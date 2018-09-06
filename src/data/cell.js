@@ -102,7 +102,7 @@ const infixExprToSuffixExpr = (src) => {
 
 const evalSubExpr = (subExpr, cellRender) => {
   if (subExpr[0] >= '0' && subExpr[0] <= '9') {
-    return subExpr;
+    return Number(subExpr);
   }
   if (subExpr[0] === '"') {
     return subExpr.substring(1);
@@ -117,29 +117,39 @@ const evalSubExpr = (subExpr, cellRender) => {
 // cellRender: (x, y) => {}
 const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
   const stack = [];
+  // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
+    // console.log(':::>>>', srcStack[i]);
     if (srcStack[i] === '+') {
       stack.push(stack.pop() + stack.pop());
     } else if (srcStack[i] === '-') {
-      stack.push(stack.pop() - stack.pop());
+      const top = stack.pop();
+      stack.push(stack.pop() - top);
     } else if (srcStack[i] === '*') {
       stack.push(stack.pop() * stack.pop());
     } else if (srcStack[i] === '/') {
-      stack.push(stack.pop() / stack.pop());
+      const top = stack.pop();
+      stack.push(stack.pop() / top);
     } else if (Array.isArray(srcStack[i])) {
       const [formula, len] = srcStack[i];
-      stack.push(formulaMap[formula].render(srcStack.slice(i - len, i)));
+      const params = [];
+      for (let j = 0; j < len; j += 1) {
+        params.push(stack.pop());
+      }
+      stack.push(formulaMap[formula].render(params));
     } else {
       stack.push(evalSubExpr(srcStack[i], cellRender));
     }
+    // console.log('stack:', stack);
   }
+  // console.log('::::::', stack);
   return stack[0];
 };
 
 const cellRender = (src, formulaMap, getCellText) => {
   if (src[0] === '=') {
-    const stack = infixExprToSuffixExpr(src);
-    console.log('suffixExpr:', stack);
+    const stack = infixExprToSuffixExpr(src.substring(1));
+    // console.log('suffixExpr:', stack);
     const cb = (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText);
     return evalSuffixExpr(stack, formulaMap, cb);
   }
