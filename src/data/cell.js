@@ -1,4 +1,49 @@
 import alphabet from './alphabet';
+// import bitmap from '../algorithm/bitmap';
+
+/*
+  cell:
+    text: string
+    merge: [rowLen, colLen]
+    formula: string,
+    format: '',
+    style:
+      color: string
+      align: string
+      valign: string
+      wrapText: boolean
+      rotation: between -90 and 90 degrees
+      border: 1px solid #fff
+      borderLeft: 1px solid #fff
+      borderTop:
+      borderBottom:
+      borderRight:
+      font:
+        name: string
+        size: int
+        color: string
+        bitmap: [bold, italic, underline, strikeout]
+*/
+
+const defaultCell = {
+  format: 'normal',
+  merge: [1, 1],
+  text: '',
+  style: {
+    color: '#ffffff',
+    align: 'left',
+    valign: 'middle',
+    wrapText: false,
+    font: {
+      name: 'Arial',
+      size: 14,
+      color: '#666666',
+      bitmap: 0,
+    },
+  },
+};
+
+// const cellStyleFontBold = (cell, flag) => {};
 
 // B10 => x,y
 const expr2xy = (src) => {
@@ -158,6 +203,7 @@ const cellRender = (src, formulaMap, getCellText) => {
 
 export default {
   render: cellRender,
+  default: defaultCell,
 };
 export {
   infixExprToSuffixExpr,
