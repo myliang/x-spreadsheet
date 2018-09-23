@@ -3,7 +3,7 @@ import alphabet from './alphabet';
 
 /*
   cell:
-    text: string
+    value: string
     merge: [rowLen, colLen]
     formula: string,
     format: '',
@@ -25,23 +25,6 @@ import alphabet from './alphabet';
         bitmap: [bold, italic, underline, strikeout]
 */
 
-const defaultCell = {
-  format: 'normal',
-  merge: [1, 1],
-  text: '',
-  style: {
-    color: '#ffffff',
-    align: 'left',
-    valign: 'middle',
-    wrapText: false,
-    font: {
-      name: 'Arial',
-      size: 14,
-      color: '#666666',
-      bitmap: 0,
-    },
-  },
-};
 
 // const cellStyleFontBold = (cell, flag) => {};
 
@@ -203,7 +186,6 @@ const cellRender = (src, formulaMap, getCellText) => {
 
 export default {
   render: cellRender,
-  default: defaultCell,
 };
 export {
   infixExprToSuffixExpr,

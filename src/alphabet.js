@@ -18,7 +18,7 @@ export default {
     for (let i = 0; i < str.length - 1; i += 1) {
       const cindex = str.charCodeAt(i) - 65;
       const exponet = str.length - 1 - i;
-      ret += (alphabets.length ** exponet) + alphabets.length * cindex;
+      ret += (alphabets.length ** exponet) + (alphabets.length * cindex);
     }
     ret += str.charCodeAt(str.length - 1) - 65;
     return ret;

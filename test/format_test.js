@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import { formats, baseFormats } from '../../src/data/format';
+import { formats, baseFormats } from '../src/format';
 
 describe('formats()', () => {
   it('should return baseFormats.length formats when this value is empty', () => {

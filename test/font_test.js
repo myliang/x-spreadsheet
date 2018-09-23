@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import { fonts, baseFonts } from '../../src/data/font';
+import { fonts, baseFonts } from '../src/font';
 
 describe('fonts()', () => {
   it('should return baseFonts.length fonts when this value is empty', () => {

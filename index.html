@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html style="font-size:20px">
+<head>
+  <meta charset="utf-8">
+  <title><%= htmlWebpackPlugin.options.title %></title>
+</head>
+<body onload="load()">
+  <div id="app"></div>
+  <canvas width="800" height="600" id="cavas"></canvas>
+  <script>
+    function load(){
+      xspreadsheet(document.getElementById('cavas'));
+    }
+  </script>
+</body>
+</html>

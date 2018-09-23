@@ -12,6 +12,7 @@ module.exports = {
     new CleanWebpackPlugin(['dist']),
     //  you should know that the HtmlWebpackPlugin by default will generate its own index.html
     new HtmlWebpackPlugin({
+      template: './index.html',
       title: 'x-spreadsheet',
     }),
   ],

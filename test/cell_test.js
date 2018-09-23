@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import cell, { infixExprToSuffixExpr } from '../../src/data/cell';
-import { formulas } from '../../src/data/formula';
+import cell, { infixExprToSuffixExpr } from '../src/cell';
+import { formulas } from '../src/formula';
 
 describe('infixExprToSuffixExpr', () => {
   it('should return myname:A1 score:50 when the value is CONCAT("my name:", A1, " score:", 50)', () => {
@@ -33,7 +33,7 @@ describe('cell', () => {
       assert.equal(cell.render('=50 + B20', formulas(), (x, y) => x + y), 50 + 21);
     });
     it('should return 2 + 500 - 21 when the value is =AVERAGE(A1:A3) + 50 * 10 - B20', () => {
-      assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', formulas(), (x, y) => x + y), 2 + 500 - 21);
+      assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', formulas(), (x, y) => x + y), (2 + 500) - 21);
     });
   });
 });

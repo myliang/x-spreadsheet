@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import { formulas, baseFormulas } from '../../src/data/formula';
+import { formulas, baseFormulas } from '../src/formula';
 
 describe('formulas()', () => {
   it('should return baseFormats.length formulas when this value is empty', () => {
