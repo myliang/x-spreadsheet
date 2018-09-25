@@ -1,6 +1,7 @@
 /* global window */
 import helper from './helper';
 import Table from './canvas/table';
+import { formulas as _formulas } from './formula';
 
 const defaultOptions = {
   formats: [],
@@ -14,18 +15,16 @@ const defaultOptions = {
     len: 5,
     width: 100,
   },
-  cell: {
-    style: {
-      color: '#ffffff',
-      align: 'left',
-      valign: 'middle',
-      wrapText: false,
-      font: {
-        name: 'Arial',
-        size: 14,
-        color: '#666666',
-        bitmap: 0,
-      },
+  style: {
+    color: '#ffffff',
+    align: 'left',
+    valign: 'top',
+    wrapText: true,
+    font: {
+      name: 'Arial',
+      size: 14,
+      color: '#333333',
+      bitmap: 0,
     },
   },
 };
@@ -38,10 +37,10 @@ Col: {
   width: number
 }
 Cell: {
-  value: string
+  text: string
   merge: [rowLen, colLen]
-  formula: string,
   format: string,
+  si: style-index
 }
 */
 
@@ -59,8 +58,10 @@ class Spreadsheet {
     this.el = el;
     this.options = helper.merge(defaultOptions, options);
     this.data = null;
-    const { row, col } = this.options;
-    this.table = new Table(el, row, col);
+    const {
+      row, col, style, formulas,
+    } = this.options;
+    this.table = new Table(el, row, col, style, _formulas(formulas));
     this.render();
   }
   loadData(data) {
@@ -68,6 +69,19 @@ class Spreadsheet {
     return this;
   }
   render() {
+    this.table.setData({
+      borders: [
+        [1, 'dashed', '#0366d6'],
+      ],
+      styles: [
+        { bgcolor: '#dddddd', bi: 0, font: { color: '#900b09' } },
+      ],
+      cellmm: {
+        1: {
+          1: { text: 'testing测试testtestetst', si: 0 },
+        },
+      },
+    });
     this.table.render();
   }
 }
