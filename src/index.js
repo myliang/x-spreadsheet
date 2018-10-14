@@ -16,15 +16,17 @@ const defaultOptions = {
     width: 100,
   },
   style: {
-    color: '#ffffff',
+    bgcolor: '#ffffff',
     align: 'left',
     valign: 'top',
     wrapText: true,
+    textDecoration: 'normal',
+    color: '#333333',
     font: {
-      name: 'Arial',
+      family: 'Arial',
       size: 14,
-      color: '#333333',
-      bitmap: 0,
+      bold: false,
+      italic: false,
     },
   },
 };
@@ -74,7 +76,7 @@ class Spreadsheet {
         [1, 'dashed', '#0366d6'],
       ],
       styles: [
-        { bgcolor: '#dddddd', bi: 0, font: { color: '#900b09' } },
+        { bgcolor: '#dddddd', bi: 0, color: '#900b09' },
       ],
       cellmm: {
         1: {

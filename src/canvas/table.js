@@ -13,6 +13,8 @@
     align: 'left',
     valign: 'middle',
     wrapText: false,
+    textDecoration: 'normal',
+    color: '#333333',
     bi: border-index
     bti: border-index
     bri: border-index
@@ -21,8 +23,8 @@
     font: {
       name: 'Arial',
       size: 14,
-      color: '#666666',
-      bitmap: 0,
+      bold: false,
+      italic: false,
     },
   }
   border: [width, style, color]
@@ -57,7 +59,7 @@ class Table {
     this.renderContentGrid();
     this.renderFixedHeaders();
     // set text style
-    // this.renderContent();
+    this.renderContent();
   }
   // x-scroll, y-scroll
   // offset = {x: , y: }
@@ -115,10 +117,10 @@ class Table {
     const wrapText = (style && style.wrapText) || this.style.wrapText;
     const font = Object.assign({}, this.style.font, style.font);
     draw.text(cellText, dbox, {
-      textAlign: (style && style.align) || this.style.align,
-      textBaseline: (style && style.align) || this.style.valign,
-      font: `${font.size}px ${font.name}`,
-      fillStyle: font.color,
+      align: (style && style.align) || this.style.align,
+      valign: (style && style.align) || this.style.valign,
+      font,
+      color: (style && style.color) || this.style.color,
     }, wrapText);
     draw.restore();
   }

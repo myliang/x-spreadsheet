@@ -14,6 +14,9 @@ describe('alphabet', () => {
     it('should return 26 when the value is AA', () => {
       assert.equal(alphabet.indexAt('AA'), 26);
     });
+    it('should return 52 when the value is BA', () => {
+      assert.equal(alphabet.indexAt('BA'), 52);
+    });
     it('should return 54 when the value is BC', () => {
       assert.equal(alphabet.indexAt('BC'), 54);
     });

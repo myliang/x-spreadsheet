@@ -39,14 +39,14 @@ class DrawBox {
     return x;
   }
   texty(align) {
-    const { height, padding } = this;
+    const { height } = this;
     let { y } = this;
     if (align === 'top') {
-      y += padding;
+      y += 0;
     } else if (align === 'middle') {
       y += height / 2;
     } else if (align === 'bottom') {
-      y += height - padding;
+      y += height;
     }
     return y;
   }
@@ -115,31 +115,46 @@ class Draw {
   }
   /*
     txt: render text
-    box: Box
+    box: DrawBox
     attr: {
-      textAlign: left | center | right
-      textBaseline: top | middle | bottom
-      font: text font
-      fillStyle: text color
+      align: left | center | right
+      valign: top | middle | bottom
+      color: '#333333',
+      textDecoration: 'normal',
+      font: {
+        name: 'Arial',
+        size: 14,
+        bold: false,
+        italic: false,
+      }
     }
     wrapText: wrap text
   */
   text(txt, box, attr = {}, wrapText = true) {
     // console.log('attr: ', attr, ', wrapText: ', wrapText, ', text:', txt);
     const { ctx } = this;
-    const tx = box.textx(attr.textAlign);
-    let ty = box.texty(attr.textBaseline);
+    const {
+      align, valign, font, color,
+    } = attr;
+    const tx = box.textx(align);
+    let ty = box.texty(valign);
     ctx.save();
-    this.attr(attr);
+    this.attr({
+      textAlign: align,
+      textBaseline: valign,
+      font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${font.size}px ${font.name}`,
+      fillStyle: color,
+    });
     const txtWidth = ctx.measureText(txt).width;
     // console.log('txtWidth: ', txtWidth);
     if (wrapText && txtWidth > box.innerWidth()) {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
+        // console.log('::::::::width:', txt[i], ctx.measureText(txt[i]).width);
         textLine.len += ctx.measureText(txt[i]).width;
         if (textLine.len >= box.innerWidth()) {
           ctx.fillText(txt.substring(textLine.start, i), tx, ty);
-          ty += box.innerHeight();
+          ty += font.size + 2;
           textLine.len = 0;
           textLine.start = i;
         }
@@ -158,6 +173,14 @@ class Draw {
     ctx.lineWidth = width - 0.5;
     ctx.strokeStyle = color;
     if (style === 'dashed') ctx.setLineDash([5, 2]);
+    return this;
+  }
+  lineStyle(width, lineDash, color) {
+    this.attr({
+      lineWidth: width - 0.5,
+      strokeStyle: color,
+    });
+    this.ctx.setLineDash(lineDash);
     return this;
   }
   line(...xys) {
