@@ -13,6 +13,7 @@ class DrawBox {
     this.borderBottom = null;
     this.borderLeft = null;
   }
+
   setBorders(b, bt, br, bb, bl) {
     this.border = b;
     if (bt) this.borderTop = bt;
@@ -20,12 +21,15 @@ class DrawBox {
     if (bb) this.borderBottom = bb;
     if (bl) this.borderLeft = bl;
   }
+
   innerWidth() {
     return this.width - (this.padding * 2);
   }
+
   innerHeight() {
     return this.height - (this.padding * 2);
   }
+
   textx(align) {
     const { width, padding } = this;
     let { x } = this;
@@ -38,6 +42,7 @@ class DrawBox {
     }
     return x;
   }
+
   texty(align) {
     const { height } = this;
     let { y } = this;
@@ -50,22 +55,26 @@ class DrawBox {
     }
     return y;
   }
+
   topxys() {
     const { x, y, width } = this;
     return [[x, y], [x + width, y]];
   }
+
   rightxys() {
     const {
       x, y, width, height,
     } = this;
     return [[x + width, y], [x + width, y + height]];
   }
+
   bottomxys() {
     const {
       x, y, width, height,
     } = this;
     return [[x, y + height], [x + width, y + height]];
   }
+
   leftxys() {
     const {
       x, y, height,
@@ -79,40 +88,49 @@ class Draw {
     this.el = el;
     this.ctx = el.getContext('2d');
   }
+
   clear() {
     const { width, height } = this.el;
     this.ctx.clearRect(0, 0, width, height);
     return this;
   }
+
   attr(options) {
     Object.assign(this.ctx, options);
     return this;
   }
+
   save() {
     this.ctx.save();
     this.ctx.beginPath();
     return this;
   }
+
   restore() {
     this.ctx.restore();
     return this;
   }
+
   beginPath() {
     this.ctx.beginPath();
     return this;
   }
+
   translate(x, y) {
     this.ctx.translate(x, y);
     return this;
   }
+
   fillRect(x, y, w, h) {
     this.ctx.fillRect(x, y, w, h);
     return this;
   }
+
   fillText(text, x, y) {
     this.ctx.fillText(text, x, y);
     return this;
   }
+
   /*
     txt: render text
     box: DrawBox
@@ -168,6 +186,7 @@ class Draw {
     ctx.restore();
     return this;
   }
+
   border(width, style, color) {
     const { ctx } = this;
     ctx.lineWidth = width - 0.5;
@@ -175,6 +194,7 @@ class Draw {
     if (style === 'dashed') ctx.setLineDash([5, 2]);
     return this;
   }
+
   lineStyle(width, lineDash, color) {
     this.attr({
       lineWidth: width - 0.5,
@@ -183,6 +203,7 @@ class Draw {
     this.ctx.setLineDash(lineDash);
     return this;
   }
+
   line(...xys) {
     const { ctx } = this;
     if (xys.length > 1) {
@@ -195,6 +216,7 @@ class Draw {
       ctx.stroke();
     }
   }
+
   rect(box) {
     const { ctx } = this;
     const {

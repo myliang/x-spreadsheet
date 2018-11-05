@@ -5,11 +5,26 @@
   <title><%= htmlWebpackPlugin.options.title %></title>
 </head>
 <body onload="load()">
-  <div id="app"></div>
-  <canvas width="800" height="600" id="cavas"></canvas>
+  <div id="app" style="margin-left: 160px;">
+    <div style="width: 100%; height: 600px;" id="xss"></div>
+  </div>
+  
   <script>
     function load(){
-      xspreadsheet(document.getElementById('cavas'));
+      xspreadsheet(document.getElementById('xss'))
+        .loadData({
+          borders: [
+            [1, 'dashed', '#0366d6'],
+          ],
+          styles: [
+            { bgcolor: '#dddddd', bi: 0, color: '#900b09' },
+          ],
+          cellmm: {
+            1: {
+              1: { text: 'testing测试testtestetst', si: 0 },
+            },
+          },
+        });
     }
   </script>
 </body>

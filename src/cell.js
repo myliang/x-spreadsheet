@@ -2,31 +2,35 @@ import alphabet from './alphabet';
 // import bitmap from '../algorithm/bitmap';
 
 /*
-  cell:
-    value: string
-    merge: [rowLen, colLen]
-    formula: string,
-    format: '',
-    style:
-      color: string
-      align: string
-      valign: string
-      wrapText: boolean
-      rotation: between -90 and 90 degrees
-      border: 1px solid #fff
-      borderLeft: 1px solid #fff
-      borderTop:
-      borderBottom:
-      borderRight:
-      font:
-        name: string
-        size: int
-        color: string
-        bitmap: [bold, italic, underline, strikeout]
+  row: {
+    len: number,
+    height: number
+  }
+  col: {
+    len: number,
+    width: number
+  }
+  style: {
+    bgcolor: '#ffffff',
+    align: 'left',
+    valign: 'middle',
+    wrapText: false,
+    textDecoration: 'normal',
+    color: '#333333',
+    bi: border-index
+    bti: border-index
+    bri: border-index
+    bbi: border-index
+    bli: border-index
+    font: {
+      name: 'Arial',
+      size: 14,
+      bold: false,
+      italic: false,
+    },
+  }
+  border: [width, style, color]
 */
-
-
-// const cellStyleFontBold = (cell, flag) => {};
 
 // B10 => x,y
 const expr2xy = (src) => {

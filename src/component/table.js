@@ -32,11 +32,10 @@
 import alphabet from '../alphabet';
 import helper from '../helper';
 import _cell from '../cell';
-import { Draw, DrawBox } from './draw';
+import { Draw, DrawBox } from '../canvas/draw';
 // gobal var
 const leftFixedCellWidth = 60;
 const cellPaddingWidth = 5;
-
 
 class Table {
   constructor(el, row, col, style, formulam) {
@@ -54,6 +53,7 @@ class Table {
     this.styles = []; // style array
     this.borders = []; // border array
   }
+
   render() {
     this.clear();
     this.renderContentGrid();
@@ -61,11 +61,13 @@ class Table {
     // set text style
     this.renderContent();
   }
+
   // x-scroll, y-scroll
   // offset = {x: , y: }
   scroll(offset) {
     Object.assign(this.scrollOffset, offset);
   }
+
   setData(data) {
     if (data) {
       const {
@@ -78,9 +80,11 @@ class Table {
       if (borders) this.borders = borders;
     }
   }
+
   clear() {
     this.draw.clear();
   }
+
   renderContent() {
     const { cellmm } = this;
     Object.keys(cellmm).forEach((rindex) => {
@@ -89,6 +93,7 @@ class Table {
       });
     });
   }
+
   renderCell(rindex, cindex, cell) {
     const {
       styles, formulam, cellmm, draw, row, scrollOffset,
@@ -124,6 +129,40 @@ class Table {
     }, wrapText);
     draw.restore();
   }
+
+  getCellRectWithIndexes(x, y) {
+    // console.log('x: ', x, ', y: ', y);
+    // 根据鼠标坐标点，获得所在的cell矩形信息(ri, ci, offsetX, offsetY, width, height)
+    const { row, col, scrollOffset } = this;
+    let tHeight = 0 + row.height + scrollOffset.y;
+    let i = 0;
+    let j = 0;
+    let cellWidth = leftFixedCellWidth;
+    let cellHeight = row.height;
+    for (; i < row.len; i += 1) {
+      if (tHeight > y) break;
+      cellHeight = this.getRowHeight(i);
+      tHeight += cellHeight;
+    }
+    let tWidth = 0 + leftFixedCellWidth + scrollOffset.x;
+    for (; j < col.len; j += 1) {
+      if (tWidth > x) break;
+      cellWidth = this.getColWidth(j);
+      tWidth += cellWidth;
+    }
+    const left = tWidth - cellWidth - scrollOffset.x;
+    const top = tHeight - cellHeight - scrollOffset.y;
+    // console.log('left: ', left, ', top: ', top, ', tWidth: ', tWidth, ', tHeight: ', tHeight);
+    return {
+      ri: i,
+      ci: j,
+      left,
+      top,
+      width: cellWidth,
+      height: cellHeight,
+    };
+  }
+
   getDrawBox(rindex, cindex) {
     let x; let y; let width; let height;
     this.rowEach(rindex, (i, y1, rowHeight) => {
@@ -136,6 +175,7 @@ class Table {
     });
     return new DrawBox(x, y, width, height, cellPaddingWidth);
   }
+
   renderContentGrid() {
     const {
       draw, scrollOffset, row, col,
@@ -158,6 +198,7 @@ class Table {
     });
     draw.restore();
   }
+
   renderFixedHeaders() {
     const {
       draw, row, col, scrollOffset,
@@ -200,16 +241,19 @@ class Table {
     // context.closePath();
     draw.restore();
   }
+
   colTotalWidth() {
     const { col, colm } = this;
     const [cmTotal, cmSize] = helper.sum(colm, v => v.width || 0);
     return ((col.len - cmSize) * col.width) + cmTotal;
   }
+
   rowTotalHeight() {
     const { row, rowm } = this;
     const [rmTotal, rmSize] = helper.sum(rowm, v => v.height || 0);
     return ((row.len - rmSize) * row.height) + rmTotal;
   }
+
   colEach(colLen, cb) {
     let x = 0;
     for (let i = 0; i <= colLen; i += 1) {
@@ -218,10 +262,18 @@ class Table {
       x += colWidth;
     }
   }
+
   getColWidth(index) {
     const { col, colm } = this;
     return colm[`${index}`] ? colm[`${index}`].width : col.width;
   }
+
+  setColWidth(index, v) {
+    this.colm[`${index}`] = this.colm[`${index}`] || {};
+    this.colm[`${index}`].width = v;
+    this.render();
+  }
+
   rowEach(rowLen, cb) {
     let y = 0;
     for (let i = 0; i <= rowLen; i += 1) {
@@ -230,9 +282,16 @@ class Table {
       y += rowHeight;
     }
   }
+
   getRowHeight(index) {
     const { row, rowm } = this;
     return rowm[`${index}`] ? rowm[`${index}`].height : row.height;
+  }
+
+  setRowHeight(index, v) {
+    this.rowm[`${index}`] = this.rowm[`${index}`] || {};
+    this.rowm[`${index}`].height = v;
+    this.render();
   }
 }
 

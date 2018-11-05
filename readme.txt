@@ -12,6 +12,10 @@ npm install --save-dev clean-webpack-plugin
 npm install --save-dev webpack-dev-server
 npm install --save-dev webpack-merge
 
+# less
+npm install less --save-dev
+npm install less-loader --save-dev
+
 npm install eslint --save-dev
 ./node_modules/.bin/eslint --init # airbnb
 

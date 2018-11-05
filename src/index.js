@@ -1,18 +1,18 @@
 /* global window */
 import helper from './helper';
-import Table from './canvas/table';
-import { formulas as _formulas } from './formula';
+import Sheet from './component/sheet';
+import './index.less';
 
 const defaultOptions = {
   formats: [],
   fonts: [],
   formula: [],
   row: {
-    len: 10,
+    len: 100,
     height: 25,
   },
   col: {
-    len: 5,
+    len: 26,
     width: 100,
   },
   style: {
@@ -59,32 +59,12 @@ class Spreadsheet {
   constructor(el, options = {}) {
     this.el = el;
     this.options = helper.merge(defaultOptions, options);
-    this.data = null;
-    const {
-      row, col, style, formulas,
-    } = this.options;
-    this.table = new Table(el, row, col, style, _formulas(formulas));
-    this.render();
+    // create canvas element
+    this.sheet = new Sheet(el, this.options);
   }
   loadData(data) {
-    this.data = data;
+    this.sheet.loadData(data);
     return this;
-  }
-  render() {
-    this.table.setData({
-      borders: [
-        [1, 'dashed', '#0366d6'],
-      ],
-      styles: [
-        { bgcolor: '#dddddd', bi: 0, color: '#900b09' },
-      ],
-      cellmm: {
-        1: {
-          1: { text: 'testing测试testtestetst', si: 0 },
-        },
-      },
-    });
-    this.table.render();
   }
 }
 

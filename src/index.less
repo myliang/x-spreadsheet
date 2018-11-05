@@ -1,0 +1,49 @@
+@border-style: 1px solid #e0e2e4;
+@icon-size: 18px;
+
+body {
+  margin: 0;
+}
+
+.xss {
+  font-size: 14px;
+  line-height: normal;
+  user-select: none;
+  -moz-user-select: none;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  box-sizing: content-box;
+  background: #fff;
+}
+
+.xss-sheet {
+  position: relative;
+  overflow: hidden;
+}
+.xss-resizer {
+  position: absolute;
+  z-index: 11;
+  
+  .xss-resizer-hover {
+    background-color: rgba(75, 137, 255, .25);
+  }
+  .xss-resizer-line {
+    position: absolute;
+  }
+  
+  &.horizontal {
+    cursor: row-resize;
+    .xss-resizer-line {
+      border-bottom: 2px dashed rgb(75, 137, 255);
+      left: 0;
+      bottom: 0;
+    }
+  }
+  &.vertical {
+    cursor: col-resize;
+    .xss-resizer-line {
+      border-right: 2px dashed rgb(75, 137, 255);
+      top: 0;
+      right: 0;
+    }
+  }
+}
