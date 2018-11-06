@@ -34,8 +34,19 @@ import helper from '../helper';
 import _cell from '../cell';
 import { Draw, DrawBox } from '../canvas/draw';
 // gobal var
-const leftFixedCellWidth = 60;
 const cellPaddingWidth = 5;
+
+function rangeReduceIf(min, max, inits, initv, ifv, getv) {
+  let s = inits;
+  let v = initv;
+  let i = min;
+  for (; i < max; i += 1) {
+    if (s > ifv) break;
+    v = getv(i);
+    s += v;
+  }
+  return [i, s - v, v];
+}
 
 class Table {
   constructor(el, row, col, style, formulam) {
@@ -57,15 +68,30 @@ class Table {
   render() {
     this.clear();
     this.renderContentGrid();
-    this.renderFixedHeaders();
     // set text style
     this.renderContent();
+    this.renderFixedHeaders();
   }
 
   // x-scroll, y-scroll
   // offset = {x: , y: }
   scroll(offset) {
-    Object.assign(this.scrollOffset, offset);
+    const { x, y } = offset;
+    const { scrollOffset, col, row } = this;
+    if (x) {
+      const [, left] = rangeReduceIf(0, col.len, 0, 0, x, i => this.getColWidth(i));
+      if (scrollOffset.x !== left) {
+        scrollOffset.x = left;
+        this.render();
+      }
+    }
+    if (y) {
+      const [, top] = rangeReduceIf(0, row.len, 0, 0, y, i => this.getRowHeight(i));
+      if (scrollOffset.y !== top) {
+        scrollOffset.y = top;
+        this.render();
+      }
+    }
   }
 
   setData(data) {
@@ -96,7 +122,7 @@ class Table {
 
   renderCell(rindex, cindex, cell) {
     const {
-      styles, formulam, cellmm, draw, row, scrollOffset,
+      styles, formulam, cellmm, draw, row, col, scrollOffset,
     } = this;
     const style = styles[cell.si];
     const dbox = this.getDrawBox(rindex, cindex);
@@ -114,8 +140,8 @@ class Table {
       this.borders[bli],
     );
     draw.save()
-      .translate(leftFixedCellWidth, row.height)
-      .translate(scrollOffset.x, scrollOffset.y);
+      .translate(col.indexWidth, row.height)
+      .translate(-scrollOffset.x, -scrollOffset.y);
     draw.rect(dbox);
     // render text
     const cellText = _cell.render(cell.text, formulam, (x, y) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
@@ -133,34 +159,43 @@ class Table {
   getCellRectWithIndexes(x, y) {
     // console.log('x: ', x, ', y: ', y);
     // 根据鼠标坐标点，获得所在的cell矩形信息(ri, ci, offsetX, offsetY, width, height)
-    const { row, col, scrollOffset } = this;
-    let tHeight = 0 + row.height + scrollOffset.y;
-    let i = 0;
-    let j = 0;
-    let cellWidth = leftFixedCellWidth;
-    let cellHeight = row.height;
-    for (; i < row.len; i += 1) {
-      if (tHeight > y) break;
-      cellHeight = this.getRowHeight(i);
-      tHeight += cellHeight;
-    }
-    let tWidth = 0 + leftFixedCellWidth + scrollOffset.x;
-    for (; j < col.len; j += 1) {
-      if (tWidth > x) break;
-      cellWidth = this.getColWidth(j);
-      tWidth += cellWidth;
-    }
-    const left = tWidth - cellWidth - scrollOffset.x;
-    const top = tHeight - cellHeight - scrollOffset.y;
-    // console.log('left: ', left, ', top: ', top, ', tWidth: ', tWidth, ', tHeight: ', tHeight);
+    const { ri, top, height } = this.getCellRowByY(y);
+    const { ci, left, width } = this.getCellColByX(x);
     return {
-      ri: i,
-      ci: j,
-      left,
-      top,
-      width: cellWidth,
-      height: cellHeight,
+      ri, ci, left, top, width, height,
     };
+  }
+
+  getCellRowByY(y) {
+    const { row, scrollOffset } = this;
+    const [ri, top, height] = rangeReduceIf(
+      0,
+      row.len,
+      row.height - scrollOffset.y,
+      row.height,
+      y,
+      i => this.getRowHeight(i),
+    );
+    if (top <= 0) {
+      return { ri: 0, top: 0, height };
+    }
+    return { ri, top, height };
+  }
+
+  getCellColByX(x) {
+    const { col, scrollOffset } = this;
+    const [ci, left, width] = rangeReduceIf(
+      0,
+      col.len,
+      col.indexWidth - scrollOffset.x,
+      col.indexWidth,
+      x,
+      i => this.getColWidth(i),
+    );
+    if (left <= 0) {
+      return { ci: 0, left: 0, width: col.indexWidth };
+    }
+    return { ci, left, width };
   }
 
   getDrawBox(rindex, cindex) {
@@ -185,8 +220,8 @@ class Table {
       lineWidth: 0.5,
       strokeStyle: '#d0d0d0',
     });
-    draw.translate(leftFixedCellWidth, row.height);
-    draw.translate(scrollOffset.x, scrollOffset.y);
+    draw.translate(col.indexWidth, row.height);
+    draw.translate(-scrollOffset.x, -scrollOffset.y);
     // sum
     const colSumWidth = this.colTotalWidth();
     const rowSumHeight = this.rowTotalHeight();
@@ -206,8 +241,8 @@ class Table {
     draw.save();
     // draw rect background
     draw.attr({ fillStyle: '#f4f5f8' })
-      .fillRect(0, 0, leftFixedCellWidth, this.rowTotalHeight() + row.height)
-      .fillRect(0, 0, this.colTotalWidth() + leftFixedCellWidth, row.height);
+      .fillRect(0, 0, col.indexWidth, this.rowTotalHeight() + row.height)
+      .fillRect(0, 0, this.colTotalWidth() + col.indexWidth, row.height);
     // draw text
     // text font, align...
     draw.attr({
@@ -220,24 +255,24 @@ class Table {
     });
     // draw.beginPath();
     this.rowEach(row.len, (i, y1, rowHeight) => {
-      const y = y1 + row.height + scrollOffset.y;
-      const [tx, ty] = [0 + (leftFixedCellWidth / 2), y + (rowHeight / 2)];
+      const y = y1 + row.height - scrollOffset.y;
+      const [tx, ty] = [0 + (col.indexWidth / 2), y + (rowHeight / 2)];
       if (i !== row.len) draw.fillText(i + 1, tx, ty);
-      draw.line([0, y], [leftFixedCellWidth, y]);
+      draw.line([0, y], [col.indexWidth, y]);
     });
-    draw.line([leftFixedCellWidth, 0], [leftFixedCellWidth, this.rowTotalHeight() + row.height]);
+    draw.line([col.indexWidth, 0], [col.indexWidth, this.rowTotalHeight() + row.height]);
     // x-header-text
     this.colEach(col.len, (i, x1, colWidth) => {
       // console.log('::::::', i, x1, colWidth, alphabet.stringAt(i));
-      const x = x1 + leftFixedCellWidth + scrollOffset.x;
+      const x = x1 + col.indexWidth - scrollOffset.x;
       const [tx, ty] = [x + (colWidth / 2), 0 + (row.height / 2)];
       if (i !== col.len) draw.fillText(alphabet.stringAt(i), tx, ty);
       draw.line([x, 0], [x, row.height]);
     });
-    draw.line([0, row.height], [this.colTotalWidth() + leftFixedCellWidth, row.height]);
+    draw.line([0, row.height], [this.colTotalWidth() + col.indexWidth, row.height]);
     // left-top-cell
     draw.attr({ fillStyle: '#f4f5f8' })
-      .fillRect(0, 0, leftFixedCellWidth, row.height);
+      .fillRect(0, 0, col.indexWidth, row.height);
     // context.closePath();
     draw.restore();
   }

@@ -3,8 +3,8 @@ const mergeDeep = (object = {}, ...sources) => {
   sources.forEach((source) => {
     Object.keys(source).forEach((key) => {
       const v = source[key];
-      // console.log('k:', key, ', v:', source[key], v instanceof Object);
-      if (!Array.isArray(v) && v instanceof Object) {
+      // console.log('k:', key, ', v:', source[key], typeof v, v instanceof Object);
+      if (typeof v === 'function' && !Array.isArray(v) && v instanceof Object) {
         object[key] = object[key] || {};
         mergeDeep(object[key], v);
       } else {
@@ -12,6 +12,7 @@ const mergeDeep = (object = {}, ...sources) => {
       }
     });
   });
+  // console.log('::', object);
   return object;
 };
 

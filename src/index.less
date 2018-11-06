@@ -18,10 +18,13 @@ body {
 .xss-sheet {
   position: relative;
   overflow: hidden;
+  height: 100%;
+  line-height: 0;
 }
+/* resizer **/
 .xss-resizer {
   position: absolute;
-  z-index: 11;
+  // z-index: 11;
   
   .xss-resizer-hover {
     background-color: rgba(75, 137, 255, .25);
@@ -45,5 +48,26 @@ body {
       top: 0;
       right: 0;
     }
+  }
+}
+/* scrollbar */
+.xss-scrollbar {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #f4f5f8;
+  opacity: 0;
+  &.horizontal {
+    // right: 15px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+  }
+  &.vertical {
+    // bottom: 15px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+  }
+  &:hover {
+    opacity: .85;
   }
 }

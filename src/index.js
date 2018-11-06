@@ -4,6 +4,9 @@ import Sheet from './component/sheet';
 import './index.less';
 
 const defaultOptions = {
+  view: {
+    height: () => 600,
+  },
   formats: [],
   fonts: [],
   formula: [],
@@ -14,6 +17,7 @@ const defaultOptions = {
   col: {
     len: 26,
     width: 100,
+    indexWidth: 60,
   },
   style: {
     bgcolor: '#ffffff',
@@ -62,6 +66,7 @@ class Spreadsheet {
     // create canvas element
     this.sheet = new Sheet(el, this.options);
   }
+
   loadData(data) {
     this.sheet.loadData(data);
     return this;

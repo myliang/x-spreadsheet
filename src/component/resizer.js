@@ -55,7 +55,7 @@ export default class Resizer {
       el, lineEl, cRect, vertical, minDistance,
     } = this;
     let distance = vertical ? cRect.width : cRect.height;
-    console.log('distance:', distance);
+    // console.log('distance:', distance);
     lineEl.show();
     mouseMoveUp(window, (e) => {
       this.moving = true;
