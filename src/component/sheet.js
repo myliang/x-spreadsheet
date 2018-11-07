@@ -101,7 +101,7 @@ export default class Sheet {
     this.table = new Table(this.tableEl.el, row, col, style, _formulas(formulas));
     // resizer
     this.rowResizer = new Resizer(false, row.height);
-    this.colResizer = new Resizer(true, 60);
+    this.colResizer = new Resizer(true, col.minWidth);
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);

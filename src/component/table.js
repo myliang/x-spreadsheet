@@ -36,18 +36,6 @@ import { Draw, DrawBox } from '../canvas/draw';
 // gobal var
 const cellPaddingWidth = 5;
 
-function rangeReduceIf(min, max, inits, initv, ifv, getv) {
-  let s = inits;
-  let v = initv;
-  let i = min;
-  for (; i < max; i += 1) {
-    if (s > ifv) break;
-    v = getv(i);
-    s += v;
-  }
-  return [i, s - v, v];
-}
-
 class Table {
   constructor(el, row, col, style, formulam) {
     this.el = el;
@@ -76,19 +64,24 @@ class Table {
   // x-scroll, y-scroll
   // offset = {x: , y: }
   scroll(offset) {
+    // console.log('scroll.offset:', offset);
     const { x, y } = offset;
     const { scrollOffset, col, row } = this;
-    if (x) {
-      const [, left] = rangeReduceIf(0, col.len, 0, 0, x, i => this.getColWidth(i));
-      if (scrollOffset.x !== left) {
-        scrollOffset.x = left;
+    if (x !== undefined) {
+      const [, left, width] = helper.rangeReduceIf(0, col.len, 0, 0, x, i => this.getColWidth(i));
+      let x1 = left;
+      if (x > 0) x1 += width;
+      if (scrollOffset.x !== x1) {
+        scrollOffset.x = x1;
         this.render();
       }
     }
-    if (y) {
-      const [, top] = rangeReduceIf(0, row.len, 0, 0, y, i => this.getRowHeight(i));
-      if (scrollOffset.y !== top) {
-        scrollOffset.y = top;
+    if (y !== undefined) {
+      const [, top, height] = helper.rangeReduceIf(0, row.len, 0, 0, y, i => this.getRowHeight(i));
+      let y1 = top;
+      if (y > 0) y1 += height;
+      if (scrollOffset.y !== y1) {
+        scrollOffset.y = y1;
         this.render();
       }
     }
@@ -168,7 +161,7 @@ class Table {
 
   getCellRowByY(y) {
     const { row, scrollOffset } = this;
-    const [ri, top, height] = rangeReduceIf(
+    const [ri, top, height] = helper.rangeReduceIf(
       0,
       row.len,
       row.height - scrollOffset.y,
@@ -184,7 +177,7 @@ class Table {
 
   getCellColByX(x) {
     const { col, scrollOffset } = this;
-    const [ci, left, width] = rangeReduceIf(
+    const [ci, left, width] = helper.rangeReduceIf(
       0,
       col.len,
       col.indexWidth - scrollOffset.x,
@@ -220,6 +213,7 @@ class Table {
       lineWidth: 0.5,
       strokeStyle: '#d0d0d0',
     });
+    // console.log(col.indexWidth, ':', row.height, scrollOffset);
     draw.translate(col.indexWidth, row.height);
     draw.translate(-scrollOffset.x, -scrollOffset.y);
     // sum
@@ -286,6 +280,7 @@ class Table {
   rowTotalHeight() {
     const { row, rowm } = this;
     const [rmTotal, rmSize] = helper.sum(rowm, v => v.height || 0);
+    // console.log('rmTotal:', rmTotal, ', rmSize:', rmSize);
     return ((row.len - rmSize) * row.height) + rmTotal;
   }
 

@@ -18,6 +18,7 @@ const defaultOptions = {
     len: 26,
     width: 100,
     indexWidth: 60,
+    minWidth: 60,
   },
   style: {
     bgcolor: '#ffffff',
