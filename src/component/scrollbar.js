@@ -6,7 +6,8 @@ export default class Scrollbar {
     this.moveFn = null;
     this.el = h('div', `xss-scrollbar ${vertical ? 'vertical' : 'horizontal'}`)
       .child(this.contentEl = h('div', ''))
-      .on('scroll', (evt) => {
+      .on('mousemove.stop', () => {})
+      .on('scroll.stop', (evt) => {
         const { scrollTop, scrollLeft } = evt.target;
         if (this.moveFn) {
           this.moveFn(this.vertical ? scrollTop : scrollLeft, evt);

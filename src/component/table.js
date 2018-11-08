@@ -63,7 +63,7 @@ class Table {
 
   // x-scroll, y-scroll
   // offset = {x: , y: }
-  scroll(offset) {
+  scroll(offset, cb = () => {}) {
     // console.log('scroll.offset:', offset);
     const { x, y } = offset;
     const { scrollOffset, col, row } = this;
@@ -72,6 +72,7 @@ class Table {
       let x1 = left;
       if (x > 0) x1 += width;
       if (scrollOffset.x !== x1) {
+        cb(x1 - scrollOffset.x);
         scrollOffset.x = x1;
         this.render();
       }
@@ -81,6 +82,7 @@ class Table {
       let y1 = top;
       if (y > 0) y1 += height;
       if (scrollOffset.y !== y1) {
+        cb(y1 - scrollOffset.y);
         scrollOffset.y = y1;
         this.render();
       }

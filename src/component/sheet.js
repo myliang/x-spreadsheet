@@ -3,19 +3,20 @@ import { h } from './element';
 import { bind } from '../event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
+import Selector from './selector';
 import Table from './table';
 import { formulas as _formulas } from '../formula';
 
 // private methods
-function tableMousemove(evt) {
-  // console.log('evt.buttons: ', evt.buttons);
+function overlayerMousemove(evt) {
+  // console.log('evt.buttons: ', evt.buttons, evt);
   if (evt.buttons !== 0) return;
+  if (evt.target.className === 'xss-resizer-hover') return;
   const {
     table, rowResizer, colResizer, tableEl,
   } = this;
   const tRect = tableEl.box();
   const cRect = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
-  // console.log('cRect:', cRect);
   if (cRect.ri >= 1 && cRect.ci === 0) {
     rowResizer.show(cRect, {
       width: tRect.width,
@@ -32,54 +33,112 @@ function tableMousemove(evt) {
   }
 }
 
-function verticalScrollbarSet() {
+function overlayerMousedown(evt) {
+  // console.log(':::::overlayer.mousedown', evt);
+  const { table, selector } = this;
   const {
-    table, verticalScrollbar, view, row,
-  } = this;
-  verticalScrollbar.set(view.height() - row.height, table.rowTotalHeight());
+    ri, ci, left, top, width, height,
+  } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
+  const tOffset = this.getTableOffset();
+  // console.log(':::::::', ri, ci, tOffset);
+  if (ri > 0 && ci > 0) {
+    selector.set([ri, ci], {
+      left: left - tOffset.left, top: top - tOffset.top, width, height,
+    });
+  }
+
+  if (evt.detail === 1) {
+    if (evt.shiftKey) {
+      // to-do
+    }
+  }
+}
+
+function verticalScrollbarSet() {
+  const { table, verticalScrollbar } = this;
+  const { height } = this.getTableOffset();
+  verticalScrollbar.set(height, table.rowTotalHeight());
 }
 
 function horizontalScrollbarSet() {
-  const {
-    table, horizontalScrollbar, el, col,
-  } = this;
-  horizontalScrollbar.set(el.box().width - col.indexWidth, table.colTotalWidth());
+  const { table, horizontalScrollbar } = this;
+  const { width } = this.getTableOffset();
+  horizontalScrollbar.set(width, table.colTotalWidth());
 }
 
 function verticalScrollbarMove(distance) {
-  const { table } = this;
-  table.scroll({ y: distance });
+  const { table, selector } = this;
+  table.scroll({ y: distance }, (d) => {
+    selector.addTop(-d);
+  });
 }
 
 function horizontalScrollbarMove(distance) {
-  const { table } = this;
-  table.scroll({ x: distance });
+  const { table, selector } = this;
+  table.scroll({ x: distance }, (d) => {
+    selector.addLeft(-d);
+  });
 }
 
 function rowResizerFinished(cRect, distance) {
-  const { ri } = cRect;
-  const { table } = this;
+  const { ri, height } = cRect;
+  const { table, selector } = this;
   table.setRowHeight(ri - 1, distance);
+  selector.addTopOrHeight(ri, distance - height);
   verticalScrollbarSet.call(this);
 }
 
 function colResizerFinished(cRect, distance) {
-  const { ci } = cRect;
-  const { table } = this;
+  const { ci, width } = cRect;
+  const { table, selector } = this;
   table.setColWidth(ci - 1, distance);
+  selector.addLeftOrWidth(ci, distance - width);
   horizontalScrollbarSet.call(this);
 }
 
 function sheetReset() {
   const {
-    el, tableEl, view,
+    tableEl, overlayerEl, overlayerCEl,
   } = this;
-  tableEl.attr({
-    width: el.box().width,
-    height: view.height(),
-  });
+  const tOffset = this.getTableOffset();
+  const vRect = this.getRect();
+  tableEl.attr(vRect);
+  overlayerEl.offset(vRect);
+  overlayerCEl.offset(tOffset);
   verticalScrollbarSet.call(this);
   horizontalScrollbarSet.call(this);
+}
+
+function sheetInitEvents() {
+  const {
+    overlayerEl, rowResizer, colResizer, verticalScrollbar, horizontalScrollbar,
+  } = this;
+  // overlayer
+  overlayerEl
+    .on('mousemove', (evt) => {
+      overlayerMousemove.call(this, evt);
+    })
+    .on('mousedown', (evt) => {
+      overlayerMousedown.call(this, evt);
+    });
+  // resizer finished callback
+  rowResizer.finishedFn = (cRect, distance) => {
+    rowResizerFinished.call(this, cRect, distance);
+  };
+  colResizer.finishedFn = (cRect, distance) => {
+    colResizerFinished.call(this, cRect, distance);
+  };
+  // scrollbar move callback
+  verticalScrollbar.moveFn = (distance, evt) => {
+    verticalScrollbarMove.call(this, distance, evt);
+  };
+  horizontalScrollbar.moveFn = (distance, evt) => {
+    horizontalScrollbarMove.call(this, distance, evt);
+  };
+
+  bind(window, 'resize', () => {
+    this.reload();
+  });
 }
 
 export default class Sheet {
@@ -94,10 +153,7 @@ export default class Sheet {
     this.col = col;
     this.row = row;
     // table
-    this.tableEl = h('canvas', 'xss-table')
-      .on('mousemove', (evt) => {
-        tableMousemove.call(this, evt);
-      });
+    this.tableEl = h('canvas', 'xss-table');
     this.table = new Table(this.tableEl.el, row, col, style, _formulas(formulas));
     // resizer
     this.rowResizer = new Resizer(false, row.height);
@@ -105,31 +161,25 @@ export default class Sheet {
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
+    // selector
+    this.selector = new Selector();
+    this.overlayerEl = h('div', 'xss-overlayer')
+      .children(
+        this.overlayerCEl = h('div', 'xss-overlayer-content')
+          .children(
+            this.selector.el,
+          ),
+      );
     // root element
     this.el.children(
       this.tableEl,
+      this.overlayerEl.el,
       this.rowResizer.el,
       this.colResizer.el,
       this.verticalScrollbar.el,
       this.horizontalScrollbar.el,
     );
-    // resizer finished callback
-    this.rowResizer.finishedFn = (cRect, distance) => {
-      rowResizerFinished.call(this, cRect, distance);
-    };
-    this.colResizer.finishedFn = (cRect, distance) => {
-      colResizerFinished.call(this, cRect, distance);
-    };
-    // scrollbar move callback
-    this.verticalScrollbar.moveFn = (distance, evt) => {
-      verticalScrollbarMove.call(this, distance, evt);
-    };
-    this.horizontalScrollbar.moveFn = (distance, evt) => {
-      horizontalScrollbarMove.call(this, distance, evt);
-    };
-    bind(window, 'resize', () => {
-      this.reload();
-    });
+    sheetInitEvents.call(this);
     sheetReset.call(this);
   }
 
@@ -142,5 +192,22 @@ export default class Sheet {
   reload() {
     sheetReset.call(this);
     this.table.render();
+  }
+
+  getRect() {
+    const { width } = this.el.box();
+    const height = this.view.height();
+    return { width, height };
+  }
+
+  getTableOffset() {
+    const { row, col } = this;
+    const { width, height } = this.getRect();
+    return {
+      width: width - col.indexWidth,
+      height: height - row.height,
+      left: col.indexWidth,
+      top: row.height,
+    };
   }
 }

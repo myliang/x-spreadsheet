@@ -16,7 +16,9 @@ class Element {
 
   on(eventName, handler) {
     const [fen, ...oen] = eventName.split('.');
+    // console.log('fen:', fen, oen);
     this.el.addEventListener(fen, (evt) => {
+      handler(evt);
       for (let i = 0; i < oen.length; i += 1) {
         const k = oen[i];
         if (k === 'left' && evt.button !== 0) {
@@ -27,21 +29,20 @@ class Element {
           evt.stopPropagation();
         }
       }
-      handler(evt);
     });
     return this;
   }
 
   offset(value) {
-    const {
-      offsetTop, offsetLeft, offsetHeight, offsetWidth,
-    } = this.el;
     if (value !== undefined) {
       Object.keys(value).forEach((k) => {
         this.css(k, `${value[k]}px`);
       });
       return this;
     }
+    const {
+      offsetTop, offsetLeft, offsetHeight, offsetWidth,
+    } = this.el;
     return {
       top: offsetTop,
       left: offsetLeft,

@@ -24,7 +24,7 @@ body {
 /* resizer **/
 .xss-resizer {
   position: absolute;
-  // z-index: 11;
+  z-index: 11;
   
   .xss-resizer-hover {
     background-color: rgba(75, 137, 255, .25);
@@ -57,6 +57,7 @@ body {
   right: 0;
   background-color: #f4f5f8;
   opacity: 0;
+  z-index: 12;
   &.horizontal {
     // right: 15px;
     overflow-x: scroll;
@@ -69,5 +70,45 @@ body {
   }
   &:hover {
     opacity: .85;
+  }
+}
+
+/* xss-overlayer */
+.xss-overlayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  .xss-overlayer-content {
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* xss-selector */
+.xss-selector {
+  position: absolute;
+  // z-index: 11;
+  left: 0;
+  top: 0;
+  .xss-selector-area {
+    position: absolute;
+    border: 2px solid rgb(75, 137, 255);
+    background: rgba(75, 137, 255, .1);
+    pointer-events: none;
+  }
+  .xss-selector-corner {
+    position: absolute;
+    cursor: crosshair;
+    font-size: 0;
+    height: 5px;
+    width: 5px;
+    right: -5px;
+    bottom: -5px;
+    border: 2px solid rgb(255, 255, 255);
+    background: rgb(75, 137, 255);
   }
 }
