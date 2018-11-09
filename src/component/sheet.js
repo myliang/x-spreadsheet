@@ -1,11 +1,47 @@
 /* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bind, mouseMoveUp } from '../event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
 import Table from './table';
 import { formulas as _formulas } from '../formula';
+
+function selectorSetStart(evt) {
+  const { table, selector } = this;
+  const {
+    ri, ci, left, top, width, height,
+  } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
+  const tOffset = this.getTableOffset();
+  if (ri > 0 && ci > 0) {
+    selector.set([ri, ci], {
+      left: left - tOffset.left, top: top - tOffset.top, width, height,
+    });
+  }
+}
+
+function selectorSetEnd(evt) {
+  const { table, selector } = this;
+  const {
+    ri, ci,
+  } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
+  if (ri > 0 && ci > 0) {
+    // const tOffset = this.getTableOffset();
+    selector.setEnd([ri, ci], (sIndexes, eIndexes) => {
+      // console.log('sIndexes:', sIndexes, ', eIndexes:', eIndexes);
+      const [srmin, scmin] = sIndexes;
+      const [ermax, ecmax] = eIndexes;
+      const left = table.colSumWidth(0, scmin - 1);
+      const top = table.rowSumHeight(0, srmin - 1);
+      const height = table.rowSumHeight(srmin - 1, ermax);
+      const width = table.colSumWidth(scmin - 1, ecmax);
+      // console.log('::::::::', left, top, width, height);
+      return {
+        left, top, height, width,
+      };
+    });
+  }
+}
 
 // private methods
 function overlayerMousemove(evt) {
@@ -34,22 +70,26 @@ function overlayerMousemove(evt) {
 }
 
 function overlayerMousedown(evt) {
-  // console.log(':::::overlayer.mousedown', evt);
-  const { table, selector } = this;
-  const {
-    ri, ci, left, top, width, height,
-  } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
-  const tOffset = this.getTableOffset();
-  // console.log(':::::::', ri, ci, tOffset);
-  if (ri > 0 && ci > 0) {
-    selector.set([ri, ci], {
-      left: left - tOffset.left, top: top - tOffset.top, width, height,
+  // console.log(':::::overlayer.mousedown:', evt.detail, evt.button, evt.buttons, evt.shiftKey);
+  if (!evt.shiftKey) {
+    // console.log('selectorSetStart:::');
+    selectorSetStart.call(this, evt);
+
+    // mouse move up
+    mouseMoveUp(window, (e) => {
+      // console.log('mouseMoveUp::::');
+      if (e.buttons === 1 && !e.shiftKey) {
+        selectorSetEnd.call(this, e);
+      }
+    }, () => {
     });
   }
 
-  if (evt.detail === 1) {
+  if (evt.buttons === 1) {
     if (evt.shiftKey) {
       // to-do
+      // console.log('shiftKey::::');
+      selectorSetEnd.call(this, evt);
     }
   }
 }

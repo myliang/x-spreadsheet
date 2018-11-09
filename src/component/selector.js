@@ -41,9 +41,10 @@ export default class Selector {
     if (indexes) {
       const [, sci] = sIndexes;
       const [, eci] = eIndexes;
+      // console.log(':index:', index, sci, eci);
       if (index < sci) {
         offset.left += v;
-      } else if (sci >= index && index <= eci) {
+      } else if (sci <= index && index <= eci) {
         offset.width += v;
       }
       this.setAreaOffset();
@@ -60,7 +61,7 @@ export default class Selector {
       const [eri] = eIndexes;
       if (index < sri) {
         offset.top += v;
-      } else if (sri >= index && index <= eri) {
+      } else if (sri <= index && index <= eri) {
         offset.height += v;
       }
       this.setAreaOffset();
@@ -77,7 +78,26 @@ export default class Selector {
     this.el.show();
   }
 
+  setEnd(nindexes, getOffset) {
+    const [ori, oci] = this.indexes;
+    const [nri, nci] = nindexes;
+    this.sIndexes = [ori, oci];
+    this.eIndexes = [nri, nci];
+    if (ori >= nri) {
+      this.eIndexes[0] = ori;
+      this.sIndexes[0] = nri;
+    }
+    if (oci >= nci) {
+      this.eIndexes[1] = oci;
+      this.sIndexes[1] = nci;
+    }
+    // set height, width, left top
+    this.offset = getOffset(this.sIndexes, this.eIndexes);
+    this.setAreaOffset();
+  }
+
   setAreaOffset() {
+    // console.log('offset>>>>>>>', this.offset);
     const {
       left, top, width, height,
     } = this.offset;

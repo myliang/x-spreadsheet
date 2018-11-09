@@ -286,6 +286,14 @@ class Table {
     return ((row.len - rmSize) * row.height) + rmTotal;
   }
 
+  colSumWidth(min, max) {
+    return helper.rangeSum(min, max, i => this.getColWidth(i));
+  }
+
+  rowSumHeight(min, max) {
+    return helper.rangeSum(min, max, i => this.getRowHeight(i));
+  }
+
   colEach(colLen, cb) {
     let x = 0;
     for (let i = 0; i <= colLen; i += 1) {
