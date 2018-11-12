@@ -12,12 +12,13 @@ function selectorSetStart(evt) {
   const {
     ri, ci, left, top, width, height,
   } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
-  const tOffset = this.getTableOffset();
-  if (ri > 0 && ci > 0) {
-    selector.set([ri, ci], {
-      left: left - tOffset.left, top: top - tOffset.top, width, height,
-    });
-  }
+  // const tOffset = this.getTableOffset();
+  console.log(ri, ':', ci, ':', left, ':', top, ':', width, ':', height);
+  if (ri === 0 && ci === 0) return;
+  selector.set([ri, ci], {
+    left, top, width, height,
+  });
+  table.setSelectRectIndexes([[ri, ci], [ri, ci]]).render();
 }
 
 function selectorSetEnd(evt) {
@@ -25,22 +26,13 @@ function selectorSetEnd(evt) {
   const {
     ri, ci,
   } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
-  if (ri > 0 && ci > 0) {
-    // const tOffset = this.getTableOffset();
-    selector.setEnd([ri, ci], (sIndexes, eIndexes) => {
-      // console.log('sIndexes:', sIndexes, ', eIndexes:', eIndexes);
-      const [srmin, scmin] = sIndexes;
-      const [ermax, ecmax] = eIndexes;
-      const left = table.colSumWidth(0, scmin - 1);
-      const top = table.rowSumHeight(0, srmin - 1);
-      const height = table.rowSumHeight(srmin - 1, ermax);
-      const width = table.colSumWidth(scmin - 1, ecmax);
-      // console.log('::::::::', left, top, width, height);
-      return {
-        left, top, height, width,
-      };
-    });
-  }
+  if (ri === 0 && ci === 0) return;
+  // const tOffset = this.getTableOffset();
+  // console.log('selectorSetEnd:', ri, ci);
+  selector.setEnd([ri, ci], (sIndexes, eIndexes) => {
+    table.setSelectRectIndexes([sIndexes, eIndexes]).render();
+    return table.getSelectRect();
+  });
 }
 
 // private methods
@@ -52,7 +44,7 @@ function overlayerMousemove(evt) {
     table, rowResizer, colResizer, tableEl,
   } = this;
   const tRect = tableEl.box();
-  const cRect = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
+  const cRect = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY, false);
   if (cRect.ri >= 1 && cRect.ci === 0) {
     rowResizer.show(cRect, {
       width: tRect.width,

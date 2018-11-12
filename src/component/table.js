@@ -51,6 +51,7 @@ class Table {
     this.style = style;
     this.styles = []; // style array
     this.borders = []; // border array
+    this.selectRectIndexes = null;
   }
 
   render() {
@@ -102,6 +103,11 @@ class Table {
     }
   }
 
+  setSelectRectIndexes(indexes) {
+    this.selectRectIndexes = indexes;
+    return this;
+  }
+
   clear() {
     this.draw.clear();
   }
@@ -151,13 +157,28 @@ class Table {
     draw.restore();
   }
 
-  getCellRectWithIndexes(x, y) {
+  getCellRectWithIndexes(x, y, forSelector = true) {
     // console.log('x: ', x, ', y: ', y);
     // 根据鼠标坐标点，获得所在的cell矩形信息(ri, ci, offsetX, offsetY, width, height)
     const { ri, top, height } = this.getCellRowByY(y);
     const { ci, left, width } = this.getCellColByX(x);
+    const { row, col } = this;
+    if (ri >= 0 && ci === 0) {
+      const nwidth = forSelector ? this.colTotalWidth() : width;
+      const ntop = forSelector ? top - row.height : top;
+      return {
+        ri, ci, left: 0, top: ntop, width: nwidth, height,
+      };
+    }
+    if (ri === 0 && ci >= 0) {
+      const nheight = forSelector ? this.rowTotalHeight() : height;
+      const nleft = forSelector ? left - col.indexWidth : left;
+      return {
+        ri, ci, left: nleft, top: 0, width, height: nheight,
+      };
+    }
     return {
-      ri, ci, left, top, width, height,
+      ri, ci, left: left - col.indexWidth, top: top - row.height, width, height,
     };
   }
 
@@ -266,11 +287,29 @@ class Table {
       draw.line([x, 0], [x, row.height]);
     });
     draw.line([0, row.height], [this.colTotalWidth() + col.indexWidth, row.height]);
+    // selectRect
+    this.renderSelectRect();
     // left-top-cell
     draw.attr({ fillStyle: '#f4f5f8' })
       .fillRect(0, 0, col.indexWidth, row.height);
     // context.closePath();
     draw.restore();
+  }
+
+  renderSelectRect() {
+    const {
+      draw, selectRectIndexes, row, col,
+    } = this;
+    if (selectRectIndexes) {
+      const {
+        left, top, height, width,
+      } = this.getSelectRect();
+      draw.save();
+      draw.attr({ fillStyle: '#4b89ff0f' })
+        .fillRect(left + col.indexWidth, 0, width, row.height)
+        .fillRect(0, top + row.height, col.indexWidth, height);
+      draw.restore();
+    }
   }
 
   colTotalWidth() {
@@ -284,6 +323,35 @@ class Table {
     const [rmTotal, rmSize] = helper.sum(rowm, v => v.height || 0);
     // console.log('rmTotal:', rmTotal, ', rmSize:', rmSize);
     return ((row.len - rmSize) * row.height) + rmTotal;
+  }
+
+  getSelectRect() {
+    const { scrollOffset } = this;
+    const [[sri, sci], [eri, eci]] = this.selectRectIndexes;
+    const { left, top } = this.cellPosition(sri - 1, sci - 1);
+    let height = this.rowSumHeight(sri - 1, eri);
+    let width = this.colSumWidth(sci - 1, eci);
+
+    if (eri >= 0 && eci === 0) {
+      width = this.colTotalWidth();
+    }
+    if (eri === 0 && eci >= 0) {
+      height = this.rowTotalHeight();
+    }
+    return {
+      left: left - scrollOffset.x,
+      top: top - scrollOffset.y,
+      height,
+      width,
+    };
+  }
+
+  cellPosition(ri, ci) {
+    const left = this.colSumWidth(0, ci);
+    const top = this.rowSumHeight(0, ri);
+    return {
+      left, top,
+    };
   }
 
   colSumWidth(min, max) {
