@@ -239,7 +239,7 @@ function sheetInitEvents() {
           selectorMove.call(this, 'right');
           evt.preventDefault();
           break;
-        case 12: // enter
+        case 13: // enter
           selectorMove.call(this, 'down');
           evt.preventDefault();
           break;
