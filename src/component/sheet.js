@@ -13,12 +13,31 @@ function selectorSetStart(evt) {
     ri, ci, left, top, width, height,
   } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
   // const tOffset = this.getTableOffset();
-  console.log(ri, ':', ci, ':', left, ':', top, ':', width, ':', height);
+  // console.log(ri, ':', ci, ':', left, ':', top, ':', width, ':', height);
   if (ri === 0 && ci === 0) return;
   selector.set([ri, ci], {
     left, top, width, height,
   });
   table.setSelectRectIndexes([[ri, ci], [ri, ci]]).render();
+}
+
+// left | right | up | down
+function selectorMove(direction) {
+  const {
+    table, selector, col, row,
+  } = this;
+  let [ri, ci] = selector.indexes;
+  if (direction === 'left') {
+    if (ci > 1) ci -= 1;
+  } else if (direction === 'right') {
+    if (ci < col.len) ci += 1;
+  } else if (direction === 'up') {
+    if (ri > 1) ri -= 1;
+  } else if (direction === 'down') {
+    if (ri < row.len) ri += 1;
+  }
+  table.setSelectRectIndexes([[ri, ci], [ri, ci]]).render();
+  selector.set([ri, ci], table.getSelectRect());
 }
 
 function selectorSetEnd(evt) {
@@ -170,6 +189,64 @@ function sheetInitEvents() {
 
   bind(window, 'resize', () => {
     this.reload();
+  });
+
+  bind(window, 'click', (evt) => {
+    this.focusing = overlayerEl.contains(evt.target);
+  });
+
+  // for selector
+  bind(window, 'keydown', (evt) => {
+    if (!this.focusing) return;
+    // console.log('keydown.evt: ', evt);
+    if (evt.ctrlKey) {
+      switch (evt.keyCode) {
+        case 67:
+          // ctrl + c
+          evt.preventDefault();
+          break;
+        case 88:
+          // ctrl + x
+          evt.preventDefault();
+          break;
+        case 86:
+          // ctrl + v
+          evt.preventDefault();
+          break;
+        default:
+          break;
+      }
+      // return;
+    } else {
+      switch (evt.keyCode) {
+        case 37: // left
+          selectorMove.call(this, 'left');
+          evt.preventDefault();
+          break;
+        case 38: // up
+          selectorMove.call(this, 'up');
+          evt.preventDefault();
+          break;
+        case 39: // right
+          selectorMove.call(this, 'right');
+          evt.preventDefault();
+          break;
+        case 40: // down
+          selectorMove.call(this, 'down');
+          evt.preventDefault();
+          break;
+        case 9: // tab
+          selectorMove.call(this, 'right');
+          evt.preventDefault();
+          break;
+        case 12: // enter
+          selectorMove.call(this, 'down');
+          evt.preventDefault();
+          break;
+        default:
+          break;
+      }
+    }
   });
 }
 
