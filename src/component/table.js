@@ -339,10 +339,22 @@ class Table {
       height = this.rowTotalHeight();
     }
     return {
+      left_: left,
+      top_: top,
       left: left - scrollOffset.x,
       top: top - scrollOffset.y,
       height,
       width,
+    };
+  }
+
+  cellRect(ri, ci) {
+    const { left, top } = this.cellPosition(ri, ci);
+    return {
+      left,
+      top,
+      width: this.getColWidth(ci),
+      height: this.getRowHeight(ri),
     };
   }
 

@@ -51,6 +51,19 @@ class Element {
     };
   }
 
+  scroll(v) {
+    const { el } = this;
+    if (v !== undefined) {
+      if (v.left !== undefined) {
+        el.scrollLeft = v.left;
+      }
+      if (v.top !== undefined) {
+        el.scrollTop = v.top;
+      }
+    }
+    return { left: el.scrollLeft, top: el.scrollTop };
+  }
+
   box() {
     return this.el.getBoundingClientRect();
   }

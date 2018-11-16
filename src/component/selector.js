@@ -71,6 +71,7 @@ export default class Selector {
 
   set(indexes, offset) {
     this.indexes = indexes;
+    this.moveIndexes = indexes;
     this.sIndexes = indexes;
     this.eIndexes = indexes;
     this.offset = offset;
