@@ -15,7 +15,7 @@ class DrawBox {
   }
 
   setBorders(b, bt, br, bb, bl) {
-    this.border = b;
+    if (b) this.border = b;
     if (bt) this.borderTop = bt;
     if (br) this.borderRight = br;
     if (bb) this.borderBottom = bb;
@@ -224,7 +224,7 @@ class Draw {
     } = box;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x, y, width, height);
+    ctx.rect(x + 1, y + 1, width - 1, height - 1);
     ctx.fillStyle = bgcolor;
     ctx.fill();
     // border

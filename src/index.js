@@ -23,8 +23,8 @@ const defaultOptions = {
   style: {
     bgcolor: '#ffffff',
     align: 'left',
-    valign: 'top',
-    wrapText: true,
+    valign: 'middle',
+    wrapText: false,
     textDecoration: 'normal',
     color: '#333333',
     font: {
