@@ -94,6 +94,7 @@ function renderCell(rindex, cindex) {
 
   const cell = cellmm[rindex][cindex];
   const style = helper.merge(this.style, cell.si !== undefined ? styles[cell.si] : {});
+  // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
   // render cell style
   const {
@@ -197,72 +198,77 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
   draw.restore();
 }
 
+function renderFreezeGridAndContent0(rowLen, colLen, width, height, scrollOffset) {
+  const { draw, col, row } = this;
+  draw.save()
+    .attr(tableGridStyle)
+    .translate(col.indexWidth, row.height)
+    .translate(-scrollOffset.x, -scrollOffset.y);
+
+  draw.fillRect(0, 0, width, height);
+  draw.line([0, 0], [width, 0]);
+  draw.line([0, 0], [0, height]);
+  this.rowEach(rowLen - 1, (i, y1, rowHeight) => {
+    const y = y1 + rowHeight;
+    if (y > 0) {
+      draw.line([0, y], [width, y]);
+      this.colEach(colLen - 1, (j, x) => {
+        if (x > 0) {
+          draw.line([x, y - rowHeight], [x, y]);
+          renderCell.call(this, i, j);
+        }
+      });
+    }
+  });
+  draw.restore();
+}
+
+function renderFreezeHighlightLine(p1, p2, scrollOffset) {
+  const { draw, row, col } = this;
+  draw.save()
+    .translate(col.indexWidth, row.height)
+    .translate(-scrollOffset.x, -scrollOffset.y)
+    .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' });
+  draw.line(p1, p2);
+  draw.restore();
+}
+
+
 function renderFreezeGridAndContent() {
   const [fri, fci] = this.freezeIndexes;
   const {
-    draw, row, col, scrollOffset,
+    row, col, scrollOffset,
   } = this;
-  draw.save();
-  draw.attr(tableGridStyle);
-  draw.translate(col.indexWidth, row.height);
+  const sheight = this.rowSumHeight(0, fri - 1);
+  const twidth = this.colTotalWidth();
   if (fri > 1) {
-    const sheight = this.rowSumHeight(0, fri - 1);
-    const twidth = this.colTotalWidth();
-    // console.log('sheight:', sheight, ', twidth:', twidth);
-    draw.fillRect(0, 0, twidth, sheight);
-    draw.line([0, 0], [twidth, 0]);
-    this.rowEach(fri - 2, (i, y1, rowHeight) => {
-      // draw horizontal line
-      const y = y1 + rowHeight;
-      if (i === fri - 2) {
-        draw.save();
-        draw.attr({ strokeStyle: 'rgb(75, 137, 255)' });
-        draw.line([0, y], [twidth, y]);
-        draw.restore();
-      } else {
-        draw.line([0, y], [twidth, y]);
-      }
-      this.colEach(col.len, (j, x) => {
-        if (j >= fci - 1) {
-          // draw vertical line
-          draw.line([x, y - rowHeight], [x, y]);
-          // text
-          draw.save();
-          draw.translate(-scrollOffset.x, 0);
-          // renderCell.call(this, i, j);
-          draw.restore();
-        }
-      });
-    });
+    renderFreezeGridAndContent0.call(
+      this,
+      fri - 1,
+      col.len,
+      twidth,
+      sheight,
+      { x: scrollOffset.x, y: 0 },
+    );
   }
-  // draw.restore();
+  const theight = this.rowTotalHeight();
+  const swidth = this.colSumWidth(0, fci - 1);
   if (fci > 1) {
-    const theight = this.rowTotalHeight();
-    const swidth = this.colSumWidth(0, fci - 1);
-    draw.fillRect(0, 0, swidth, theight);
-    draw.line([0, 0], [0, theight]);
-    this.colEach(fci - 2, (j, x1, colWidth) => {
-      const x = x1 + colWidth;
-      // console.log('j:', j, ', fci:', fci);
-      if (j === fci - 2) {
-        draw.save();
-        draw.attr({ strokeStyle: 'rgb(75, 137, 255)' });
-        draw.line([x, 0], [x, theight]);
-        draw.restore();
-      } else {
-        draw.line([x, 0], [x, theight]);
-      }
-      this.rowEach(row.len, (i, y) => {
-        if (i >= fri - 1) {
-          draw.line([x - colWidth, y], [x, y]);
-          draw.save().translate(0, -scrollOffset.y);
-          renderCell.call(this, i, j);
-          draw.restore();
-        }
-      });
-    });
+    renderFreezeGridAndContent0.call(
+      this,
+      row.len,
+      fci - 1,
+      swidth,
+      theight,
+      { x: 0, y: scrollOffset.y },
+    );
   }
-  draw.restore();
+  renderFreezeHighlightLine.call(
+    this, [0, sheight], [twidth, sheight], { x: scrollOffset.x, y: 0 },
+  );
+  renderFreezeHighlightLine.call(
+    this, [swidth, 0], [swidth, theight], { x: 0, y: scrollOffset.y },
+  );
 }
 
 function renderAll(rowLen, colLen, scrollOffset) {
@@ -328,9 +334,6 @@ class Table {
   render() {
     this.clear();
     const { row, col, scrollOffset } = this;
-    // renderContentGrid.call(this, row.len, col.len, scrollOffset);
-    // renderContent.call(this, scrollOffset);
-    // renderFixedHeaders.call(this, row.len, col.len, scrollOffset);
     renderAll.call(this, row.len, col.len, scrollOffset);
     const [fri, fci] = this.freezeIndexes;
     if (fri > 1 || fci > 1) {

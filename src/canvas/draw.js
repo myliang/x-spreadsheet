@@ -224,9 +224,8 @@ class Draw {
     } = box;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x + 1, y + 1, width - 1, height - 1);
     ctx.fillStyle = bgcolor;
-    ctx.fill();
+    ctx.fillRect(x + 1, y + 1, width - 1, height - 1);
     // border
     const {
       border, borderTop, borderRight, borderBottom, borderLeft,
