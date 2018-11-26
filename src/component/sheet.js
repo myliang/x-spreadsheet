@@ -49,7 +49,7 @@ function selectorSetByEvent(multiple, evt) {
   const {
     ri, ci, // left, top, width, height,
   } = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
-  console.log('::::overlayerMousemove.ri, ci:', ri, ci);
+  // console.log('::::overlayerMousemove.ri, ci:', ri, ci);
   if (ri === 0 && ci === 0) return;
   selectorSet.call(this, multiple, ri, ci);
 }

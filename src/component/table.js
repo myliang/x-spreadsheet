@@ -163,7 +163,6 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
     .fillRect(0, 0, sumWidth, row.height);
 
   const [[sri, sci], [eri, eci]] = this.selectRectIndexes;
-  // const [fri, fci] = this.freezeIndexes;
   // draw text
   // text font, align...
   draw.attr(tableFixedHeaderStyle);
@@ -348,14 +347,18 @@ class Table {
     // console.log('scroll.offset:', offset);
     const { x, y } = offset;
     const { scrollOffset, col, row } = this;
+    const [fri, fci] = this.freezeIndexes;
+    // const fRect = this.cellRect(fri - 2, fci - 2);
+    // console.log(':::::::::', fRect);
     if (x !== undefined) {
       const [
         ci, left, width,
-      ] = helper.rangeReduceIf(0, col.len, 0, 0, x, i => this.getColWidth(i));
+      ] = helper.rangeReduceIf(fci - 1, col.len, 0, 0, x, i => this.getColWidth(i));
+      // console.log('x:', x, ', ci:', ci, ', left:', left, ', width:', width);
       let x1 = left;
       if (x > 0) x1 += width;
       if (scrollOffset.x !== x1) {
-        this.scrollIndexes[1] = x > 0 ? ci : 0;
+        this.scrollIndexes[1] = x > 0 ? ci - (fci - 1) : 0;
         cb(x1 - scrollOffset.x);
         scrollOffset.x = x1;
         this.render();
@@ -364,7 +367,7 @@ class Table {
     if (y !== undefined) {
       const [
         ri, top, height,
-      ] = helper.rangeReduceIf(0, row.len, 0, 0, y, i => this.getRowHeight(i));
+      ] = helper.rangeReduceIf(fri - 1, row.len, 0, 0, y, i => this.getRowHeight(i));
       let y1 = top;
       if (y > 0) y1 += height;
       if (scrollOffset.y !== y1) {
@@ -475,6 +478,14 @@ class Table {
     return {
       left, top,
     };
+  }
+
+  freezeSumWidth() {
+    return this.colSumWidth(0, this.freezeIndexes[1] - 1);
+  }
+
+  freezeSumHeight() {
+    return this.rowSumHeight(0, this.freezeIndexes[0] - 1);
   }
 
   colSumWidth(min, max) {
