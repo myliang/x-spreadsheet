@@ -279,10 +279,14 @@ function renderAll(rowLen, colLen, scrollOffset) {
 
 function getCellRowByY(y) {
   const { row, scrollOffset } = this;
+  const fsh = this.freezeSumHeight();
+  // console.log('y:', y, ', fsh:', fsh);
+  let inits = row.height;
+  if (fsh + row.height < y) inits -= scrollOffset.y;
   const [ri, top, height] = helper.rangeReduceIf(
     0,
     row.len,
-    row.height - scrollOffset.y,
+    inits,
     row.height,
     y,
     i => this.getRowHeight(i),
@@ -295,10 +299,13 @@ function getCellRowByY(y) {
 
 function getCellColByX(x) {
   const { col, scrollOffset } = this;
+  const fsw = this.freezeSumWidth();
+  let inits = col.indexWidth;
+  if (fsw + col.indexWidth < x) inits -= scrollOffset.x;
   const [ci, left, width] = helper.rangeReduceIf(
     0,
     col.len,
-    col.indexWidth - scrollOffset.x,
+    inits,
     col.indexWidth,
     x,
     i => this.getColWidth(i),
@@ -407,6 +414,7 @@ class Table {
     const { ri, top, height } = getCellRowByY.call(this, y);
     const { ci, left, width } = getCellColByX.call(this, x);
     const { row, col } = this;
+    // console.log('ri:', ri, ', ci:', ci, ', left:', left, ', top:', top);
     if (ri >= 0 && ci === 0) {
       const nwidth = forSelector ? this.colTotalWidth() : width;
       const ntop = forSelector ? top - row.height : top;
@@ -445,18 +453,28 @@ class Table {
     const { left, top } = this.cellPosition(sri - 1, sci - 1);
     let height = this.rowSumHeight(sri - 1, eri);
     let width = this.colSumWidth(sci - 1, eci);
-
+    // console.log('sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
     if (eri >= 0 && eci === 0) {
       width = this.colTotalWidth();
     }
     if (eri === 0 && eci >= 0) {
       height = this.rowTotalHeight();
     }
+    let left0 = left - scrollOffset.x;
+    let top0 = top - scrollOffset.y;
+    const fsh = this.freezeSumHeight();
+    const fsw = this.freezeSumWidth();
+    if (fsw > 0 && fsw > left) {
+      left0 = left;
+    }
+    if (fsh > 0 && fsh > top) {
+      top0 = top;
+    }
     return {
       left_: left,
       top_: top,
-      left: left - scrollOffset.x,
-      top: top - scrollOffset.y,
+      left: left0,
+      top: top0,
       height,
       width,
     };

@@ -16,14 +16,20 @@ function scrollbarMove() {
   // console.log(',left_:', left_, ', left:', left, ', tOffset.left:', tableOffset.width);
   if (Math.abs(left) + width > tableOffset.width) {
     horizontalScrollbar.move({ left: left_ + width - tableOffset.width });
-  } else if (left < 0) {
-    horizontalScrollbar.move({ left: left_ - 1 });
+  } else {
+    const fsw = table.freezeSumWidth();
+    if (left < fsw) {
+      horizontalScrollbar.move({ left: left_ - 1 - fsw });
+    }
   }
   // console.log('top:', top, ', height:', height, ', tof.height:', tableOffset.height);
   if (Math.abs(top) + height > tableOffset.height) {
     verticalScrollbar.move({ top: top_ + height - tableOffset.height - 1 });
-  } else if (top < 0) {
-    verticalScrollbar.move({ top: top_ - 1 });
+  } else {
+    const fsh = table.freezeSumHeight();
+    if (top < fsh) {
+      verticalScrollbar.move({ top: top_ - 1 - fsh });
+    }
   }
 }
 
@@ -39,7 +45,9 @@ function selectorSet(multiple, ri, ci) {
       return table.getSelectRect();
     });
   } else {
+    // console.log('ri:', ri, ', ci:', ci);
     table.setSelectRectIndexes([[ri, ci], [ri, ci]]).render();
+    // console.log('table.getSelectRect():', table.getSelectRect());
     selector.set([ri, ci], table.getSelectRect());
   }
 }
