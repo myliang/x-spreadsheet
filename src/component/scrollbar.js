@@ -22,6 +22,10 @@ export default class Scrollbar {
     return this;
   }
 
+  scroll() {
+    return this.el.scroll();
+  }
+
   set(distance, contentDistance) {
     const d = distance - 1;
     // console.log('distance:', distance, ', contentDistance:', contentDistance);

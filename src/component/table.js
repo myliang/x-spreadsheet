@@ -334,7 +334,7 @@ class Table {
     this.styles = []; // style array
     this.borders = []; // border array
     this.selectRectIndexes = [[0, 0], [0, 0]];
-    this.freezeIndexes = [3, 3]; // freeze index of row, col
+    this.freezeIndexes = [0, 0]; // freeze index of row, col
   }
 
   render() {
@@ -385,6 +385,20 @@ class Table {
       }
     }
   }
+
+  /*
+  scrollY(cellLen, cb = () => {}) {
+    const { scrollIndexes, row, scrollOffset } = this;
+    console.log('scrollIndexes[0]:', scrollIndexes[0]);
+    const ri = scrollIndexes[0] + cellLen;
+    if (ri < 0 || ri > row.len) return;
+    scrollIndexes[0] = ri;
+    const rh = this.getRowHeight(this.scrollIndexes[0] - 1);
+    cb(rh);
+    scrollOffset.y += cellLen > 0 ? rh : -rh;
+    this.render();
+  }
+  */
 
   setData(data) {
     if (data) {

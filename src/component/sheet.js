@@ -153,7 +153,6 @@ function horizontalScrollbarSet() {
 
 function verticalScrollbarMove(distance) {
   const { table, selector } = this;
-  // console.log('distance:', distance);
   table.scroll({ y: distance }, (d) => {
     selector.addTop(-d);
   });
@@ -228,6 +227,25 @@ function sheetInitEvents() {
 
   bind(window, 'click', (evt) => {
     this.focusing = overlayerEl.contains(evt.target);
+  });
+
+  bind(window, 'mousewheel', (evt) => {
+    if (!this.focusing) return;
+    const { table, row } = this;
+    const { top } = this.verticalScrollbar.scroll();
+    if (evt.deltaY > 0) {
+      // up
+      const ri = table.scrollIndexes[0] + 1;
+      if (ri < row.len) {
+        this.verticalScrollbar.move({ top: top + table.getRowHeight(ri) });
+      }
+    } else {
+      // down
+      const ri = table.scrollIndexes[0] - 1;
+      if (ri >= 0) {
+        this.verticalScrollbar.move({ top: ri === 0 ? 0 : top - table.getRowHeight(ri) });
+      }
+    }
   });
 
   // for selector
@@ -307,11 +325,18 @@ export default class Sheet {
     this.horizontalScrollbar = new Scrollbar(false);
     // selector
     this.selector = new Selector();
+    this.selectorForFreeze = new Selector();
     this.overlayerEl = h('div', 'xss-overlayer')
       .children(
         this.overlayerCEl = h('div', 'xss-overlayer-content')
+          .css('z-index', '10')
           .children(
             this.selector.el,
+          ),
+        this.overlayerCFEl = h('div', 'xss-overlayer-content')
+          .css('z-index', '11')
+          .children(
+            this.selectorForFreeze.el,
           ),
       );
     // root element
@@ -330,6 +355,22 @@ export default class Sheet {
   loadData(data) {
     const { table } = this;
     table.setData(data);
+    table.render();
+  }
+
+  // freeze rows or cols
+  freeze(ri, ci) {
+    const { table, overlayerCFEl } = this;
+    if (ri > 1 || ci > 1) {
+      const fsh = table.freezeSumHeight();
+      const fsw = table.freezeSumWidth();
+      overlayerCFEl.offset(
+        { left: fsw, top: fsh },
+      ).show();
+    } else {
+      overlayerCFEl.hide();
+    }
+    table.freezeIndexes = [ri, ci];
     table.render();
   }
 
