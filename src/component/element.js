@@ -156,7 +156,7 @@ class Element {
   // css( propertyName, value )
   // css( properties )
   css(name, value) {
-    if (Array.isArray(name)) {
+    if (value === undefined && typeof name !== 'string') {
       Object.keys(name).forEach((k) => {
         this.el.style[k] = name[k];
       });

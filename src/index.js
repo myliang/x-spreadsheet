@@ -36,6 +36,15 @@ const defaultOptions = {
   },
 };
 
+const defaultData = {
+  freezes: [0, 0],
+  rowm: {},
+  colm: {},
+  cellmm: {},
+  styles: [],
+  borders: [],
+};
+
 /*
 Row: {
   height: number
@@ -55,6 +64,7 @@ Cell: {
   el: element in document
   options: like #defaultOptions
   data: {
+    freezes: [0, 0],
     rowm: {}, // Map<int, Row>
     colm: {}, // Map<int, Col>
     cellmm: {}, // Map<int, Map<int, Cell>>
@@ -69,7 +79,7 @@ class Spreadsheet {
   }
 
   loadData(data) {
-    this.sheet.loadData(data);
+    this.sheet.loadData(helper.merge(defaultData, data)).freeze(3, 3);
     return this;
   }
 }

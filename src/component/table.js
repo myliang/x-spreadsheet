@@ -403,14 +403,20 @@ class Table {
   setData(data) {
     if (data) {
       const {
-        rowm, colm, cellmm, styles, borders,
+        rowm, colm, cellmm, styles, borders, freezes,
       } = data;
-      if (rowm) this.rowm = rowm;
-      if (colm) this.colm = colm;
-      if (cellmm) this.cellmm = cellmm;
-      if (styles) this.styles = styles;
-      if (borders) this.borders = borders;
+      this.rowm = rowm;
+      this.colm = colm;
+      this.cellmm = cellmm;
+      this.styles = styles;
+      this.borders = borders;
+      this.freezeIndexes = freezes;
     }
+  }
+
+  setFreezeIndexes([ri, ci]) {
+    this.freezeIndexes[0] = ri;
+    this.freezeIndexes[1] = ci;
   }
 
   setSelectRectIndexes(indexes) {
@@ -485,8 +491,8 @@ class Table {
       top0 = top;
     }
     return {
-      left_: left,
-      top_: top,
+      l: left,
+      t: top,
       left: left0,
       top: top0,
       height,

@@ -91,9 +91,13 @@ body {
 /* xss-selector */
 .xss-selector {
   position: absolute;
-  // z-index: 11;
-  left: 0;
+  overflow: hidden;
+  pointer-events: none;
   top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
   .xss-selector-area {
     position: absolute;
     border: 2px solid rgb(75, 137, 255);

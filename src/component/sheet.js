@@ -10,25 +10,25 @@ import { formulas as _formulas } from '../formula';
 function scrollbarMove() {
   const { table, verticalScrollbar, horizontalScrollbar } = this;
   const {
-    left_, top_, left, top, width, height,
+    l, t, left, top, width, height,
   } = table.getSelectRect();
   const tableOffset = this.getTableOffset();
-  // console.log(',left_:', left_, ', left:', left, ', tOffset.left:', tableOffset.width);
+  // console.log(',l:', l, ', left:', left, ', tOffset.left:', tableOffset.width);
   if (Math.abs(left) + width > tableOffset.width) {
-    horizontalScrollbar.move({ left: left_ + width - tableOffset.width });
+    horizontalScrollbar.move({ left: l + width - tableOffset.width });
   } else {
     const fsw = table.freezeSumWidth();
     if (left < fsw) {
-      horizontalScrollbar.move({ left: left_ - 1 - fsw });
+      horizontalScrollbar.move({ left: l - 1 - fsw });
     }
   }
   // console.log('top:', top, ', height:', height, ', tof.height:', tableOffset.height);
   if (Math.abs(top) + height > tableOffset.height) {
-    verticalScrollbar.move({ top: top_ + height - tableOffset.height - 1 });
+    verticalScrollbar.move({ top: t + height - tableOffset.height - 1 });
   } else {
     const fsh = table.freezeSumHeight();
     if (top < fsh) {
-      verticalScrollbar.move({ top: top_ - 1 - fsh });
+      verticalScrollbar.move({ top: t - 1 - fsh });
     }
   }
 }
@@ -48,7 +48,8 @@ function selectorSet(multiple, ri, ci) {
     // console.log('ri:', ri, ', ci:', ci);
     table.setSelectRectIndexes([[ri, ci], [ri, ci]]).render();
     // console.log('table.getSelectRect():', table.getSelectRect());
-    selector.set([ri, ci], table.getSelectRect());
+    const selectRect = table.getSelectRect();
+    selector.set([ri, ci], selectRect);
   }
 }
 
@@ -170,6 +171,7 @@ function rowResizerFinished(cRect, distance) {
   const { table, selector } = this;
   table.setRowHeight(ri - 1, distance);
   selector.addTopOrHeight(ri, distance - height);
+  selector.setFreezeLengths(selector.freezeWidth, table.freezeSumHeight());
   verticalScrollbarSet.call(this);
 }
 
@@ -178,6 +180,7 @@ function colResizerFinished(cRect, distance) {
   const { table, selector } = this;
   table.setColWidth(ci - 1, distance);
   selector.addLeftOrWidth(ci, distance - width);
+  selector.setFreezeLengths(table.freezeSumWidth(), selector.freezeHeight);
   horizontalScrollbarSet.call(this);
 }
 
@@ -303,6 +306,18 @@ function sheetInitEvents() {
   });
 }
 
+function sheetFreeze() {
+  const {
+    table, selector,
+  } = this;
+  const [ri, ci] = table.freezeIndexes;
+  if (ri > 1 || ci > 1) {
+    selector.setFreezeLengths(table.freezeSumWidth(), table.freezeSumHeight());
+  } else {
+    selector.setFreezeLengths(0, 0);
+  }
+}
+
 export default class Sheet {
   constructor(targetEl, options = {}) {
     this.el = h('div', 'xss-sheet');
@@ -325,20 +340,10 @@ export default class Sheet {
     this.horizontalScrollbar = new Scrollbar(false);
     // selector
     this.selector = new Selector();
-    this.selectorForFreeze = new Selector();
+    this.overlayerCEl = h('div', 'xss-overlayer-content')
+      .children(...this.selector.elements());
     this.overlayerEl = h('div', 'xss-overlayer')
-      .children(
-        this.overlayerCEl = h('div', 'xss-overlayer-content')
-          .css('z-index', '10')
-          .children(
-            this.selector.el,
-          ),
-        this.overlayerCFEl = h('div', 'xss-overlayer-content')
-          .css('z-index', '11')
-          .children(
-            this.selectorForFreeze.el,
-          ),
-      );
+      .child(this.overlayerCEl);
     // root element
     this.el.children(
       this.tableEl,
@@ -356,27 +361,23 @@ export default class Sheet {
     const { table } = this;
     table.setData(data);
     table.render();
+    sheetFreeze.call(this);
+    return this;
   }
 
   // freeze rows or cols
   freeze(ri, ci) {
-    const { table, overlayerCFEl } = this;
-    if (ri > 1 || ci > 1) {
-      const fsh = table.freezeSumHeight();
-      const fsw = table.freezeSumWidth();
-      overlayerCFEl.offset(
-        { left: fsw, top: fsh },
-      ).show();
-    } else {
-      overlayerCFEl.hide();
-    }
-    table.freezeIndexes = [ri, ci];
+    const { table } = this;
+    table.setFreezeIndexes([ri, ci]);
     table.render();
+    sheetFreeze.call(this);
+    return this;
   }
 
   reload() {
     sheetReset.call(this);
     this.table.render();
+    return this;
   }
 
   getRect() {
