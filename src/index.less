@@ -116,3 +116,36 @@ body {
     background: rgb(75, 137, 255);
   }
 }
+
+.xss-editor {
+  position: absolute;
+  text-align: left;
+  border: 2px solid rgb(75, 137, 255);
+  line-height: 0;
+  z-index: 100;
+
+  textarea {
+    box-sizing: content-box;
+    border: none;
+    padding: 0 3px;
+    outline-width: 0;
+    resize: none;
+    text-align: start;
+    overflow-y: hidden;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 22px;
+    margin: 0;
+  }
+
+  .textline {
+    overflow: hidden;
+    visibility: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+}

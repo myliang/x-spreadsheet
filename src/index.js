@@ -1,5 +1,6 @@
 /* global window */
 import helper from './helper';
+import DataProxy from './data_proxy';
 import Sheet from './component/sheet';
 import './index.less';
 
@@ -36,15 +37,6 @@ const defaultOptions = {
   },
 };
 
-const defaultData = {
-  freezes: [0, 0],
-  rowm: {},
-  colm: {},
-  cellmm: {},
-  styles: [],
-  borders: [],
-};
-
 /*
 Row: {
   height: number
@@ -79,7 +71,7 @@ class Spreadsheet {
   }
 
   loadData(data) {
-    this.sheet.loadData(helper.merge(defaultData, data)).freeze(3, 3);
+    this.sheet.loadData(new DataProxy(this.options, data)).freeze(3, 3);
     return this;
   }
 }

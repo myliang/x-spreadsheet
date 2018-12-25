@@ -4,11 +4,13 @@ import { bind, mouseMoveUp } from '../event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
+import Editor from './editor';
 import Table from './table';
-import { formulas as _formulas } from '../formula';
 
 function scrollbarMove() {
-  const { table, verticalScrollbar, horizontalScrollbar } = this;
+  const {
+    data, table, verticalScrollbar, horizontalScrollbar,
+  } = this;
   const {
     l, t, left, top, width, height,
   } = table.getSelectRect();
@@ -17,7 +19,7 @@ function scrollbarMove() {
   if (Math.abs(left) + width > tableOffset.width) {
     horizontalScrollbar.move({ left: l + width - tableOffset.width });
   } else {
-    const fsw = table.freezeSumWidth();
+    const fsw = data.freezeTotalWidth();
     if (left < fsw) {
       horizontalScrollbar.move({ left: l - 1 - fsw });
     }
@@ -26,7 +28,7 @@ function scrollbarMove() {
   if (Math.abs(top) + height > tableOffset.height) {
     verticalScrollbar.move({ top: t + height - tableOffset.height - 1 });
   } else {
-    const fsh = table.freezeSumHeight();
+    const fsh = data.freezeTotalHeight();
     if (top < fsh) {
       verticalScrollbar.move({ top: t - 1 - fsh });
     }
@@ -141,15 +143,19 @@ function overlayerMousedown(evt) {
 }
 
 function verticalScrollbarSet() {
-  const { table, verticalScrollbar } = this;
+  const { data, verticalScrollbar } = this;
   const { height } = this.getTableOffset();
-  verticalScrollbar.set(height, table.rowTotalHeight());
+  if (data) {
+    verticalScrollbar.set(height, data.rowTotalHeight());
+  }
 }
 
 function horizontalScrollbarSet() {
-  const { table, horizontalScrollbar } = this;
+  const { data, horizontalScrollbar } = this;
   const { width } = this.getTableOffset();
-  horizontalScrollbar.set(width, table.colTotalWidth());
+  if (data) {
+    horizontalScrollbar.set(width, data.colTotalWidth());
+  }
 }
 
 function verticalScrollbarMove(distance) {
@@ -168,20 +174,28 @@ function horizontalScrollbarMove(distance) {
 
 function rowResizerFinished(cRect, distance) {
   const { ri, height } = cRect;
-  const { table, selector } = this;
-  table.setRowHeight(ri - 1, distance);
+  const { table, selector, data } = this;
+  data.setRowHeight(ri - 1, distance);
+  table.render();
   selector.addTopOrHeight(ri, distance - height);
-  selector.setFreezeLengths(selector.freezeWidth, table.freezeSumHeight());
+  selector.setFreezeLengths(selector.freezeWidth, data.freezeTotalHeight());
   verticalScrollbarSet.call(this);
 }
 
 function colResizerFinished(cRect, distance) {
   const { ci, width } = cRect;
-  const { table, selector } = this;
-  table.setColWidth(ci - 1, distance);
+  const { table, selector, data } = this;
+  data.setColWidth(ci - 1, distance);
+  table.render();
   selector.addLeftOrWidth(ci, distance - width);
-  selector.setFreezeLengths(table.freezeSumWidth(), selector.freezeHeight);
+  selector.setFreezeLengths(data.freezeTotalWidth(), selector.freezeHeight);
   horizontalScrollbarSet.call(this);
+}
+
+function editorSet(evt) {
+  const { table } = this;
+  console.log('::::evt: ', evt);
+  this.editor.set(table.getSelectRect());
 }
 
 function sheetReset() {
@@ -207,7 +221,12 @@ function sheetInitEvents() {
       overlayerMousemove.call(this, evt);
     })
     .on('mousedown', (evt) => {
-      overlayerMousedown.call(this, evt);
+      // console.log('mousedown.evt:', evt);
+      if (evt.detail === 2) {
+        editorSet.call(this, evt);
+      } else {
+        overlayerMousedown.call(this, evt);
+      }
     });
   // resizer finished callback
   rowResizer.finishedFn = (cRect, distance) => {
@@ -234,19 +253,19 @@ function sheetInitEvents() {
 
   bind(window, 'mousewheel', (evt) => {
     if (!this.focusing) return;
-    const { table, row } = this;
+    const { data, row, table } = this;
     const { top } = this.verticalScrollbar.scroll();
     if (evt.deltaY > 0) {
       // up
       const ri = table.scrollIndexes[0] + 1;
       if (ri < row.len) {
-        this.verticalScrollbar.move({ top: top + table.getRowHeight(ri) });
+        this.verticalScrollbar.move({ top: top + data.getRowHeight(ri) });
       }
     } else {
       // down
       const ri = table.scrollIndexes[0] - 1;
       if (ri >= 0) {
-        this.verticalScrollbar.move({ top: ri === 0 ? 0 : top - table.getRowHeight(ri) });
+        this.verticalScrollbar.move({ top: ri === 0 ? 0 : top - data.getRowHeight(ri) });
       }
     }
   });
@@ -308,11 +327,11 @@ function sheetInitEvents() {
 
 function sheetFreeze() {
   const {
-    table, selector,
+    selector, data,
   } = this;
-  const [ri, ci] = table.freezeIndexes;
+  const [ri, ci] = data.getFreezes();
   if (ri > 1 || ci > 1) {
-    selector.setFreezeLengths(table.freezeSumWidth(), table.freezeSumHeight());
+    selector.setFreezeLengths(data.freezeTotalWidth(), data.freezeTotalHeight());
   } else {
     selector.setFreezeLengths(0, 0);
   }
@@ -324,14 +343,15 @@ export default class Sheet {
     targetEl.appendChild(this.el.el);
     // console.log('elRect:', elRect);
     const {
-      row, col, style, formulas, view,
+      row, col, view,
     } = options;
     this.view = view;
     this.col = col;
     this.row = row;
+    this.data = null;
     // table
     this.tableEl = h('canvas', 'xss-table');
-    this.table = new Table(this.tableEl.el, row, col, style, _formulas(formulas));
+    this.table = new Table(this.tableEl.el);
     // resizer
     this.rowResizer = new Resizer(false, row.height);
     this.colResizer = new Resizer(true, col.minWidth);
@@ -344,6 +364,8 @@ export default class Sheet {
       .children(...this.selector.elements());
     this.overlayerEl = h('div', 'xss-overlayer')
       .child(this.overlayerCEl);
+    // editor
+    this.editor = new Editor();
     // root element
     this.el.children(
       this.tableEl,
@@ -352,6 +374,7 @@ export default class Sheet {
       this.colResizer.el,
       this.verticalScrollbar.el,
       this.horizontalScrollbar.el,
+      this.editor.el,
     );
     sheetInitEvents.call(this);
     sheetReset.call(this);
@@ -359,6 +382,7 @@ export default class Sheet {
 
   loadData(data) {
     const { table } = this;
+    this.data = data;
     table.setData(data);
     table.render();
     sheetFreeze.call(this);
