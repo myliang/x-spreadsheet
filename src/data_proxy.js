@@ -64,6 +64,13 @@ export default class DataProxy {
     return helper.merge(this.options.style, cell.si !== undefined ? styles[cell.si] : {});
   }
 
+  setCellText(ri, ci, text) {
+    const { cellmm } = this.d;
+    cellmm[ri] = cellmm[ri] || {};
+    cellmm[ri][ci] = cellmm[ri][ci] || {};
+    cellmm[ri][ci].text = text;
+  }
+
   getFreezes() {
     return this.d.freezes;
   }

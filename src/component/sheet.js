@@ -192,10 +192,25 @@ function colResizerFinished(cRect, distance) {
   horizontalScrollbarSet.call(this);
 }
 
-function editorSet(evt) {
-  const { table } = this;
-  console.log('::::evt: ', evt);
-  this.editor.set(table.getSelectRect());
+function editorSet() {
+  const {
+    table, row, col, data,
+  } = this;
+  // console.log('::::evt: ', evt);
+  const {
+    left, top, width, height,
+  } = table.getSelectRect();
+  const [ri, ci] = this.selector.indexes;
+  this.editor.set({
+    left: left + col.indexWidth, top: top + row.height, width, height,
+  }, data.getCell(ri - 1, ci - 1));
+}
+
+function setCellText(text) {
+  const { selector, data, table } = this;
+  const [ri, ci] = selector.indexes;
+  data.setCellText(ri - 1, ci - 1, text);
+  table.render();
 }
 
 function sheetReset() {
@@ -207,8 +222,6 @@ function sheetReset() {
   tableEl.attr(vRect);
   overlayerEl.offset(vRect);
   overlayerCEl.offset(tOffset);
-  verticalScrollbarSet.call(this);
-  horizontalScrollbarSet.call(this);
 }
 
 function sheetInitEvents() {
@@ -225,6 +238,9 @@ function sheetInitEvents() {
       if (evt.detail === 2) {
         editorSet.call(this, evt);
       } else {
+        this.editor.clear((itext) => {
+          setCellText.call(this, itext);
+        });
         overlayerMousedown.call(this, evt);
       }
     });
@@ -358,14 +374,14 @@ export default class Sheet {
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
+    // editor
+    this.editor = new Editor();
     // selector
     this.selector = new Selector();
     this.overlayerCEl = h('div', 'xss-overlayer-content')
       .children(...this.selector.elements());
     this.overlayerEl = h('div', 'xss-overlayer')
       .child(this.overlayerCEl);
-    // editor
-    this.editor = new Editor();
     // root element
     this.el.children(
       this.tableEl,
@@ -383,6 +399,9 @@ export default class Sheet {
   loadData(data) {
     const { table } = this;
     this.data = data;
+    verticalScrollbarSet.call(this);
+    horizontalScrollbarSet.call(this);
+
     table.setData(data);
     table.render();
     sheetFreeze.call(this);
