@@ -26,14 +26,14 @@ body {
 .xss-resizer {
   position: absolute;
   z-index: 11;
-  
+
   .xss-resizer-hover {
     background-color: rgba(75, 137, 255, .25);
   }
   .xss-resizer-line {
     position: absolute;
   }
-  
+
   &.horizontal {
     cursor: row-resize;
     .xss-resizer-line {
@@ -98,7 +98,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  
+
   .xss-selector-area {
     position: absolute;
     border: 2px solid rgb(75, 137, 255);
@@ -149,4 +149,40 @@ body {
     top: 0;
     left: 0;
   }
+}
+
+.xss-item {
+  user-select: none;
+  background: 0;
+  border: 1px solid transparent;
+  outline: none;
+  height: 24px;
+  color: rgba(0, 0, 0, .8);
+  line-height: 24px;
+  list-style: none;
+  padding: 2px 10px;
+  cursor: default;
+
+  &.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  &:hover, &.active {
+    background: rgba(0, 0, 0, .08);
+  }
+
+  .label {
+    float: right;
+    opacity: .8;
+    font-size: .85em;
+  }
+}
+
+.xss-suggest {
+  position: absolute;
+  box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
+  background: #fff;
+  z-index: 100;
+  max-height: 300px;
 }

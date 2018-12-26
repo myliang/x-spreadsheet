@@ -7,17 +7,17 @@
 const baseFormulas = [
   {
     key: 'SUM',
-    title: 'SUM',
+    title: '求和',
     render: ary => ary.reduce((a, b) => Number(a) + Number(b), 0),
   },
   {
     key: 'AVERAGE',
-    title: 'AVERAGE',
+    title: '求平均值',
     render: ary => ary.reduce((a, b) => Number(a) + Number(b), 0) / ary.length,
   },
   {
     key: 'MAX',
-    title: 'MAX',
+    title: '最大值',
     render: ary => Math.max(...ary.map(v => Number(v))),
   },
   {

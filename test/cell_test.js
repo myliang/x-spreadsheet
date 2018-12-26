@@ -22,6 +22,18 @@ describe('infixExprToSuffixExpr', () => {
   it('should return 931-+23+*42/+ when the value is (9+(3-1))*(2+3)+4/2', () => {
     assert.equal(infixExprToSuffixExpr('(9+(3-1))*(2+3)+4/2').join(''), '931-+23+*42/+');
   });
+  it('should return SUM(1) when the value is 1', () => {
+    assert.equal(infixExprToSuffixExpr('SUM(1)').join(''), '1');
+  });
+  it('should return SUM() when the value is ""', () => {
+    assert.equal(infixExprToSuffixExpr('SUM()').join(''), '');
+  });
+  it('should return SUM( when the value is SUM', () => {
+    assert.equal(infixExprToSuffixExpr('SUM(').join(''), 'SUM');
+  });
+  it('should return =SUM() when the value is SUM', () => {
+    assert.equal(infixExprToSuffixExpr('=SUM()').join(''), 'SUM');
+  });
 });
 
 describe('cell', () => {

@@ -66,12 +66,13 @@ class Spreadsheet {
   constructor(el, options = {}) {
     this.el = el;
     this.options = helper.merge(defaultOptions, options);
+    this.data = new DataProxy(this.options);
     // create canvas element
-    this.sheet = new Sheet(el, this.options);
+    this.sheet = new Sheet(el, this.data);
   }
 
   loadData(data) {
-    this.sheet.loadData(new DataProxy(this.options, data)).freeze(3, 3);
+    this.sheet.loadData(data).freeze(3, 3);
     return this;
   }
 }

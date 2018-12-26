@@ -57,6 +57,7 @@ const infixExprToSuffixExpr = (src) => {
   let fnArgsLen = 1; // A1,A2,A3...
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
+    // console.log('c:', c);
     if (c !== ' ') {
       if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')) {
         subStrs.push(c);
@@ -92,7 +93,8 @@ const infixExprToSuffixExpr = (src) => {
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
           } else {
-            while (c1 !== '(') {
+            // console.log('c1:', c1, fnArgType, operatorStack);
+            while (c1 !== '(' && operatorStack.length > 0) {
               stack.push(c1);
               c1 = operatorStack.pop();
             }
@@ -179,9 +181,11 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
 };
 
 const cellRender = (src, formulaMap, getCellText) => {
+  // console.log(':::::::::::::src:', src);
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
-    // console.log('suffixExpr:', stack);
+    console.log('suffixExpr:', stack);
+    if (stack.length <= 0) return src;
     const cb = (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText);
     return evalSuffixExpr(stack, formulaMap, cb);
   }

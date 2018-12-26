@@ -354,20 +354,20 @@ function sheetFreeze() {
 }
 
 export default class Sheet {
-  constructor(targetEl, options = {}) {
+  constructor(targetEl, data) {
     this.el = h('div', 'xss-sheet');
     targetEl.appendChild(this.el.el);
     // console.log('elRect:', elRect);
     const {
       row, col, view,
-    } = options;
+    } = data.options;
     this.view = view;
     this.col = col;
     this.row = row;
-    this.data = null;
+    this.data = data;
     // table
     this.tableEl = h('canvas', 'xss-table');
-    this.table = new Table(this.tableEl.el);
+    this.table = new Table(this.tableEl.el, data);
     // resizer
     this.rowResizer = new Resizer(false, row.height);
     this.colResizer = new Resizer(true, col.minWidth);
@@ -375,7 +375,7 @@ export default class Sheet {
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
     // editor
-    this.editor = new Editor();
+    this.editor = new Editor(Object.values(data.formulam));
     // selector
     this.selector = new Selector();
     this.overlayerCEl = h('div', 'xss-overlayer-content')
@@ -398,11 +398,11 @@ export default class Sheet {
 
   loadData(data) {
     const { table } = this;
-    this.data = data;
+    this.data.load(data);
+    // console.log('this.data:', this.data);
     verticalScrollbarSet.call(this);
     horizontalScrollbarSet.call(this);
 
-    table.setData(data);
     table.render();
     sheetFreeze.call(this);
     return this;

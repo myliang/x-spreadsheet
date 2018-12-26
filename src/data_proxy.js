@@ -11,10 +11,13 @@ const defaultData = {
 };
 
 export default class DataProxy {
-  constructor(options, data) {
+  constructor(options) {
     this.options = options;
-    this.d = helper.merge(defaultData, data);
     this.formulam = _formulas(options.formulas);
+  }
+
+  load(data) {
+    this.d = helper.merge(defaultData, data);
   }
 
   colTotalWidth() {

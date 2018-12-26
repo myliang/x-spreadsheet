@@ -319,14 +319,14 @@ function getCellColByX(x) {
 
 /** end */
 class Table {
-  constructor(el) {
+  constructor(el, data) {
     this.el = el;
     this.context = el.getContext('2d');
     this.draw = new Draw(el);
     this.scrollOffset = { x: 0, y: 0 };
     this.scrollIndexes = [0, 0];
     this.selectRectIndexes = [[0, 0], [0, 0]];
-    this.data = null;
+    this.data = data;
   }
 
   render() {
@@ -378,10 +378,6 @@ class Table {
         this.render();
       }
     }
-  }
-
-  setData(data) {
-    this.data = data;
   }
 
   setFreezeIndexes([ri, ci]) {
