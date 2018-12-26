@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "test": "./node_modules/mocha/bin/mocha --require babel-core/register test/*",
-    "build": "webpack --config webpack.prod.js"
+    "build": "webpack --config webpack.prod.js",
+    "lint": "./node_modules/eslint/bin/eslint.js src"
   },
   "keywords": [
     "javascript",

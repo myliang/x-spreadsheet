@@ -6,7 +6,7 @@ export default class Suggest {
     this.width = width;
     this.el = h('div', 'xss-suggest')
       .css('width', `${this.width}px`).hide();
-    this.itemClick = itemClick
+    this.itemClick = itemClick;
   }
 
   setOffset(v) {
@@ -22,7 +22,7 @@ export default class Suggest {
     if (!/^\s*$/.test(word)) {
       items = items.filter(it => it.key.startsWith(word.toUpperCase()));
     }
-    items = items.map(it => {
+    items = items.map((it) => {
       const item = h('div', 'xss-item')
         .child(it.key)
         .on('click', () => {
@@ -40,4 +40,3 @@ export default class Suggest {
     this.el.html('').children(...items).show();
   }
 }
-

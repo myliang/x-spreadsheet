@@ -42,26 +42,26 @@ function editorReset() {
   }
 }
 
+function editorSetText(text) {
+  const { textEl, textlineEl } = this;
+  textEl.val(text);
+  textlineEl.html(text);
+}
+
 function suggestItemClick(it) {
   const { inputText } = this;
   const start = inputText.lastIndexOf('=');
   const sit = inputText.substring(0, start + 1);
   let eit = inputText.substring(start + 1);
-  if (eit.indexOf(')') !== -1){
+  if (eit.indexOf(')') !== -1) {
     eit = eit.substring(eit.indexOf(')'));
   } else {
     eit = '';
   }
-  this.inputText = sit + it.key + '(';
+  this.inputText = `${sit + it.key}(`;
   editorSetTextareaRange.call(this, this.inputText.length);
-  this.inputText += ')' + eit;
+  this.inputText += `)${eit}`;
   editorSetText.call(this, this.inputText);
-}
-
-function editorSetText(text) {
-  const { textEl, textlineEl } = this;
-  textEl.val(text);
-  textlineEl.html(text);
 }
 
 export default class Editor {
@@ -95,7 +95,7 @@ export default class Editor {
   set(offset, cell) {
     this.offset = offset;
     this.cell = cell;
-    const text = cell && cell.text || '';
+    const text = (cell && cell.text) || '';
     editorSetText.call(this, text);
     editorReset.call(this);
     editorSetTextareaRange.call(this, text.length);
