@@ -1,5 +1,6 @@
 /* global window */
 import helper from './helper';
+import { h } from './component/element';
 import DataProxy from './data_proxy';
 import Sheet from './component/sheet';
 import './index.less';
@@ -30,7 +31,7 @@ const defaultOptions = {
     color: '#333333',
     font: {
       family: 'Arial',
-      size: 14,
+      size: 13,
       bold: false,
       italic: false,
     },
@@ -63,12 +64,14 @@ Cell: {
   }
 */
 class Spreadsheet {
-  constructor(el, options = {}) {
-    this.el = el;
+  constructor(tel, options = {}) {
     this.options = helper.merge(defaultOptions, options);
+    const fontSize = this.options.style.font.size;
+    this.el = h('div', 'xss').css('font-size', `${fontSize}px`);
+    tel.appendChild(this.el.el);
     this.data = new DataProxy(this.options);
     // create canvas element
-    this.sheet = new Sheet(el, this.data);
+    this.sheet = new Sheet(this.el, this.data);
   }
 
   loadData(data) {

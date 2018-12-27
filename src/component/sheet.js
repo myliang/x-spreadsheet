@@ -374,7 +374,7 @@ function sheetFreeze() {
 export default class Sheet {
   constructor(targetEl, data) {
     this.el = h('div', 'xss-sheet');
-    targetEl.appendChild(this.el.el);
+    targetEl.child(this.el);
     // console.log('elRect:', elRect);
     const {
       row, col, view,
