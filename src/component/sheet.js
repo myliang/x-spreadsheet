@@ -158,11 +158,25 @@ function horizontalScrollbarSet() {
   }
 }
 
+function editorSetOffset() {
+  const { editor, table } = this;
+  editor.setOffset(table.getSelectRect());
+}
+function editorSet() {
+  const {
+    editor, data, selector,
+  } = this;
+  const [ri, ci] = selector.indexes;
+  editor.setCell(data.getCell(ri - 1, ci - 1));
+  editorSetOffset.call(this);
+}
+
 function verticalScrollbarMove(distance) {
   const { table, selector } = this;
   table.scroll({ y: distance }, (d) => {
     selector.addTop(-d);
   });
+  editorSetOffset.call(this);
 }
 
 function horizontalScrollbarMove(distance) {
@@ -170,6 +184,7 @@ function horizontalScrollbarMove(distance) {
   table.scroll({ x: distance }, (d) => {
     selector.addLeft(-d);
   });
+  editorSetOffset.call(this);
 }
 
 function rowResizerFinished(cRect, distance) {
@@ -180,6 +195,7 @@ function rowResizerFinished(cRect, distance) {
   selector.addTopOrHeight(ri, distance - height);
   selector.setFreezeLengths(selector.freezeWidth, data.freezeTotalHeight());
   verticalScrollbarSet.call(this);
+  editorSetOffset.call(this);
 }
 
 function colResizerFinished(cRect, distance) {
@@ -190,23 +206,10 @@ function colResizerFinished(cRect, distance) {
   selector.addLeftOrWidth(ci, distance - width);
   selector.setFreezeLengths(data.freezeTotalWidth(), selector.freezeHeight);
   horizontalScrollbarSet.call(this);
+  editorSetOffset.call(this);
 }
 
-function editorSet() {
-  const {
-    table, row, col, data,
-  } = this;
-  // console.log('::::evt: ', evt);
-  const {
-    left, top, width, height,
-  } = table.getSelectRect();
-  const [ri, ci] = this.selector.indexes;
-  this.editor.set({
-    left: left + col.indexWidth, top: top + row.height, width, height,
-  }, data.getCell(ri - 1, ci - 1));
-}
-
-function setCellText(text) {
+function dataSetCellText(text) {
   const { selector, data, table } = this;
   const [ri, ci] = selector.indexes;
   data.setCellText(ri - 1, ci - 1, text);
@@ -241,7 +244,7 @@ function sheetInitEvents() {
     .on('mousedown', (evt) => {
       // console.log('mousedown.evt:', evt);
       if (evt.detail === 2) {
-        editorSet.call(this, evt);
+        editorSet.call(this);
       } else {
         editor.clear();
         overlayerMousedown.call(this, evt);
@@ -262,7 +265,7 @@ function sheetInitEvents() {
     horizontalScrollbarMove.call(this, distance, evt);
   };
   // editor
-  editor.change = itext => setCellText.call(this, itext);
+  editor.change = itext => dataSetCellText.call(this, itext);
 
   bind(window, 'resize', () => {
     this.reload();
@@ -344,6 +347,14 @@ function sheetInitEvents() {
         default:
           break;
       }
+
+      if ((evt.keyCode >= 65 && evt.keyCode <= 90)
+        || (evt.keyCode >= 48 && evt.keyCode <= 57)
+        || (evt.keyCode >= 96 && evt.keyCode <= 105)
+      ) {
+        dataSetCellText.call(this, evt.key);
+        editorSet.call(this);
+      }
     }
   });
 }
@@ -386,7 +397,7 @@ export default class Sheet {
     // selector
     this.selector = new Selector();
     this.overlayerCEl = h('div', 'xss-overlayer-content')
-      .children(...this.selector.elements());
+      .children(this.editor.el, ...this.selector.elements());
     this.overlayerEl = h('div', 'xss-overlayer')
       .child(this.overlayerCEl);
     // root element
@@ -397,7 +408,6 @@ export default class Sheet {
       this.colResizer.el,
       this.verticalScrollbar.el,
       this.horizontalScrollbar.el,
-      this.editor.el,
     );
     sheetInitEvents.call(this);
     sheetReset.call(this);

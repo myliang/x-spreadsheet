@@ -2,7 +2,9 @@
 import { h } from './element';
 import { bind } from '../event';
 
-function inputMovePrev() {
+function inputMovePrev(evt) {
+  evt.preventDefault();
+  evt.stopPropagation();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
   filterItems[this.itemIndex].toggle();
@@ -13,7 +15,8 @@ function inputMovePrev() {
   filterItems[this.itemIndex].toggle();
 }
 
-function inputMoveNext() {
+function inputMoveNext(evt) {
+  evt.stopPropagation();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
   filterItems[this.itemIndex].toggle();
@@ -24,36 +27,41 @@ function inputMoveNext() {
   filterItems[this.itemIndex].toggle();
 }
 
-function inputEnter() {
+function inputEnter(evt) {
+  evt.preventDefault();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
+  evt.stopPropagation();
   filterItems[this.itemIndex].el.click();
   this.hide();
 }
 
 function inputKeydownHandler(evt) {
   const { keyCode } = evt;
+  if (evt.ctrlKey) {
+    evt.stopPropagation();
+  }
   switch (keyCode) {
     case 37: // left
       evt.stopPropagation();
       break;
     case 38: // up
-      inputMovePrev.call(this);
-      evt.preventDefault();
-      evt.stopPropagation();
+      inputMovePrev.call(this, evt);
       break;
     case 39: // right
       evt.stopPropagation();
       break;
     case 40: // down
-      inputMoveNext.call(this);
-      evt.stopPropagation();
+      inputMoveNext.call(this, evt);
       break;
     case 13: // enter
-      inputEnter.call(this);
-      evt.preventDefault();
+      inputEnter.call(this, evt);
+      break;
+    case 9:
+      inputEnter.call(this, evt);
       break;
     default:
+      evt.stopPropagation();
       break;
   }
 }
