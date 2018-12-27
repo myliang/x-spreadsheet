@@ -110,6 +110,11 @@ class Element {
     return this;
   }
 
+  toggle(cls = 'active') {
+    this.toggleClass(cls);
+    return this;
+  }
+
   toggleClass(name) {
     this.el.classList.toggle(name);
     return this;

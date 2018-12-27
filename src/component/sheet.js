@@ -226,7 +226,12 @@ function sheetReset() {
 
 function sheetInitEvents() {
   const {
-    overlayerEl, rowResizer, colResizer, verticalScrollbar, horizontalScrollbar,
+    overlayerEl,
+    rowResizer,
+    colResizer,
+    verticalScrollbar,
+    horizontalScrollbar,
+    editor,
   } = this;
   // overlayer
   overlayerEl
@@ -238,9 +243,7 @@ function sheetInitEvents() {
       if (evt.detail === 2) {
         editorSet.call(this, evt);
       } else {
-        this.editor.clear((itext) => {
-          setCellText.call(this, itext);
-        });
+        editor.clear();
         overlayerMousedown.call(this, evt);
       }
     });
@@ -258,6 +261,8 @@ function sheetInitEvents() {
   horizontalScrollbar.moveFn = (distance, evt) => {
     horizontalScrollbarMove.call(this, distance, evt);
   };
+  // editor
+  editor.change = itext => setCellText.call(this, itext);
 
   bind(window, 'resize', () => {
     this.reload();
@@ -327,10 +332,12 @@ function sheetInitEvents() {
           evt.preventDefault();
           break;
         case 9: // tab
+          editor.clear();
           selectorMove.call(this, evt.shiftKey, 'right');
           evt.preventDefault();
           break;
         case 13: // enter
+          editor.clear();
           selectorMove.call(this, evt.shiftKey, 'down');
           evt.preventDefault();
           break;

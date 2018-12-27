@@ -17,8 +17,8 @@ function editorInputEventHandler(evt) {
 
 function editorSetTextareaRange(position) {
   const { textEl } = this;
+  textEl.el.setSelectionRange(position, position);
   setTimeout(() => {
-    textEl.el.setSelectionRange(position, position);
     textEl.el.focus();
   }, 0);
 }
@@ -42,10 +42,11 @@ function editorReset() {
   }
 }
 
-function editorSetText(text) {
+function editorSetText(text, position) {
   const { textEl, textlineEl } = this;
   textEl.val(text);
   textlineEl.html(text);
+  editorSetTextareaRange.call(this, position);
 }
 
 function suggestItemClick(it) {
@@ -59,9 +60,10 @@ function suggestItemClick(it) {
     eit = '';
   }
   this.inputText = `${sit + it.key}(`;
-  editorSetTextareaRange.call(this, this.inputText.length);
+  // console.log('inputText:', this.inputText);
+  const position = this.inputText.length;
   this.inputText += `)${eit}`;
-  editorSetText.call(this, this.inputText);
+  editorSetText.call(this, this.inputText, position);
 }
 
 export default class Editor {
@@ -75,15 +77,17 @@ export default class Editor {
       this.textlineEl = h('div', 'textline'),
       this.suggest.el,
     );
+    this.suggest.bindInputEvents(this.textEl);
 
     this.offset = null;
     this.cell = null;
     this.inputText = '';
+    this.change = () => {};
   }
 
-  clear(change) {
+  clear() {
     if (!/^\s*$/.test(this.inputText)) {
-      change(this.inputText);
+      this.change(this.inputText);
     }
     this.cell = null;
     this.inputText = '';
@@ -96,8 +100,7 @@ export default class Editor {
     this.offset = offset;
     this.cell = cell;
     const text = (cell && cell.text) || '';
-    editorSetText.call(this, text);
+    editorSetText.call(this, text, text.length);
     editorReset.call(this);
-    editorSetTextareaRange.call(this, text.length);
   }
 }
