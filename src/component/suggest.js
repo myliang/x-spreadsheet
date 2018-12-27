@@ -71,18 +71,20 @@ export default class Suggest {
     this.filterItems = [];
     this.items = items;
     this.width = width;
-    this.el = h('div', 'xss-suggest')
-      .css('width', `${this.width}px`).hide();
+    this.el = h('div', 'xss-suggest').hide();
     this.itemClick = itemClick;
     this.itemIndex = 0;
   }
 
   setOffset(v) {
-    this.el.offset(v);
+    this.el.cssRemoveKeys('top', 'bottom')
+      .css('width', `${this.width}px`)
+      .offset(v);
   }
 
   hide() {
     this.filterItems = [];
+    this.itemIndex = 0;
     this.el.hide();
   }
 
@@ -103,11 +105,9 @@ export default class Suggest {
     });
     this.filterItems = items;
     if (items.length <= 0) {
-      // items = [h('div', 'xss-item').child('No result')];
       return;
     }
     items[0].toggle();
-    // console.log('items:', items);
     this.el.html('').children(...items).show();
   }
 

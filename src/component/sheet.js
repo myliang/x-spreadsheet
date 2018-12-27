@@ -160,7 +160,14 @@ function horizontalScrollbarSet() {
 
 function editorSetOffset() {
   const { editor, table } = this;
-  editor.setOffset(table.getSelectRect());
+  const sOffset = table.getSelectRect();
+  const tOffset = this.getTableOffset();
+  let sPosition = 'top';
+  // console.log('sOffset:', sOffset, ':', tOffset);
+  if (sOffset.top > tOffset.height / 2) {
+    sPosition = 'bottom';
+  }
+  editor.setOffset(sOffset, sPosition);
 }
 function editorSet() {
   const {

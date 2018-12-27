@@ -157,6 +157,11 @@ class Element {
     return this.el.value;
   }
 
+  cssRemoveKeys(...keys) {
+    keys.forEach(k => this.el.style.removeProperty(k));
+    return this;
+  }
+
   // css( propertyName )
   // css( propertyName, value )
   // css( properties )

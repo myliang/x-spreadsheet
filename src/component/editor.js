@@ -78,7 +78,7 @@ export default class Editor {
     this.textlineEl.html('');
   }
 
-  setOffset(offset) {
+  setOffset(offset, suggestPosition = 'top') {
     const {
       textEl, el, suggest,
     } = this;
@@ -88,7 +88,9 @@ export default class Editor {
       } = offset;
       el.offset({ left, top });
       textEl.offset({ width: width - 9, height: height - 3 });
-      suggest.setOffset({ left: 0, top: height });
+      const sOffset = { left: 0 };
+      sOffset[suggestPosition] = height;
+      suggest.setOffset(sOffset);
     }
   }
 
