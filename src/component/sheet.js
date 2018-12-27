@@ -174,8 +174,8 @@ function editorSet() {
     editor, data, selector,
   } = this;
   const [ri, ci] = selector.indexes;
-  editor.setCell(data.getCell(ri - 1, ci - 1));
   editorSetOffset.call(this);
+  editor.setCell(data.getCell(ri - 1, ci - 1));
 }
 
 function verticalScrollbarMove(distance) {
@@ -403,7 +403,11 @@ export default class Sheet {
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
     // editor
-    this.editor = new Editor(Object.values(data.formulam));
+    this.editor = new Editor(
+      Object.values(data.formulam),
+      () => this.getTableOffset(),
+      row.height,
+    );
     // selector
     this.selector = new Selector();
     this.overlayerCEl = h('div', 'xss-overlayer-content')

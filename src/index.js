@@ -28,9 +28,9 @@ const defaultOptions = {
     valign: 'middle',
     wrapText: false,
     textDecoration: 'normal',
-    color: '#333333',
+    color: '#0a0a0a',
     font: {
-      family: 'Arial',
+      name: 'sans-serif',
       size: 13,
       bold: false,
       italic: false,
@@ -66,8 +66,10 @@ Cell: {
 class Spreadsheet {
   constructor(tel, options = {}) {
     this.options = helper.merge(defaultOptions, options);
-    const fontSize = this.options.style.font.size;
-    this.el = h('div', 'xss').css('font-size', `${fontSize}px`);
+    const { font, color } = this.options.style;
+    this.el = h('div', 'xss')
+      .css('color', color)
+      .css('font-size', `${font.size}px`);
     tel.appendChild(this.el.el);
     this.data = new DataProxy(this.options);
     // create canvas element

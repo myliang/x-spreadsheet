@@ -3,19 +3,45 @@ import { h } from './element';
 import Suggest from './suggest';
 // import { mouseMoveUp } from '../event';
 
-function editorInputEventHandler(evt) {
-  const v = evt.target.value;
-  this.inputText = v;
-  const start = v.lastIndexOf('=');
-  // console.log('start:', start, v.substring(start));
-  if (start !== -1) {
-    this.suggest.search(v.substring(start + 1));
-  } else {
-    this.suggest.hide();
+function resetTextareaSize() {
+  if (!/^\s*$/.test(this.inputText)) {
+    const {
+      textlineEl, textEl, areaOffset,
+    } = this;
+    const tlineWidth = textlineEl.offset().width + 9;
+    const maxWidth = this.viewFn().width - areaOffset.left - 9;
+    // console.log('tlineWidth:', tlineWidth, ':', maxWidth);
+    if (tlineWidth > areaOffset.width) {
+      let twidth = tlineWidth;
+      if (tlineWidth > maxWidth) {
+        twidth = maxWidth;
+        let h1 = parseInt(tlineWidth / maxWidth, 10);
+        h1 += (tlineWidth % maxWidth) > 0 ? 1 : 0;
+        h1 *= this.rowHeight;
+        if (h1 > areaOffset.height) {
+          textEl.css('height', `${h1}px`);
+        }
+      }
+      textEl.css('width', `${twidth}px`);
+    }
   }
 }
 
-function editorSetTextareaRange(position) {
+function inputEventHandler(evt) {
+  const v = evt.target.value;
+  this.inputText = v;
+  const start = v.lastIndexOf('=');
+  const { suggest, textlineEl } = this;
+  if (start !== -1) {
+    suggest.search(v.substring(start + 1));
+  } else {
+    suggest.hide();
+  }
+  textlineEl.html(v);
+  resetTextareaSize.call(this);
+}
+
+function setTextareaRange(position) {
   const { textEl } = this;
   textEl.el.setSelectionRange(position, position);
   setTimeout(() => {
@@ -23,11 +49,11 @@ function editorSetTextareaRange(position) {
   }, 0);
 }
 
-function editorSetText(text, position) {
+function setText(text, position) {
   const { textEl, textlineEl } = this;
   textEl.val(text);
   textlineEl.html(text);
-  editorSetTextareaRange.call(this, position);
+  setTextareaRange.call(this, position);
 }
 
 function suggestItemClick(it) {
@@ -44,17 +70,19 @@ function suggestItemClick(it) {
   // console.log('inputText:', this.inputText);
   const position = this.inputText.length;
   this.inputText += `)${eit}`;
-  editorSetText.call(this, this.inputText, position);
+  setText.call(this, this.inputText, position);
 }
 
 export default class Editor {
-  constructor(formulas) {
+  constructor(formulas, viewFn, rowHeight) {
+    this.viewFn = viewFn;
+    this.rowHeight = rowHeight;
     this.suggest = new Suggest(formulas, 180, (it) => {
       suggestItemClick.call(this, it);
     });
     this.areaEl = h('div', 'xss-editor-area').children(
       this.textEl = h('textarea', '')
-        .on('input', evt => editorInputEventHandler.call(this, evt)),
+        .on('input', evt => inputEventHandler.call(this, evt)),
       this.textlineEl = h('div', 'textline'),
       this.suggest.el,
     );
@@ -62,6 +90,7 @@ export default class Editor {
       .child(this.areaEl).hide();
     this.suggest.bindInputEvents(this.textEl);
 
+    this.areaOffset = null;
     this.freeze = { w: 0, h: 0 };
     this.cell = null;
     this.inputText = '';
@@ -80,6 +109,7 @@ export default class Editor {
       this.change(this.inputText);
     }
     this.cell = null;
+    this.areaOffset = null;
     this.inputText = '';
     this.el.hide();
     this.textEl.val('');
@@ -91,10 +121,11 @@ export default class Editor {
       textEl, areaEl, suggest, freeze, el,
     } = this;
     if (offset) {
+      this.areaOffset = offset;
       const {
         left, top, width, height, l, t,
       } = offset;
-      console.log('left:', left, ',top:', top, ', freeze:', freeze);
+      // console.log('left:', left, ',top:', top, ', freeze:', freeze);
       const elOffset = { left: 0, top: 0 };
       // top left
       if (freeze.w > l && freeze.h > t) {
@@ -121,6 +152,7 @@ export default class Editor {
     this.cell = cell;
     const text = (cell && cell.text) || '';
     this.inputText = text;
-    editorSetText.call(this, text, text.length);
+    setText.call(this, text, text.length);
+    resetTextareaSize.call(this);
   }
 }
