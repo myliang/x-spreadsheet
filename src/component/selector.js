@@ -95,7 +95,7 @@ export default class Selector {
     const { areaOffset, indexes } = this;
     if (indexes) {
       areaOffset.left += left;
-      areaOffset.l += left;
+      // areaOffset.l += left;
       this.setAreaOffset();
       this.setTAreaOffset();
     }
@@ -106,7 +106,7 @@ export default class Selector {
     const { areaOffset, indexes } = this;
     if (indexes) {
       areaOffset.top += top;
-      areaOffset.t += top;
+      // areaOffset.t += top;
       this.setAreaOffset();
       this.setLAreaOffset();
     }
@@ -123,7 +123,7 @@ export default class Selector {
       // console.log(':index:', index, sci, eci);
       if (index < sci) {
         areaOffset.left += v;
-        areaOffset.l += v;
+        // areaOffset.l += v;
       } else if (sci <= index && index <= eci) {
         areaOffset.width += v;
       }
@@ -142,7 +142,7 @@ export default class Selector {
       const [eri] = eIndexes;
       if (index < sri) {
         areaOffset.top += v;
-        areaOffset.t += v;
+        // areaOffset.t += v;
       } else if (sri <= index && index <= eri) {
         areaOffset.height += v;
       }
@@ -202,10 +202,10 @@ export default class Selector {
   setTLAreaOffset() {
     if (this.areaOffset !== null) {
       const {
-        l, t, width, height,
+        left, top, width, height,
       } = this.areaOffset;
       this.tl.setAreaOffset({
-        left: l, top: t, width, height,
+        left, top, width, height,
       });
     }
   }
@@ -214,10 +214,10 @@ export default class Selector {
     if (this.areaOffset !== null) {
       const { freezeWidth } = this;
       const {
-        l, t, width, height,
+        left, top, width, height,
       } = this.areaOffset;
       this.t.setAreaOffset({
-        left: l - freezeWidth, top: t, width, height,
+        left: left - freezeWidth, top, width, height,
       });
     }
   }
@@ -226,10 +226,10 @@ export default class Selector {
     if (this.areaOffset !== null) {
       const { freezeHeight } = this;
       const {
-        l, t, width, height,
+        left, top, width, height,
       } = this.areaOffset;
       this.l.setAreaOffset({
-        left: l, top: t - freezeHeight, width, height,
+        left, top: top - freezeHeight, width, height,
       });
     }
   }

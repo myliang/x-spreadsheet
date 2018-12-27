@@ -52,17 +52,25 @@ export default class Editor {
     this.suggest = new Suggest(formulas, 180, (it) => {
       suggestItemClick.call(this, it);
     });
-    this.el = h('div', 'xss-editor').children(
+    this.areaEl = h('div', 'xss-editor-area').children(
       this.textEl = h('textarea', '')
         .on('input', evt => editorInputEventHandler.call(this, evt)),
       this.textlineEl = h('div', 'textline'),
       this.suggest.el,
-    ).hide();
+    );
+    this.el = h('div', 'xss-editor')
+      .child(this.areaEl).hide();
     this.suggest.bindInputEvents(this.textEl);
 
+    this.freeze = { w: 0, h: 0 };
     this.cell = null;
     this.inputText = '';
     this.change = () => {};
+  }
+
+  setFreezeLengths(width, height) {
+    this.freeze.w = width;
+    this.freeze.h = height;
   }
 
   clear() {
@@ -80,13 +88,27 @@ export default class Editor {
 
   setOffset(offset, suggestPosition = 'top') {
     const {
-      textEl, el, suggest,
+      textEl, areaEl, suggest, freeze, el,
     } = this;
     if (offset) {
       const {
-        left, top, width, height,
+        left, top, width, height, l, t,
       } = offset;
-      el.offset({ left, top });
+      console.log('left:', left, ',top:', top, ', freeze:', freeze);
+      const elOffset = { left: 0, top: 0 };
+      // top left
+      if (freeze.w > l && freeze.h > t) {
+        //
+      } else if (freeze.w < l && freeze.h < t) {
+        elOffset.left = freeze.w;
+        elOffset.top = freeze.h;
+      } else if (freeze.w > l) {
+        elOffset.top = freeze.h;
+      } else if (freeze.h > t) {
+        elOffset.left = freeze.w;
+      }
+      el.offset(elOffset);
+      areaEl.offset({ left: left - elOffset.left, top: top - elOffset.top });
       textEl.offset({ width: width - 9, height: height - 3 });
       const sOffset = { left: 0 };
       sOffset[suggestPosition] = height;

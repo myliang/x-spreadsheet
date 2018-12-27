@@ -368,11 +368,14 @@ function sheetInitEvents() {
 
 function sheetFreeze() {
   const {
-    selector, data,
+    selector, data, editor,
   } = this;
   const [ri, ci] = data.getFreezes();
   if (ri > 1 || ci > 1) {
-    selector.setFreezeLengths(data.freezeTotalWidth(), data.freezeTotalHeight());
+    const fwidth = data.freezeTotalWidth();
+    const fheight = data.freezeTotalHeight();
+    selector.setFreezeLengths(fwidth, fheight);
+    editor.setFreezeLengths(fwidth, fheight);
   } else {
     selector.setFreezeLengths(0, 0);
   }
