@@ -244,8 +244,11 @@ function sheetInitEvents() {
     verticalScrollbar,
     horizontalScrollbar,
     editor,
+    selector,
     contextMenu,
     table,
+    data,
+    row,
   } = this;
   // overlayer
   overlayerEl
@@ -283,6 +286,16 @@ function sheetInitEvents() {
   };
   // editor
   editor.change = itext => dataSetCellText.call(this, itext);
+  // contextmenu
+  contextMenu.itemClick = (type) => {
+    const { sIndexes, eIndexes } = selector;
+    if (type === 'insert-row') {
+      data.insertRow(sIndexes[0] - 1);
+    } else if (type === 'delete-row') {
+      data.deleteRow(sIndexes[0] - 1, eIndexes[0] - 1);
+    }
+    table.render();
+  };
 
   bind(window, 'resize', () => {
     this.reload();
@@ -294,7 +307,6 @@ function sheetInitEvents() {
 
   bind(window, 'mousewheel', (evt) => {
     if (!this.focusing) return;
-    const { data, row } = this;
     const { top } = this.verticalScrollbar.scroll();
     if (evt.deltaY > 0) {
       // up

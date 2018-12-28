@@ -30,6 +30,12 @@ const sum = (objOrAry, cb = value => value) => {
   return [total, size];
 };
 
+function deleteProperty(obj, property) {
+  const oldv = obj[`${property}`];
+  delete obj[`${property}`];
+  return oldv;
+}
+
 function rangeReduceIf(min, max, inits, initv, ifv, getv) {
   let s = inits;
   let v = initv;
@@ -56,4 +62,5 @@ export default {
   sum,
   rangeSum,
   rangeReduceIf,
+  deleteProperty,
 };

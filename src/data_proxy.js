@@ -5,7 +5,7 @@ const defaultData = {
   freezes: [0, 0],
   rowm: {}, // Map<int, Row>, len
   colm: {}, // Map<int, Row>, len
-  cellmm: {}, // Map<int, Map<int, Cell>>, len
+  cellmm: {}, // Map<int, Map<int, Cell>>
   styles: [],
   borders: [],
 };
@@ -18,6 +18,28 @@ export default class DataProxy {
 
   load(data) {
     this.d = helper.merge(defaultData, data);
+  }
+
+  insertRow(index, n = 1) {
+    const { cellmm, rowm } = this.d;
+    const ndata = {};
+    Object.keys(cellmm).forEach((key) => {
+      let ikey = parseInt(key, 10);
+      if (ikey >= index) {
+        ikey += n;
+      }
+      ndata[ikey] = cellmm[ikey];
+    });
+    this.d.cellmm = ndata;
+    rowm.len = this.rowLen() + n;
+  }
+
+  deleteRow(min, max) {
+    const { cellmm, rowm } = this.d;
+    for (let i = min; i <= max; i += 1) {
+      helper.deleteProperty(cellmm, i);
+    }
+    rowm.len = this.rowLen() - (max - min) - 1;
   }
 
   colTotalWidth() {
