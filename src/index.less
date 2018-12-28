@@ -175,6 +175,14 @@ body {
     background: rgba(0, 0, 0, .08);
   }
 
+  &.divider {
+    height: 0;
+    padding: 0;
+    margin: 5px 0;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+  }
+
   .label {
     float: right;
     opacity: .8;
@@ -182,10 +190,12 @@ body {
   }
 }
 
-.xss-suggest {
+.xss-suggest, .xss-contextmenu {
   position: absolute;
   box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
   background: #fff;
   z-index: 100;
   max-height: 300px;
+  width: 260px;
 }
+

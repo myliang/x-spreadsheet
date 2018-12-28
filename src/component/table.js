@@ -420,6 +420,18 @@ class Table {
     };
   }
 
+  xyInSelectRect(x, y) {
+    const {
+      left, top, width, height,
+    } = this.getSelectRect();
+    const { row, col } = this.data.options;
+    const x1 = x - col.indexWidth;
+    const y1 = y - row.height;
+    // console.log('x:', x, ',y:', y, 'left:', left, 'top:', top);
+    return x1 > left && x1 < (left + width)
+      && y1 > top && y1 < (top + height);
+  }
+
   getSelectRect() {
     const { scrollOffset, data } = this;
     const [[sri, sci], [eri, eci]] = this.selectRectIndexes;

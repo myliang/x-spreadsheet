@@ -67,10 +67,9 @@ function inputKeydownHandler(evt) {
 }
 
 export default class Suggest {
-  constructor(items, width, itemClick) {
+  constructor(items, itemClick) {
     this.filterItems = [];
     this.items = items;
-    this.width = width;
     this.el = h('div', 'xss-suggest').hide();
     this.itemClick = itemClick;
     this.itemIndex = 0;
@@ -78,7 +77,6 @@ export default class Suggest {
 
   setOffset(v) {
     this.el.cssRemoveKeys('top', 'bottom')
-      .css('width', `${this.width}px`)
       .offset(v);
   }
 

@@ -5,6 +5,7 @@ import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
 import Editor from './editor';
+import ContextMenu from './contextmenu';
 import Table from './table';
 
 function scrollbarMove() {
@@ -243,6 +244,8 @@ function sheetInitEvents() {
     verticalScrollbar,
     horizontalScrollbar,
     editor,
+    contextMenu,
+    table,
   } = this;
   // overlayer
   overlayerEl
@@ -251,7 +254,13 @@ function sheetInitEvents() {
     })
     .on('mousedown', (evt) => {
       // console.log('mousedown.evt:', evt);
-      if (evt.detail === 2) {
+      if (evt.buttons === 2) {
+        if (table.xyInSelectRect(evt.offsetX, evt.offsetY)) {
+          contextMenu.setPosition(evt.offsetX, evt.offsetY);
+        } else {
+          contextMenu.hide();
+        }
+      } else if (evt.detail === 2) {
         editorSet.call(this);
       } else {
         editor.clear();
@@ -285,7 +294,7 @@ function sheetInitEvents() {
 
   bind(window, 'mousewheel', (evt) => {
     if (!this.focusing) return;
-    const { data, row, table } = this;
+    const { data, row } = this;
     const { top } = this.verticalScrollbar.scroll();
     if (evt.deltaY > 0) {
       // up
@@ -408,10 +417,15 @@ export default class Sheet {
       () => this.getTableOffset(),
       row.height,
     );
+    // contextMenu
+    this.contextMenu = new ContextMenu(() => this.getTableOffset());
     // selector
     this.selector = new Selector(data);
     this.overlayerCEl = h('div', 'xss-overlayer-content')
-      .children(this.editor.el, ...this.selector.elements());
+      .children(
+        this.editor.el,
+        ...this.selector.elements(),
+      );
     this.overlayerEl = h('div', 'xss-overlayer')
       .child(this.overlayerCEl);
     // root element
@@ -422,6 +436,7 @@ export default class Sheet {
       this.colResizer.el,
       this.verticalScrollbar.el,
       this.horizontalScrollbar.el,
+      this.contextMenu.el,
     );
     sheetInitEvents.call(this);
     sheetReset.call(this);

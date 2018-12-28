@@ -77,7 +77,7 @@ export default class Editor {
   constructor(formulas, viewFn, rowHeight) {
     this.viewFn = viewFn;
     this.rowHeight = rowHeight;
-    this.suggest = new Suggest(formulas, 180, (it) => {
+    this.suggest = new Suggest(formulas, (it) => {
       suggestItemClick.call(this, it);
     });
     this.areaEl = h('div', 'xss-editor-area').children(

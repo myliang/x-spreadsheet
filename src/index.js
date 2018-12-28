@@ -68,6 +68,7 @@ class Spreadsheet {
     this.options = helper.merge(defaultOptions, options);
     const { font, color } = this.options.style;
     this.el = h('div', 'xss')
+      .on('contextmenu', evt => evt.preventDefault())
       .css('color', color)
       .css('font-size', `${font.size}px`);
     tel.appendChild(this.el.el);
