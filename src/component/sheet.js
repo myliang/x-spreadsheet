@@ -40,6 +40,7 @@ function selectorSet(multiple, ri, ci) {
     table, selector,
   } = this;
   if (multiple) {
+    // console.log('ri:', ri, ', ci:', ci);
     selector.setEnd([ri, ci], (sIndexes, eIndexes) => {
       // console.log('sIndexes:', sIndexes, ', eIndexes:', eIndexes, table.scrollOffset);
       table.setSelectRectIndexes([sIndexes, eIndexes]).render();
@@ -180,38 +181,38 @@ function editorSet() {
 
 function verticalScrollbarMove(distance) {
   const { table, selector } = this;
-  table.scroll({ y: distance }, (d) => {
-    selector.addTop(-d);
-  });
+  table.scroll({ y: distance });
+  // selectorsetAreaOffset.call(this);
+  selector.setBRLAreaOffset(table.getSelectRect());
   editorSetOffset.call(this);
 }
 
 function horizontalScrollbarMove(distance) {
   const { table, selector } = this;
-  table.scroll({ x: distance }, (d) => {
-    selector.addLeft(-d);
-  });
+  table.scroll({ x: distance });
+  // selectorsetAreaOffset.call(this);
+  selector.setBRTAreaOffset(table.getSelectRect());
   editorSetOffset.call(this);
 }
 
 function rowResizerFinished(cRect, distance) {
-  const { ri, height } = cRect;
+  const { ri } = cRect;
   const { table, selector, data } = this;
   data.setRowHeight(ri - 1, distance);
   table.render();
-  selector.addTopOrHeight(ri, distance - height);
-  selector.setFreezeLengths(selector.freezeWidth, data.freezeTotalHeight());
+  // selectorsetAreaOffset.call(this);
+  selector.setAreaOffset(table.getSelectRect());
   verticalScrollbarSet.call(this);
   editorSetOffset.call(this);
 }
 
 function colResizerFinished(cRect, distance) {
-  const { ci, width } = cRect;
+  const { ci } = cRect;
   const { table, selector, data } = this;
   data.setColWidth(ci - 1, distance);
   table.render();
-  selector.addLeftOrWidth(ci, distance - width);
-  selector.setFreezeLengths(data.freezeTotalWidth(), selector.freezeHeight);
+  // selectorsetAreaOffset.call(this);
+  selector.setAreaOffset(table.getSelectRect());
   horizontalScrollbarSet.call(this);
   editorSetOffset.call(this);
 }
@@ -368,17 +369,16 @@ function sheetInitEvents() {
 
 function sheetFreeze() {
   const {
-    selector, data, editor,
+    selector, data, editor, table,
   } = this;
   const [ri, ci] = data.getFreezes();
   if (ri > 1 || ci > 1) {
     const fwidth = data.freezeTotalWidth();
     const fheight = data.freezeTotalHeight();
-    selector.setFreezeLengths(fwidth, fheight);
     editor.setFreezeLengths(fwidth, fheight);
-  } else {
-    selector.setFreezeLengths(0, 0);
   }
+  // selectorsetAreaOffset.call(this);
+  selector.setAreaOffset(table.getSelectRect());
 }
 
 export default class Sheet {
@@ -409,7 +409,7 @@ export default class Sheet {
       row.height,
     );
     // selector
-    this.selector = new Selector();
+    this.selector = new Selector(data);
     this.overlayerCEl = h('div', 'xss-overlayer-content')
       .children(this.editor.el, ...this.selector.elements());
     this.overlayerEl = h('div', 'xss-overlayer')

@@ -30,7 +30,7 @@ const defaultOptions = {
     textDecoration: 'normal',
     color: '#0a0a0a',
     font: {
-      name: 'sans-serif',
+      name: 'Helvetica',
       size: 13,
       bold: false,
       italic: false,

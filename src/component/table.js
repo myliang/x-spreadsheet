@@ -344,7 +344,7 @@ class Table {
 
   // x-scroll, y-scroll
   // offset = {x: , y: }
-  scroll(offset, cb = () => {}) {
+  scroll(offset) {
     // console.log('scroll.offset:', offset);
     const { x, y } = offset;
     const { scrollOffset, data } = this;
@@ -360,7 +360,7 @@ class Table {
       if (x > 0) x1 += width;
       if (scrollOffset.x !== x1) {
         this.scrollIndexes[1] = x > 0 ? ci - (fci - 1) : 0;
-        cb(x1 - scrollOffset.x);
+        // cb(x1 - scrollOffset.x);
         scrollOffset.x = x1;
         this.render();
       }
@@ -373,7 +373,7 @@ class Table {
       if (y > 0) y1 += height;
       if (scrollOffset.y !== y1) {
         this.scrollIndexes[0] = y > 0 ? ri : 0;
-        cb(y1 - scrollOffset.y);
+        // cb(y1 - scrollOffset.y);
         scrollOffset.y = y1;
         this.render();
       }
@@ -423,6 +423,12 @@ class Table {
   getSelectRect() {
     const { scrollOffset, data } = this;
     const [[sri, sci], [eri, eci]] = this.selectRectIndexes;
+    // no selector
+    if (sri <= 0 && sci <= 0) {
+      return {
+        left: 0, l: 0, top: 0, t: 0, scroll: scrollOffset,
+      };
+    }
     const { left, top } = data.cellPosition(sri - 1, sci - 1);
     let height = data.rowSumHeight(sri - 1, eri);
     let width = data.colSumWidth(sci - 1, eci);
@@ -450,6 +456,7 @@ class Table {
       top: top0,
       height,
       width,
+      scroll: scrollOffset,
     };
   }
 }

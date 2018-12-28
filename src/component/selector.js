@@ -40,7 +40,8 @@ class SelectorElement {
 }
 
 export default class Selector {
-  constructor() {
+  constructor(data) {
+    this.data = data;
     this.br = new SelectorElement();
     this.t = new SelectorElement();
     this.l = new SelectorElement();
@@ -51,8 +52,6 @@ export default class Selector {
     this.indexes = null;
     this.sIndexes = null;
     this.eIndexes = null;
-    this.freezeHeight = 0;
-    this.freezeWidth = 0;
 
     startZIndex += 1;
   }
@@ -64,10 +63,12 @@ export default class Selector {
     return [tl.el, t.el, l.el, br.el];
   }
 
-  reset() {
+  resetOffset() {
     const {
-      freezeHeight, freezeWidth, tl, t, l, br,
+      data, tl, t, l, br,
     } = this;
+    const freezeHeight = data.freezeTotalHeight();
+    const freezeWidth = data.freezeTotalWidth();
     if (freezeHeight > 0 || freezeWidth > 0) {
       tl.setOffset({ width: freezeWidth, height: freezeHeight });
       t.setOffset({ left: freezeWidth, height: freezeHeight });
@@ -81,75 +82,25 @@ export default class Selector {
     }
   }
 
-  setFreezeLengths(width, height) {
-    if (this.freezeHeight !== height || this.freezeWidth !== width) {
-      this.freezeHeight = height;
-      this.freezeWidth = width;
-      this.reset();
-      this.setAllAreaOffset();
-    }
-    return this;
+  setAreaOffset(offset) {
+    // console.log('offset:', offset);
+    this.areaOffset = offset;
+    this.setAllAreaOffset();
+    this.resetOffset();
   }
 
-  addLeft(left) {
-    const { areaOffset, indexes } = this;
-    if (indexes) {
-      areaOffset.left += left;
-      // areaOffset.l += left;
-      this.setAreaOffset();
-      this.setTAreaOffset();
-    }
-    return this;
+  setBRTAreaOffset(offset) {
+    this.areaOffset = offset;
+    this.setBRAreaOffset();
+    this.setTAreaOffset();
+    this.resetOffset();
   }
 
-  addTop(top) {
-    const { areaOffset, indexes } = this;
-    if (indexes) {
-      areaOffset.top += top;
-      // areaOffset.t += top;
-      this.setAreaOffset();
-      this.setLAreaOffset();
-    }
-    return this;
-  }
-
-  addLeftOrWidth(index, v) {
-    const {
-      areaOffset, indexes, sIndexes, eIndexes,
-    } = this;
-    if (indexes) {
-      const [, sci] = sIndexes;
-      const [, eci] = eIndexes;
-      // console.log(':index:', index, sci, eci);
-      if (index < sci) {
-        areaOffset.left += v;
-        // areaOffset.l += v;
-      } else if (sci <= index && index <= eci) {
-        areaOffset.width += v;
-      }
-      this.setAreaOffset();
-      this.setTAreaOffset();
-    }
-    return this;
-  }
-
-  addTopOrHeight(index, v) {
-    const {
-      areaOffset, indexes, sIndexes, eIndexes,
-    } = this;
-    if (indexes) {
-      const [sri] = sIndexes;
-      const [eri] = eIndexes;
-      if (index < sri) {
-        areaOffset.top += v;
-        // areaOffset.t += v;
-      } else if (sri <= index && index <= eri) {
-        areaOffset.height += v;
-      }
-      this.setAreaOffset();
-      this.setLAreaOffset();
-    }
-    return this;
+  setBRLAreaOffset(offset) {
+    this.areaOffset = offset;
+    this.setBRAreaOffset();
+    this.setLAreaOffset();
+    this.resetOffset();
   }
 
   set(indexes, offset) {
@@ -157,8 +108,7 @@ export default class Selector {
     this.moveIndexes = indexes;
     this.sIndexes = indexes;
     this.eIndexes = indexes;
-    this.areaOffset = offset;
-    this.setAllAreaOffset();
+    this.setAreaOffset(offset);
   }
 
   setEnd(nindexes, getOffset) {
@@ -180,21 +130,29 @@ export default class Selector {
   }
 
   setAllAreaOffset() {
-    this.setAreaOffset();
+    this.setBRAreaOffset();
     this.setTLAreaOffset();
     this.setTAreaOffset();
     this.setLAreaOffset();
   }
 
-  setAreaOffset() {
+  setBRAreaOffset() {
     if (this.areaOffset !== null) {
-      const { freezeWidth, freezeHeight } = this;
+      const { data } = this;
       const {
-        left, top, width, height,
+        left, top, width, height, scroll, l, t,
       } = this.areaOffset;
-      // console.log('l:', l, ', t:', t);
+      const ftwidth = data.freezeTotalWidth();
+      const ftheight = data.freezeTotalHeight();
+      let left0 = left - ftwidth;
+      if (ftwidth > l) left0 -= scroll.x;
+      let top0 = top - ftheight;
+      if (ftheight > t) top0 -= scroll.y;
       this.br.setAreaOffset({
-        left: left - freezeWidth, top: top - freezeHeight, width, height,
+        left: left0,
+        top: top0,
+        width,
+        height,
       });
     }
   }
@@ -202,34 +160,42 @@ export default class Selector {
   setTLAreaOffset() {
     if (this.areaOffset !== null) {
       const {
-        left, top, width, height,
+        l, t, width, height,
       } = this.areaOffset;
       this.tl.setAreaOffset({
-        left, top, width, height,
+        left: l, top: t, width, height,
       });
     }
   }
 
   setTAreaOffset() {
     if (this.areaOffset !== null) {
-      const { freezeWidth } = this;
+      const { data } = this;
       const {
-        left, top, width, height,
+        left, width, height, l, t, scroll,
       } = this.areaOffset;
+      const ftwidth = data.freezeTotalWidth();
+      let left0 = left - ftwidth;
+      if (ftwidth > l) left0 -= scroll.x;
+      // console.log('ftwdith:', ftwidth, ', l:', l, ', top:', top, ', t', t);
       this.t.setAreaOffset({
-        left: left - freezeWidth, top, width, height,
+        left: left0, top: t, width, height,
       });
     }
   }
 
   setLAreaOffset() {
     if (this.areaOffset !== null) {
-      const { freezeHeight } = this;
+      const { data } = this;
       const {
-        left, top, width, height,
+        top, width, height, l, t, scroll,
       } = this.areaOffset;
+      const ftheight = data.freezeTotalHeight();
+      let top0 = top - ftheight;
+      // console.log('ftheight:', ftheight, ', t:', t);
+      if (ftheight > t) top0 -= scroll.y;
       this.l.setAreaOffset({
-        left, top: top - freezeHeight, width, height,
+        left: l, top: top0, width, height,
       });
     }
   }

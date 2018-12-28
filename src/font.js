@@ -1,4 +1,5 @@
 const baseFonts = [
+  { key: 'Helvetica', title: 'Helvetica' },
   { key: 'Comic Sans MS', title: 'Comic Sans MS' },
   { key: 'Arial', title: 'Arial' },
   { key: 'Courier New', title: 'Courier New' },
