@@ -147,9 +147,8 @@ function overlayerMousedown(evt) {
 function verticalScrollbarSet() {
   const { data, verticalScrollbar } = this;
   const { height } = this.getTableOffset();
-  if (data) {
-    verticalScrollbar.set(height, data.rowTotalHeight());
-  }
+  // console.log('data:', data, ',height:', height, ', totalHeight:', data.rowTotalHeight());
+  verticalScrollbar.set(height, data.rowTotalHeight());
 }
 
 function horizontalScrollbarSet() {
@@ -225,15 +224,35 @@ function dataSetCellText(text) {
   table.render();
 }
 
+function sheetFreeze() {
+  const {
+    selector, data, editor, table,
+  } = this;
+  const [ri, ci] = data.getFreezes();
+  if (ri > 1 || ci > 1) {
+    const fwidth = data.freezeTotalWidth();
+    const fheight = data.freezeTotalHeight();
+    editor.setFreezeLengths(fwidth, fheight);
+  }
+  selector.setAreaOffset(table.getSelectRect());
+}
+
 function sheetReset() {
   const {
-    tableEl, overlayerEl, overlayerCEl,
+    tableEl,
+    overlayerEl,
+    overlayerCEl,
+    table,
   } = this;
   const tOffset = this.getTableOffset();
   const vRect = this.getRect();
   tableEl.attr(vRect);
   overlayerEl.offset(vRect);
   overlayerCEl.offset(tOffset);
+  verticalScrollbarSet.call(this);
+  horizontalScrollbarSet.call(this);
+  sheetFreeze.call(this);
+  table.render();
 }
 
 function sheetInitEvents() {
@@ -288,13 +307,18 @@ function sheetInitEvents() {
   editor.change = itext => dataSetCellText.call(this, itext);
   // contextmenu
   contextMenu.itemClick = (type) => {
+    // console.log('type:', type);
     const { sIndexes, eIndexes } = selector;
     if (type === 'insert-row') {
       data.insertRow(sIndexes[0] - 1);
     } else if (type === 'delete-row') {
       data.deleteRow(sIndexes[0] - 1, eIndexes[0] - 1);
+    } else if (type === 'insert-column') {
+      data.insertColumn(sIndexes[1] - 1);
+    } else if (type === 'delete-column') {
+      data.deleteColumn(sIndexes[1] - 1, eIndexes[1] - 1);
     }
-    table.render();
+    this.reload();
   };
 
   bind(window, 'resize', () => {
@@ -388,20 +412,6 @@ function sheetInitEvents() {
   });
 }
 
-function sheetFreeze() {
-  const {
-    selector, data, editor, table,
-  } = this;
-  const [ri, ci] = data.getFreezes();
-  if (ri > 1 || ci > 1) {
-    const fwidth = data.freezeTotalWidth();
-    const fheight = data.freezeTotalHeight();
-    editor.setFreezeLengths(fwidth, fheight);
-  }
-  // selectorsetAreaOffset.call(this);
-  selector.setAreaOffset(table.getSelectRect());
-}
-
 export default class Sheet {
   constructor(targetEl, data) {
     this.el = h('div', 'xss-sheet');
@@ -436,7 +446,7 @@ export default class Sheet {
     this.overlayerCEl = h('div', 'xss-overlayer-content')
       .children(
         this.editor.el,
-        ...this.selector.elements(),
+        this.selector.el,
       );
     this.overlayerEl = h('div', 'xss-overlayer')
       .child(this.overlayerCEl);
@@ -455,14 +465,8 @@ export default class Sheet {
   }
 
   loadData(data) {
-    const { table } = this;
     this.data.load(data);
-    // console.log('this.data:', this.data);
-    verticalScrollbarSet.call(this);
-    horizontalScrollbarSet.call(this);
-
-    table.render();
-    sheetFreeze.call(this);
+    sheetReset.call(this);
     return this;
   }
 
@@ -470,14 +474,12 @@ export default class Sheet {
   freeze(ri, ci) {
     const { table } = this;
     table.setFreezeIndexes([ri, ci]);
-    table.render();
-    sheetFreeze.call(this);
+    sheetReset.call(this);
     return this;
   }
 
   reload() {
     sheetReset.call(this);
-    this.table.render();
     return this;
   }
 

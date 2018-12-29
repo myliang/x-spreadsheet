@@ -207,10 +207,10 @@ function renderFreezeGridAndContent0(rowLen, colLen, width, height, scrollOffset
   draw.line([0, 0], [0, height]);
   data.rowEach(rowLen - 1, (i, y1, rowHeight) => {
     const y = y1 + rowHeight;
-    if (y > 0) {
+    if (y >= 0) {
       draw.line([0, y], [width, y]);
       data.colEach(colLen - 1, (j, x) => {
-        if (x > 0) {
+        if (x >= 0) {
           draw.line([x, y - rowHeight], [x, y]);
           renderCell.call(this, i, j);
         }
@@ -236,14 +236,13 @@ function renderFreezeGridAndContent() {
   const { data } = this;
   const [fri, fci] = data.getFreezes();
   const { scrollOffset } = this;
-  const { row, col } = data.options;
   const sheight = data.rowSumHeight(0, fri - 1);
   const twidth = data.colTotalWidth();
   if (fri > 1) {
     renderFreezeGridAndContent0.call(
       this,
       fri - 1,
-      col.len,
+      data.colLen(),
       twidth,
       sheight,
       { x: scrollOffset.x, y: 0 },
@@ -254,7 +253,7 @@ function renderFreezeGridAndContent() {
   if (fci > 1) {
     renderFreezeGridAndContent0.call(
       this,
-      row.len,
+      data.rowLen(),
       fci - 1,
       swidth,
       theight,
@@ -285,7 +284,7 @@ function getCellRowByY(y) {
   if (fsh + row.height < y) inits -= scrollOffset.y;
   const [ri, top, height] = helper.rangeReduceIf(
     0,
-    row.len,
+    data.rowLen(),
     inits,
     row.height,
     y,
@@ -305,7 +304,7 @@ function getCellColByX(x) {
   if (fsw + col.indexWidth < x) inits -= scrollOffset.x;
   const [ci, left, width] = helper.rangeReduceIf(
     0,
-    col.len,
+    data.colLen(),
     inits,
     col.indexWidth,
     x,

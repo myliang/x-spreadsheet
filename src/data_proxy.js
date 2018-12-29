@@ -14,6 +14,7 @@ export default class DataProxy {
   constructor(options) {
     this.options = options;
     this.formulam = _formulas(options.formulas);
+    this.d = defaultData;
   }
 
   load(data) {
@@ -23,37 +24,77 @@ export default class DataProxy {
   insertRow(index, n = 1) {
     const { cellmm, rowm } = this.d;
     const ndata = {};
-    Object.keys(cellmm).forEach((key) => {
-      let ikey = parseInt(key, 10);
-      if (ikey >= index) {
-        ikey += n;
+    Object.keys(cellmm).forEach((ri) => {
+      let nri = parseInt(ri, 10);
+      if (nri >= index) {
+        nri += n;
       }
-      ndata[ikey] = cellmm[ikey];
+      ndata[nri] = cellmm[ri];
     });
     this.d.cellmm = ndata;
+    // console.log('row.len:', this.rowLen());
     rowm.len = this.rowLen() + n;
+    // console.log('after.row.len:', this.rowLen());
   }
 
   deleteRow(min, max) {
     const { cellmm, rowm } = this.d;
-    for (let i = min; i <= max; i += 1) {
-      helper.deleteProperty(cellmm, i);
-    }
-    rowm.len = this.rowLen() - (max - min) - 1;
+    // console.log('min:', min, ',max:', max);
+    const n = max - min + 1;
+    const ndata = {};
+    Object.keys(cellmm).forEach((ri) => {
+      const nri = parseInt(ri, 10);
+      if (nri < min) {
+        ndata[nri] = cellmm[nri];
+      } else if (ri > max) {
+        ndata[nri - n] = cellmm[nri];
+      }
+    });
+    // console.log('cellmm:', cellmm, ', ndata:', ndata);
+    this.d.cellmm = ndata;
+    rowm.len = this.rowLen() - n;
+  }
+
+  insertColumn(index, n = 1) {
+    const { cellmm, colm } = this.d;
+    Object.keys(cellmm).forEach((ri) => {
+      const rndata = {};
+      Object.keys(cellmm[ri]).forEach((ci) => {
+        let nci = parseInt(ci, 10);
+        if (nci >= index) {
+          nci += n;
+        }
+        rndata[nci] = cellmm[ri][ci];
+      });
+      cellmm[ri] = rndata;
+    });
+    colm.len = this.colLen() + n;
+  }
+
+  deleteColumn(min, max) {
+    const { cellmm, colm } = this.d;
+    const n = max - min + 1;
+    Object.keys(cellmm).forEach((ri) => {
+      const rndata = {};
+      Object.keys(cellmm[ri]).forEach((ci) => {
+        const nci = parseInt(ci, 10);
+        if (nci < min) {
+          rndata[nci] = cellmm[ri][ci];
+        } else if (nci > max) {
+          rndata[nci - n] = cellmm[ri][ci];
+        }
+      });
+      cellmm[ri] = rndata;
+    });
+    colm.len = this.colLen() - n;
   }
 
   colTotalWidth() {
-    const { colm } = this.d;
-    const { col } = this.options;
-    const [cmTotal, cmSize] = helper.sum(colm, v => v.width || 0);
-    return ((col.len - cmSize) * col.width) + cmTotal;
+    return this.colSumWidth(0, this.colLen());
   }
 
   rowTotalHeight() {
-    const { rowm } = this.d;
-    const { row } = this.options;
-    const [rmTotal, rmSize] = helper.sum(rowm, v => v.height || 0);
-    return ((row.len - rmSize) * row.height) + rmTotal;
+    return this.rowSumHeight(0, this.rowLen());
   }
 
   cellRect(ri, ci) {

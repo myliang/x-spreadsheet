@@ -52,15 +52,19 @@ export default class Selector {
     this.indexes = null;
     this.sIndexes = null;
     this.eIndexes = null;
+    this.el = h('div', 'xss-selectors')
+      .children(
+        this.tl.el,
+        this.t.el,
+        this.l.el,
+        this.br.el,
+      ).hide();
 
     startZIndex += 1;
   }
 
-  elements() {
-    const {
-      tl, t, l, br,
-    } = this;
-    return [tl.el, t.el, l.el, br.el];
+  hide() {
+    this.el.hide();
   }
 
   resetOffset() {
@@ -109,6 +113,7 @@ export default class Selector {
     this.sIndexes = indexes;
     this.eIndexes = indexes;
     this.setAreaOffset(offset);
+    this.el.show();
   }
 
   setEnd(nindexes, getOffset) {

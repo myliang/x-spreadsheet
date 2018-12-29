@@ -53,12 +53,13 @@ export default class ContextMenu {
 
   setPosition(x, y) {
     const { el } = this;
-    const { height } = el.offset();
+    const { height } = el.show().offset();
     const viewHeight = this.viewFn().height;
     let top = y;
+    // console.log('x:', x, ',y:', y, ',viewH:', viewHeight, ',h:', height);
     if (y > viewHeight / 2) {
       top -= height;
     }
-    el.offset({ left: x, top }).show();
+    el.offset({ left: x, top });
   }
 }
