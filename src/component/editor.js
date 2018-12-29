@@ -42,10 +42,10 @@ function inputEventHandler(evt) {
 }
 
 function setTextareaRange(position) {
-  const { textEl } = this;
-  textEl.el.setSelectionRange(position, position);
+  const { el } = this.textEl;
   setTimeout(() => {
-    textEl.el.focus();
+    el.focus();
+    el.setSelectionRange(position, position);
   }, 0);
 }
 
@@ -80,12 +80,15 @@ export default class Editor {
     this.suggest = new Suggest(formulas, (it) => {
       suggestItemClick.call(this, it);
     });
-    this.areaEl = h('div', 'xss-editor-area').children(
-      this.textEl = h('textarea', '')
-        .on('input', evt => inputEventHandler.call(this, evt)),
-      this.textlineEl = h('div', 'textline'),
-      this.suggest.el,
-    );
+    this.areaEl = h('div', 'xss-editor-area')
+      .children(
+        this.textEl = h('textarea', '')
+          .on('input', evt => inputEventHandler.call(this, evt)),
+        this.textlineEl = h('div', 'textline'),
+        this.suggest.el,
+      )
+      .on('mousemove.stop', () => {})
+      .on('mousedown.stop', () => {});
     this.el = h('div', 'xss-editor')
       .child(this.areaEl).hide();
     this.suggest.bindInputEvents(this.textEl);
