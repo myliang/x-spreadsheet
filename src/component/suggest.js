@@ -94,7 +94,7 @@ export default class Suggest {
     items = items.map((it) => {
       const item = h('div', 'xss-item')
         .child(it.key)
-        .on('click', () => {
+        .on('click.stop', () => {
           this.itemClick(it);
           this.hide();
         });
