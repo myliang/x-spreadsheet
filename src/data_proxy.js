@@ -10,15 +10,111 @@ const defaultData = {
   borders: [],
 };
 
+class Clipboard {
+  constructor() {
+    this.sIndexes = null;
+    this.eIndexes = null;
+    this.from = null;
+  }
+
+  copy(sIndexes, eIndexes) {
+    this.set(sIndexes, eIndexes, 'copy');
+    return this;
+  }
+
+  cut(sIndexes, eIndexes) {
+    this.set(sIndexes, eIndexes, 'cut');
+    return this;
+  }
+
+  isCopy() {
+    return this.from === 'copy';
+  }
+
+  isCut() {
+    return this.from === 'cut';
+  }
+
+  set(sIndexes, eIndexes, from) {
+    this.sIndexes = sIndexes;
+    this.eIndexes = eIndexes;
+    this.from = from;
+    return this;
+  }
+
+  get() {
+    return [this.sIndexes, this.eIndexes];
+  }
+
+  clear() {
+    if (this.isCut()) {
+      this.sIndexes = null;
+      this.sIndexes = null;
+      this.from = null;
+    }
+  }
+}
+
+function getClipboardData() {
+  const { clipboard, d } = this;
+  const { cellmm } = d;
+  const [[sri, sci], [eri, eci]] = clipboard.get();
+  const ret = [];
+  for (let i = sri; i <= eri; i += 1) {
+    if (cellmm[i]) {
+      const cols = [];
+      for (let j = sci; j <= eci; j += 1) {
+        if (cellmm[i][j]) {
+          cols.push([j - sci, cellmm[i][j]]);
+        }
+      }
+      ret.push([i - sri, cols]);
+    }
+  }
+  return ret;
+}
+
 export default class DataProxy {
   constructor(options) {
     this.options = options;
     this.formulam = _formulas(options.formulas);
     this.d = defaultData;
+    this.clipboard = new Clipboard();
   }
 
   load(data) {
     this.d = helper.merge(defaultData, data);
+  }
+
+  copy(sIndexes, eIndexes) {
+    this.clipboard.copy(sIndexes, eIndexes);
+  }
+
+  cut(sIndexes, eIndexes) {
+    this.clipboard.cut(sIndexes, eIndexes);
+  }
+
+  // what: all | text | format
+  paste(sIndexes, eIndexes, what = 'all') {
+    // console.log('sIndexes:', sIndexes);
+    const { clipboard } = this;
+    const clipboardData = getClipboardData.call(this);
+    const [sri, sci] = sIndexes;
+    if (clipboard.isCopy()) {
+      clipboardData.forEach((row) => {
+        row[1].forEach((col) => {
+          this.setCell(sri + row[0], sci + col[0], col[1]);
+        });
+      });
+    } else if (clipboard.isCut()) {
+      clipboardData.forEach((row) => {
+        row[1].forEach((col) => {
+          this.setCell(sri + row[0], sci + col[0], col[1]);
+          // delete row[1][col[0]];
+        });
+      });
+    }
+    clipboard.clear();
   }
 
   insertRow(index, n = 1) {
@@ -135,6 +231,12 @@ export default class DataProxy {
     cellmm[ri] = cellmm[ri] || {};
     cellmm[ri][ci] = cellmm[ri][ci] || {};
     cellmm[ri][ci].text = text;
+  }
+
+  setCell(ri, ci, cell) {
+    const { cellmm } = this.d;
+    cellmm[ri] = cellmm[ri] || {};
+    cellmm[ri][ci] = cell;
   }
 
   getFreezes() {

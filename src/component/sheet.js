@@ -307,15 +307,18 @@ function sheetInitEvents() {
   // contextmenu
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
-    const { sIndexes, eIndexes } = selector;
+    // const { sIndexes, eIndexes } = selector;
+    const [
+      sri, sci, eri, eci,
+    ] = selector.getCellRangeIndexes();
     if (type === 'insert-row') {
-      data.insertRow(sIndexes[0] - 1);
+      data.insertRow(sri);
     } else if (type === 'delete-row') {
-      data.deleteRow(sIndexes[0] - 1, eIndexes[0] - 1);
+      data.deleteRow(sri, eri);
     } else if (type === 'insert-column') {
-      data.insertColumn(sIndexes[1] - 1);
+      data.insertColumn(sci);
     } else if (type === 'delete-column') {
-      data.deleteColumn(sIndexes[1] - 1, eIndexes[1] - 1);
+      data.deleteColumn(sci, eci);
     }
     this.reload();
   };
@@ -351,17 +354,24 @@ function sheetInitEvents() {
     if (!this.focusing) return;
     // console.log('keydown.evt: ', evt);
     if (evt.ctrlKey) {
+      const [
+        sri, sci, eri, eci,
+      ] = selector.getCellRangeIndexes();
       switch (evt.keyCode) {
         case 67:
           // ctrl + c
+          data.copy([sri, sci], [eri, eci]);
           evt.preventDefault();
           break;
         case 88:
           // ctrl + x
+          data.cut([sri, sci], [eri, eci]);
           evt.preventDefault();
           break;
         case 86:
           // ctrl + v
+          data.paste([sri, sci], [eri, eci]);
+          table.render();
           evt.preventDefault();
           break;
         default:

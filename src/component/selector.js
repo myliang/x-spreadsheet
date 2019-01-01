@@ -134,6 +134,12 @@ export default class Selector {
     this.setAllAreaOffset();
   }
 
+  getCellRangeIndexes() {
+    const [sri, sci] = this.sIndexes;
+    const [eri, eci] = this.eIndexes;
+    return [sri - 1, sci - 1, eri - 1, eci - 1];
+  }
+
   setAllAreaOffset() {
     this.setBRAreaOffset();
     this.setTLAreaOffset();
