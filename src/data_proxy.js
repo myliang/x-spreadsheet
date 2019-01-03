@@ -14,7 +14,7 @@ class Clipboard {
   constructor() {
     this.sIndexes = null;
     this.eIndexes = null;
-    this.from = null;
+    this.state = null;
   }
 
   copy(sIndexes, eIndexes) {
@@ -28,17 +28,17 @@ class Clipboard {
   }
 
   isCopy() {
-    return this.from === 'copy';
+    return this.state === 'copy';
   }
 
   isCut() {
-    return this.from === 'cut';
+    return this.state === 'cut';
   }
 
-  set(sIndexes, eIndexes, from) {
+  set(sIndexes, eIndexes, state) {
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
-    this.from = from;
+    this.state = state;
     return this;
   }
 
@@ -46,32 +46,15 @@ class Clipboard {
     return [this.sIndexes, this.eIndexes];
   }
 
-  clear() {
-    if (this.isCut()) {
-      this.sIndexes = null;
-      this.sIndexes = null;
-      this.from = null;
-    }
+  isClear() {
+    return this.state === 'clear';
   }
-}
 
-function getClipboardData() {
-  const { clipboard, d } = this;
-  const { cellmm } = d;
-  const [[sri, sci], [eri, eci]] = clipboard.get();
-  const ret = [];
-  for (let i = sri; i <= eri; i += 1) {
-    if (cellmm[i]) {
-      const cols = [];
-      for (let j = sci; j <= eci; j += 1) {
-        if (cellmm[i][j]) {
-          cols.push([j - sci, cellmm[i][j]]);
-        }
-      }
-      ret.push([i - sri, cols]);
-    }
+  clear() {
+    this.sIndexes = null;
+    this.sIndexes = null;
+    this.state = 'clear';
   }
-  return ret;
 }
 
 export default class DataProxy {
@@ -97,22 +80,38 @@ export default class DataProxy {
   // what: all | text | format
   paste(sIndexes, eIndexes, what = 'all') {
     // console.log('sIndexes:', sIndexes);
-    const { clipboard } = this;
-    const clipboardData = getClipboardData.call(this);
-    const [sri, sci] = sIndexes;
+    const { clipboard, d } = this;
+    if (clipboard.isClear()) return;
+    const { cellmm } = d;
+    const [[sri, sci], [eri, eci]] = clipboard.get();
+    const [nsri, nsci] = sIndexes;
     if (clipboard.isCopy()) {
-      clipboardData.forEach((row) => {
-        row[1].forEach((col) => {
-          this.setCell(sri + row[0], sci + col[0], col[1]);
-        });
-      });
+      for (let i = sri; i <= eri; i += 1) {
+        if (cellmm[i]) {
+          const cols = [];
+          for (let j = sci; j <= eci; j += 1) {
+            if (cellmm[i][j]) {
+              cols.push([j - sci, cellmm[i][j]]);
+              this.setCell(nsri + (i - sri), nsci + (j - sci), cellmm[i][j]);
+            }
+          }
+        }
+      }
     } else if (clipboard.isCut()) {
-      clipboardData.forEach((row) => {
-        row[1].forEach((col) => {
-          this.setCell(sri + row[0], sci + col[0], col[1]);
-          // delete row[1][col[0]];
+      const ncellmm = {};
+      Object.keys(cellmm).forEach((ri) => {
+        Object.keys(cellmm[ri]).forEach((ci) => {
+          let nri = parseInt(ri, 10);
+          let nci = parseInt(ci, 10);
+          if (ri >= sri && ri <= eri && ci >= sci && ci <= eci) {
+            nri = nsri + (nri - sri);
+            nci = nsci + (nci - sci);
+          }
+          ncellmm[nri] = ncellmm[nri] || {};
+          ncellmm[nri][nci] = cellmm[ri][ci];
         });
       });
+      d.cellmm = ncellmm;
     }
     clipboard.clear();
   }
@@ -236,7 +235,7 @@ export default class DataProxy {
   setCell(ri, ci, cell) {
     const { cellmm } = this.d;
     cellmm[ri] = cellmm[ri] || {};
-    cellmm[ri][ci] = cell;
+    cellmm[ri][ci] = helper.cloneDeep(cell);
   }
 
   getFreezes() {
