@@ -1,6 +1,14 @@
 import helper from './helper';
 import { formulas as _formulas } from './formula';
 
+/*
+Cell: {
+  text: string
+  merge: [rowLen, colLen]
+  format: string,
+  si: style-index
+}
+*/
 const defaultData = {
   freezes: [0, 0],
   rowm: {}, // Map<int, Row>, len

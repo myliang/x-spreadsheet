@@ -1,36 +1,4 @@
 import alphabet from './alphabet';
-// import bitmap from '../algorithm/bitmap';
-
-/*
-  row: {
-    len: number,
-    height: number
-  }
-  col: {
-    len: number,
-    width: number
-  }
-  style: {
-    bgcolor: '#ffffff',
-    align: 'left',
-    valign: 'middle',
-    wrapText: false,
-    textDecoration: 'normal',
-    color: '#333333',
-    bi: border-index
-    bti: border-index
-    bri: border-index
-    bbi: border-index
-    bli: border-index
-    font: {
-      name: 'Arial',
-      size: 14,
-      bold: false,
-      italic: false,
-    },
-  }
-  border: [width, style, color]
-*/
 
 // B10 => x,y
 const expr2xy = (src) => {
