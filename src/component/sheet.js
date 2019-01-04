@@ -227,7 +227,7 @@ function sheetFreeze() {
   const {
     selector, data, editor, table,
   } = this;
-  const [ri, ci] = data.getFreezes();
+  const [ri, ci] = data.getFreeze();
   if (ri > 1 || ci > 1) {
     const fwidth = data.freezeTotalWidth();
     const fheight = data.freezeTotalHeight();

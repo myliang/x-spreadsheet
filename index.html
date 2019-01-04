@@ -13,6 +13,7 @@
     function load(){
       xspreadsheet(document.getElementById('xss'))
         .loadData({
+          freeze: [3, 3],
           borders: [
             [1, 'dashed', '#0366d6'],
           ],
@@ -27,7 +28,7 @@
             2: {
               0: { text: '渲染', si: 0 },
               1: { text: '哈哈1' },
-              2: { text: '哈哈', si: 0 },
+              2: { text: '哈哈', merge: [1, 1] },
             }
           },
         });

@@ -42,16 +42,10 @@ function renderContentGrid(rowLen, colLen, scrollOffset) {
 
 function getDrawBox(rindex, cindex) {
   const { data } = this;
-  let x; let y; let width; let height;
-  data.rowEach(rindex, (i, y1, rowHeight) => {
-    y = y1;
-    height = rowHeight;
-  });
-  data.colEach(cindex, (i, x1, colWidth) => {
-    x = x1;
-    width = colWidth;
-  });
-  return new DrawBox(x, y, width, height, cellPaddingWidth);
+  const {
+    left, top, width, height,
+  } = data.cellRect(rindex, cindex);
+  return new DrawBox(left, top, width, height, cellPaddingWidth);
 }
 
 function renderCell(rindex, cindex) {
@@ -203,7 +197,7 @@ function renderFreezeHighlightLine(p1, p2, scrollOffset) {
 
 function renderFreezeGridAndContent() {
   const { data } = this;
-  const [fri, fci] = data.getFreezes();
+  const [fri, fci] = data.getFreeze();
   const { scrollOffset } = this;
   const sheight = data.rowSumHeight(0, fri - 1);
   const twidth = data.colTotalWidth();
@@ -303,7 +297,7 @@ class Table {
       scrollOffset, data,
     } = this;
     renderAll.call(this, data.rowLen(), data.colLen(), scrollOffset);
-    const [fri, fci] = data.getFreezes();
+    const [fri, fci] = data.getFreeze();
     if (fri > 1 || fci > 1) {
       renderFreezeGridAndContent.call(this);
       renderAll.call(this, fri - 1, fci - 1, { x: 0, y: 0 });
@@ -316,7 +310,7 @@ class Table {
     // console.log('scroll.offset:', offset);
     const { x, y } = offset;
     const { scrollOffset, data } = this;
-    const [fri, fci] = data.getFreezes();
+    const [fri, fci] = data.getFreeze();
     // const fRect = this.cellRect(fri - 2, fci - 2);
     // console.log(':::::::::', fRect);
     if (x !== undefined) {
@@ -349,7 +343,7 @@ class Table {
   }
 
   setFreezeIndexes([ri, ci]) {
-    this.data.setFreezes(ri, ci);
+    this.data.setFreeze(ri, ci);
   }
 
   setSelectRectIndexes(indexes) {

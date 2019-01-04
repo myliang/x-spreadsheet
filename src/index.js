@@ -58,7 +58,7 @@ Cell: {
   el: element in document
   options: like #defaultOptions
   data: {
-    freezes: [0, 0],
+    freeze: [0, 0],
     rowm: {}, // Map<int, Row>
     colm: {}, // Map<int, Col>
     cellmm: {}, // Map<int, Map<int, Cell>>
@@ -80,7 +80,7 @@ class Spreadsheet {
   }
 
   loadData(data) {
-    this.sheet.loadData(data).freeze(3, 3);
+    this.sheet.loadData(data);
     return this;
   }
 }

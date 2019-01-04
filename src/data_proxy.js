@@ -10,7 +10,7 @@ Cell: {
 }
 */
 const defaultData = {
-  freezes: [0, 0],
+  freeze: [0, 0],
   rowm: {}, // Map<int, Row>, len
   colm: {}, // Map<int, Row>, len
   cellmm: {}, // Map<int, Map<int, Cell>>
@@ -185,6 +185,18 @@ export default class DataProxy {
     this.clipboard.clear();
   }
 
+  merge(sIndexes, eIndexes) {
+    const [sri, sci] = sIndexes;
+    const [eri, eci] = eIndexes;
+    const rn = eri - sri;
+    const cn = eci - sci;
+    if (rn > 0 || cn > 0) {
+      addHistory.call(this);
+      const cell = this.getCellOrNew(sri, sci);
+      cell.merge = [rn, cn];
+    }
+  }
+
   insertRow(index, n = 1) {
     addHistory.call(this);
     const { cellmm, rowm } = this.d;
@@ -267,11 +279,26 @@ export default class DataProxy {
 
   cellRect(ri, ci) {
     const { left, top } = this.cellPosition(ri, ci);
+    const cell = this.getCell(ri, ci);
+    let width = this.getColWidth(ci);
+    let height = this.getRowHeight(ri);
+    if (cell !== null) {
+      if (cell.merge) {
+        const [rn, cn] = cell.merge;
+        if (rn > 0) {
+          for (let i = 1; i <= rn; i += 1) {
+            height += this.getRowHeight(ri + i);
+          }
+        }
+        if (cn > 0) {
+          for (let i = 1; i <= cn; i += 1) {
+            width += this.getColWidth(ci + i);
+          }
+        }
+      }
+    }
     return {
-      left,
-      top,
-      width: this.getColWidth(ci),
-      height: this.getRowHeight(ri),
+      left, top, width, height,
     };
   }
 
@@ -325,22 +352,22 @@ export default class DataProxy {
     return cellmm[ri][ci];
   }
 
-  getFreezes() {
-    return this.d.freezes;
+  getFreeze() {
+    return this.d.freeze;
   }
 
-  setFreezes(ri, ci) {
+  setFreeze(ri, ci) {
     addHistory.call(this);
-    this.d.freezes[0] = ri;
-    this.d.freezes[1] = ci;
+    this.d.freeze[0] = ri;
+    this.d.freeze[1] = ci;
   }
 
   freezeTotalWidth() {
-    return this.colSumWidth(0, this.d.freezes[1] - 1);
+    return this.colSumWidth(0, this.d.freeze[1] - 1);
   }
 
   freezeTotalHeight() {
-    return this.rowSumHeight(0, this.d.freezes[0] - 1);
+    return this.rowSumHeight(0, this.d.freeze[0] - 1);
   }
 
   colSumWidth(min, max) {
