@@ -10,6 +10,42 @@ const defaultData = {
   borders: [],
 };
 
+class History {
+  constructor() {
+    this.undoItems = [];
+    this.redoItems = [];
+  }
+
+  add(data) {
+    this.undoItems.push(helper.cloneDeep(data));
+    this.redoItems = [];
+  }
+
+  isUndo() {
+    return this.undoItems.length > 0;
+  }
+
+  isRedo() {
+    return this.redoItems.length > 0;
+  }
+
+  undo(currentd, cb) {
+    const { undoItems, redoItems } = this;
+    if (this.isUndo()) {
+      redoItems.push(helper.cloneDeep(currentd));
+      cb(undoItems.pop());
+    }
+  }
+
+  redo(currentd, cb) {
+    const { undoItems, redoItems } = this;
+    if (this.isRedo()) {
+      undoItems.push(helper.cloneDeep(currentd));
+      cb(redoItems.pop());
+    }
+  }
+}
+
 class Clipboard {
   constructor() {
     this.sIndexes = null;
@@ -57,16 +93,35 @@ class Clipboard {
   }
 }
 
+function addHistory() {
+  this.history.add(this.d);
+}
+
 export default class DataProxy {
   constructor(options) {
     this.options = options;
     this.formulam = _formulas(options.formulas);
     this.d = defaultData;
     this.clipboard = new Clipboard();
+    this.history = new History();
   }
 
   load(data) {
     this.d = helper.merge(defaultData, data);
+  }
+
+  undo() {
+    const { history } = this;
+    history.undo(this.d, (d) => {
+      this.d = d;
+    });
+  }
+
+  redo() {
+    const { history } = this;
+    history.redo(this.d, (d) => {
+      this.d = d;
+    });
   }
 
   copy(sIndexes, eIndexes) {
@@ -82,17 +137,19 @@ export default class DataProxy {
     // console.log('sIndexes:', sIndexes);
     const { clipboard, d } = this;
     if (clipboard.isClear()) return;
+
+    addHistory.call(this);
     const { cellmm } = d;
     const [[sri, sci], [eri, eci]] = clipboard.get();
     const [nsri, nsci] = sIndexes;
     if (clipboard.isCopy()) {
       for (let i = sri; i <= eri; i += 1) {
         if (cellmm[i]) {
-          const cols = [];
           for (let j = sci; j <= eci; j += 1) {
             if (cellmm[i][j]) {
-              cols.push([j - sci, cellmm[i][j]]);
-              this.setCell(nsri + (i - sri), nsci + (j - sci), cellmm[i][j]);
+              const nri = nsri + (i - sri);
+              const nci = nsci + (j - sci);
+              this.setCell(nri, nci, cellmm[i][j], what);
             }
           }
         }
@@ -112,11 +169,16 @@ export default class DataProxy {
         });
       });
       d.cellmm = ncellmm;
+      clipboard.clear();
     }
-    clipboard.clear();
+  }
+
+  clearClipboard() {
+    this.clipboard.clear();
   }
 
   insertRow(index, n = 1) {
+    addHistory.call(this);
     const { cellmm, rowm } = this.d;
     const ndata = {};
     Object.keys(cellmm).forEach((ri) => {
@@ -133,6 +195,7 @@ export default class DataProxy {
   }
 
   deleteRow(min, max) {
+    addHistory.call(this);
     const { cellmm, rowm } = this.d;
     // console.log('min:', min, ',max:', max);
     const n = max - min + 1;
@@ -151,6 +214,7 @@ export default class DataProxy {
   }
 
   insertColumn(index, n = 1) {
+    addHistory.call(this);
     const { cellmm, colm } = this.d;
     Object.keys(cellmm).forEach((ri) => {
       const rndata = {};
@@ -167,6 +231,7 @@ export default class DataProxy {
   }
 
   deleteColumn(min, max) {
+    addHistory.call(this);
     const { cellmm, colm } = this.d;
     const n = max - min + 1;
     Object.keys(cellmm).forEach((ri) => {
@@ -226,16 +291,30 @@ export default class DataProxy {
   }
 
   setCellText(ri, ci, text) {
+    const cell = this.getCellOrNew(ri, ci);
+    cell.text = text;
+  }
+
+  // what: all | text | format
+  setCell(ri, ci, cell, what = 'all') {
+    const { cellmm } = this.d;
+    cellmm[ri] = cellmm[ri] || {};
+    if (what === 'all') {
+      cellmm[ri][ci] = helper.cloneDeep(cell);
+    } else if (what === 'text') {
+      cellmm[ri][ci] = cellmm[ri][ci] || {};
+      cellmm[ri][ci].text = cell.text;
+    } else if (what === 'format') {
+      cellmm[ri][ci] = cellmm[ri][ci] || {};
+      cellmm[ri][ci].si = cell.si;
+    }
+  }
+
+  getCellOrNew(ri, ci) {
     const { cellmm } = this.d;
     cellmm[ri] = cellmm[ri] || {};
     cellmm[ri][ci] = cellmm[ri][ci] || {};
-    cellmm[ri][ci].text = text;
-  }
-
-  setCell(ri, ci, cell) {
-    const { cellmm } = this.d;
-    cellmm[ri] = cellmm[ri] || {};
-    cellmm[ri][ci] = helper.cloneDeep(cell);
+    return cellmm[ri][ci];
   }
 
   getFreezes() {
@@ -243,6 +322,7 @@ export default class DataProxy {
   }
 
   setFreezes(ri, ci) {
+    addHistory.call(this);
     this.d.freezes[0] = ri;
     this.d.freezes[1] = ci;
   }
@@ -296,6 +376,7 @@ export default class DataProxy {
   }
 
   setColWidth(index, v) {
+    addHistory.call(this);
     const { colm } = this.d;
     colm[`${index}`] = colm[`${index}`] || {};
     colm[`${index}`].width = v;
@@ -308,6 +389,7 @@ export default class DataProxy {
   }
 
   setRowHeight(index, v) {
+    addHistory.call(this);
     const { rowm } = this.d;
     rowm[`${index}`] = rowm[`${index}`] || {};
     rowm[`${index}`].height = v;

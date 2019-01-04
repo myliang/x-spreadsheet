@@ -357,7 +357,22 @@ function sheetInitEvents() {
       const [
         sri, sci, eri, eci,
       ] = selector.getCellRangeIndexes();
+      let what = 'all';
+      if (evt.shiftKey) what = 'text';
+      if (evt.altKey) what = 'format';
       switch (evt.keyCode) {
+        case 90:
+          // undo: ctrl + z
+          data.undo();
+          sheetReset.call(this);
+          evt.preventDefault();
+          break;
+        case 89:
+          // redo: ctrl + y
+          data.redo();
+          sheetReset.call(this);
+          evt.preventDefault();
+          break;
         case 67:
           // ctrl + c
           data.copy([sri, sci], [eri, eci]);
@@ -370,8 +385,8 @@ function sheetInitEvents() {
           break;
         case 86:
           // ctrl + v
-          data.paste([sri, sci], [eri, eci]);
-          table.render();
+          data.paste([sri, sci], [eri, eci], what);
+          sheetReset.call(this);
           evt.preventDefault();
           break;
         default:
@@ -379,7 +394,12 @@ function sheetInitEvents() {
       }
       // return;
     } else {
+      // console.log('evt.keyCode:', evt.keyCode);
       switch (evt.keyCode) {
+        case 27:
+          contextMenu.hide();
+          data.clearClipboard();
+          break;
         case 37: // left
           selectorMove.call(this, evt.shiftKey, 'left');
           evt.preventDefault();
