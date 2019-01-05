@@ -319,6 +319,8 @@ function sheetInitEvents() {
       data.insertColumn(sci);
     } else if (type === 'delete-column') {
       data.deleteColumn(sci, eci);
+    } else if (type === 'delete-cell') {
+      data.deleteCell(sri, sci, eri, eci);
     }
     this.reload();
   };

@@ -11,8 +11,10 @@ const menuItems = [
   { key: 'divider' },
   { key: 'insert-row', title: 'Insert row' },
   { key: 'insert-column', title: 'Insert column' },
+  { key: 'divider' },
   { key: 'delete-row', title: 'Delete row' },
   { key: 'delete-column', title: 'Delete column' },
+  { key: 'delete-cell', title: 'Delete cell' },
 ];
 
 function buildMenuItem(item) {

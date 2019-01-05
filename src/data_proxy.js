@@ -11,6 +11,7 @@ Cell: {
 */
 const defaultData = {
   freeze: [0, 0],
+  merges: [], // [[sri, sci, eri, eci],...]
   rowm: {}, // Map<int, Row>, len
   colm: {}, // Map<int, Row>, len
   cellmm: {}, // Map<int, Map<int, Cell>>
@@ -105,6 +106,31 @@ function addHistory() {
   this.history.add(this.d);
 }
 
+function deleteCells(sri, sci, eri, eci) {
+  const { d } = this;
+  const { cellmm } = d;
+  const ndata = {};
+  // console.log(sri, sci, eri, eci);
+  Object.keys(cellmm).forEach((ri) => {
+    if (ri >= sri && ri <= eri) {
+      const ncdata = {};
+      let ncdataLength = 0;
+      Object.keys(cellmm[ri]).forEach((ci) => {
+        if (ci < sci || ci > eci) {
+          ncdataLength += 1;
+          ncdata[ci] = cellmm[ri][ci];
+        }
+      });
+      if (ncdataLength > 0) {
+        ndata[ri] = ncdata;
+      }
+    } else {
+      ndata[ri] = cellmm[ri];
+    }
+  });
+  d.cellmm = ndata;
+}
+
 export default class DataProxy {
   constructor(options) {
     this.options = options;
@@ -191,10 +217,19 @@ export default class DataProxy {
     const rn = eri - sri;
     const cn = eci - sci;
     if (rn > 0 || cn > 0) {
+      const { d } = this;
       addHistory.call(this);
       const cell = this.getCellOrNew(sri, sci);
       cell.merge = [rn, cn];
+      d.merges.push([sri, sci, eri, eci]);
+      // delete merge cells
+      deleteCells.call(this, sri, sci, eri, eci);
     }
+  }
+
+  deleteCell(sri, sci, eri, eci) {
+    addHistory.call(this);
+    deleteCells.call(this, sri, sci, eri, eci);
   }
 
   insertRow(index, n = 1) {

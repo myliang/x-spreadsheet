@@ -7,7 +7,7 @@ import './index.less';
 
 const defaultOptions = {
   view: {
-    height: () => 600,
+    height: () => 800,
   },
   formats: [],
   fonts: [],
