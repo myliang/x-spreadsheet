@@ -1,5 +1,5 @@
 import alphabet from '../alphabet';
-import helper from '../helper';
+// import helper from '../helper';
 import _cell from '../cell';
 import { Draw, DrawBox } from '../canvas/draw';
 // gobal var
@@ -122,7 +122,7 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
     .fillRect(0, 0, col.indexWidth, sumHeight)
     .fillRect(0, 0, sumWidth, row.height);
 
-  const [[sri, sci], [eri, eci]] = this.selectRectIndexes;
+  const [sri, sci, eri, eci] = data.selectedIndexes;
   // draw text
   // text font, align...
   draw.attr(tableFixedHeaderStyle);
@@ -198,36 +198,36 @@ function renderFreezeHighlightLine(p1, p2, scrollOffset) {
 function renderFreezeGridAndContent() {
   const { data } = this;
   const [fri, fci] = data.getFreeze();
-  const { scrollOffset } = this;
-  const sheight = data.rowSumHeight(0, fri - 1);
+  const { scroll } = data;
+  const sheight = data.rowSumHeight(0, fri);
   const twidth = data.colTotalWidth();
-  if (fri > 1) {
+  if (fri > 0) {
     renderFreezeGridAndContent0.call(
       this,
-      fri - 1,
+      fri,
       data.colLen(),
       twidth,
       sheight,
-      { x: scrollOffset.x, y: 0 },
+      { x: scroll.x, y: 0 },
     );
   }
   const theight = data.rowTotalHeight();
-  const swidth = data.colSumWidth(0, fci - 1);
-  if (fci > 1) {
+  const swidth = data.colSumWidth(0, fci);
+  if (fci) {
     renderFreezeGridAndContent0.call(
       this,
       data.rowLen(),
-      fci - 1,
+      fci,
       swidth,
       theight,
-      { x: 0, y: scrollOffset.y },
+      { x: 0, y: scroll.y },
     );
   }
   renderFreezeHighlightLine.call(
-    this, [0, sheight], [twidth, sheight], { x: scrollOffset.x, y: 0 },
+    this, [0, sheight], [twidth, sheight], { x: scroll.x, y: 0 },
   );
   renderFreezeHighlightLine.call(
-    this, [swidth, 0], [swidth, theight], { x: 0, y: scrollOffset.y },
+    this, [swidth, 0], [swidth, theight], { x: 0, y: scroll.y },
   );
 }
 
@@ -238,6 +238,7 @@ function renderAll(rowLen, colLen, scrollOffset) {
   renderFixedHeaders.call(this, rowLen, colLen, scrollOffset);
 }
 
+/*
 function getCellRowByY(y) {
   const { data, scrollOffset } = this;
   const { row } = data.options;
@@ -278,6 +279,7 @@ function getCellColByX(x) {
   }
   return { ci, left, width };
 }
+*/
 
 /** end */
 class Table {
@@ -285,27 +287,26 @@ class Table {
     this.el = el;
     this.context = el.getContext('2d');
     this.draw = new Draw(el);
-    this.scrollOffset = { x: 0, y: 0 };
-    this.scrollIndexes = [0, 0];
-    this.selectRectIndexes = [[0, 0], [0, 0]];
+    // this.scrollOffset = { x: 0, y: 0 };
+    // this.scrollIndexes = [0, 0];
+    // this.selectRectIndexes = [[0, 0], [0, 0]];
     this.data = data;
   }
 
   render() {
     this.clear();
-    const {
-      scrollOffset, data,
-    } = this;
-    renderAll.call(this, data.rowLen(), data.colLen(), scrollOffset);
+    const { data } = this;
+    renderAll.call(this, data.rowLen(), data.colLen(), data.scroll);
     const [fri, fci] = data.getFreeze();
-    if (fri > 1 || fci > 1) {
+    if (fri > 0 || fci > 0) {
       renderFreezeGridAndContent.call(this);
-      renderAll.call(this, fri - 1, fci - 1, { x: 0, y: 0 });
+      renderAll.call(this, fri, fci, { x: 0, y: 0 });
     }
   }
 
   // x-scroll, y-scroll
   // offset = {x: , y: }
+  /*
   scroll(offset) {
     // console.log('scroll.offset:', offset);
     const { x, y } = offset;
@@ -345,16 +346,20 @@ class Table {
   setFreezeIndexes([ri, ci]) {
     this.data.setFreeze(ri, ci);
   }
+  */
 
+  /*
   setSelectRectIndexes(indexes) {
     this.selectRectIndexes = indexes;
     return this;
   }
+  */
 
   clear() {
     this.draw.clear();
   }
 
+  /*
   getCellRectWithIndexes(x, y, forSelector = true) {
     // console.log('x: ', x, ', y: ', y);
     // 根据鼠标坐标点，获得所在的cell矩形信息(ri, ci, offsetX, offsetY, width, height)
@@ -381,7 +386,9 @@ class Table {
       ri, ci, left: left - col.indexWidth, top: top - row.height, width, height,
     };
   }
+  */
 
+  /*
   xyInSelectRect(x, y) {
     const {
       left, top, width, height,
@@ -395,12 +402,12 @@ class Table {
   }
 
   getSelectRect() {
-    const { scrollOffset, data } = this;
+    const { data } = this;
     const [[sri, sci], [eri, eci]] = this.selectRectIndexes;
     // no selector
     if (sri <= 0 && sci <= 0) {
       return {
-        left: 0, l: 0, top: 0, t: 0, scroll: scrollOffset,
+        left: 0, l: 0, top: 0, t: 0, scroll: data.scroll,
       };
     }
     const { left, top } = data.cellPosition(sri - 1, sci - 1);
@@ -413,8 +420,8 @@ class Table {
     if (eri === 0 && eci >= 0) {
       height = data.rowTotalHeight();
     }
-    let left0 = left - scrollOffset.x;
-    let top0 = top - scrollOffset.y;
+    let left0 = left - data.scroll.x;
+    let top0 = top - data.scroll.y;
     const fsh = data.freezeTotalHeight();
     const fsw = data.freezeTotalWidth();
     if (fsw > 0 && fsw > left) {
@@ -430,9 +437,10 @@ class Table {
       top: top0,
       height,
       width,
-      scroll: scrollOffset,
+      scroll: data.scroll,
     };
   }
+  */
 }
 
 export default Table;

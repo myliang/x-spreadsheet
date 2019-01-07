@@ -13,12 +13,15 @@
     function load(){
       xspreadsheet(document.getElementById('xss'))
         .loadData({
-          freeze: [3, 3],
+          freeze: [2, 2],
           borders: [
             [1, 'dashed', '#0366d6'],
           ],
           styles: [
             { bgcolor: '#f4f5f8', wrapText: true, color: '#900b09', bi: 0 },
+          ],
+          merges: [
+            [2, 2, 3, 3],
           ],
           cellmm: {
             1: {

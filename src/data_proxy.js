@@ -30,17 +30,17 @@ class History {
     this.redoItems = [];
   }
 
-  isUndo() {
+  canUndo() {
     return this.undoItems.length > 0;
   }
 
-  isRedo() {
+  canRedo() {
     return this.redoItems.length > 0;
   }
 
   undo(currentd, cb) {
     const { undoItems, redoItems } = this;
-    if (this.isUndo()) {
+    if (this.canUndo()) {
       redoItems.push(helper.cloneDeep(currentd));
       cb(undoItems.pop());
     }
@@ -48,7 +48,7 @@ class History {
 
   redo(currentd, cb) {
     const { undoItems, redoItems } = this;
-    if (this.isRedo()) {
+    if (this.canRedo()) {
       undoItems.push(helper.cloneDeep(currentd));
       cb(redoItems.pop());
     }
@@ -102,6 +102,14 @@ class Clipboard {
   }
 }
 
+class Scroll {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.indexes = [0, 0];
+  }
+}
+
 function addHistory() {
   this.history.add(this.d);
 }
@@ -131,6 +139,76 @@ function deleteCells(sri, sci, eri, eci) {
   d.cellmm = ndata;
 }
 
+function getCellRowByY(y, scrollOffsety) {
+  const { options } = this;
+  const { row } = options;
+  const fsh = this.freezeTotalHeight();
+  // console.log('y:', y, ', fsh:', fsh);
+  let inits = row.height;
+  if (fsh + row.height < y) inits -= scrollOffsety;
+  const [ri, top, height] = helper.rangeReduceIf(
+    0,
+    this.rowLen(),
+    inits,
+    row.height,
+    y,
+    i => this.getRowHeight(i),
+  );
+  if (top <= 0) {
+    return { ri: 0, top: 0, height };
+  }
+  return { ri, top, height };
+  // return { ri, top: top - row.height, height };
+}
+
+function getCellColByX(x, scrollOffsetx) {
+  const { options } = this;
+  const { col } = options;
+  const fsw = this.freezeTotalWidth();
+  let inits = col.indexWidth;
+  if (fsw + col.indexWidth < x) inits -= scrollOffsetx;
+  const [ci, left, width] = helper.rangeReduceIf(
+    0,
+    this.colLen(),
+    inits,
+    col.indexWidth,
+    x,
+    i => this.getColWidth(i),
+  );
+  if (left <= 0) {
+    return { ci: 0, left: 0, width: col.indexWidth };
+  }
+  return { ci, left, width };
+  // return { ci, left: left - col.indexWidth, width };
+}
+
+/*
+function calSelectedWidth() {
+  const { selectedIndexes, d } = this;
+  const [, sci, , eci] = selectedIndexes;
+  const [, cmmap] = getMergesMap.call(this);
+  const totalWidth = 0;
+  for (let i = sci; i < eci; i += 1) {
+    if (d.merges && d.merges.length > 0) {
+      for (let j = 0; j < d.merges.length; j += 1) {
+        const [msri, msci, meri, meci] = d.merges[j];
+        if (msci >= i && i <= meci) {
+          if (i === msci) {
+            totalWidth += ;
+            i += 
+          }
+          break;
+        }
+      }
+    } else {
+      totalWidth += this.getColWidth(i);
+    }
+  }
+}
+
+function calSelectedHeight(sri, eri) {}
+*/
+
 export default class DataProxy {
   constructor(options) {
     this.options = options;
@@ -138,6 +216,8 @@ export default class DataProxy {
     this.d = defaultData;
     this.clipboard = new Clipboard();
     this.history = new History();
+    this.scroll = new Scroll();
+    this.selectedIndexes = [0, 0, 0, 0];
   }
 
   load(data) {
@@ -157,6 +237,97 @@ export default class DataProxy {
       this.d = d;
     });
   }
+
+  /* for select start */
+  setSelectedIndexes([sri, sci], [eri, eci]) {
+    this.selectedIndexes = [sri, sci, eri, eci];
+  }
+
+  xyInSelectedRect(x, y) {
+    const {
+      left, top, width, height,
+    } = this.getSelectedRect();
+    const { row, col } = this.options;
+    const x1 = x - col.indexWidth;
+    const y1 = y - row.height;
+    // console.log('x:', x, ',y:', y, 'left:', left, 'top:', top);
+    return x1 > left && x1 < (left + width)
+      && y1 > top && y1 < (top + height);
+  }
+
+  getSelectedRect() {
+    const { scroll, selectedIndexes } = this;
+    const [sri, sci, eri, eci] = selectedIndexes;
+    // no selector
+    if (sri <= 0 && sci <= 0) {
+      return {
+        left: 0, l: 0, top: 0, t: 0, scroll,
+      };
+    }
+    const { left, top } = this.cellPosition(sri - 1, sci - 1);
+    let height = this.rowSumHeight(sri - 1, eri);
+    let width = this.colSumWidth(sci - 1, eci);
+    // console.log('sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
+    if (eri >= 0 && eci === 0) {
+      width = this.colTotalWidth();
+    }
+    if (eri === 0 && eci >= 0) {
+      height = this.rowTotalHeight();
+    }
+    let left0 = left - scroll.x;
+    let top0 = top - scroll.y;
+    const fsh = this.freezeTotalHeight();
+    const fsw = this.freezeTotalWidth();
+    if (fsw > 0 && fsw > left) {
+      left0 = left;
+    }
+    if (fsh > 0 && fsh > top) {
+      top0 = top;
+    }
+    return {
+      l: left,
+      t: top,
+      left: left0,
+      top: top0,
+      height,
+      width,
+      scroll,
+    };
+  }
+
+  getCellRectByXY(x, y) {
+    const { scroll } = this;
+    let { ri, top, height } = getCellRowByY.call(this, y, scroll.y);
+    let { ci, left, width } = getCellColByX.call(this, x, scroll.x);
+    if (ci === 0) {
+      width = this.colTotalWidth();
+    }
+    if (ri === 0) {
+      height = this.rowTotalHeight();
+    }
+    if (ri > 0 || ci > 0) {
+      const { merges } = this.d;
+      if (merges.length > 0) {
+        const nri = ri - 1;
+        const nci = ci - 1;
+        for (let i = 0; i < merges.length; i += 1) {
+          const [sri, sci, eri, eci] = merges[i];
+          if (nri >= sri && nri <= eri && nci >= sci && nci <= eci) {
+            ri = sri + 1;
+            ci = sci + 1;
+            ({
+              left, top, width, height,
+            } = this.cellRect(sri, sci));
+            break;
+          }
+        }
+      }
+    }
+    return {
+      ri, ci, left, top, width, height,
+    };
+  }
+  /* for selector end */
 
   copy(sIndexes, eIndexes) {
     this.clipboard.copy(sIndexes, eIndexes);
@@ -304,6 +475,36 @@ export default class DataProxy {
     colm.len = this.colLen() - n;
   }
 
+  scrollx(x, cb) {
+    const { scroll } = this;
+    const [, fci] = this.getFreeze();
+    const [
+      ci, left, width,
+    ] = helper.rangeReduceIf(fci, this.colLen(), 0, 0, x, i => this.getColWidth(i));
+    let x1 = left;
+    if (x > 0) x1 += width;
+    if (scroll.x !== x1) {
+      scroll.indexes[1] = x > 0 ? ci - fci : 0;
+      scroll.x = x1;
+      cb();
+    }
+  }
+
+  scrolly(y, cb) {
+    const { scroll } = this;
+    const [fri] = this.getFreeze();
+    const [
+      ri, top, height,
+    ] = helper.rangeReduceIf(fri, this.rowLen(), 0, 0, y, i => this.getRowHeight(i));
+    let y1 = top;
+    if (y > 0) y1 += height;
+    if (scroll.y !== y1) {
+      scroll.indexes[0] = y > 0 ? ri : 0;
+      scroll.y = y1;
+      cb();
+    }
+  }
+
   colTotalWidth() {
     return this.colSumWidth(0, this.colLen());
   }
@@ -398,11 +599,11 @@ export default class DataProxy {
   }
 
   freezeTotalWidth() {
-    return this.colSumWidth(0, this.d.freeze[1] - 1);
+    return this.colSumWidth(0, this.d.freeze[1]);
   }
 
   freezeTotalHeight() {
-    return this.rowSumHeight(0, this.d.freeze[0] - 1);
+    return this.rowSumHeight(0, this.d.freeze[0]);
   }
 
   colSumWidth(min, max) {
@@ -463,5 +664,12 @@ export default class DataProxy {
     const { rowm } = this.d;
     rowm[`${index}`] = rowm[`${index}`] || {};
     rowm[`${index}`].height = v;
+  }
+
+  getFixedHeaderWidth() {
+    return this.options.col.indexWidth;
+  }
+  getFixedHeaderHeight() {
+    return this.options.row.height;
   }
 }
