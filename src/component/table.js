@@ -238,58 +238,12 @@ function renderAll(rowLen, colLen, scrollOffset) {
   renderFixedHeaders.call(this, rowLen, colLen, scrollOffset);
 }
 
-/*
-function getCellRowByY(y) {
-  const { data, scrollOffset } = this;
-  const { row } = data.options;
-  const fsh = data.freezeTotalHeight();
-  // console.log('y:', y, ', fsh:', fsh);
-  let inits = row.height;
-  if (fsh + row.height < y) inits -= scrollOffset.y;
-  const [ri, top, height] = helper.rangeReduceIf(
-    0,
-    data.rowLen(),
-    inits,
-    row.height,
-    y,
-    i => data.getRowHeight(i),
-  );
-  if (top <= 0) {
-    return { ri: 0, top: 0, height };
-  }
-  return { ri, top, height };
-}
-
-function getCellColByX(x) {
-  const { scrollOffset, data } = this;
-  const { col } = data.options;
-  const fsw = data.freezeTotalWidth();
-  let inits = col.indexWidth;
-  if (fsw + col.indexWidth < x) inits -= scrollOffset.x;
-  const [ci, left, width] = helper.rangeReduceIf(
-    0,
-    data.colLen(),
-    inits,
-    col.indexWidth,
-    x,
-    i => data.getColWidth(i),
-  );
-  if (left <= 0) {
-    return { ci: 0, left: 0, width: col.indexWidth };
-  }
-  return { ci, left, width };
-}
-*/
-
 /** end */
 class Table {
   constructor(el, data) {
     this.el = el;
     this.context = el.getContext('2d');
     this.draw = new Draw(el);
-    // this.scrollOffset = { x: 0, y: 0 };
-    // this.scrollIndexes = [0, 0];
-    // this.selectRectIndexes = [[0, 0], [0, 0]];
     this.data = data;
   }
 
@@ -304,143 +258,9 @@ class Table {
     }
   }
 
-  // x-scroll, y-scroll
-  // offset = {x: , y: }
-  /*
-  scroll(offset) {
-    // console.log('scroll.offset:', offset);
-    const { x, y } = offset;
-    const { scrollOffset, data } = this;
-    const [fri, fci] = data.getFreeze();
-    // const fRect = this.cellRect(fri - 2, fci - 2);
-    // console.log(':::::::::', fRect);
-    if (x !== undefined) {
-      const [
-        ci, left, width,
-      ] = helper.rangeReduceIf(fci - 1, data.colLen(), 0, 0, x, i => data.getColWidth(i));
-      // console.log('x:', x, ', ci:', ci, ', left:', left, ', width:', width);
-      let x1 = left;
-      if (x > 0) x1 += width;
-      if (scrollOffset.x !== x1) {
-        this.scrollIndexes[1] = x > 0 ? ci - (fci - 1) : 0;
-        // cb(x1 - scrollOffset.x);
-        scrollOffset.x = x1;
-        this.render();
-      }
-    }
-    if (y !== undefined) {
-      const [
-        ri, top, height,
-      ] = helper.rangeReduceIf(fri - 1, data.rowLen(), 0, 0, y, i => data.getRowHeight(i));
-      let y1 = top;
-      if (y > 0) y1 += height;
-      if (scrollOffset.y !== y1) {
-        this.scrollIndexes[0] = y > 0 ? ri : 0;
-        // cb(y1 - scrollOffset.y);
-        scrollOffset.y = y1;
-        this.render();
-      }
-    }
-  }
-
-  setFreezeIndexes([ri, ci]) {
-    this.data.setFreeze(ri, ci);
-  }
-  */
-
-  /*
-  setSelectRectIndexes(indexes) {
-    this.selectRectIndexes = indexes;
-    return this;
-  }
-  */
-
   clear() {
     this.draw.clear();
   }
-
-  /*
-  getCellRectWithIndexes(x, y, forSelector = true) {
-    // console.log('x: ', x, ', y: ', y);
-    // 根据鼠标坐标点，获得所在的cell矩形信息(ri, ci, offsetX, offsetY, width, height)
-    const { ri, top, height } = getCellRowByY.call(this, y);
-    const { ci, left, width } = getCellColByX.call(this, x);
-    const { data } = this;
-    const { row, col } = data.options;
-    // console.log('ri:', ri, ', ci:', ci, ', left:', left, ', top:', top);
-    if (ri >= 0 && ci === 0) {
-      const nwidth = forSelector ? data.colTotalWidth() : width;
-      const ntop = forSelector ? top - row.height : top;
-      return {
-        ri, ci, left: 0, top: ntop, width: nwidth, height,
-      };
-    }
-    if (ri === 0 && ci >= 0) {
-      const nheight = forSelector ? data.rowTotalHeight() : height;
-      const nleft = forSelector ? left - col.indexWidth : left;
-      return {
-        ri, ci, left: nleft, top: 0, width, height: nheight,
-      };
-    }
-    return {
-      ri, ci, left: left - col.indexWidth, top: top - row.height, width, height,
-    };
-  }
-  */
-
-  /*
-  xyInSelectRect(x, y) {
-    const {
-      left, top, width, height,
-    } = this.getSelectRect();
-    const { row, col } = this.data.options;
-    const x1 = x - col.indexWidth;
-    const y1 = y - row.height;
-    // console.log('x:', x, ',y:', y, 'left:', left, 'top:', top);
-    return x1 > left && x1 < (left + width)
-      && y1 > top && y1 < (top + height);
-  }
-
-  getSelectRect() {
-    const { data } = this;
-    const [[sri, sci], [eri, eci]] = this.selectRectIndexes;
-    // no selector
-    if (sri <= 0 && sci <= 0) {
-      return {
-        left: 0, l: 0, top: 0, t: 0, scroll: data.scroll,
-      };
-    }
-    const { left, top } = data.cellPosition(sri - 1, sci - 1);
-    let height = data.rowSumHeight(sri - 1, eri);
-    let width = data.colSumWidth(sci - 1, eci);
-    // console.log('sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
-    if (eri >= 0 && eci === 0) {
-      width = data.colTotalWidth();
-    }
-    if (eri === 0 && eci >= 0) {
-      height = data.rowTotalHeight();
-    }
-    let left0 = left - data.scroll.x;
-    let top0 = top - data.scroll.y;
-    const fsh = data.freezeTotalHeight();
-    const fsw = data.freezeTotalWidth();
-    if (fsw > 0 && fsw > left) {
-      left0 = left;
-    }
-    if (fsh > 0 && fsh > top) {
-      top0 = top;
-    }
-    return {
-      l: left,
-      t: top,
-      left: left0,
-      top: top0,
-      height,
-      width,
-      scroll: data.scroll,
-    };
-  }
-  */
 }
 
 export default Table;

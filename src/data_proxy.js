@@ -182,33 +182,6 @@ function getCellColByX(x, scrollOffsetx) {
   // return { ci, left: left - col.indexWidth, width };
 }
 
-/*
-function calSelectedWidth() {
-  const { selectedIndexes, d } = this;
-  const [, sci, , eci] = selectedIndexes;
-  const [, cmmap] = getMergesMap.call(this);
-  const totalWidth = 0;
-  for (let i = sci; i < eci; i += 1) {
-    if (d.merges && d.merges.length > 0) {
-      for (let j = 0; j < d.merges.length; j += 1) {
-        const [msri, msci, meri, meci] = d.merges[j];
-        if (msci >= i && i <= meci) {
-          if (i === msci) {
-            totalWidth += ;
-            i += 
-          }
-          break;
-        }
-      }
-    } else {
-      totalWidth += this.getColWidth(i);
-    }
-  }
-}
-
-function calSelectedHeight(sri, eri) {}
-*/
-
 export default class DataProxy {
   constructor(options) {
     this.options = options;
@@ -258,6 +231,7 @@ export default class DataProxy {
   getSelectedRect() {
     const { scroll, selectedIndexes } = this;
     const [sri, sci, eri, eci] = selectedIndexes;
+    // console.log('sri:', sri, ',sci:', sci, ', eri:', eri, ', eci:', eci);
     // no selector
     if (sri <= 0 && sci <= 0) {
       return {
@@ -534,7 +508,7 @@ export default class DataProxy {
       }
     }
     return {
-      left, top, width, height,
+      left, top, width, height, cell,
     };
   }
 
@@ -669,6 +643,7 @@ export default class DataProxy {
   getFixedHeaderWidth() {
     return this.options.col.indexWidth;
   }
+
   getFixedHeaderHeight() {
     return this.options.row.height;
   }

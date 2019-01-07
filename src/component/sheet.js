@@ -59,10 +59,8 @@ function selectorSet(multiple, ri, ci) {
 
 function selectorSetByEvent(multiple, evt) {
   const { data } = this;
-  const {
-    ri, ci, // left, top, width, height,
-  } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
-  // } = data.getCellRectWithIndexes(evt.offsetX, evt.offsetY);
+  const { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
+  // console.log('ri:', ri, ', ci:', ci, ', eri:', eri, ', eci:', eci);
   if (ri === 0 && ci === 0) return;
   selectorSet.call(this, multiple, ri, ci);
 }
@@ -316,28 +314,28 @@ function sheetInitEvents() {
     ] = selector.getCellRangeIndexes();
     if (type === 'copy') {
       data.copy([sri, sci], [eri, eci]);
-      return;
     } else if (type === 'cut') {
       data.cut([sri, sci], [eri, eci]);
-      return;
-    } else if (type === 'paste') {
-      data.paste([sri, sci], [eri, eci], 'all');
-    } else if (type === 'paste-value') {
-      data.paste([sri, sci], [eri, eci], 'text');
-    } else if (type === 'paste-format') {
-      data.paste([sri, sci], [eri, eci], 'format');
-    } else if (type === 'insert-row') {
-      data.insertRow(sri);
-    } else if (type === 'delete-row') {
-      data.deleteRow(sri, eri);
-    } else if (type === 'insert-column') {
-      data.insertColumn(sci);
-    } else if (type === 'delete-column') {
-      data.deleteColumn(sci, eci);
-    } else if (type === 'delete-cell') {
-      data.deleteCell(sri, sci, eri, eci);
+    } else {
+      if (type === 'paste') {
+        data.paste([sri, sci], [eri, eci], 'all');
+      } else if (type === 'paste-value') {
+        data.paste([sri, sci], [eri, eci], 'text');
+      } else if (type === 'paste-format') {
+        data.paste([sri, sci], [eri, eci], 'format');
+      } else if (type === 'insert-row') {
+        data.insertRow(sri);
+      } else if (type === 'delete-row') {
+        data.deleteRow(sri, eri);
+      } else if (type === 'insert-column') {
+        data.insertColumn(sci);
+      } else if (type === 'delete-column') {
+        data.deleteColumn(sci, eci);
+      } else if (type === 'delete-cell') {
+        data.deleteCell(sri, sci, eri, eci);
+      }
+      this.reload();
     }
-    this.reload();
   };
 
   bind(window, 'resize', () => {
