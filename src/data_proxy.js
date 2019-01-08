@@ -270,14 +270,6 @@ export default class DataProxy {
     const height = this.rowSumHeight(sri, eri + 1);
     const width = this.colSumWidth(sci, eci + 1);
     // console.log('sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
-    /*
-    if (eri >= 0 && eci === -1) {
-      width = this.colTotalWidth();
-    }
-    if (eri === -1 && eci >= 0) {
-      height = this.rowTotalHeight();
-    }
-    */
     let left0 = left - scroll.x;
     let top0 = top - scroll.y;
     const fsh = this.freezeTotalHeight();
@@ -333,7 +325,16 @@ export default class DataProxy {
     if (sci >= eci) {
       [sci, eci] = [eci, sci];
     }
-    mergesEach.call(this, ([s, e]) => {
+    mergesEach.call(this, ([[msri, msci], [meri, meci]]) => {
+      // console.log(msri, eri, sri, meri, msci, eci, sci, meci);
+      if (msri > eri || sri > meri || msci > eci || sci > meci) {
+        // console.log('没有交集');
+      } else {
+        if (msri < sri) sri = msri;
+        if (msci < sci) sci = msci;
+        if (meri > eri) eri = meri;
+        if (meci > eci) eci = meci;
+      }
     });
     this.setSelectedIndexes([sri, sci], [eri, eci]);
     return this.selectedIndexes;

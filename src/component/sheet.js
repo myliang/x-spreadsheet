@@ -91,7 +91,6 @@ function overlayerMousemove(evt) {
     rowResizer, colResizer, tableEl, data,
   } = this;
   const tRect = tableEl.box();
-  // const cRect = table.getCellRectWithIndexes(evt.offsetX, evt.offsetY, false);
   const cRect = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   if (cRect.ri >= 0 && cRect.ci === -1) {
     rowResizer.show(cRect, {
