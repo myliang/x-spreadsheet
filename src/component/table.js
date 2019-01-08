@@ -122,7 +122,8 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
     .fillRect(0, 0, col.indexWidth, sumHeight)
     .fillRect(0, 0, sumWidth, row.height);
 
-  const [sri, sci, eri, eci] = data.selectedIndexes;
+  const [[sri, sci], [eri, eci]] = data.selectedIndexes;
+  // console.log(data.selectIndexes);
   // draw text
   // text font, align...
   draw.attr(tableFixedHeaderStyle);
@@ -131,7 +132,7 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
     const y = y1 + row.height - scrollOffset.y;
     draw.line([0, y], [col.indexWidth, y]);
     if (i !== rowLen) {
-      if (sri - 1 <= i && i < eri) {
+      if (sri <= i && i < eri + 1) {
         renderSelectedHeaderCell.call(this, 0, y, col.indexWidth, rowHeight);
       }
       draw.fillText(i + 1, col.indexWidth / 2, y + (rowHeight / 2));
@@ -143,7 +144,7 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
     const x = x1 + col.indexWidth - scrollOffset.x;
     draw.line([x, 0], [x, row.height]);
     if (i !== colLen) {
-      if (sci - 1 <= i && i < eci) {
+      if (sci <= i && i < eci + 1) {
         renderSelectedHeaderCell.call(this, x, 0, colWidth, row.height);
       }
       draw.fillText(alphabet.stringAt(i), x + (colWidth / 2), row.height / 2);

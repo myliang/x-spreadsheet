@@ -107,37 +107,25 @@ export default class Selector {
     this.resetOffset();
   }
 
-  set(indexes, offset) {
-    this.indexes = indexes;
-    this.moveIndexes = indexes;
-    this.sIndexes = indexes;
-    this.eIndexes = indexes;
-    this.setAreaOffset(offset);
+  set(ri, ci) {
+    const { data } = this;
+    const [sIndexes, eIndexes] = data.calRangeIndexes(ri, ci);
+    const selectRect = data.getSelectedRect();
+    this.indexes = sIndexes;
+    this.moveIndexes = sIndexes;
+    this.sIndexes = sIndexes;
+    this.eIndexes = eIndexes;
+    this.setAreaOffset(selectRect);
     this.el.show();
   }
 
-  setEnd(nindexes, getOffset) {
-    const [ori, oci] = this.indexes;
-    const [nri, nci] = nindexes;
-    this.sIndexes = [ori, oci];
-    this.eIndexes = [nri, nci];
-    if (ori >= nri) {
-      this.eIndexes[0] = ori;
-      this.sIndexes[0] = nri;
-    }
-    if (oci >= nci) {
-      this.eIndexes[1] = oci;
-      this.sIndexes[1] = nci;
-    }
-    // set height, width, left top
-    this.areaOffset = getOffset(this.sIndexes, this.eIndexes);
+  setEnd(ri, ci) {
+    const { data } = this;
+    const [sIndexes, eIndexes] = data.calRangeIndexes2(this.indexes, [ri, ci]);
+    this.sIndexes = sIndexes;
+    this.eIndexes = eIndexes;
+    this.areaOffset = data.getSelectedRect();
     this.setAllAreaOffset();
-  }
-
-  getCellRangeIndexes() {
-    const [sri, sci] = this.sIndexes;
-    const [eri, eci] = this.eIndexes;
-    return [sri - 1, sci - 1, eri - 1, eci - 1];
   }
 
   setAllAreaOffset() {

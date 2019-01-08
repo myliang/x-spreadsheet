@@ -11,7 +11,7 @@ Cell: {
 */
 const defaultData = {
   freeze: [0, 0],
-  merges: [], // [[sri, sci, eri, eci],...]
+  merges: [], // [[[sri, sci], [eri, eci]],...]
   rowm: {}, // Map<int, Row>, len
   colm: {}, // Map<int, Row>, len
   cellmm: {}, // Map<int, Map<int, Cell>>
@@ -114,9 +114,10 @@ function addHistory() {
   this.history.add(this.d);
 }
 
-function deleteCells(sri, sci, eri, eci) {
+function deleteCells() {
   const { d } = this;
   const { cellmm } = d;
+  const [[sri, sci], [eri, eci]] = this.selectedIndexes;
   const ndata = {};
   // console.log(sri, sci, eri, eci);
   Object.keys(cellmm).forEach((ri) => {
@@ -155,9 +156,9 @@ function getCellRowByY(y, scrollOffsety) {
     i => this.getRowHeight(i),
   );
   if (top <= 0) {
-    return { ri: 0, top: 0, height };
+    return { ri: -1, top: 0, height };
   }
-  return { ri, top, height };
+  return { ri: ri - 1, top, height };
   // return { ri, top: top - row.height, height };
 }
 
@@ -176,10 +177,37 @@ function getCellColByX(x, scrollOffsetx) {
     i => this.getColWidth(i),
   );
   if (left <= 0) {
-    return { ci: 0, left: 0, width: col.indexWidth };
+    return { ci: -1, left: 0, width: col.indexWidth };
   }
-  return { ci, left, width };
+  return { ci: ci - 1, left, width };
   // return { ci, left: left - col.indexWidth, width };
+}
+
+function mergesEach(cb) {
+  const { merges } = this.d;
+  // console.log('merges:', merges);
+  if (merges.length > 0) {
+    for (let i = 0; i < merges.length; i += 1) {
+      cb(merges[i]);
+    }
+  }
+}
+
+// type: row | col
+// i: index
+function mergesModify(type, i, n) {
+  const idx = type === 'row' ? 0 : 1;
+  mergesEach.call(this, (merge) => {
+    const [sIndexes, eIndexes] = merge;
+    if (sIndexes[idx] >= i) {
+      sIndexes[idx] += n;
+      eIndexes[idx] += n;
+    } else if (sIndexes[idx] < i && i <= eIndexes[idx]) {
+      eIndexes[idx] += n;
+      const cell = this.getCell(...sIndexes);
+      cell.merge[idx] += n;
+    }
+  });
 }
 
 export default class DataProxy {
@@ -190,7 +218,7 @@ export default class DataProxy {
     this.clipboard = new Clipboard();
     this.history = new History();
     this.scroll = new Scroll();
-    this.selectedIndexes = [0, 0, 0, 0];
+    this.selectedIndexes = [[-1, -1], [-1, -1]];
   }
 
   load(data) {
@@ -212,8 +240,8 @@ export default class DataProxy {
   }
 
   /* for select start */
-  setSelectedIndexes([sri, sci], [eri, eci]) {
-    this.selectedIndexes = [sri, sci, eri, eci];
+  setSelectedIndexes(sIndexes, eIndexes) {
+    this.selectedIndexes = [sIndexes, eIndexes];
   }
 
   xyInSelectedRect(x, y) {
@@ -230,24 +258,26 @@ export default class DataProxy {
 
   getSelectedRect() {
     const { scroll, selectedIndexes } = this;
-    const [sri, sci, eri, eci] = selectedIndexes;
+    const [[sri, sci], [eri, eci]] = selectedIndexes;
     // console.log('sri:', sri, ',sci:', sci, ', eri:', eri, ', eci:', eci);
     // no selector
-    if (sri <= 0 && sci <= 0) {
+    if (sri < 0 && sci < 0) {
       return {
         left: 0, l: 0, top: 0, t: 0, scroll,
       };
     }
-    const { left, top } = this.cellPosition(sri - 1, sci - 1);
-    let height = this.rowSumHeight(sri - 1, eri);
-    let width = this.colSumWidth(sci - 1, eci);
+    const { left, top } = this.cellPosition(sri, sci);
+    const height = this.rowSumHeight(sri, eri + 1);
+    const width = this.colSumWidth(sci, eci + 1);
     // console.log('sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
-    if (eri >= 0 && eci === 0) {
+    /*
+    if (eri >= 0 && eci === -1) {
       width = this.colTotalWidth();
     }
-    if (eri === 0 && eci >= 0) {
+    if (eri === -1 && eci >= 0) {
       height = this.rowTotalHeight();
     }
+    */
     let left0 = left - scroll.x;
     let top0 = top - scroll.y;
     const fsh = this.freezeTotalHeight();
@@ -273,29 +303,20 @@ export default class DataProxy {
     const { scroll } = this;
     let { ri, top, height } = getCellRowByY.call(this, y, scroll.y);
     let { ci, left, width } = getCellColByX.call(this, x, scroll.x);
-    if (ci === 0) {
+    if (ci === -1) {
       width = this.colTotalWidth();
     }
-    if (ri === 0) {
+    if (ri === -1) {
       height = this.rowTotalHeight();
     }
-    if (ri > 0 || ci > 0) {
-      const { merges } = this.d;
-      if (merges.length > 0) {
-        const nri = ri - 1;
-        const nci = ci - 1;
-        for (let i = 0; i < merges.length; i += 1) {
-          const [sri, sci, eri, eci] = merges[i];
-          if (nri >= sri && nri <= eri && nci >= sci && nci <= eci) {
-            ri = sri + 1;
-            ci = sci + 1;
-            ({
-              left, top, width, height,
-            } = this.cellRect(sri, sci));
-            break;
-          }
-        }
-      }
+    if (ri >= 0 || ci >= 0) {
+      this.inMerges(ri, ci, ([[sri, sci]]) => {
+        ri = sri;
+        ci = sci;
+        ({
+          left, top, width, height,
+        } = this.cellRect(sri, sci));
+      });
     }
     return {
       ri, ci, left, top, width, height,
@@ -303,20 +324,75 @@ export default class DataProxy {
   }
   /* for selector end */
 
-  copy(sIndexes, eIndexes) {
+  calRangeIndexes2(cIndexes, eIndexes) {
+    let [sri, sci] = cIndexes;
+    let [eri, eci] = eIndexes;
+    if (sri >= eri) {
+      [sri, eri] = [eri, sri];
+    }
+    if (sci >= eci) {
+      [sci, eci] = [eci, sci];
+    }
+    mergesEach.call(this, ([s, e]) => {
+    });
+    this.setSelectedIndexes([sri, sci], [eri, eci]);
+    return this.selectedIndexes;
+  }
+
+  calRangeIndexes(ri, ci) {
+    const sIndexes = [ri, ci];
+    const eIndexes = [ri, ci];
+    if (ri === -1) {
+      sIndexes[0] = 0;
+      eIndexes[0] = this.rowLen() - 1;
+    }
+    if (ci === -1) {
+      sIndexes[1] = 0;
+      eIndexes[1] = this.colLen() - 1;
+    }
+    let mIndexes = [sIndexes, eIndexes];
+    this.inMerges(ri, ci, (merge) => {
+      // console.log('merge:', merge);
+      mIndexes = merge;
+    });
+    this.setSelectedIndexes(...mIndexes);
+    return mIndexes;
+  }
+
+  /* merge method start */
+  inMerges(ri, ci, cb) {
+    const { merges } = this.d;
+    // console.log('merges:', merges);
+    if (merges.length > 0) {
+      for (let i = 0; i < merges.length; i += 1) {
+        // console.log('merges:', merges);
+        const [[sri, sci], [eri, eci]] = merges[i];
+        if (ri >= sri && ri <= eri && ci >= sci && ci <= eci) {
+          cb(merges[i]);
+          break;
+        }
+      }
+    }
+  }
+  /* merge methods end */
+
+  copy() {
+    const [sIndexes, eIndexes] = this.selectedIndexes;
     this.clipboard.copy(sIndexes, eIndexes);
   }
 
-  cut(sIndexes, eIndexes) {
+  cut() {
+    const [sIndexes, eIndexes] = this.selectedIndexes;
     this.clipboard.cut(sIndexes, eIndexes);
   }
 
   // what: all | text | format
-  paste(sIndexes, eIndexes, what = 'all') {
+  paste(what = 'all') {
     // console.log('sIndexes:', sIndexes);
     const { clipboard, d } = this;
     if (clipboard.isClear()) return;
 
+    const [sIndexes] = this.selectedIndexes;
     addHistory.call(this);
     const { cellmm } = d;
     const [[sri, sci], [eri, eci]] = clipboard.get();
@@ -356,7 +432,8 @@ export default class DataProxy {
     this.clipboard.clear();
   }
 
-  merge(sIndexes, eIndexes) {
+  merge() {
+    const [sIndexes, eIndexes] = this.selectedIndexes;
     const [sri, sci] = sIndexes;
     const [eri, eci] = eIndexes;
     const rn = eri - sri;
@@ -366,61 +443,64 @@ export default class DataProxy {
       addHistory.call(this);
       const cell = this.getCellOrNew(sri, sci);
       cell.merge = [rn, cn];
-      d.merges.push([sri, sci, eri, eci]);
+      d.merges.push([sIndexes, eIndexes]);
       // delete merge cells
-      deleteCells.call(this, sri, sci, eri, eci);
+      deleteCells.call(this);
     }
   }
 
-  deleteCell(sri, sci, eri, eci) {
+  deleteCell() {
     addHistory.call(this);
-    deleteCells.call(this, sri, sci, eri, eci);
+    deleteCells.call(this);
   }
 
-  insertRow(index, n = 1) {
+  insertRow(n = 1) {
     addHistory.call(this);
     const { cellmm, rowm } = this.d;
+    const [[sri]] = this.selectedIndexes;
     const ndata = {};
     Object.keys(cellmm).forEach((ri) => {
       let nri = parseInt(ri, 10);
-      if (nri >= index) {
+      if (nri >= sri) {
         nri += n;
       }
       ndata[nri] = cellmm[ri];
     });
     this.d.cellmm = ndata;
-    // console.log('row.len:', this.rowLen());
     rowm.len = this.rowLen() + n;
-    // console.log('after.row.len:', this.rowLen());
+    mergesModify.call(this, 'row', sri, n);
   }
 
-  deleteRow(min, max) {
+  deleteRow() {
     addHistory.call(this);
     const { cellmm, rowm } = this.d;
+    const [[sri], [eri]] = this.selectedIndexes;
     // console.log('min:', min, ',max:', max);
-    const n = max - min + 1;
+    const n = eri - sri + 1;
     const ndata = {};
     Object.keys(cellmm).forEach((ri) => {
       const nri = parseInt(ri, 10);
-      if (nri < min) {
+      if (nri < sri) {
         ndata[nri] = cellmm[nri];
-      } else if (ri > max) {
+      } else if (ri > eri) {
         ndata[nri - n] = cellmm[nri];
       }
     });
     // console.log('cellmm:', cellmm, ', ndata:', ndata);
     this.d.cellmm = ndata;
     rowm.len = this.rowLen() - n;
+    mergesModify.call(this, 'row', sri, -n);
   }
 
-  insertColumn(index, n = 1) {
+  insertColumn(n = 1) {
     addHistory.call(this);
     const { cellmm, colm } = this.d;
+    const [[, sci]] = this.selectedIndexes;
     Object.keys(cellmm).forEach((ri) => {
       const rndata = {};
       Object.keys(cellmm[ri]).forEach((ci) => {
         let nci = parseInt(ci, 10);
-        if (nci >= index) {
+        if (nci >= sci) {
           nci += n;
         }
         rndata[nci] = cellmm[ri][ci];
@@ -428,25 +508,29 @@ export default class DataProxy {
       cellmm[ri] = rndata;
     });
     colm.len = this.colLen() + n;
+    mergesModify.call(this, 'col', sci, n);
   }
 
-  deleteColumn(min, max) {
+  deleteColumn() {
     addHistory.call(this);
     const { cellmm, colm } = this.d;
-    const n = max - min + 1;
+    const [[, sci], [, eci]] = this.selectedIndexes;
+    const n = eci - sci + 1;
     Object.keys(cellmm).forEach((ri) => {
       const rndata = {};
       Object.keys(cellmm[ri]).forEach((ci) => {
         const nci = parseInt(ci, 10);
-        if (nci < min) {
+        if (nci < sci) {
           rndata[nci] = cellmm[ri][ci];
-        } else if (nci > max) {
+        } else if (nci > eci) {
           rndata[nci - n] = cellmm[ri][ci];
         }
       });
       cellmm[ri] = rndata;
     });
     colm.len = this.colLen() - n;
+    // console.log('n:', n);
+    mergesModify.call(this, 'col', sci, -n);
   }
 
   scrollx(x, cb) {
