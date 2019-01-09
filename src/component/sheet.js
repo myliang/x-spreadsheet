@@ -101,7 +101,7 @@ function overlayerMousemove(evt) {
     rowResizer.hide();
   }
   if (cRect.ri === -1 && cRect.ci >= 0) {
-    cRect.height = getFixedHeaderHeight();
+    cRect.height = data.getFixedHeaderHeight();
     colResizer.show(cRect, {
       height: tRect.height,
     });

@@ -265,6 +265,54 @@ function modifyMerges(type, i, n) {
   });
 }
 
+function copyPaste(srcIndexes, dstIndexes, what) {
+  const { cellmm } = this.d;
+  const [[sri, sci], [eri, eci]] = srcIndexes;
+  const [[dsri, dsci], [deri, deci]] = dstIndexes;
+  const rn = eri - sri + 1;
+  const cn = eci - sci + 1;
+  for (let i = sri; i <= eri; i += 1) {
+    if (cellmm[i]) {
+      for (let j = sci; j <= eci; j += 1) {
+        if (cellmm[i][j]) {
+          for (let ii = dsri; ii <= deri; ii += rn) {
+            for (let jj = dsci; jj <= deci; jj += cn) {
+              const nri = ii + (i - sri);
+              const nci = jj + (j - sci);
+              this.setCell(nri, nci, cellmm[i][j], what);
+              addMergesByCellIndexes.call(this, nri, nci);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+function cutPaste(srcIndexes, dstIndexes) {
+  const { clipboard, d } = this;
+  const { cellmm } = d;
+  const [[sri, sci], [eri, eci]] = srcIndexes;
+  const [[dsri, dsci]] = dstIndexes;
+  const ncellmm = {};
+  Object.keys(cellmm).forEach((ri) => {
+    Object.keys(cellmm[ri]).forEach((ci) => {
+      let nri = parseInt(ri, 10);
+      let nci = parseInt(ci, 10);
+      if (ri >= sri && ri <= eri && ci >= sci && ci <= eci) {
+        nri = dsri + (nri - sri);
+        nci = dsci + (nci - sci);
+      }
+      ncellmm[nri] = ncellmm[nri] || {};
+      ncellmm[nri][nci] = cellmm[ri][ci];
+    });
+  });
+  // console.log('rn:', nsri - sri, ', cn:', nsci - sci);
+  moveMerges.call(this, [sri, sci], [eri, eci], dsri - sri, dsci - sci);
+  d.cellmm = ncellmm;
+  clipboard.clear();
+}
+
 export default class DataProxy {
   constructor(options) {
     this.options = options;
@@ -428,45 +476,15 @@ export default class DataProxy {
   // what: all | text | format
   paste(what = 'all') {
     // console.log('sIndexes:', sIndexes);
-    const { clipboard, d } = this;
+    const { clipboard } = this;
     if (clipboard.isClear()) return;
 
-    const [sIndexes] = this.selectedIndexes;
+    const [sIndexes, eIndexes] = this.selectedIndexes;
     addHistory.call(this);
-    const { cellmm } = d;
-    const [[sri, sci], [eri, eci]] = clipboard.get();
-    const [nsri, nsci] = sIndexes;
     if (clipboard.isCopy()) {
-      for (let i = sri; i <= eri; i += 1) {
-        if (cellmm[i]) {
-          for (let j = sci; j <= eci; j += 1) {
-            if (cellmm[i][j]) {
-              const nri = nsri + (i - sri);
-              const nci = nsci + (j - sci);
-              this.setCell(nri, nci, cellmm[i][j], what);
-              addMergesByCellIndexes.call(this, nri, nci);
-            }
-          }
-        }
-      }
+      copyPaste.call(this, clipboard.get(), [sIndexes, eIndexes], what);
     } else if (clipboard.isCut()) {
-      const ncellmm = {};
-      Object.keys(cellmm).forEach((ri) => {
-        Object.keys(cellmm[ri]).forEach((ci) => {
-          let nri = parseInt(ri, 10);
-          let nci = parseInt(ci, 10);
-          if (ri >= sri && ri <= eri && ci >= sci && ci <= eci) {
-            nri = nsri + (nri - sri);
-            nci = nsci + (nci - sci);
-          }
-          ncellmm[nri] = ncellmm[nri] || {};
-          ncellmm[nri][nci] = cellmm[ri][ci];
-        });
-      });
-      // console.log('rn:', nsri - sri, ', cn:', nsci - sci);
-      moveMerges.call(this, [sri, sci], [eri, eci], nsri - sri, nsci - sci);
-      d.cellmm = ncellmm;
-      clipboard.clear();
+      cutPaste.call(this, clipboard.get(), [sIndexes, eIndexes]);
     }
   }
 
