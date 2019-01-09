@@ -246,6 +246,29 @@ function sheetReset() {
   table.render();
 }
 
+function clearClipboard() {
+  const { data, selector } = this;
+  data.clearClipboard();
+  selector.hideClipboard();
+}
+
+function copy() {
+  const { data, selector } = this;
+  data.copy();
+  selector.showClipboard();
+}
+
+function cut() {
+  const { data, selector } = this;
+  data.cut();
+  selector.showClipboard();
+}
+
+function paste(what) {
+  this.data.paste(what);
+  sheetReset.call(this);
+}
+
 function sheetInitEvents() {
   const {
     overlayerEl,
@@ -273,6 +296,7 @@ function sheetInitEvents() {
         }
       } else if (evt.detail === 2) {
         editorSet.call(this);
+        clearClipboard.call(this);
       } else {
         editor.clear();
         overlayerMousedown.call(this, evt);
@@ -299,26 +323,29 @@ function sheetInitEvents() {
     // console.log('type:', type);
     // const { sIndexes, eIndexes } = selector;
     if (type === 'copy') {
-      data.copy();
+      copy.call(this);
     } else if (type === 'cut') {
-      data.cut();
+      cut.call(this);
     } else {
       if (type === 'paste') {
-        data.paste('all');
+        paste.call(this, 'all');
       } else if (type === 'paste-value') {
-        data.paste('text');
+        paste.call(this, 'text');
       } else if (type === 'paste-format') {
-        data.paste('format');
-      } else if (type === 'insert-row') {
-        data.insertRow();
-      } else if (type === 'delete-row') {
-        data.deleteRow();
-      } else if (type === 'insert-column') {
-        data.insertColumn();
-      } else if (type === 'delete-column') {
-        data.deleteColumn();
-      } else if (type === 'delete-cell') {
-        data.deleteCell();
+        paste.call(this, 'format');
+      } else {
+        if (type === 'insert-row') {
+          data.insertRow();
+        } else if (type === 'delete-row') {
+          data.deleteRow();
+        } else if (type === 'insert-column') {
+          data.insertColumn();
+        } else if (type === 'delete-column') {
+          data.deleteColumn();
+        } else if (type === 'delete-cell') {
+          data.deleteCell();
+        }
+        clearClipboard.call(this);
       }
       this.reload();
     }
@@ -362,30 +389,27 @@ function sheetInitEvents() {
       switch (evt.keyCode) {
         case 90:
           // undo: ctrl + z
-          data.undo();
-          sheetReset.call(this);
+          this.undo();
           evt.preventDefault();
           break;
         case 89:
           // redo: ctrl + y
-          data.redo();
-          sheetReset.call(this);
+          this.redo();
           evt.preventDefault();
           break;
         case 67:
           // ctrl + c
-          data.copy();
+          copy.call(this);
           evt.preventDefault();
           break;
         case 88:
           // ctrl + x
-          data.cut();
+          cut.call(this);
           evt.preventDefault();
           break;
         case 86:
           // ctrl + v
-          data.paste(what);
-          sheetReset.call(this);
+          paste.call(this, what);
           evt.preventDefault();
           break;
         default:
@@ -395,9 +419,9 @@ function sheetInitEvents() {
     } else {
       // console.log('evt.keyCode:', evt.keyCode);
       switch (evt.keyCode) {
-        case 27:
+        case 27: // esc
           contextMenu.hide();
-          data.clearClipboard();
+          clearClipboard.call(this);
           break;
         case 37: // left
           selectorMove.call(this, evt.shiftKey, 'left');
@@ -435,6 +459,7 @@ function sheetInitEvents() {
       ) {
         dataSetCellText.call(this, evt.key);
         editorSet.call(this);
+        clearClipboard.call(this);
       }
     }
   });
@@ -504,6 +529,16 @@ export default class Sheet {
     data.setFreeze(ri, ci);
     sheetReset.call(this);
     return this;
+  }
+
+  undo() {
+    this.data.undo();
+    sheetReset.call(this);
+  }
+
+  redo() {
+    this.data.redo();
+    sheetReset.call(this);
   }
 
   reload() {

@@ -8,12 +8,14 @@ class SelectorElement {
     this.cornerEl = h('div', 'xss-selector-corner');
     this.areaEl = h('div', 'xss-selector-area')
       .child(this.cornerEl).hide();
+    this.clipboardEl = h('div', 'xss-selector-clipboard').hide();
     this.el = h('div', 'xss-selector')
       .css('z-index', `${startZIndex}`)
       .on('click.stop', () => {})
-      .child(this.areaEl)
+      .children(this.areaEl, this.clipboardEl)
       .hide();
     startZIndex += 1;
+    this.areaOffset = null;
   }
 
   setOffset(v) {
@@ -30,12 +32,29 @@ class SelectorElement {
     const {
       left, top, width, height,
     } = v;
+    this.areaOffset = v;
     this.areaEl.offset({
       width: width - selectorHeightBorderWidth,
       height: height - selectorHeightBorderWidth,
       left,
       top,
     }).show();
+  }
+
+  showClipboard() {
+    const {
+      left, top, width, height,
+    } = this.areaOffset;
+    this.clipboardEl.offset({
+      left: left - 1,
+      top: top - 1,
+      width: width - 1,
+      height: height - 1,
+    }).show();
+  }
+
+  hideClipboard() {
+    this.clipboardEl.hide();
   }
 }
 
@@ -127,6 +146,18 @@ export default class Selector {
     this.eIndexes = eIndexes;
     this.areaOffset = data.getSelectedRect();
     this.setAllAreaOffset();
+  }
+
+  showClipboard() {
+    ['br', 'l', 't', 'tl'].forEach((property) => {
+      this[property].showClipboard();
+    });
+  }
+
+  hideClipboard() {
+    ['br', 'l', 't', 'tl'].forEach((property) => {
+      this[property].hideClipboard();
+    });
   }
 
   setAllAreaOffset() {
