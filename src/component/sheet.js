@@ -93,6 +93,7 @@ function overlayerMousemove(evt) {
   const tRect = tableEl.box();
   const cRect = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   if (cRect.ri >= 0 && cRect.ci === -1) {
+    cRect.width = data.getFixedHeaderWidth();
     rowResizer.show(cRect, {
       width: tRect.width,
     });
@@ -100,6 +101,7 @@ function overlayerMousemove(evt) {
     rowResizer.hide();
   }
   if (cRect.ri === -1 && cRect.ci >= 0) {
+    cRect.height = getFixedHeaderHeight();
     colResizer.show(cRect, {
       height: tRect.height,
     });
