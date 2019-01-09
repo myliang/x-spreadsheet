@@ -121,7 +121,8 @@ export default class Selector {
 
   setEnd(ri, ci) {
     const { data } = this;
-    const [sIndexes, eIndexes] = data.calRangeIndexes2(this.indexes, [ri, ci]);
+    let [sIndexes, eIndexes] = data.calRangeIndexes2(this.indexes, [ri, ci]);
+    [sIndexes, eIndexes] = data.calRangeIndexes2(sIndexes, eIndexes);
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
     this.areaOffset = data.getSelectedRect();

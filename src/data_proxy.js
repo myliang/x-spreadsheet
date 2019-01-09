@@ -371,8 +371,8 @@ export default class DataProxy {
   }
   /* for selector end */
 
-  calRangeIndexes2(cIndexes, eIndexes) {
-    let [sri, sci] = cIndexes;
+  calRangeIndexes2(sIndexes, eIndexes) {
+    let [sri, sci] = sIndexes;
     let [eri, eci] = eIndexes;
     if (sri >= eri) {
       [sri, eri] = [eri, sri];
@@ -383,7 +383,7 @@ export default class DataProxy {
     eachMerges.call(this, ([[msri, msci], [meri, meci]]) => {
       // console.log(msri, eri, sri, meri, msci, eci, sci, meci);
       if (msri > eri || sri > meri || msci > eci || sci > meci) {
-        console.log('没有交集');
+        // console.log('没有交集');
       } else {
         if (msri < sri) sri = msri;
         if (msci < sci) sci = msci;
