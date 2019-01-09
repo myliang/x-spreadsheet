@@ -183,7 +183,7 @@ function getCellColByX(x, scrollOffsetx) {
   // return { ci, left: left - col.indexWidth, width };
 }
 
-function mergesEach(cb) {
+function eachMerges(cb) {
   const { merges } = this.d;
   // console.log('merges:', merges);
   if (merges.length > 0) {
@@ -193,11 +193,66 @@ function mergesEach(cb) {
   }
 }
 
+function inMerges(ri, ci, cb) {
+  const { merges } = this.d;
+  // console.log('merges:', merges);
+  if (merges.length > 0) {
+    for (let i = 0; i < merges.length; i += 1) {
+      // console.log('merges:', merges);
+      const [[sri, sci], [eri, eci]] = merges[i];
+      if (ri >= sri && ri <= eri && ci >= sci && ci <= eci) {
+        cb(merges[i]);
+        break;
+      }
+    }
+  }
+}
+
+function deleteMerges([sri, sci], [eri, eci]) {
+  const nmerges = [];
+  eachMerges.call(this, (merge) => {
+    const [[msri, msci], [meri, meci]] = merge;
+    if (msri > eri || sri > meri || msci > eci || sci > meci) {
+      nmerges.push(merge);
+    }
+  });
+  this.d.merges = nmerges;
+}
+
+function addMerges(sIndexes, eIndexes) {
+  this.d.merges.push([sIndexes, eIndexes]);
+}
+
+function addMergesByCellIndexes(ri, ci) {
+  const cell = this.getCell(ri, ci);
+  if (cell && cell.merge) {
+    const [rn, cn] = cell.merge;
+    if (rn <= 0 && cn <= 0) return;
+    addMerges.call(this, [ri, ci], [ri + rn, ci + cn]);
+  }
+}
+
+function moveMerges([sri, sci], [eri, eci], rn, cn) {
+  eachMerges.call(this, (merge) => {
+    const [[msri, msci], [meri, meci]] = merge;
+    if (msri > eri || sri > meri || msci > eci || sci > meci) {
+      // no intersection
+    } else {
+      // console.log('::::::::', merge, rn, cn);
+      for (let i = 0; i <= 1; i += 1) {
+        const indexes = merge[i];
+        indexes[0] += rn;
+        indexes[1] += cn;
+      }
+    }
+  });
+}
+
 // type: row | col
 // i: index
-function mergesModify(type, i, n) {
+function modifyMerges(type, i, n) {
   const idx = type === 'row' ? 0 : 1;
-  mergesEach.call(this, (merge) => {
+  eachMerges.call(this, (merge) => {
     const [sIndexes, eIndexes] = merge;
     if (sIndexes[idx] >= i) {
       sIndexes[idx] += n;
@@ -302,7 +357,7 @@ export default class DataProxy {
       height = this.rowTotalHeight();
     }
     if (ri >= 0 || ci >= 0) {
-      this.inMerges(ri, ci, ([[sri, sci]]) => {
+      inMerges.call(this, ri, ci, ([[sri, sci]]) => {
         ri = sri;
         ci = sci;
         ({
@@ -325,10 +380,10 @@ export default class DataProxy {
     if (sci >= eci) {
       [sci, eci] = [eci, sci];
     }
-    mergesEach.call(this, ([[msri, msci], [meri, meci]]) => {
+    eachMerges.call(this, ([[msri, msci], [meri, meci]]) => {
       // console.log(msri, eri, sri, meri, msci, eci, sci, meci);
       if (msri > eri || sri > meri || msci > eci || sci > meci) {
-        // console.log('没有交集');
+        console.log('没有交集');
       } else {
         if (msri < sri) sri = msri;
         if (msci < sci) sci = msci;
@@ -352,30 +407,13 @@ export default class DataProxy {
       eIndexes[1] = this.colLen() - 1;
     }
     let mIndexes = [sIndexes, eIndexes];
-    this.inMerges(ri, ci, (merge) => {
+    inMerges.call(this, ri, ci, (merge) => {
       // console.log('merge:', merge);
       mIndexes = merge;
     });
     this.setSelectedIndexes(...mIndexes);
     return mIndexes;
   }
-
-  /* merge method start */
-  inMerges(ri, ci, cb) {
-    const { merges } = this.d;
-    // console.log('merges:', merges);
-    if (merges.length > 0) {
-      for (let i = 0; i < merges.length; i += 1) {
-        // console.log('merges:', merges);
-        const [[sri, sci], [eri, eci]] = merges[i];
-        if (ri >= sri && ri <= eri && ci >= sci && ci <= eci) {
-          cb(merges[i]);
-          break;
-        }
-      }
-    }
-  }
-  /* merge methods end */
 
   copy() {
     const [sIndexes, eIndexes] = this.selectedIndexes;
@@ -406,6 +444,7 @@ export default class DataProxy {
               const nri = nsri + (i - sri);
               const nci = nsci + (j - sci);
               this.setCell(nri, nci, cellmm[i][j], what);
+              addMergesByCellIndexes.call(this, nri, nci);
             }
           }
         }
@@ -424,6 +463,8 @@ export default class DataProxy {
           ncellmm[nri][nci] = cellmm[ri][ci];
         });
       });
+      // console.log('rn:', nsri - sri, ', cn:', nsci - sci);
+      moveMerges.call(this, [sri, sci], [eri, eci], nsri - sri, nsci - sci);
       d.cellmm = ncellmm;
       clipboard.clear();
     }
@@ -440,11 +481,10 @@ export default class DataProxy {
     const rn = eri - sri;
     const cn = eci - sci;
     if (rn > 0 || cn > 0) {
-      const { d } = this;
       addHistory.call(this);
       const cell = this.getCellOrNew(sri, sci);
       cell.merge = [rn, cn];
-      d.merges.push([sIndexes, eIndexes]);
+      addMerges.call(this, sIndexes, eIndexes);
       // delete merge cells
       deleteCells.call(this);
     }
@@ -453,6 +493,7 @@ export default class DataProxy {
   deleteCell() {
     addHistory.call(this);
     deleteCells.call(this);
+    deleteMerges.call(this, ...this.selectedIndexes);
   }
 
   insertRow(n = 1) {
@@ -469,7 +510,7 @@ export default class DataProxy {
     });
     this.d.cellmm = ndata;
     rowm.len = this.rowLen() + n;
-    mergesModify.call(this, 'row', sri, n);
+    modifyMerges.call(this, 'row', sri, n);
   }
 
   deleteRow() {
@@ -490,7 +531,7 @@ export default class DataProxy {
     // console.log('cellmm:', cellmm, ', ndata:', ndata);
     this.d.cellmm = ndata;
     rowm.len = this.rowLen() - n;
-    mergesModify.call(this, 'row', sri, -n);
+    modifyMerges.call(this, 'row', sri, -n);
   }
 
   insertColumn(n = 1) {
@@ -509,7 +550,7 @@ export default class DataProxy {
       cellmm[ri] = rndata;
     });
     colm.len = this.colLen() + n;
-    mergesModify.call(this, 'col', sci, n);
+    modifyMerges.call(this, 'col', sci, n);
   }
 
   deleteColumn() {
@@ -531,7 +572,7 @@ export default class DataProxy {
     });
     colm.len = this.colLen() - n;
     // console.log('n:', n);
-    mergesModify.call(this, 'col', sci, -n);
+    modifyMerges.call(this, 'col', sci, -n);
   }
 
   scrollx(x, cb) {
