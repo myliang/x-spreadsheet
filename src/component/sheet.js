@@ -173,7 +173,7 @@ function editorSet() {
 function verticalScrollbarMove(distance) {
   const { data, table, selector } = this;
   data.scrolly(distance, () => {
-    selector.setBRLAreaOffset(data.getSelectedRect());
+    selector.resetBRLAreaOffset();
     editorSetOffset.call(this);
     table.render();
   });
@@ -182,7 +182,7 @@ function verticalScrollbarMove(distance) {
 function horizontalScrollbarMove(distance) {
   const { data, table, selector } = this;
   data.scrollx(distance, () => {
-    selector.setBRTAreaOffset(data.getSelectedRect());
+    selector.resetBRTAreaOffset();
     editorSetOffset.call(this);
     table.render();
   });
@@ -193,7 +193,7 @@ function rowResizerFinished(cRect, distance) {
   const { table, selector, data } = this;
   data.setRowHeight(ri, distance);
   table.render();
-  selector.setAreaOffset(data.getSelectedRect());
+  selector.resetAreaOffset();
   verticalScrollbarSet.call(this);
   editorSetOffset.call(this);
 }
@@ -203,7 +203,7 @@ function colResizerFinished(cRect, distance) {
   const { table, selector, data } = this;
   data.setColWidth(ci, distance);
   table.render();
-  selector.setAreaOffset(data.getSelectedRect());
+  selector.resetAreaOffset();
   horizontalScrollbarSet.call(this);
   editorSetOffset.call(this);
 }
@@ -225,7 +225,7 @@ function sheetFreeze() {
     const fheight = data.freezeTotalHeight();
     editor.setFreezeLengths(fwidth, fheight);
   }
-  selector.setAreaOffset(data.getSelectedRect());
+  selector.resetAreaOffset();
 }
 
 function sheetReset() {

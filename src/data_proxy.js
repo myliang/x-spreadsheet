@@ -59,7 +59,7 @@ class Clipboard {
   constructor() {
     this.sIndexes = null;
     this.eIndexes = null;
-    this.state = null;
+    this.state = 'clear';
   }
 
   copy(sIndexes, eIndexes) {
@@ -360,8 +360,21 @@ export default class DataProxy {
   }
 
   getSelectedRect() {
-    const { scroll, selectedIndexes } = this;
-    const [[sri, sci], [eri, eci]] = selectedIndexes;
+    return this.getRect(...this.selectedIndexes);
+  }
+
+  getClipboardRect() {
+    const { clipboard } = this;
+    if (!clipboard.isClear()) {
+      const [sIndexes, eIndexes] = clipboard.get();
+      return this.getRect(sIndexes, eIndexes);
+    }
+    return { left: -100, top: -100 };
+  }
+
+  getRect([sri, sci], [eri, eci]) {
+    const { scroll } = this;
+    // const [[sri, sci], [eri, eci]] = selectedIndexes;
     // console.log('sri:', sri, ',sci:', sci, ', eri:', eri, ', eci:', eci);
     // no selector
     if (sri < 0 && sci < 0) {

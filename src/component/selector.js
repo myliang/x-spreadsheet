@@ -15,7 +15,6 @@ class SelectorElement {
       .children(this.areaEl, this.clipboardEl)
       .hide();
     startZIndex += 1;
-    this.areaOffset = null;
   }
 
   setOffset(v) {
@@ -32,7 +31,6 @@ class SelectorElement {
     const {
       left, top, width, height,
     } = v;
-    this.areaOffset = v;
     this.areaEl.offset({
       width: width - selectorHeightBorderWidth,
       height: height - selectorHeightBorderWidth,
@@ -41,21 +39,125 @@ class SelectorElement {
     }).show();
   }
 
-  showClipboard() {
+  setClipboardOffset(v) {
     const {
       left, top, width, height,
-    } = this.areaOffset;
+    } = v;
     this.clipboardEl.offset({
-      left: left - 1,
-      top: top - 1,
-      width: width - 1,
-      height: height - 1,
-    }).show();
+      left: left + 1,
+      top: top + 1,
+      width: width - 5,
+      height: height - 5,
+    });
+  }
+
+  showClipboard() {
+    this.clipboardEl.show();
   }
 
   hideClipboard() {
     this.clipboardEl.hide();
   }
+}
+
+function calBRAreaOffset(offset) {
+  const { data } = this;
+  const {
+    left, top, width, height, scroll, l, t,
+  } = offset;
+  const ftwidth = data.freezeTotalWidth();
+  const ftheight = data.freezeTotalHeight();
+  let left0 = left - ftwidth;
+  if (ftwidth > l) left0 -= scroll.x;
+  let top0 = top - ftheight;
+  if (ftheight > t) top0 -= scroll.y;
+  return {
+    left: left0,
+    top: top0,
+    width,
+    height,
+  };
+}
+
+function calTAreaOffset(offset) {
+  const { data } = this;
+  const {
+    left, width, height, l, t, scroll,
+  } = offset;
+  const ftwidth = data.freezeTotalWidth();
+  let left0 = left - ftwidth;
+  if (ftwidth > l) left0 -= scroll.x;
+  return {
+    left: left0, top: t, width, height,
+  };
+}
+
+function calLAreaOffset(offset) {
+  const { data } = this;
+  const {
+    top, width, height, l, t, scroll,
+  } = offset;
+  const ftheight = data.freezeTotalHeight();
+  let top0 = top - ftheight;
+  // console.log('ftheight:', ftheight, ', t:', t);
+  if (ftheight > t) top0 -= scroll.y;
+  return {
+    left: l, top: top0, width, height,
+  };
+}
+
+function setBRAreaOffset(offset) {
+  const { br } = this;
+  br.setAreaOffset(calBRAreaOffset.call(this, offset));
+}
+
+function setTLAreaOffset(offset) {
+  const { tl } = this;
+  tl.setAreaOffset(offset);
+}
+
+function setTAreaOffset(offset) {
+  const { t } = this;
+  t.setAreaOffset(calTAreaOffset.call(this, offset));
+}
+
+function setLAreaOffset(offset) {
+  const { l } = this;
+  l.setAreaOffset(calLAreaOffset.call(this, offset));
+}
+
+function setLClipboardOffset(offset) {
+  const { l } = this;
+  l.setClipboardOffset(calLAreaOffset.call(this, offset));
+}
+
+function setBRClipboardOffset(offset) {
+  const { br } = this;
+  br.setClipboardOffset(calBRAreaOffset.call(this, offset));
+}
+
+function setTLClipboardOffset(offset) {
+  const { tl } = this;
+  tl.setClipboardOffset(offset);
+}
+
+function setTClipboardOffset(offset) {
+  const { t } = this;
+  t.setClipboardOffset(calTAreaOffset.call(this, offset));
+}
+
+function setAllAreaOffset(offset) {
+  setBRAreaOffset.call(this, offset);
+  setTLAreaOffset.call(this, offset);
+  setTAreaOffset.call(this, offset);
+  setLAreaOffset.call(this, offset);
+}
+
+function setAllClipboardOffset(offset) {
+  setBRClipboardOffset.call(this, offset);
+  setTLClipboardOffset.call(this, offset);
+  setTClipboardOffset.call(this, offset);
+  setLClipboardOffset.call(this, offset);
 }
 
 export default class Selector {
@@ -105,36 +207,43 @@ export default class Selector {
     }
   }
 
-  setAreaOffset(offset) {
+  resetAreaOffset() {
     // console.log('offset:', offset);
-    this.areaOffset = offset;
-    this.setAllAreaOffset();
+    const offset = this.data.getSelectedRect();
+    const coffset = this.data.getClipboardRect();
+    setAllAreaOffset.call(this, offset);
+    setAllClipboardOffset.call(this, coffset);
     this.resetOffset();
   }
 
-  setBRTAreaOffset(offset) {
-    this.areaOffset = offset;
-    this.setBRAreaOffset();
-    this.setTAreaOffset();
+  resetBRTAreaOffset() {
+    const offset = this.data.getSelectedRect();
+    const coffset = this.data.getClipboardRect();
+    setBRAreaOffset.call(this, offset);
+    setTAreaOffset.call(this, offset);
+    setBRClipboardOffset.call(this, coffset);
+    setTClipboardOffset.call(this, coffset);
     this.resetOffset();
   }
 
-  setBRLAreaOffset(offset) {
-    this.areaOffset = offset;
-    this.setBRAreaOffset();
-    this.setLAreaOffset();
+  resetBRLAreaOffset() {
+    const offset = this.data.getSelectedRect();
+    const coffset = this.data.getClipboardRect();
+    setBRAreaOffset.call(this, offset);
+    setLAreaOffset.call(this, offset);
+    setBRClipboardOffset.call(this, coffset);
+    setLClipboardOffset.call(this, coffset);
     this.resetOffset();
   }
 
   set(ri, ci) {
     const { data } = this;
     const [sIndexes, eIndexes] = data.calRangeIndexes(ri, ci);
-    const selectRect = data.getSelectedRect();
     this.indexes = sIndexes;
     this.moveIndexes = sIndexes;
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
-    this.setAreaOffset(selectRect);
+    this.resetAreaOffset();
     this.el.show();
   }
 
@@ -144,11 +253,12 @@ export default class Selector {
     [sIndexes, eIndexes] = data.calRangeIndexes2(sIndexes, eIndexes);
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
-    this.areaOffset = data.getSelectedRect();
-    this.setAllAreaOffset();
+    setAllAreaOffset.call(this, data.getSelectedRect());
   }
 
   showClipboard() {
+    const coffset = this.data.getClipboardRect();
+    setAllClipboardOffset.call(this, coffset);
     ['br', 'l', 't', 'tl'].forEach((property) => {
       this[property].showClipboard();
     });
@@ -158,76 +268,5 @@ export default class Selector {
     ['br', 'l', 't', 'tl'].forEach((property) => {
       this[property].hideClipboard();
     });
-  }
-
-  setAllAreaOffset() {
-    this.setBRAreaOffset();
-    this.setTLAreaOffset();
-    this.setTAreaOffset();
-    this.setLAreaOffset();
-  }
-
-  setBRAreaOffset() {
-    if (this.areaOffset !== null) {
-      const { data } = this;
-      const {
-        left, top, width, height, scroll, l, t,
-      } = this.areaOffset;
-      const ftwidth = data.freezeTotalWidth();
-      const ftheight = data.freezeTotalHeight();
-      let left0 = left - ftwidth;
-      if (ftwidth > l) left0 -= scroll.x;
-      let top0 = top - ftheight;
-      if (ftheight > t) top0 -= scroll.y;
-      this.br.setAreaOffset({
-        left: left0,
-        top: top0,
-        width,
-        height,
-      });
-    }
-  }
-
-  setTLAreaOffset() {
-    if (this.areaOffset !== null) {
-      const {
-        l, t, width, height,
-      } = this.areaOffset;
-      this.tl.setAreaOffset({
-        left: l, top: t, width, height,
-      });
-    }
-  }
-
-  setTAreaOffset() {
-    if (this.areaOffset !== null) {
-      const { data } = this;
-      const {
-        left, width, height, l, t, scroll,
-      } = this.areaOffset;
-      const ftwidth = data.freezeTotalWidth();
-      let left0 = left - ftwidth;
-      if (ftwidth > l) left0 -= scroll.x;
-      // console.log('ftwdith:', ftwidth, ', l:', l, ', top:', top, ', t', t);
-      this.t.setAreaOffset({
-        left: left0, top: t, width, height,
-      });
-    }
-  }
-
-  setLAreaOffset() {
-    if (this.areaOffset !== null) {
-      const { data } = this;
-      const {
-        top, width, height, l, t, scroll,
-      } = this.areaOffset;
-      const ftheight = data.freezeTotalHeight();
-      let top0 = top - ftheight;
-      // console.log('ftheight:', ftheight, ', t:', t);
-      if (ftheight > t) top0 -= scroll.y;
-      this.l.setAreaOffset({
-        left: l, top: top0, width, height,
-      });
-    }
   }
 }
