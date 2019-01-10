@@ -63,16 +63,20 @@ function selectorMove(multiple, direction) {
     selector, col, row,
   } = this;
   let [ri, ci] = selector.indexes;
+  const [eri, eci] = selector.eIndexes;
   if (multiple) {
     [ri, ci] = selector.moveIndexes;
   }
+  // console.log('selector.move:', ri, ci);
   if (direction === 'left') {
-    if (ci > 1) ci -= 1;
+    if (ci > 0) ci -= 1;
   } else if (direction === 'right') {
+    if (eci !== ci) ci = eci;
     if (ci < col.len) ci += 1;
   } else if (direction === 'up') {
-    if (ri > 1) ri -= 1;
+    if (ri > 0) ri -= 1;
   } else if (direction === 'down') {
+    if (eri !== ri) ri = eri;
     if (ri < row.len) ri += 1;
   }
   if (multiple) {
