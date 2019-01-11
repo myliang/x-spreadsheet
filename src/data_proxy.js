@@ -1,3 +1,4 @@
+/* eslint no-new-wrappers: "error" */
 import helper from './helper';
 import { formulas as _formulas } from './formula';
 
@@ -265,12 +266,23 @@ function modifyMerges(type, i, n) {
   });
 }
 
-function copyPaste(srcIndexes, dstIndexes, what) {
+function copyPaste(srcIndexes, dstIndexes, what, autofill = false) {
   const { cellmm } = this.d;
   const [[sri, sci], [eri, eci]] = srcIndexes;
   const [[dsri, dsci], [deri, deci]] = dstIndexes;
   const rn = eri - sri + 1;
   const cn = eci - sci + 1;
+  const drn = deri - dsri + 1;
+  const dcn = deci - dsci + 1;
+  // console.log(srcIndexes, dstIndexes);
+  let isAdd = true;
+  let dn = 0;
+  if (deri < sri || deci < sci) {
+    isAdd = false;
+    if (deri < sri) dn = drn;
+    else dn = dcn;
+  }
+  // console.log('drn:', drn, ', dcn:', dcn);
   for (let i = sri; i <= eri; i += 1) {
     if (cellmm[i]) {
       for (let j = sci; j <= eci; j += 1) {
@@ -279,7 +291,27 @@ function copyPaste(srcIndexes, dstIndexes, what) {
             for (let jj = dsci; jj <= deci; jj += cn) {
               const nri = ii + (i - sri);
               const nci = jj + (j - sci);
-              this.setCell(nri, nci, cellmm[i][j], what);
+              const ncell = helper.cloneDeep(cellmm[i][j]);
+              // ncell.text
+              if (autofill && ncell && ncell.text && ncell.text.length > 0) {
+                const { text } = ncell;
+                let n = (jj - dsci) + (ii - dsri) + 1;
+                // console.log('n:', n);
+                if (!isAdd) {
+                  n -= dn + 1;
+                }
+                if (text[0] === '=') {
+                  //
+                } else {
+                  const result = /[\\.\d]+$/.exec(text);
+                  // console.log('result:', result);
+                  if (result !== null) {
+                    const index = Number(result[0]) + n;
+                    ncell.text = text.substring(0, result.index) + index;
+                  }
+                }
+              }
+              this.setCell(nri, nci, ncell, what);
               addMergesByCellIndexes.call(this, nri, nci);
             }
           }
@@ -501,6 +533,12 @@ export default class DataProxy {
     }
   }
 
+  autofill(sIndexes, eIndexes, what) {
+    // console.log('clipboard.get:', this.selectedIndexes);
+    addHistory.call(this);
+    copyPaste.call(this, this.selectedIndexes, [sIndexes, eIndexes], what, true);
+  }
+
   clearClipboard() {
     this.clipboard.clear();
   }
@@ -702,7 +740,7 @@ export default class DataProxy {
     const { cellmm } = this.d;
     cellmm[ri] = cellmm[ri] || {};
     if (what === 'all') {
-      cellmm[ri][ci] = helper.cloneDeep(cell);
+      cellmm[ri][ci] = cell;
     } else if (what === 'text') {
       cellmm[ri][ci] = cellmm[ri][ci] || {};
       cellmm[ri][ci].text = cell.text;

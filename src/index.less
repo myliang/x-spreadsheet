@@ -106,11 +106,16 @@ body {
     border: 2px solid rgb(75, 137, 255);
     background: rgba(75, 137, 255, .1);
   }
-  .xss-selector-clipboard {
+  .xss-selector-clipboard, .xss-selector-autofill {
     position: absolute;
-    border: 2px dashed rgb(75, 137, 255);
     background: transparent;
     z-index: 100;
+  }
+  .xss-selector-clipboard {
+    border: 2px dashed rgb(75, 137, 255);
+  }
+  .xss-selector-autofill {
+    border: 1px dashed rgba(0, 0, 0, .45); // #606060; // rgba(0, 0, 0, .2);
   }
   .xss-selector-corner {
     pointer-events: auto;

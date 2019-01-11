@@ -48,9 +48,9 @@ function selectorSet(multiple, ri, ci) {
   table.render();
 }
 
-function selectorSetByEvent(multiple, evt) {
-  const { data } = this;
-  const { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
+function selectorSetByEvent(multiple, ri, ci) {
+  // const { data } = this;
+  // const { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   // console.log('ri:', ri, ', ci:', ci, ', eri:', eri, ', eci:', eci);
   if (ri === -1 && ci === -1) return;
   selectorSet.call(this, multiple, ri, ci);
@@ -91,9 +91,15 @@ function overlayerMousemove(evt) {
   // console.log('evt.buttons: ', evt.buttons, evt);
   if (evt.buttons !== 0) return;
   if (evt.target.className === 'xss-resizer-hover') return;
+  const { offsetX, offsetY } = evt;
+  // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
   const {
     rowResizer, colResizer, tableEl, data,
   } = this;
+  if (offsetX > data.getFixedHeaderWidth()
+    && offsetY > data.getFixedHeaderHeight()) {
+    return;
+  }
   const tRect = tableEl.box();
   const cRect = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   if (cRect.ri >= 0 && cRect.ci === -1) {
@@ -116,25 +122,41 @@ function overlayerMousemove(evt) {
 
 function overlayerMousedown(evt) {
   // console.log(':::::overlayer.mousedown:', evt.detail, evt.button, evt.buttons, evt.shiftKey);
+  // console.log('evt.target.className:', evt.target.className);
+  const { selector, data, table } = this;
+  const isAutofillEl = evt.target.className === 'xss-selector-corner';
+  let { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
+  // console.log('ri:', ri, ', ci:', ci);
   if (!evt.shiftKey) {
     // console.log('selectorSetStart:::');
-    selectorSetByEvent.call(this, false, evt);
+    if (isAutofillEl) {
+      selector.showAutofill(ri, ci);
+    } else {
+      selectorSetByEvent.call(this, false, ri, ci);
+    }
 
     // mouse move up
     mouseMoveUp(window, (e) => {
       // console.log('mouseMoveUp::::');
-      if (e.buttons === 1 && !e.shiftKey) {
-        selectorSetByEvent.call(this, true, e);
+      ({ ri, ci } = data.getCellRectByXY(e.offsetX, e.offsetY));
+      if (isAutofillEl) {
+        selector.showAutofill(ri, ci);
+      } else if (e.buttons === 1 && !e.shiftKey) {
+        selectorSetByEvent.call(this, true, ri, ci);
       }
     }, () => {
+      if (isAutofillEl) {
+        data.autofill(selector.saIndexes, selector.eaIndexes, 'all');
+        table.render();
+      }
+      selector.hideAutofill();
     });
   }
 
-  if (evt.buttons === 1) {
+  if (!isAutofillEl && evt.buttons === 1) {
     if (evt.shiftKey) {
-      // to-do
       // console.log('shiftKey::::');
-      selectorSetByEvent.call(this, true, evt);
+      selectorSetByEvent.call(this, true, ri, ci);
     }
   }
 }

@@ -9,10 +9,10 @@ class SelectorElement {
     this.areaEl = h('div', 'xss-selector-area')
       .child(this.cornerEl).hide();
     this.clipboardEl = h('div', 'xss-selector-clipboard').hide();
+    this.autofillEl = h('div', 'xss-selector-autofill').hide();
     this.el = h('div', 'xss-selector')
       .css('z-index', `${startZIndex}`)
-      .on('click.stop', () => {})
-      .children(this.areaEl, this.clipboardEl)
+      .children(this.areaEl, this.clipboardEl, this.autofillEl)
       .hide();
     startZIndex += 1;
   }
@@ -49,6 +49,22 @@ class SelectorElement {
       width: width - 5,
       height: height - 5,
     });
+  }
+
+  showAutofill(v) {
+    const {
+      left, top, width, height,
+    } = v;
+    this.autofillEl.offset({
+      width: width - selectorHeightBorderWidth,
+      height: height - selectorHeightBorderWidth,
+      left,
+      top,
+    }).show();
+  }
+
+  hideAutofill() {
+    this.autofillEl.hide();
   }
 
   showClipboard() {
@@ -173,6 +189,8 @@ export default class Selector {
     this.indexes = null;
     this.sIndexes = null;
     this.eIndexes = null;
+    this.saIndexes = null;
+    this.eaIndexes = null;
     this.el = h('div', 'xss-selectors')
       .children(
         this.tl.el,
@@ -254,6 +272,69 @@ export default class Selector {
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
     setAllAreaOffset.call(this, data.getSelectedRect());
+  }
+
+  showAutofill(ri, ci) {
+    if (ri === -1 && ci === -1) return;
+    // console.log('ri:', ri, ', ci:', ci);
+    const [sri, sci] = this.sIndexes;
+    const [eri, eci] = this.eIndexes;
+    const [nri, nci] = [ri, ci];
+    // const rn = eri - sri;
+    // const cn = eci - sci;
+    const srn = sri - ri;
+    const scn = sci - ci;
+    const ern = eri - ri;
+    const ecn = eci - ci;
+    if (scn > 0) {
+      // left
+      // console.log('left');
+      this.saIndexes = [sri, nci];
+      this.eaIndexes = [eri, sci - 1];
+      // data.calRangeIndexes2(
+    } else if (srn > 0) {
+      // top
+      // console.log('top');
+      // nri = sri;
+      this.saIndexes = [nri, sci];
+      this.eaIndexes = [sri - 1, eci];
+    } else if (ecn < 0) {
+      // right
+      // console.log('right');
+      // nci = eci;
+      this.saIndexes = [sri, eci + 1];
+      this.eaIndexes = [eri, nci];
+    } else if (ern < 0) {
+      // bottom
+      // console.log('bottom');
+      // nri = eri;
+      this.saIndexes = [eri + 1, sci];
+      this.eaIndexes = [nri, eci];
+    } else {
+      // console.log('else:');
+      this.saIndexes = null;
+      this.eaIndexes = null;
+      return;
+    }
+    if (this.saIndexes !== null) {
+      // console.log(this.saIndexes, ':', this.eaIndexes);
+      const offset = this.data.getRect(this.saIndexes, this.eaIndexes);
+      offset.width += 2;
+      offset.height += 2;
+      const {
+        br, l, t, tl,
+      } = this;
+      br.showAutofill(calBRAreaOffset.call(this, offset));
+      l.showAutofill(calLAreaOffset.call(this, offset));
+      t.showAutofill(calTAreaOffset.call(this, offset));
+      tl.showAutofill(offset);
+    }
+  }
+
+  hideAutofill() {
+    ['br', 'l', 't', 'tl'].forEach((property) => {
+      this[property].hideAutofill();
+    });
   }
 
   showClipboard() {
