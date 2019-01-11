@@ -98,6 +98,8 @@ function overlayerMousemove(evt) {
   } = this;
   if (offsetX > data.getFixedHeaderWidth()
     && offsetY > data.getFixedHeaderHeight()) {
+    rowResizer.hide();
+    colResizer.hide();
     return;
   }
   const tRect = tableEl.box();
