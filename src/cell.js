@@ -14,6 +14,11 @@ const expr2xy = (src) => {
   return [alphabet.indexAt(x), parseInt(y, 10)];
 };
 
+const expr2expr = (src, xn, yn) => {
+  const [x, y] = expr2xy(src);
+  return alphabet.stringAt(x + xn) + (y + yn);
+};
+
 // Converting infix expression to a suffix expression
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
 // return: [A1, A2], SUM[, B1],AVERAGE,50,+,B20,+
@@ -154,7 +159,7 @@ const cellRender = (src, formulaMap, getCellText) => {
     const stack = infixExprToSuffixExpr(src.substring(1));
     // console.log('suffixExpr:', stack);
     if (stack.length <= 0) return src;
-    const cb = (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText);
+    const cb = (x, y) => cellRender(getCellText(x, y - 1), formulaMap, getCellText);
     return evalSuffixExpr(stack, formulaMap, cb);
   }
   return src;
@@ -165,4 +170,6 @@ export default {
 };
 export {
   infixExprToSuffixExpr,
+  expr2xy,
+  expr2expr,
 };

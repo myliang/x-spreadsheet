@@ -73,7 +73,7 @@ function renderCell(rindex, cindex) {
   // border, background....
   draw.rect(dbox);
   // render text
-  const cellText = _cell.render(cell.text, data.formulam, (x, y) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
+  const cellText = _cell.render(cell.text, data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
   const font = Object.assign({}, style.font);
   draw.text(cellText, dbox, {
     align: style.align,

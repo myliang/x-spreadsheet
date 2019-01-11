@@ -1,6 +1,7 @@
 /* eslint no-new-wrappers: "error" */
 import helper from './helper';
 import { formulas as _formulas } from './formula';
+import { expr2expr } from './cell';
 
 /*
 Cell: {
@@ -301,7 +302,16 @@ function copyPaste(srcIndexes, dstIndexes, what, autofill = false) {
                   n -= dn + 1;
                 }
                 if (text[0] === '=') {
-                  //
+                  ncell.text = text.replace(/\w{1,3}\d/g, (word) => {
+                    let [xn, yn] = [0, 0];
+                    if (sri === dsri) {
+                      xn = n;
+                    } else {
+                      yn = n;
+                    }
+                    // console.log('xn:', xn, ', yn:', yn, expr2expr(word, xn, yn));
+                    return expr2expr(word, xn, yn);
+                  });
                 } else {
                   const result = /[\\.\d]+$/.exec(text);
                   // console.log('result:', result);
