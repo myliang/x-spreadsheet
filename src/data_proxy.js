@@ -864,4 +864,8 @@ export default class DataProxy {
   fonts() {
     return Object.values(this.fontm);
   }
+
+  formulas() {
+    return Object.values(this.formulam);
+  }
 }

@@ -40,10 +40,10 @@ body {
   }
 
   .xss-dropdown-header {
-    .xss-icon:not(.arrow) {
+    .xss-icon.arrow-left {
       margin-left: 4px;
     }
-    .xss-icon.arrow {
+    .xss-icon.arrow-right {
       width: 10px;
       margin-right: 4px;
       .arrow-down {
@@ -393,6 +393,62 @@ body {
     &.arrow-right {
       left: -8 * @icon-size;
       top: -1 * @icon-size;
+    }
+    &.link {
+      left: -9 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.chart {
+      left: -10 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.border-all {
+      left: 0;
+      top: -2 * @icon-size;
+    }
+    &.border-inside {
+      left: -1 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-horizontal {
+      left: -2 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-vertical {
+      left: -3 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-outside {
+      left: -4 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-left {
+      left: -5 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-top {
+      left: -6 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-right {
+      left: -6 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-bottom {
+      left: -7 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.border-none {
+      left: -8 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.line-color {
+      left: -9 * @icon-size;
+      top: -2 * @icon-size;
+    }
+    &.line-type {
+      left: -10 * @icon-size;
+      top: -2 * @icon-size;
     }
   }
 }

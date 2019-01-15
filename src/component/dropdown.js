@@ -8,6 +8,8 @@ export default class Dropdown extends Element {
     this.title = title;
     if (typeof title === 'string') {
       this.title = h('div', 'xss-dropdown-title').child(title);
+    } else if (showArrow) {
+      this.title.addClass('arrow-left');
     }
     this.contentEl = h('div', 'xss-dropdown-content')
       .children(...children)
@@ -18,7 +20,7 @@ export default class Dropdown extends Element {
         .on('click', () => this.contentEl.show())
         .children(
           this.title,
-          showArrow ? h('div', 'xss-icon arrow').child(
+          showArrow ? h('div', 'xss-icon arrow-right').child(
             h('div', 'xss-icon-img arrow-down'),
           ) : '',
         ),

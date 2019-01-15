@@ -59,6 +59,15 @@ function buildFont(fonts) {
   return buildButton().child(dropdown);
 }
 
+function buildFormula(formulas) {
+  const dropdown = new Dropdown(
+    buildIcon('formula'),
+    '200px',
+    ...formulas.map(it => buildItem().child(it.key)),
+  );
+  return buildButton().child(dropdown);
+}
+
 function buildFontSize() {
   const dropdown = new Dropdown(
     '10',
@@ -86,7 +95,12 @@ function buildColorPicker(iconName, color) {
 }
 
 function buildBorders() {
-  return buildButton();
+  const dropdown = new Dropdown(
+    buildIcon('border-all'),
+    'auto',
+    false,
+  );
+  return buildButton().child(dropdown);
 }
 
 function buildAlign(aligns, align) {
@@ -134,6 +148,11 @@ export default class Toolbar {
         this.alignEl = buildAlign(['left', 'center', 'right'], style.align),
         this.valignEl = buildAlign(['top', 'middle', 'bottom'], style.valign),
         this.textwrapEl = buildButtonWithIcon('textwrap'),
+        buildDivider(),
+        this.linkEl = buildButtonWithIcon('link'),
+        this.chartEl = buildButtonWithIcon('chart'),
+        this.autofilterEl = buildButtonWithIcon('autofilter'),
+        this.formulaEl = buildFormula(data.formulas()),
       );
     this.reset();
   }
