@@ -3,6 +3,7 @@ import helper from './helper';
 import { h } from './component/element';
 import DataProxy from './data_proxy';
 import Sheet from './component/sheet';
+import Toolbar from './component/toolbar';
 import './index.less';
 
 const defaultOptions = {
@@ -67,14 +68,12 @@ Cell: {
 class Spreadsheet {
   constructor(tel, options = {}) {
     this.options = helper.merge(defaultOptions, options);
-    const { font, color } = this.options.style;
-    this.el = h('div', 'xss')
-      .on('contextmenu', evt => evt.preventDefault())
-      .css('font-family', 'Source Sans Pro')
-      .css('color', color)
-      .css('font-size', `${font.size}px`);
-    tel.appendChild(this.el.el);
     this.data = new DataProxy(this.options);
+    this.toolbar = new Toolbar(this.data);
+    this.el = h('div', 'xss')
+      .child(this.toolbar.el)
+      .on('contextmenu', evt => evt.preventDefault());
+    tel.appendChild(this.el.el);
     // create canvas element
     this.sheet = new Sheet(this.el, this.data);
   }

@@ -6,7 +6,7 @@ body {
 }
 
 .xss {
-  font-size: 13px;
+  font-size: 14px;
   line-height: normal;
   user-select: none;
   -moz-user-select: none;
@@ -21,6 +21,36 @@ body {
   overflow: hidden;
   height: 100%;
   line-height: 0;
+}
+.xss-dropdown {
+  position: relative;
+
+  .xss-dropdown-content {
+    position: absolute;
+    top: calc(~'100% + 5px');
+    left: 0;
+    z-index: 200;
+    background: #fff;
+    box-shadow: 1px 2px 5px 2px rgba(51,51,51,.15);
+  }
+
+  .xss-dropdown-title {
+    padding: 0 5px;
+    display: inline-block;
+  }
+
+  .xss-dropdown-header {
+    .xss-icon:not(.arrow) {
+      margin-left: 4px;
+    }
+    .xss-icon.arrow {
+      width: 10px;
+      margin-right: 4px;
+      .arrow-down {
+        left: -130px;
+      }
+    }
+  }
 }
 /* resizer **/
 .xss-resizer {
@@ -172,12 +202,13 @@ body {
   background: 0;
   border: 1px solid transparent;
   outline: none;
-  height: 24px;
+  height: 26px;
   color: rgba(0, 0, 0, .9);
-  line-height: 24px;
+  line-height: 26px;
   list-style: none;
   padding: 2px 10px;
   cursor: default;
+  text-align: left;
 
   &.disabled {
     pointer-events: none;
@@ -216,4 +247,152 @@ body {
 
 .xss-suggest {
   width: 200px;
+}
+
+.xss-toolbar {
+  height: 40px;
+  text-align: left;
+  padding: 0 60px;
+  border-bottom: 1px solid #e0e2e4;
+  background: #f5f6f7;
+  display: flex;
+
+  .xss-toolbar-btn {
+    flex: 0 0 auto;
+    display: inline-block;
+    border: 1px solid transparent;
+    height: 26px;
+    line-height: 26px;
+    min-width: 26px;
+    margin: 6px 1px 0;
+    padding: 0;
+    text-align: center;
+    border-radius: 2px;
+
+    &:hover, &.active {
+      background: rgba(0, 0, 0, .08);
+    }
+  }
+}
+
+.xss-toolbar-divider {
+  display: inline-block;
+  background: #e0e2e4;
+  width: 1px;
+  vertical-align: middle;
+  height: 18px;
+  margin: 12px 3px 0;
+}
+
+.xss-icon {
+  width: 18px;
+  height: 18px;
+  margin: 1px 2px 2px 1px;
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+  display: inline-block;
+
+  .xss-icon-img {
+    background-image: url('../assets/sprite.svg');
+    position: absolute;
+    width: 262px;
+    height: 444px;
+    opacity: 0.56;
+
+    &.undo {
+      left: 0;
+      top: 0;
+    }
+    &.redo {
+      left: -1 * @icon-size;
+      top: 0;
+    }
+    &.print {
+      left: -2 * @icon-size;
+      top: 0;
+    }
+    &.paintformat {
+      left: -3 * @icon-size;
+      top: 0;
+    }
+    &.clearformat {
+      left: -4 * @icon-size;
+      top: 0;
+    }
+    &.bold {
+      left: -5 * @icon-size;
+      top: 0;
+    }
+    &.italic {
+      left: -6 * @icon-size;
+      top: 0;
+    }
+    &.underline {
+      left: -7 * @icon-size;
+      top: 0;
+    }
+    &.strikethrough {
+      left: -8 * @icon-size;
+      top: 0;
+    }
+    &.text-color {
+      left: -9 * @icon-size;
+      top: 0;
+    }
+    &.fill-color {
+      left: -10 * @icon-size;
+      top: 0;
+    }
+    &.merge {
+      left: -11 * @icon-size;
+      top: 0;
+    }
+    &.align-left {
+      left: -12 * @icon-size;
+      top: 0;
+    }
+    &.align-center {
+      left: -13 * @icon-size;
+      top: 0;
+    }
+    &.align-right {
+      left: 0;
+      top: -1 * @icon-size;
+    }
+    &.align-top {
+      left: -1 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.align-middle {
+      left: -2 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.align-bottom {
+      left: -3 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.textwrap {
+      left: -4 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.autofilter {
+      left: -5 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.formula {
+      left: -6 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.arrow-down {
+      left: -7 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.arrow-right {
+      left: -8 * @icon-size;
+      top: -1 * @icon-size;
+    }
+  }
 }

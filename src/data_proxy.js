@@ -1,6 +1,8 @@
 /* eslint no-new-wrappers: "error" */
 import helper from './helper';
 import { formulas as _formulas } from './formula';
+import { formats as _formats } from './format';
+import { fonts as _fonts } from './font';
 import { expr2expr } from './cell';
 
 /*
@@ -359,6 +361,8 @@ export default class DataProxy {
   constructor(options) {
     this.options = options;
     this.formulam = _formulas(options.formulas);
+    this.formatm = _formats(options.formats);
+    this.fontm = _fonts(options.fonts);
     this.d = defaultData;
     this.clipboard = new Clipboard();
     this.history = new History();
@@ -851,5 +855,13 @@ export default class DataProxy {
 
   getFixedHeaderHeight() {
     return this.options.row.height;
+  }
+
+  formats() {
+    return Object.values(this.formatm);
+  }
+
+  fonts() {
+    return Object.values(this.fontm);
   }
 }
