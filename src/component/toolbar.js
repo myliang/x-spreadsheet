@@ -1,5 +1,7 @@
 import { h } from './element';
 import Dropdown from './dropdown';
+import ColorPalette from './color_palette';
+import BorderPalette from './border_palette';
 import Icon from './icon';
 import { fontSizes } from '../font';
 
@@ -82,24 +84,22 @@ function buildFontSize() {
   return buildButton().child(dropdown);
 }
 
-function buildColorPicker(iconName, color) {
-  const icon = buildIcon(iconName)
-    .css('height', '16px')
-    .css('border-bottom', `3px solid ${color}`);
-  const dropdown = new Dropdown(
-    icon,
-    'auto',
-    false,
-  );
-  return buildButton().child(dropdown);
+function buildColor(iconName, color) {
+  const picker = ColorPalette.build(iconName, color);
+  return buildButton().child(picker);
 }
 
 function buildBorders() {
+  const borderPalette = new BorderPalette();
   const dropdown = new Dropdown(
     buildIcon('border-all'),
     'auto',
     false,
+    borderPalette.el,
   );
+  borderPalette.change = () => {
+    dropdown.hide();
+  };
   return buildButton().child(dropdown);
 }
 
@@ -139,9 +139,9 @@ export default class Toolbar {
         this.boldEl = buildButtonWithIcon('bold'),
         this.italicEl = buildButtonWithIcon('italic'),
         this.strikethroughEl = buildButtonWithIcon('strikethrough'),
-        this.textColorEl = buildColorPicker('text-color', style.color),
+        this.textColorEl = buildColor('text-color', style.color),
         buildDivider(),
-        this.fillColorEl = buildColorPicker('fill-color', style.bgcolor),
+        this.fillColorEl = buildColor('fill-color', style.bgcolor),
         this.bordersEl = buildBorders(),
         this.mergeEl = buildButtonWithIcon('merge'),
         buildDivider(),
