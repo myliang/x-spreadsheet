@@ -146,10 +146,9 @@ class Draw {
         italic: false,
       }
     }
-    wrapText: wrap text
+    textWrap: text wrapping
   */
-  text(txt, box, attr = {}, wrapText = true) {
-    // console.log('attr: ', attr, ', wrapText: ', wrapText, ', text:', txt);
+  text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
       align, valign, font, color,
@@ -165,7 +164,7 @@ class Draw {
     });
     const txtWidth = ctx.measureText(txt).width;
     // console.log('txtWidth: ', txtWidth);
-    if (wrapText && txtWidth > box.innerWidth()) {
+    if (textWrap && txtWidth > box.innerWidth()) {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
         // console.log('::::::::width:', txt[i], ctx.measureText(txt[i]).width);

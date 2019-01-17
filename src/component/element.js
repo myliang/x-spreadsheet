@@ -123,19 +123,30 @@ class Element {
     return this;
   }
 
+  active(flag = true) {
+    if (flag) this.addClass('active');
+    else this.removeClass('active');
+  }
+
+  disabled(flag = true) {
+    if (flag) this.addClass('disabled');
+    else this.removeClass('disabled');
+  }
+
   // key, value
   // key
   // {k, v}...
   attr(key, value) {
     if (value !== undefined) {
       this.el.setAttribute(key, value);
+    } else {
+      if (typeof key === 'string') {
+        return this.el.getAttribute(key);
+      }
+      Object.keys(key).forEach((k) => {
+        this.el.setAttribute(k, key[k]);
+      });
     }
-    if (typeof value === 'string') {
-      return this.el.getAttribute(key);
-    }
-    Object.keys(key).forEach((k) => {
-      this.el.setAttribute(k, key[k]);
-    });
     return this;
   }
 

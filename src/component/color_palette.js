@@ -1,6 +1,4 @@
 import { h } from './element';
-import Dropdown from './dropdown';
-import Icon from './icon';
 
 const themeColorPlaceHolders = ['#ffffff', '#000100', '#e7e5e6', '#445569', '#5b9cd6', '#ed7d31', '#a5a5a5', '#ffc001', '#4371c6', '#71ae47'];
 
@@ -42,23 +40,3 @@ export default class ColorPalette {
     this.el.child(table);
   }
 }
-
-function buildColorPicker(iconName, color) {
-  const icon = new Icon(iconName)
-    .css('height', '16px')
-    .css('border-bottom', `3px solid ${color}`);
-  const colorPalette = new ColorPalette();
-  const dropdown = new Dropdown(
-    icon,
-    'auto',
-    false,
-    colorPalette.el,
-  );
-  colorPalette.change = (v) => {
-    icon.css('border-color', v);
-    dropdown.hide();
-  };
-  return dropdown;
-}
-
-ColorPalette.build = buildColorPicker;

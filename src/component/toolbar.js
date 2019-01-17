@@ -1,9 +1,15 @@
 import { h } from './element';
-import Dropdown from './dropdown';
-import ColorPalette from './color_palette';
-import BorderPalette from './border_palette';
+import DropdownFont from './dropdown_font';
+import DropdownFontSize from './dropdown_fontsize';
+import DropdownFormat from './dropdown_format';
+import DropdownFormula from './dropdown_formula';
+import DropdownColor from './dropdown_color';
+import DropdownAlign from './dropdown_align';
+import DropdownBorder from './dropdown_border';
 import Icon from './icon';
-import { fontSizes } from '../font';
+// import { fontSizes, baseFonts } from '../font';
+// import { baseFormulas } from '../formula';
+// import { baseFormats } from '../format';
 
 function buildIcon(name) {
   return new Icon(name);
@@ -11,14 +17,6 @@ function buildIcon(name) {
 
 function buildButton(tooltip) {
   return h('div', 'xss-toolbar-btn').attr('data-tooltip', tooltip);
-}
-
-function buildItem() {
-  return h('div', 'xss-item');
-}
-
-function buildItemWithIcon(iconName) {
-  return buildItem().child(buildIcon(iconName));
 }
 
 function buildDivider() {
@@ -29,104 +27,20 @@ function buildButtonWithIcon(tooltip, iconName) {
   return buildButton(tooltip).child(buildIcon(iconName));
 }
 
-function buildFormat(formats) {
-  const dropdown = new Dropdown(
-    'Normal',
-    '220px',
-    true,
-    ...formats.map((it) => {
-      const item = buildItem();
-      item.child(it.title)
-        .on('click', () => {
-          dropdown.setTitle(it.title);
-        });
-      if (it.label) item.child(h('div', 'label').html(it.label));
-      return item;
-    }),
-  );
-  return buildButton('Formats').child(dropdown);
-}
-
-function buildFont(fonts) {
-  const dropdown = new Dropdown(
-    fonts[0].title,
-    '160px',
-    true,
-    ...fonts.map(it => buildItem()
-      .on('click', () => {
-        dropdown.setTitle(it.title);
-      })
-      .child(it.title)),
-  );
-  return buildButton('Font').child(dropdown);
-}
-
-function buildFormula(formulas) {
-  const dropdown = new Dropdown(
-    buildIcon('formula'),
-    '200px',
-    ...formulas.map(it => buildItem()
-      .on('click', () => {
-        dropdown.hide();
-      })
-      .child(it.key)),
-  );
-  return buildButton('Functions').child(dropdown);
-}
-
-function buildFontSize() {
-  const dropdown = new Dropdown(
-    '10',
-    '60px',
-    true,
-    ...fontSizes.map(it => buildItem()
-      .on('click', () => {
-        dropdown.setTitle(`${it.pt}`);
-      })
-      .child(`${it.pt}`)),
-  );
-  return buildButton('Font size').child(dropdown);
-}
-
-function buildColor(tooltip, iconName, color) {
-  const picker = ColorPalette.build(iconName, color);
-  return buildButton(tooltip).child(picker);
-}
-
-function buildBorders() {
-  const borderPalette = new BorderPalette();
-  const dropdown = new Dropdown(
-    buildIcon('border-all'),
-    'auto',
-    false,
-    borderPalette.el,
-  );
-  borderPalette.change = () => {
-    dropdown.hide();
-  };
-  return buildButton('Borders').child(dropdown);
-}
-
-function buildAlign(aligns, tooltip, align) {
-  const icon = buildIcon(`align-${align}`);
-  const dropdown = new Dropdown(
-    icon,
-    'auto',
-    true,
-    ...aligns.map(it => buildItemWithIcon(`align-${it}`)
-      .on('click', () => {
-        icon.setName(`align-${it}`);
-        dropdown.hide();
-      })),
-  );
-  return buildButton(tooltip).child(dropdown);
-}
-
 export default class Toolbar {
   constructor(data) {
     this.data = data;
     const { style } = data.options;
     // console.log('data:', data);
+    this.ddFormat = new DropdownFormat();
+    this.ddFont = new DropdownFont();
+    this.ddFormula = new DropdownFormula();
+    this.ddFontSize = new DropdownFontSize();
+    this.ddTextColor = new DropdownColor('text-color', style.color);
+    this.ddFillColor = new DropdownColor('fill-color', style.bgcolor);
+    this.ddAlign = new DropdownAlign(['left', 'center', 'right'], style.align);
+    this.ddVAlign = new DropdownAlign(['top', 'middle', 'bottom'], style.valign);
+    this.ddBorder = new DropdownBorder();
     this.el = h('div', 'xss-toolbar')
       .children(
         this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo'),
@@ -135,33 +49,53 @@ export default class Toolbar {
         this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat'),
         this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat'),
         buildDivider(),
-        this.formatEl = buildFormat(data.formats()),
+        buildButton('Format').child(this.ddFormat.el),
         buildDivider(),
-        this.fontEl = buildFont(data.fonts()),
-        this.fontSizeEl = buildFontSize(),
+        buildButton('Font').child(this.ddFont.el),
+        buildButton('Font size').child(this.ddFontSize.el),
         buildDivider(),
         this.boldEl = buildButtonWithIcon('Bold', 'bold'),
         this.italicEl = buildButtonWithIcon('Italic', 'italic'),
         this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough'),
-        this.textColorEl = buildColor('Text color', 'text-color', style.color),
+        buildButton('Text color').child(this.ddTextColor.el),
         buildDivider(),
-        this.fillColorEl = buildColor('Fill color', 'fill-color', style.bgcolor),
-        this.bordersEl = buildBorders(),
+        buildButton('Fill color').child(this.ddFillColor.el),
+        buildButton('Borders').child(this.ddBorder.el),
         this.mergeEl = buildButtonWithIcon('Merge cells', 'merge'),
         buildDivider(),
-        this.alignEl = buildAlign(['left', 'center', 'right'], 'Horizontal align', style.align),
-        this.valignEl = buildAlign(['top', 'middle', 'bottom'], 'Vertical align', style.valign),
-        this.textwrapEl = buildButtonWithIcon('textwrap'),
+        buildButton('Horizontal align').child(this.ddAlign.el),
+        buildButton('Vertical align').child(this.ddVAlign.el),
+        this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap'),
         buildDivider(),
         this.linkEl = buildButtonWithIcon('Insert link', 'link'),
         this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
         this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
-        this.formulaEl = buildFormula(data.formulas()),
+        buildButton('Functions').child(this.ddFormula.el),
       );
     this.reset();
   }
 
   reset() {
-    //
+    const { data } = this;
+    const style = data.getSelectedCellStyle();
+    const cell = data.getSelectedCell();
+    this.undoEl.disabled(!data.canUndo());
+    this.redoEl.disabled(!data.canRedo());
+    this.mergeEl.disabled(!data.canMerge());
+    // console.log('selectedCell:', style, cell);
+    const { font } = style;
+    this.ddFont.setTitle(font.name);
+    this.ddFontSize.setTitle(font.size);
+    this.boldEl.active(font.bold);
+    this.italicEl.active(font.italic);
+    this.strikethroughEl.active(style.strikethrough);
+    this.ddTextColor.setTitle(style.color);
+    this.ddFillColor.setTitle(style.bgcolor);
+    this.textwrapEl.active(style.textWrap);
+    if (cell) {
+      if (cell.format) {
+        this.ddFormat.setTitle(cell.format);
+      }
+    }
   }
 }

@@ -53,30 +53,30 @@ const baseFormats = [
   {
     key: 'date',
     title: 'Date',
-    type: 'string',
+    type: 'date',
     label: '26/09/2008',
-    render: v => `$${formatNumberRender(v)}`,
+    render: formatStringRender,
   },
   {
     key: 'time',
     title: 'Time',
-    type: 'string',
+    type: 'date',
     label: '15:59:00',
-    render: v => `$${formatNumberRender(v)}`,
+    render: formatStringRender,
   },
   {
     key: 'datetime',
     title: 'Date time',
-    type: 'string',
+    type: 'date',
     label: '26/09/2008 15:59:00',
-    render: v => `$${formatNumberRender(v)}`,
+    render: formatStringRender,
   },
   {
     key: 'duration',
     title: 'Duration',
-    type: 'string',
+    type: 'date',
     label: '24:01:00',
-    render: v => `$${formatNumberRender(v)}`,
+    render: formatStringRender,
   },
 ];
 

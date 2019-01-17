@@ -1,5 +1,5 @@
 import alphabet from '../alphabet';
-// import helper from '../helper';
+import { getFontSizePxByPt } from '../font';
 import _cell from '../cell';
 import { Draw, DrawBox } from '../canvas/draw';
 // gobal var
@@ -75,12 +75,13 @@ function renderCell(rindex, cindex) {
   // render text
   const cellText = _cell.render(cell.text, data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
   const font = Object.assign({}, style.font);
+  font.size = getFontSizePxByPt(font.size);
   draw.text(cellText, dbox, {
     align: style.align,
     valign: style.valign,
     font,
     color: style.color,
-  }, style.wrapText);
+  }, style.textWrap);
   draw.restore();
 }
 
@@ -122,7 +123,7 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
     .fillRect(0, 0, col.indexWidth, sumHeight)
     .fillRect(0, 0, sumWidth, row.height);
 
-  const [[sri, sci], [eri, eci]] = data.selectedIndexes;
+  const [[sri, sci], [eri, eci]] = data.selector.getRange();
   // console.log(data.selectIndexes);
   // draw text
   // text font, align...

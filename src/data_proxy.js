@@ -106,6 +106,23 @@ class Clipboard {
   }
 }
 
+class Selector {
+  constructor() {
+    this.indexes = [0, 0];
+    this.sIndexes = [-1, -1];
+    this.eIndexes = [-1, -1];
+  }
+
+  getRange() {
+    return [this.sIndexes, this.eIndexes];
+  }
+
+  setRange(sIndexes, eIndexes) {
+    this.sIndexes = sIndexes;
+    this.eIndexes = eIndexes;
+  }
+}
+
 class Scroll {
   constructor() {
     this.x = 0;
@@ -119,9 +136,9 @@ function addHistory() {
 }
 
 function deleteCells() {
-  const { d } = this;
+  const { d, selector } = this;
   const { cellmm } = d;
-  const [[sri, sci], [eri, eci]] = this.selectedIndexes;
+  const [[sri, sci], [eri, eci]] = selector.getRange();
   const ndata = {};
   // console.log(sri, sci, eri, eci);
   Object.keys(cellmm).forEach((ri) => {
@@ -367,11 +384,19 @@ export default class DataProxy {
     this.clipboard = new Clipboard();
     this.history = new History();
     this.scroll = new Scroll();
-    this.selectedIndexes = [[-1, -1], [-1, -1]];
+    this.selector = new Selector();
   }
 
   load(data) {
     this.d = helper.merge(defaultData, data);
+  }
+
+  canUndo() {
+    this.history.canUndo();
+  }
+
+  canRedo() {
+    this.history.canRedo();
   }
 
   undo() {
@@ -390,7 +415,11 @@ export default class DataProxy {
 
   /* for select start */
   setSelectedIndexes(sIndexes, eIndexes) {
-    this.selectedIndexes = [sIndexes, eIndexes];
+    this.selector.setRange(sIndexes, eIndexes);
+  }
+
+  setSelectedCurrentIndexes(indexes) {
+    this.selector.indexes = indexes;
   }
 
   xyInSelectedRect(x, y) {
@@ -405,8 +434,16 @@ export default class DataProxy {
       && y1 > top && y1 < (top + height);
   }
 
+  getSelectedCellStyle() {
+    return this.getCellStyle(...this.selector.indexes);
+  }
+
+  getSelectedCell() {
+    return this.getCell(...this.selector.indexes);
+  }
+
   getSelectedRect() {
-    return this.getRect(...this.selectedIndexes);
+    return this.getRect(...this.selector.getRange());
   }
 
   getClipboardRect() {
@@ -420,7 +457,6 @@ export default class DataProxy {
 
   getRect([sri, sci], [eri, eci]) {
     const { scroll } = this;
-    // const [[sri, sci], [eri, eci]] = selectedIndexes;
     // console.log('sri:', sri, ',sci:', sci, ', eri:', eri, ', eci:', eci);
     // no selector
     if (sri < 0 && sci < 0) {
@@ -499,7 +535,7 @@ export default class DataProxy {
       }
     });
     this.setSelectedIndexes([sri, sci], [eri, eci]);
-    return this.selectedIndexes;
+    return this.selector.getRange();
   }
 
   calRangeIndexes(ri, ci) {
@@ -523,12 +559,12 @@ export default class DataProxy {
   }
 
   copy() {
-    const [sIndexes, eIndexes] = this.selectedIndexes;
+    const { sIndexes, eIndexes } = this.selector;
     this.clipboard.copy(sIndexes, eIndexes);
   }
 
   cut() {
-    const [sIndexes, eIndexes] = this.selectedIndexes;
+    const { sIndexes, eIndexes } = this.selector;
     this.clipboard.cut(sIndexes, eIndexes);
   }
 
@@ -538,7 +574,7 @@ export default class DataProxy {
     const { clipboard } = this;
     if (clipboard.isClear()) return;
 
-    const [sIndexes, eIndexes] = this.selectedIndexes;
+    const { sIndexes, eIndexes } = this.selector;
     addHistory.call(this);
     if (clipboard.isCopy()) {
       copyPaste.call(this, clipboard.get(), [sIndexes, eIndexes], what);
@@ -548,17 +584,28 @@ export default class DataProxy {
   }
 
   autofill(sIndexes, eIndexes, what) {
-    // console.log('clipboard.get:', this.selectedIndexes);
     addHistory.call(this);
-    copyPaste.call(this, this.selectedIndexes, [sIndexes, eIndexes], what, true);
+    copyPaste.call(this, this.selector.getRange(), [sIndexes, eIndexes], what, true);
   }
 
   clearClipboard() {
     this.clipboard.clear();
   }
 
+  /* merge methods start */
+  canMerge() {
+    const [[sri, sci], [eri, eci]] = this.selector.getRange();
+    if (sri === eri && sci === eci) return false;
+    const cell = this.getCell(sri, sci);
+    if (cell && cell.merge) {
+      const [rn, cn] = cell.merge;
+      if (sri + rn === eri && sci + cn === eci) return false;
+    }
+    return true;
+  }
+
   merge() {
-    const [sIndexes, eIndexes] = this.selectedIndexes;
+    const { sIndexes, eIndexes } = this.selector;
     const [sri, sci] = sIndexes;
     const [eri, eci] = eIndexes;
     const rn = eri - sri;
@@ -572,17 +619,18 @@ export default class DataProxy {
       deleteCells.call(this);
     }
   }
+  /* merge methods end */
 
   deleteCell() {
     addHistory.call(this);
     deleteCells.call(this);
-    deleteMerges.call(this, ...this.selectedIndexes);
+    deleteMerges.call(this, ...this.selector.getRange());
   }
 
   insertRow(n = 1) {
     addHistory.call(this);
     const { cellmm, rowm } = this.d;
-    const [[sri]] = this.selectedIndexes;
+    const [sri] = this.selector.sIndexes;
     const ndata = {};
     Object.keys(cellmm).forEach((ri) => {
       let nri = parseInt(ri, 10);
@@ -599,7 +647,7 @@ export default class DataProxy {
   deleteRow() {
     addHistory.call(this);
     const { cellmm, rowm } = this.d;
-    const [[sri], [eri]] = this.selectedIndexes;
+    const [[sri], [eri]] = this.selector.getRange();
     // console.log('min:', min, ',max:', max);
     const n = eri - sri + 1;
     const ndata = {};
@@ -620,7 +668,7 @@ export default class DataProxy {
   insertColumn(n = 1) {
     addHistory.call(this);
     const { cellmm, colm } = this.d;
-    const [[, sci]] = this.selectedIndexes;
+    const [, sci] = this.selector.sIndexes;
     Object.keys(cellmm).forEach((ri) => {
       const rndata = {};
       Object.keys(cellmm[ri]).forEach((ci) => {
@@ -639,7 +687,7 @@ export default class DataProxy {
   deleteColumn() {
     addHistory.call(this);
     const { cellmm, colm } = this.d;
-    const [[, sci], [, eci]] = this.selectedIndexes;
+    const [[, sci], [, eci]] = this.selector.getRange();
     const n = eci - sci + 1;
     Object.keys(cellmm).forEach((ri) => {
       const rndata = {};
@@ -741,7 +789,7 @@ export default class DataProxy {
     const cell = this.getCell(ri, ci);
     const { styles } = this.d;
     // console.log('options:', this.opitons.style);
-    return helper.merge(this.options.style, cell.si !== undefined ? styles[cell.si] : {});
+    return helper.merge(this.options.style, (cell && cell.si !== undefined) ? styles[cell.si] : {});
   }
 
   setCellText(ri, ci, text) {
@@ -855,17 +903,5 @@ export default class DataProxy {
 
   getFixedHeaderHeight() {
     return this.options.row.height;
-  }
-
-  formats() {
-    return Object.values(this.formatm);
-  }
-
-  fonts() {
-    return Object.values(this.fontm);
-  }
-
-  formulas() {
-    return Object.values(this.formulam);
   }
 }
