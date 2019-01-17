@@ -12,12 +12,13 @@ export default class DropdownAlign extends Dropdown {
     const naligns = aligns.map(it => buildItemWithIcon(`align-${it}`)
       .on('click', () => {
         this.setTitle(it);
+        this.change(it);
       }));
     super(icon, 'auto', true, ...naligns);
   }
 
   setTitle(align) {
-    this.title.className(`align-${align}`);
+    this.title.setName(`align-${align}`);
     this.hide();
   }
 }

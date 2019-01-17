@@ -6,7 +6,8 @@ export default class DropdownBorder extends Dropdown {
   constructor() {
     const icon = new Icon('border-all');
     const borderPalette = new BorderPalette();
-    borderPalette.change = () => {
+    borderPalette.change = (v) => {
+      this.change(v);
       this.hide();
     };
     super(icon, 'auto', false, borderPalette.el);

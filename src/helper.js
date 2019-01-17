@@ -1,10 +1,16 @@
 /* eslint-disable no-param-reassign */
+function cloneDeep(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 const mergeDeep = (object = {}, ...sources) => {
   sources.forEach((source) => {
     Object.keys(source).forEach((key) => {
       const v = source[key];
       // console.log('k:', key, ', v:', source[key], typeof v, v instanceof Object);
-      if (typeof v === 'function' && !Array.isArray(v) && v instanceof Object) {
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+        object[key] = v;
+      } else if (typeof v !== 'function' && !Array.isArray(v) && v instanceof Object) {
         object[key] = object[key] || {};
         mergeDeep(object[key], v);
       } else {
@@ -57,7 +63,7 @@ function rangeSum(min, max, getv) {
 }
 
 export default {
-  cloneDeep: obj => JSON.parse(JSON.stringify(obj)),
+  cloneDeep,
   merge: (...sources) => mergeDeep({}, ...sources),
   sum,
   rangeSum,

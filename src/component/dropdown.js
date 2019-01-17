@@ -6,6 +6,7 @@ export default class Dropdown extends Element {
   constructor(title, width, showArrow, ...children) {
     super('div', 'xss-dropdown');
     this.title = title;
+    this.change = () => {};
     if (typeof title === 'string') {
       this.title = h('div', 'xss-dropdown-title').child(title);
     } else if (showArrow) {

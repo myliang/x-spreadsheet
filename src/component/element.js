@@ -95,6 +95,7 @@ class Element {
   className(v) {
     if (v !== undefined) {
       this.el.className = v;
+      return this;
     }
     return this.el.className;
   }

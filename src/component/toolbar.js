@@ -24,12 +24,27 @@ function buildDivider() {
 }
 
 function buildButtonWithIcon(tooltip, iconName) {
-  return buildButton(tooltip).child(buildIcon(iconName));
+  return buildButton(tooltip)
+    .child(buildIcon(iconName))
+    .on('click', () => this.change(iconName));
+}
+
+function bindDropdownChange() {
+  this.ddFormat.change = it => this.change('format', it);
+  this.ddFont.change = it => this.change('font', it);
+  this.ddFormula.change = it => this.change('formula', it);
+  this.ddFontSize.change = it => this.change('font-size', it);
+  this.ddTextColor.change = it => this.change('color', it);
+  this.ddFillColor.change = it => this.change('bgcolor', it);
+  this.ddAlign.change = it => this.change('align', it);
+  this.ddVAlign.change = it => this.change('valign', it);
+  this.ddBorder.change = it => this.change('border', it);
 }
 
 export default class Toolbar {
   constructor(data) {
     this.data = data;
+    this.change = () => {};
     const { style } = data.options;
     // console.log('data:', data);
     this.ddFormat = new DropdownFormat();
@@ -43,35 +58,36 @@ export default class Toolbar {
     this.ddBorder = new DropdownBorder();
     this.el = h('div', 'xss-toolbar')
       .children(
-        this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo'),
-        this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo'),
-        this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print'),
-        this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat'),
-        this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat'),
+        this.undoEl = buildButtonWithIcon.call(this, 'Undo (Ctrl+Z)', 'undo'),
+        this.redoEl = buildButtonWithIcon.call(this, 'Redo (Ctrl+Y)', 'redo'),
+        this.printEl = buildButtonWithIcon.call(this, 'Print (Ctrl+P)', 'print'),
+        this.paintformatEl = buildButtonWithIcon.call(this, 'Paint format', 'paintformat'),
+        this.clearformatEl = buildButtonWithIcon.call(this, 'Clear format', 'clearformat'),
         buildDivider(),
         buildButton('Format').child(this.ddFormat.el),
         buildDivider(),
         buildButton('Font').child(this.ddFont.el),
         buildButton('Font size').child(this.ddFontSize.el),
         buildDivider(),
-        this.boldEl = buildButtonWithIcon('Bold', 'bold'),
-        this.italicEl = buildButtonWithIcon('Italic', 'italic'),
-        this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough'),
+        this.boldEl = buildButtonWithIcon.call(this, 'Bold', 'bold'),
+        this.italicEl = buildButtonWithIcon.call(this, 'Italic', 'italic'),
+        this.strikethroughEl = buildButtonWithIcon.call(this, 'Strikethrough', 'strikethrough'),
         buildButton('Text color').child(this.ddTextColor.el),
         buildDivider(),
         buildButton('Fill color').child(this.ddFillColor.el),
         buildButton('Borders').child(this.ddBorder.el),
-        this.mergeEl = buildButtonWithIcon('Merge cells', 'merge'),
+        this.mergeEl = buildButtonWithIcon.call(this, 'Merge cells', 'merge'),
         buildDivider(),
         buildButton('Horizontal align').child(this.ddAlign.el),
         buildButton('Vertical align').child(this.ddVAlign.el),
-        this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap'),
+        this.textwrapEl = buildButtonWithIcon.call(this, 'Text wrapping', 'textwrap'),
         buildDivider(),
-        this.linkEl = buildButtonWithIcon('Insert link', 'link'),
-        this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
-        this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
+        this.linkEl = buildButtonWithIcon.call(this, 'Insert link', 'link'),
+        this.chartEl = buildButtonWithIcon.call(this, 'Insert chart', 'chart'),
+        this.autofilterEl = buildButtonWithIcon.call(this, 'Filter', 'autofilter'),
         buildButton('Functions').child(this.ddFormula.el),
       );
+    bindDropdownChange.call(this);
     this.reset();
   }
 
@@ -91,7 +107,7 @@ export default class Toolbar {
     this.strikethroughEl.active(style.strikethrough);
     this.ddTextColor.setTitle(style.color);
     this.ddFillColor.setTitle(style.bgcolor);
-    this.textwrapEl.active(style.textWrap);
+    this.textwrapEl.active(style.textwrap);
     if (cell) {
       if (cell.format) {
         this.ddFormat.setTitle(cell.format);

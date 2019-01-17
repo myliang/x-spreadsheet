@@ -9,7 +9,8 @@ export default class DropdownColor extends Dropdown {
       .css('border-bottom', `3px solid ${color}`);
     const colorPalette = new ColorPalette();
     colorPalette.change = (v) => {
-      this.setColor(v);
+      this.setTitle(v);
+      this.change(v);
     };
     super(icon, 'auto', false, colorPalette.el);
   }

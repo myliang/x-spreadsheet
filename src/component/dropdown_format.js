@@ -15,6 +15,7 @@ export default class DropdownFormat extends Dropdown {
         item.child(it.title)
           .on('click', () => {
             this.setTitle(it.title);
+            this.change(it);
           });
         if (it.label) item.child(h('div', 'label').html(it.label));
       }

@@ -8,8 +8,9 @@ export default class DropdownFormula extends Dropdown {
     const nformulas = baseFormulas.map(it => h('div', 'xss-item')
       .on('click', () => {
         this.hide();
+        this.change(it);
       })
       .child(it.key));
-    super(new Icon('formula'), '200px', nformulas);
+    super(new Icon('formula'), '200px', ...nformulas);
   }
 }

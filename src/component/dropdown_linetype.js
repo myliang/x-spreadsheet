@@ -21,6 +21,7 @@ export default class DropdownLineType extends Dropdown {
         lineTypeEls[iti].toggle('checked');
         beforei = iti;
         this.hide();
+        this.change(it);
       })
       .child(
         h('div', 'xss-line-type').html(it[1]),

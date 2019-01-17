@@ -27,7 +27,7 @@ const defaultOptions = {
     bgcolor: '#ffffff',
     align: 'left',
     valign: 'middle',
-    textWrap: false,
+    textwrap: false,
     textDecoration: 'normal',
     strikethrough: false,
     color: '#0a0a0a',
@@ -65,17 +65,49 @@ Cell: {
     cellmm: {}, // Map<int, Map<int, Cell>>
   }
 */
+
+function toolbarChange(type, value) {
+  const { data, sheet } = this;
+  const style = data.getSelectedCellStyle();
+  // const cell = data.getSelectedCell();
+  const { font } = style;
+  if (type === 'link' || type === 'chart' || type === 'filter') {
+  } else {
+    if (type === 'bold' || type === 'italic' || type === 'strikethrough') {
+      font[type] = !font[type];
+    } else if (type === 'textwrap' || type === 'merge') {
+      style[type] = !style[type];
+    } else if (type === 'font' && font.name !== value.key) {
+      font.name = value.key;
+    } else if (type === 'font-size' && font.size !== value.pt) {
+      font.size = value.pt;
+    } else if (type === 'align' || type === 'valign' || type === 'color' || type === 'bgcolor') {
+      if (style[type] !== value) style[type] = value;
+    } else if (type === 'border') {
+      // border
+    } else if (type === 'formula') {
+      // formula
+    } else if (type === 'format') {
+      // format
+    }
+    sheet.reload();
+  }
+  console.log('type: ', type, ', value:', value);
+}
+
 class Spreadsheet {
   constructor(tel, options = {}) {
     this.options = helper.merge(defaultOptions, options);
     this.data = new DataProxy(this.options);
     this.toolbar = new Toolbar(this.data);
-    this.el = h('div', 'xss')
+    const rootEl = h('div', 'xss')
       .child(this.toolbar.el)
       .on('contextmenu', evt => evt.preventDefault());
-    tel.appendChild(this.el.el);
+    this.sheet = new Sheet(rootEl, this.data);
     // create canvas element
-    this.sheet = new Sheet(this.el, this.data);
+    tel.appendChild(rootEl.el);
+    // change event
+    this.toolbar.change = (type, value) => toolbarChange.call(this, type, value);
   }
 
   loadData(data) {

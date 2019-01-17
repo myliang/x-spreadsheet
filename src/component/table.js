@@ -81,7 +81,7 @@ function renderCell(rindex, cindex) {
     valign: style.valign,
     font,
     color: style.color,
-  }, style.textWrap);
+  }, style.textwrap);
   draw.restore();
 }
 
