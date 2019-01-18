@@ -13,22 +13,28 @@ function buildTd(iconName) {
   return h('td', '').child(
     h('div', 'xss-border-palette-cell').child(
       new Icon(`border-${iconName}`),
-    ).on('click', () => this.change(iconName)),
+    ).on('click', () => {
+      this.mode = iconName;
+      const { mode, style, color } = this;
+      this.change({ mode, style, color });
+    }),
   );
-}
-
-function buildLineColor(color) {
-  return h('div', 'xss-toolbar-btn').child(new DropdownColor('line-color', color));
-}
-
-function buildLineType(type) {
-  return h('div', 'xss-toolbar-btn').child(new DropdownLineType(type));
 }
 
 export default class BorderPalette {
   constructor() {
     this.color = '#000';
+    this.style = 'thin';
+    this.mode = 'all';
     this.change = () => {};
+    this.ddColor = new DropdownColor('line-color', this.color);
+    this.ddColor.change = (color) => {
+      this.color = color;
+    };
+    this.ddType = new DropdownLineType(this.style);
+    this.ddType.change = ([s]) => {
+      this.style = s;
+    };
     this.el = h('div', 'xss-border-palette');
     const table = buildTable(
       h('tr', '').children(
@@ -43,8 +49,8 @@ export default class BorderPalette {
           ),
         ),
         h('td', 'xss-border-palette-right').children(
-          buildLineColor(this.color),
-          buildLineType('thin'),
+          h('div', 'xss-toolbar-btn').child(this.ddColor.el),
+          h('div', 'xss-toolbar-btn').child(this.ddType.el),
         ),
       ),
     );

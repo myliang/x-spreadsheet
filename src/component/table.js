@@ -73,7 +73,11 @@ function renderCell(rindex, cindex) {
   // border, background....
   draw.rect(dbox);
   // render text
-  const cellText = _cell.render(cell.text, data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
+  let cellText = _cell.render(cell.text || '', data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
+  if (cell.format) {
+    // console.log(data.formatm, '>>', cell.format);
+    cellText = data.formatm[cell.format].render(cellText);
+  }
   const font = Object.assign({}, style.font);
   font.size = getFontSizePxByPt(font.size);
   draw.text(cellText, dbox, {

@@ -7,6 +7,7 @@ import Selector from './selector';
 import Editor from './editor';
 import ContextMenu from './contextmenu';
 import Table from './table';
+import Toolbar from './toolbar';
 
 function scrollbarMove() {
   const {
@@ -45,6 +46,7 @@ function selectorSet(multiple, ri, ci) {
   } else {
     selector.set(ri, ci);
   }
+  this.selectorChange();
   table.render();
 }
 
@@ -297,6 +299,47 @@ function paste(what) {
   sheetReset.call(this);
 }
 
+function insertDeleteRowColumn(type) {
+  const { data } = this;
+  if (type === 'insert-row') {
+    data.insertRow();
+  } else if (type === 'delete-row') {
+    data.deleteRow();
+  } else if (type === 'insert-column') {
+    data.insertColumn();
+  } else if (type === 'delete-column') {
+    data.deleteColumn();
+  } else if (type === 'delete-cell') {
+    data.deleteCell();
+  }
+  clearClipboard.call(this);
+  sheetReset.call(this);
+}
+
+function toolbarChange(type, value) {
+  const { data } = this;
+  if (type === 'undo') {
+    this.undo();
+  } else if (type === 'redo') {
+    this.redo();
+  } else if (type === 'print') {
+    // print
+  } else if (type === 'paintformat') {
+    copy.call(this);
+  } else if (type === 'clearformat') {
+    insertDeleteRowColumn('delete-cell');
+  } else if (type === 'link') {
+    // link
+  } else if (type === 'chart') {
+    // chart
+  } else if (type === 'filter') {
+    // filter
+  } else {
+    data.setSelectedCellAttr(type, value);
+    sheetReset.call(this);
+  }
+}
+
 function sheetInitEvents() {
   const {
     overlayerEl,
@@ -308,6 +351,7 @@ function sheetInitEvents() {
     contextMenu,
     data,
     row,
+    toolbar,
   } = this;
   // overlayer
   overlayerEl
@@ -330,6 +374,10 @@ function sheetInitEvents() {
         overlayerMousedown.call(this, evt);
       }
     });
+
+  // toolbar change
+  toolbar.change = (type, value) => toolbarChange.call(this, type, value);
+
   // resizer finished callback
   rowResizer.finishedFn = (cRect, distance) => {
     rowResizerFinished.call(this, cRect, distance);
@@ -354,28 +402,28 @@ function sheetInitEvents() {
       copy.call(this);
     } else if (type === 'cut') {
       cut.call(this);
+    } else if (type === 'paste') {
+      paste.call(this, 'all');
+    } else if (type === 'paste-value') {
+      paste.call(this, 'text');
+    } else if (type === 'paste-format') {
+      paste.call(this, 'format');
     } else {
-      if (type === 'paste') {
-        paste.call(this, 'all');
-      } else if (type === 'paste-value') {
-        paste.call(this, 'text');
-      } else if (type === 'paste-format') {
-        paste.call(this, 'format');
-      } else {
-        if (type === 'insert-row') {
-          data.insertRow();
-        } else if (type === 'delete-row') {
-          data.deleteRow();
-        } else if (type === 'insert-column') {
-          data.insertColumn();
-        } else if (type === 'delete-column') {
-          data.deleteColumn();
-        } else if (type === 'delete-cell') {
-          data.deleteCell();
-        }
-        clearClipboard.call(this);
+      insertDeleteRowColumn.call(this, type);
+      /** if (type === 'insert-row') {
+        data.insertRow();
+      } else if (type === 'delete-row') {
+        data.deleteRow();
+      } else if (type === 'insert-column') {
+        data.insertColumn();
+      } else if (type === 'delete-column') {
+        data.deleteColumn();
+      } else if (type === 'delete-cell') {
+        data.deleteCell();
       }
+      clearClipboard.call(this);
       this.reload();
+      */
     }
   };
 
@@ -496,7 +544,8 @@ function sheetInitEvents() {
 export default class Sheet {
   constructor(targetEl, data) {
     this.el = h('div', 'xss-sheet');
-    targetEl.child(this.el);
+    this.toolbar = new Toolbar(data);
+    targetEl.children(this.toolbar.el, this.el);
     // console.log('elRect:', elRect);
     const {
       row, col, view,
@@ -543,6 +592,8 @@ export default class Sheet {
     );
     sheetInitEvents.call(this);
     sheetReset.call(this);
+
+    this.selectorChange = () => {};
   }
 
   loadData(data) {

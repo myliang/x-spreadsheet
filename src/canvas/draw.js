@@ -186,11 +186,21 @@ class Draw {
     return this;
   }
 
-  border(width, style, color) {
+  border(style, color) {
     const { ctx } = this;
-    ctx.lineWidth = width - 0.5;
+    ctx.lineWidth = 0.5;
     ctx.strokeStyle = color;
-    if (style === 'dashed') ctx.setLineDash([5, 2]);
+    if (style === 'medium') {
+      ctx.lineWidth = 1.5;
+    } else if (style === 'thick') {
+      ctx.lineWidth = 2.5;
+    } else if (style === 'dashed') {
+      ctx.setLineDash([2, 0]);
+    } else if (style === 'dotted') {
+      ctx.setLineDash([1, 1]);
+    } else if (style === 'double') {
+      ctx.setLineDash([2, 0]);
+    }
     return this;
   }
 

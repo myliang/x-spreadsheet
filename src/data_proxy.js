@@ -121,6 +121,16 @@ class Selector {
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
   }
+
+  each(cb) {
+    const [sri, sci] = this.sIndexes;
+    const [eri, eci] = this.eIndexes;
+    for (let i = sri; i <= eri; i += 1) {
+      for (let j = sci; j <= eci; j += 1) {
+        cb(i, j);
+      }
+    }
+  }
 }
 
 class Scroll {
@@ -374,6 +384,52 @@ function cutPaste(srcIndexes, dstIndexes) {
   clipboard.clear();
 }
 
+function setStyleBorder(style, [ri, ci], mode, v) {
+  const s = style;
+  const [[sri, sci], [eri, eci]] = this.selector.getRange();
+  if (mode === 'all') {
+    s.bi = v;
+  } else if (mode === 'inside') {
+    if (this.canMerge()) {
+      if (eri !== ri) s.bbi = v;
+      if (sri !== ri) s.bti = v;
+      if (eci !== ci) s.bri = v;
+      if (sci !== ci) s.bli = v;
+    }
+  } else if (mode === 'horizontal') {
+    if (this.canMerge()) {
+      if (eri !== ri) s.bbi = v;
+      if (sri !== ri) s.bti = v;
+    }
+  } else if (mode === 'vertical') {
+    if (this.canMerge()) {
+      if (eci !== ci) s.bri = v;
+      if (sci !== ci) s.bli = v;
+    }
+  } else if (mode === 'outside') {
+    if (this.canMerge()) {
+      if (sri === ri) s.bti = v;
+      if (eri === ri) s.bbi = v;
+      if (sci === ci) s.bli = v;
+      if (eci === ci) s.bri = v;
+    }
+  } else if (mode === 'left') {
+    s.bli = v;
+  } else if (mode === 'top') {
+    s.bti = v;
+  } else if (mode === 'right') {
+    s.bri = v;
+  } else if (mode === 'bottom') {
+    s.bbi = v;
+  } else if (mode === 'none') {
+    delete s.bi;
+    delete s.bli;
+    delete s.bti;
+    delete s.bri;
+    delete s.bbi;
+  }
+}
+
 export default class DataProxy {
   constructor(options) {
     this.options = options;
@@ -438,12 +494,56 @@ export default class DataProxy {
     return this.getCellStyle(...this.selector.indexes);
   }
 
+  getSelectedCellOrNew() {
+    return this.getCellOrNew(...this.selector.indexes);
+  }
+
   getSelectedCell() {
     return this.getCell(...this.selector.indexes);
   }
 
   getSelectedRect() {
     return this.getRect(...this.selector.getRange());
+  }
+
+  setSelectedCellAttr(property, value) {
+    addHistory.call(this);
+    const { selector } = this;
+    const { style } = this.options;
+    const { styles } = this.d;
+    if (property === 'merge') {
+      this.mergeOrUnmerge();
+    } else if (property === 'formula') {
+      const cell = this.getCellOrNew(...selector.indexes);
+      cell.text = `=${value}()`;
+    } else {
+      selector.each((ri, ci) => {
+        const cell = this.getCellOrNew(ri, ci);
+        let cstyle = {};
+        if (cell.si !== undefined) {
+          cstyle = styles[cell.si];
+        }
+        if (property === 'format') {
+          cell.format = value;
+        } else if (property === 'border') {
+          // const { mode, style, color } = value;
+          const bi = this.addBorder(value.style, value.color);
+          setStyleBorder.call(this, cstyle, [ri, ci], value.mode, bi);
+          cell.si = this.addStyle(cstyle);
+        } else if (property === 'bold' || property === 'italic'
+          || property === 'font' || property === 'font-size') {
+          const nfont = {};
+          nfont[property] = value;
+          cstyle.font = Object.assign(cstyle.font || {}, nfont);
+          cell.si = this.addStyle(cstyle);
+        } else if (property === 'strikethrought' || property === 'textwrap'
+          || property === 'align' || property === 'valign'
+          || property === 'color' || property === 'bgcolor') {
+          cstyle[property] = value;
+          cell.si = this.addStyle(cstyle);
+        }
+      });
+    }
   }
 
   getClipboardRect() {
@@ -604,7 +704,18 @@ export default class DataProxy {
     return true;
   }
 
+  canUnmerge() {
+    const [[sri, sci], [eri, eci]] = this.selector.getRange();
+    const cell = this.getCell(sri, sci);
+    if (cell && cell.merge) {
+      const [rn, cn] = cell.merge;
+      if (sri + rn === eri && sci + cn === eci) return true;
+    }
+    return false;
+  }
+
   merge() {
+    if (!this.canMerge()) return;
     const { sIndexes, eIndexes } = this.selector;
     const [sri, sci] = sIndexes;
     const [eri, eci] = eIndexes;
@@ -618,6 +729,19 @@ export default class DataProxy {
       // delete merge cells
       deleteCells.call(this);
     }
+  }
+
+  unmerge() {
+    if (!this.canUnmerge()) return;
+    const { sIndexes, eIndexes } = this.selector;
+    const cell = this.getCell(...sIndexes);
+    delete cell.merge;
+    deleteMerges.call(this, sIndexes, eIndexes);
+  }
+
+  mergeOrUnmerge() {
+    this.merge();
+    this.unmerge();
   }
   /* merge methods end */
 
@@ -816,6 +940,7 @@ export default class DataProxy {
     const { cellmm } = this.d;
     cellmm[ri] = cellmm[ri] || {};
     cellmm[ri][ci] = cellmm[ri][ci] || {};
+    // console.log('ri:', ri, ', ci:', ci, cellmm);
     return cellmm[ri][ci];
   }
 
@@ -903,5 +1028,27 @@ export default class DataProxy {
 
   getFixedHeaderHeight() {
     return this.options.row.height;
+  }
+
+  addBorder(style, color) {
+    const { borders } = this.d;
+    for (let i = 0; i < borders.length; i += 1) {
+      const [s, c] = borders[i];
+      if (s === style && c === color) {
+        return i;
+      }
+    }
+    borders.push([style, color]);
+    return borders.length - 1;
+  }
+
+  addStyle(nstyle) {
+    const { styles } = this.d;
+    for (let i = 0; i < styles.length; i += 1) {
+      const style = styles[i];
+      if (helper.equals(style, nstyle)) return i;
+    }
+    styles.push(nstyle);
+    return styles.length - 1;
   }
 }

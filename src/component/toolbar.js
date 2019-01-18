@@ -30,10 +30,10 @@ function buildButtonWithIcon(tooltip, iconName) {
 }
 
 function bindDropdownChange() {
-  this.ddFormat.change = it => this.change('format', it);
-  this.ddFont.change = it => this.change('font', it);
-  this.ddFormula.change = it => this.change('formula', it);
-  this.ddFontSize.change = it => this.change('font-size', it);
+  this.ddFormat.change = it => this.change('format', it.key);
+  this.ddFont.change = it => this.change('font', it.key);
+  this.ddFormula.change = it => this.change('formula', it.key);
+  this.ddFontSize.change = it => this.change('font-size', it.pt);
   this.ddTextColor.change = it => this.change('color', it);
   this.ddFillColor.change = it => this.change('bgcolor', it);
   this.ddAlign.change = it => this.change('align', it);
@@ -97,7 +97,8 @@ export default class Toolbar {
     const cell = data.getSelectedCell();
     this.undoEl.disabled(!data.canUndo());
     this.redoEl.disabled(!data.canRedo());
-    this.mergeEl.disabled(!data.canMerge());
+    this.mergeEl.active(data.canUnmerge());
+    // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
     const { font } = style;
     this.ddFont.setTitle(font.name);

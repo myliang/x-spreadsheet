@@ -22,6 +22,22 @@ const mergeDeep = (object = {}, ...sources) => {
   return object;
 };
 
+function equals(obj1, obj2) {
+  const keys = Object.keys(obj1);
+  for (let i = 0; i < keys.length; i += 1) {
+    const k = keys[i];
+    const v1 = obj1[k];
+    const v2 = obj2[k];
+    if (v2 === undefined) return false;
+    if (typeof v1 === 'string' || typeof v1 === 'number' || typeof v1 === 'boolean') {
+      if (v1 !== v2) return false;
+    } else if (typeof v1 !== 'function' && !Array.isArray(v1) && v1 instanceof Object) {
+      if (!equals(v1, v2)) return false;
+    }
+  }
+  return true;
+}
+
 /*
   objOrAry: obejct or Array
   cb: (value, index | key) => { return value }
@@ -65,6 +81,7 @@ function rangeSum(min, max, getv) {
 export default {
   cloneDeep,
   merge: (...sources) => mergeDeep({}, ...sources),
+  equals,
   sum,
   rangeSum,
   rangeReduceIf,
