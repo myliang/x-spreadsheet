@@ -152,7 +152,7 @@ function addHistory() {
 }
 
 function deleteCells([sri, sci], [eri, eci]) {
-  const { d, selector } = this;
+  const { d } = this;
   const { cellmm } = d;
   const ndata = {};
   // console.log(sri, sci, eri, eci);
@@ -525,10 +525,10 @@ export default class DataProxy {
   setSelectedCellAttr(property, value) {
     addHistory.call(this);
     const { selector } = this;
-    const { style } = this.options;
     const { styles } = this.d;
     if (property === 'merge') {
-      value ? this.merge() : this.unmerge();
+      if (value) this.merge();
+      else this.unmerge();
     } else if (property === 'formula') {
       const cell = this.getCellOrNew(...selector.indexes);
       cell.text = `=${value}()`;
