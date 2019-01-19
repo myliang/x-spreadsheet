@@ -139,6 +139,7 @@ class Draw {
       valign: top | middle | bottom
       color: '#333333',
       textDecoration: 'normal',
+      strikethrought: false,
       font: {
         name: 'Arial',
         size: 14,

@@ -39,14 +39,14 @@ function scrollbarMove() {
 
 function selectorSet(multiple, ri, ci) {
   const {
-    table, selector,
+    table, selector, toolbar,
   } = this;
   if (multiple) {
     selector.setEnd(ri, ci);
   } else {
     selector.set(ri, ci);
   }
-  this.selectorChange();
+  toolbar.reset();
   table.render();
 }
 
@@ -592,8 +592,6 @@ export default class Sheet {
     );
     sheetInitEvents.call(this);
     sheetReset.call(this);
-
-    this.selectorChange = () => {};
   }
 
   loadData(data) {

@@ -122,6 +122,12 @@ class Selector {
     this.eIndexes = eIndexes;
   }
 
+  seqe() {
+    const [sri, sci] = this.sIndexes;
+    const [eri, eci] = this.eIndexes;
+    return sri === eri && sci === eci;
+  }
+
   each(cb) {
     const [sri, sci] = this.sIndexes;
     const [eri, eci] = this.eIndexes;
@@ -145,10 +151,9 @@ function addHistory() {
   this.history.add(this.d);
 }
 
-function deleteCells() {
+function deleteCells([sri, sci], [eri, eci]) {
   const { d, selector } = this;
   const { cellmm } = d;
-  const [[sri, sci], [eri, eci]] = selector.getRange();
   const ndata = {};
   // console.log(sri, sci, eri, eci);
   Object.keys(cellmm).forEach((ri) => {
@@ -390,24 +395,24 @@ function setStyleBorder(style, [ri, ci], mode, v) {
   if (mode === 'all') {
     s.bi = v;
   } else if (mode === 'inside') {
-    if (this.canMerge()) {
+    if (this.isMultiple()) {
       if (eri !== ri) s.bbi = v;
       if (sri !== ri) s.bti = v;
       if (eci !== ci) s.bri = v;
       if (sci !== ci) s.bli = v;
     }
   } else if (mode === 'horizontal') {
-    if (this.canMerge()) {
+    if (this.isMultiple()) {
       if (eri !== ri) s.bbi = v;
       if (sri !== ri) s.bti = v;
     }
   } else if (mode === 'vertical') {
-    if (this.canMerge()) {
+    if (this.isMultiple()) {
       if (eci !== ci) s.bri = v;
       if (sci !== ci) s.bli = v;
     }
   } else if (mode === 'outside') {
-    if (this.canMerge()) {
+    if (this.isMultiple()) {
       if (sri === ri) s.bti = v;
       if (eri === ri) s.bbi = v;
       if (sci === ci) s.bli = v;
@@ -470,6 +475,17 @@ export default class DataProxy {
   }
 
   /* for select start */
+  isMultiple() {
+    const [[sri, sci], [eri, eci]] = this.selector.getRange();
+    if (sri === eri && sci === eci) return false;
+    const cell = this.getCell(sri, sci);
+    if (cell && cell.merge) {
+      const [rn, cn] = cell.merge;
+      if (sri + rn === eri && sci + cn === eci) return false;
+    }
+    return true;
+  }
+
   setSelectedIndexes(sIndexes, eIndexes) {
     this.selector.setRange(sIndexes, eIndexes);
   }
@@ -512,7 +528,7 @@ export default class DataProxy {
     const { style } = this.options;
     const { styles } = this.d;
     if (property === 'merge') {
-      this.mergeOrUnmerge();
+      value ? this.merge() : this.unmerge();
     } else if (property === 'formula') {
       const cell = this.getCellOrNew(...selector.indexes);
       cell.text = `=${value}()`;
@@ -530,10 +546,10 @@ export default class DataProxy {
           const bi = this.addBorder(value.style, value.color);
           setStyleBorder.call(this, cstyle, [ri, ci], value.mode, bi);
           cell.si = this.addStyle(cstyle);
-        } else if (property === 'bold' || property === 'italic'
-          || property === 'font' || property === 'font-size') {
+        } else if (property === 'font-bold' || property === 'font-italic'
+          || property === 'font-name' || property === 'font-size') {
           const nfont = {};
-          nfont[property] = value;
+          nfont[property.split('-')[1]] = value;
           cstyle.font = Object.assign(cstyle.font || {}, nfont);
           cell.si = this.addStyle(cstyle);
         } else if (property === 'strikethrought' || property === 'textwrap'
@@ -693,17 +709,6 @@ export default class DataProxy {
   }
 
   /* merge methods start */
-  canMerge() {
-    const [[sri, sci], [eri, eci]] = this.selector.getRange();
-    if (sri === eri && sci === eci) return false;
-    const cell = this.getCell(sri, sci);
-    if (cell && cell.merge) {
-      const [rn, cn] = cell.merge;
-      if (sri + rn === eri && sci + cn === eci) return false;
-    }
-    return true;
-  }
-
   canUnmerge() {
     const [[sri, sci], [eri, eci]] = this.selector.getRange();
     const cell = this.getCell(sri, sci);
@@ -715,19 +720,20 @@ export default class DataProxy {
   }
 
   merge() {
-    if (!this.canMerge()) return;
+    if (!this.isMultiple()) return;
     const { sIndexes, eIndexes } = this.selector;
     const [sri, sci] = sIndexes;
     const [eri, eci] = eIndexes;
     const rn = eri - sri;
     const cn = eci - sci;
+    // console.log('merge:', rn, cn);
     if (rn > 0 || cn > 0) {
       addHistory.call(this);
       const cell = this.getCellOrNew(sri, sci);
       cell.merge = [rn, cn];
       addMerges.call(this, sIndexes, eIndexes);
       // delete merge cells
-      deleteCells.call(this);
+      deleteCells.call(this, [sri + 1, sci + 1], eIndexes);
     }
   }
 
@@ -738,17 +744,13 @@ export default class DataProxy {
     delete cell.merge;
     deleteMerges.call(this, sIndexes, eIndexes);
   }
-
-  mergeOrUnmerge() {
-    this.merge();
-    this.unmerge();
-  }
   /* merge methods end */
 
   deleteCell() {
+    const { sIndexes, eIndexes } = this.selector;
     addHistory.call(this);
-    deleteCells.call(this);
-    deleteMerges.call(this, ...this.selector.getRange());
+    deleteCells.call(this, sIndexes, eIndexes);
+    deleteMerges.call(this, sIndexes, eIndexes);
   }
 
   insertRow(n = 1) {

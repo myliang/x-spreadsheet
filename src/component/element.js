@@ -127,11 +127,13 @@ class Element {
   active(flag = true) {
     if (flag) this.addClass('active');
     else this.removeClass('active');
+    return this;
   }
 
   disabled(flag = true) {
     if (flag) this.addClass('disabled');
     else this.removeClass('disabled');
+    return this;
   }
 
   // key, value
