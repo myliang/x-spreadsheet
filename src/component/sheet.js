@@ -124,10 +124,89 @@ function overlayerMousemove(evt) {
   }
 }
 
+function verticalScrollbarSet() {
+  const { data, verticalScrollbar } = this;
+  const { height } = this.getTableOffset();
+  verticalScrollbar.set(height, data.rowTotalHeight());
+}
+
+function horizontalScrollbarSet() {
+  const { data, horizontalScrollbar } = this;
+  const { width } = this.getTableOffset();
+  if (data) {
+    horizontalScrollbar.set(width, data.colTotalWidth());
+  }
+}
+
+function sheetFreeze() {
+  const {
+    selector, data, editor,
+  } = this;
+  const [ri, ci] = data.getFreeze();
+  if (ri > 0 || ci > 0) {
+    const fwidth = data.freezeTotalWidth();
+    const fheight = data.freezeTotalHeight();
+    editor.setFreezeLengths(fwidth, fheight);
+  }
+  selector.resetAreaOffset();
+}
+
+function sheetReset() {
+  const {
+    tableEl,
+    overlayerEl,
+    overlayerCEl,
+    table,
+  } = this;
+  const tOffset = this.getTableOffset();
+  const vRect = this.getRect();
+  tableEl.attr(vRect);
+  overlayerEl.offset(vRect);
+  overlayerCEl.offset(tOffset);
+  verticalScrollbarSet.call(this);
+  horizontalScrollbarSet.call(this);
+  sheetFreeze.call(this);
+  table.render();
+}
+
+function clearClipboard() {
+  const { data, selector } = this;
+  data.clearClipboard();
+  selector.hideClipboard();
+}
+
+function copy() {
+  const { data, selector } = this;
+  data.copy();
+  selector.showClipboard();
+}
+
+function cut() {
+  const { data, selector } = this;
+  data.cut();
+  selector.showClipboard();
+}
+
+function paste(what) {
+  this.data.paste(what);
+  sheetReset.call(this);
+}
+
+function toolbarChangePaintformatPaste() {
+  const { toolbar } = this;
+  if (toolbar.paintformatActive()) {
+    paste.call(this, 'format');
+    clearClipboard.call(this);
+    toolbar.paintformatToggle();
+  }
+}
+
 function overlayerMousedown(evt) {
   // console.log(':::::overlayer.mousedown:', evt.detail, evt.button, evt.buttons, evt.shiftKey);
   // console.log('evt.target.className:', evt.target.className);
-  const { selector, data, table } = this;
+  const {
+    selector, data, table,
+  } = this;
   const isAutofillEl = evt.target.className === 'xss-selector-corner';
   let { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   // console.log('ri:', ri, ', ci:', ci);
@@ -154,6 +233,7 @@ function overlayerMousedown(evt) {
         table.render();
       }
       selector.hideAutofill();
+      toolbarChangePaintformatPaste.call(this);
     });
   }
 
@@ -162,21 +242,6 @@ function overlayerMousedown(evt) {
       // console.log('shiftKey::::');
       selectorSetByEvent.call(this, true, ri, ci);
     }
-  }
-}
-
-function verticalScrollbarSet() {
-  const { data, verticalScrollbar } = this;
-  const { height } = this.getTableOffset();
-  // console.log('data:', data, ',height:', height, ', totalHeight:', data.rowTotalHeight());
-  verticalScrollbar.set(height, data.rowTotalHeight());
-}
-
-function horizontalScrollbarSet() {
-  const { data, horizontalScrollbar } = this;
-  const { width } = this.getTableOffset();
-  if (data) {
-    horizontalScrollbar.set(width, data.colTotalWidth());
   }
 }
 
@@ -245,60 +310,6 @@ function dataSetCellText(text) {
   table.render();
 }
 
-function sheetFreeze() {
-  const {
-    selector, data, editor,
-  } = this;
-  const [ri, ci] = data.getFreeze();
-  if (ri > 0 || ci > 0) {
-    const fwidth = data.freezeTotalWidth();
-    const fheight = data.freezeTotalHeight();
-    editor.setFreezeLengths(fwidth, fheight);
-  }
-  selector.resetAreaOffset();
-}
-
-function sheetReset() {
-  const {
-    tableEl,
-    overlayerEl,
-    overlayerCEl,
-    table,
-  } = this;
-  const tOffset = this.getTableOffset();
-  const vRect = this.getRect();
-  tableEl.attr(vRect);
-  overlayerEl.offset(vRect);
-  overlayerCEl.offset(tOffset);
-  verticalScrollbarSet.call(this);
-  horizontalScrollbarSet.call(this);
-  sheetFreeze.call(this);
-  table.render();
-}
-
-function clearClipboard() {
-  const { data, selector } = this;
-  data.clearClipboard();
-  selector.hideClipboard();
-}
-
-function copy() {
-  const { data, selector } = this;
-  data.copy();
-  selector.showClipboard();
-}
-
-function cut() {
-  const { data, selector } = this;
-  data.cut();
-  selector.showClipboard();
-}
-
-function paste(what) {
-  this.data.paste(what);
-  sheetReset.call(this);
-}
-
 function insertDeleteRowColumn(type) {
   const { data } = this;
   if (type === 'insert-row') {
@@ -311,6 +322,8 @@ function insertDeleteRowColumn(type) {
     data.deleteColumn();
   } else if (type === 'delete-cell') {
     data.deleteCell();
+  } else if (type === 'delete-cell-format') {
+    data.deleteCell('format');
   }
   clearClipboard.call(this);
   sheetReset.call(this);
@@ -325,9 +338,10 @@ function toolbarChange(type, value) {
   } else if (type === 'print') {
     // print
   } else if (type === 'paintformat') {
-    copy.call(this);
+    if (value === true) copy.call(this);
+    else clearClipboard.call(this);
   } else if (type === 'clearformat') {
-    insertDeleteRowColumn('delete-cell');
+    insertDeleteRowColumn.call(this, 'delete-cell-format');
   } else if (type === 'link') {
     // link
   } else if (type === 'chart') {
@@ -393,11 +407,13 @@ function sheetInitEvents() {
     horizontalScrollbarMove.call(this, distance, evt);
   };
   // editor
-  editor.change = itext => dataSetCellText.call(this, itext);
+  editor.change = (itext) => {
+    dataSetCellText.call(this, itext);
+    toolbar.reset();
+  };
   // contextmenu
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
-    // const { sIndexes, eIndexes } = selector;
     if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -410,20 +426,6 @@ function sheetInitEvents() {
       paste.call(this, 'format');
     } else {
       insertDeleteRowColumn.call(this, type);
-      /** if (type === 'insert-row') {
-        data.insertRow();
-      } else if (type === 'delete-row') {
-        data.deleteRow();
-      } else if (type === 'insert-column') {
-        data.insertColumn();
-      } else if (type === 'delete-column') {
-        data.deleteColumn();
-      } else if (type === 'delete-cell') {
-        data.deleteCell();
-      }
-      clearClipboard.call(this);
-      this.reload();
-      */
     }
   };
 

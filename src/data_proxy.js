@@ -151,29 +151,26 @@ function addHistory() {
   this.history.add(this.d);
 }
 
-function deleteCells([sri, sci], [eri, eci]) {
+// what: all | text | format
+function deleteCells([sri, sci], [eri, eci], what = 'all') {
   const { d } = this;
   const { cellmm } = d;
-  const ndata = {};
-  // console.log(sri, sci, eri, eci);
   Object.keys(cellmm).forEach((ri) => {
     if (ri >= sri && ri <= eri) {
-      const ncdata = {};
-      let ncdataLength = 0;
       Object.keys(cellmm[ri]).forEach((ci) => {
-        if (ci < sci || ci > eci) {
-          ncdataLength += 1;
-          ncdata[ci] = cellmm[ri][ci];
+        const cell = cellmm[ri][ci];
+        if (ci >= sci && ci <= eci) {
+          if (what === 'all') {
+            delete cellmm[ri][`${ci}`];
+          } else if (what === 'text') {
+            if (cell.text) delete cell.text;
+          } else if (what === 'format') {
+            if (cell.si !== undefined) delete cell.si;
+          }
         }
       });
-      if (ncdataLength > 0) {
-        ndata[ri] = ncdata;
-      }
-    } else {
-      ndata[ri] = cellmm[ri];
     }
   });
-  d.cellmm = ndata;
 }
 
 function getCellRowByY(y, scrollOffsety) {
@@ -446,6 +443,7 @@ export default class DataProxy {
     this.history = new History();
     this.scroll = new Scroll();
     this.selector = new Selector();
+    this.change = () => {};
   }
 
   load(data) {
@@ -453,11 +451,11 @@ export default class DataProxy {
   }
 
   canUndo() {
-    this.history.canUndo();
+    return this.history.canUndo();
   }
 
   canRedo() {
-    this.history.canRedo();
+    return this.history.canRedo();
   }
 
   undo() {
@@ -560,6 +558,7 @@ export default class DataProxy {
         }
       });
     }
+    this.change(this.d);
   }
 
   getClipboardRect() {
@@ -697,11 +696,13 @@ export default class DataProxy {
     } else if (clipboard.isCut()) {
       cutPaste.call(this, clipboard.get(), [sIndexes, eIndexes]);
     }
+    this.change(this.d);
   }
 
   autofill(sIndexes, eIndexes, what) {
     addHistory.call(this);
     copyPaste.call(this, this.selector.getRange(), [sIndexes, eIndexes], what, true);
+    this.change(this.d);
   }
 
   clearClipboard() {
@@ -734,23 +735,29 @@ export default class DataProxy {
       addMerges.call(this, sIndexes, eIndexes);
       // delete merge cells
       deleteCells.call(this, [sri + 1, sci + 1], eIndexes);
+      this.change(this.d);
     }
   }
 
   unmerge() {
     if (!this.canUnmerge()) return;
+    addHistory.call(this);
     const { sIndexes, eIndexes } = this.selector;
     const cell = this.getCell(...sIndexes);
     delete cell.merge;
     deleteMerges.call(this, sIndexes, eIndexes);
+    this.change(this.d);
   }
   /* merge methods end */
 
-  deleteCell() {
+  deleteCell(what = 'all') {
     const { sIndexes, eIndexes } = this.selector;
     addHistory.call(this);
-    deleteCells.call(this, sIndexes, eIndexes);
-    deleteMerges.call(this, sIndexes, eIndexes);
+    deleteCells.call(this, sIndexes, eIndexes, what);
+    if (what === 'all') {
+      deleteMerges.call(this, sIndexes, eIndexes);
+    }
+    this.change(this.d);
   }
 
   insertRow(n = 1) {
@@ -768,6 +775,7 @@ export default class DataProxy {
     this.d.cellmm = ndata;
     rowm.len = this.rowLen() + n;
     modifyMerges.call(this, 'row', sri, n);
+    this.change(this.d);
   }
 
   deleteRow() {
@@ -789,6 +797,7 @@ export default class DataProxy {
     this.d.cellmm = ndata;
     rowm.len = this.rowLen() - n;
     modifyMerges.call(this, 'row', sri, -n);
+    this.change(this.d);
   }
 
   insertColumn(n = 1) {
@@ -808,6 +817,7 @@ export default class DataProxy {
     });
     colm.len = this.colLen() + n;
     modifyMerges.call(this, 'col', sci, n);
+    this.change(this.d);
   }
 
   deleteColumn() {
@@ -830,6 +840,7 @@ export default class DataProxy {
     colm.len = this.colLen() - n;
     // console.log('n:', n);
     modifyMerges.call(this, 'col', sci, -n);
+    this.change(this.d);
   }
 
   scrollx(x, cb) {
@@ -919,8 +930,10 @@ export default class DataProxy {
   }
 
   setCellText(ri, ci, text) {
+    addHistory.call(this);
     const cell = this.getCellOrNew(ri, ci);
     cell.text = text;
+    this.change(this.d);
   }
 
   // what: all | text | format
@@ -1009,6 +1022,7 @@ export default class DataProxy {
     const { colm } = this.d;
     colm[`${index}`] = colm[`${index}`] || {};
     colm[`${index}`].width = v;
+    this.change(this.d);
   }
 
   getRowHeight(index) {
@@ -1022,6 +1036,7 @@ export default class DataProxy {
     const { rowm } = this.d;
     rowm[`${index}`] = rowm[`${index}`] || {};
     rowm[`${index}`].height = v;
+    this.change(this.d);
   }
 
   getFixedHeaderWidth() {

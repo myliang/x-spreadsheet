@@ -68,6 +68,12 @@ function textwrapChange() {
   this.change('textwrap', textwrapEl.hasClass('active'));
 }
 
+function paintformatChange() {
+  const { paintformatEl } = this;
+  paintformatEl.toggle();
+  this.change('paintformat', paintformatEl.hasClass('active'));
+}
+
 export default class Toolbar {
   constructor(data) {
     this.data = data;
@@ -88,7 +94,7 @@ export default class Toolbar {
         this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
         this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
         this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
-        this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => this.change('paintformat')),
+        this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => paintformatChange.call(this)),
         this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
         buildDivider(),
         buildButton('Format').child(this.ddFormat.el),
@@ -118,10 +124,19 @@ export default class Toolbar {
     this.reset();
   }
 
+  paintformatActive() {
+    return this.paintformatEl.hasClass('active');
+  }
+
+  paintformatToggle() {
+    this.paintformatEl.toggle();
+  }
+
   reset() {
     const { data } = this;
     const style = data.getSelectedCellStyle();
     const cell = data.getSelectedCell();
+    // console.log('canUndo:', data.canUndo());
     this.undoEl.disabled(!data.canUndo());
     this.redoEl.disabled(!data.canRedo());
     this.mergeEl.active(data.canUnmerge())

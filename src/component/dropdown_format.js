@@ -23,4 +23,12 @@ export default class DropdownFormat extends Dropdown {
     });
     super('Normal', '220px', true, ...nformats);
   }
+
+  setTitle(key) {
+    for (let i = 0; i < baseFormats.length; i += 1) {
+      if (baseFormats[i].key === key) {
+        this.title.html(baseFormats[i].title);
+      }
+    }
+  }
 }
