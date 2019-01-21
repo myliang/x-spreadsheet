@@ -710,6 +710,10 @@ export default class DataProxy {
   }
 
   /* merge methods start */
+  eachMerges(cb) {
+    eachMerges.call(this, cb);
+  }
+
   canUnmerge() {
     const [[sri, sci], [eri, eci]] = this.selector.getRange();
     const cell = this.getCell(sri, sci);

@@ -20,7 +20,7 @@ const tableGridStyle = {
 };
 
 /* private methods */
-function renderContentGrid(rowLen, colLen, scrollOffset) {
+/* function renderContentGrid(rowLen, colLen, scrollOffset) {
   const { draw, data } = this;
   const { row, col } = data.options;
   draw.save();
@@ -39,6 +39,7 @@ function renderContentGrid(rowLen, colLen, scrollOffset) {
   });
   draw.restore();
 }
+*/
 
 function getDrawBox(rindex, cindex) {
   const { data } = this;
@@ -52,7 +53,6 @@ function renderCell(rindex, cindex) {
   const { draw, data } = this;
   const { cellmm, borders } = data.d;
   const cell = data.getCell(rindex, cindex);
-  if (cell === null) return;
 
   const style = data.getCellStyle(rindex, cindex);
   // console.log('style:', style);
@@ -72,37 +72,40 @@ function renderCell(rindex, cindex) {
   draw.save();
   // border, background....
   draw.rect(dbox);
-  // render text
-  let cellText = _cell.render(cell.text || '', data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
-  if (cell.format) {
-    // console.log(data.formatm, '>>', cell.format);
-    cellText = data.formatm[cell.format].render(cellText);
+  if (cell !== null) {
+    // render text
+    let cellText = _cell.render(cell.text || '', data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
+    if (cell.format) {
+      // console.log(data.formatm, '>>', cell.format);
+      cellText = data.formatm[cell.format].render(cellText);
+    }
+    const font = Object.assign({}, style.font);
+    font.size = getFontSizePxByPt(font.size);
+    draw.text(cellText, dbox, {
+      align: style.align,
+      valign: style.valign,
+      font,
+      color: style.color,
+    }, style.textwrap);
   }
-  const font = Object.assign({}, style.font);
-  font.size = getFontSizePxByPt(font.size);
-  draw.text(cellText, dbox, {
-    align: style.align,
-    valign: style.valign,
-    font,
-    color: style.color,
-  }, style.textwrap);
   draw.restore();
 }
 
 function renderContent(rowLen, colLen, scrollOffset) {
   const { draw, data } = this;
   const { col, row } = data.options;
-  const { cellmm } = data.d;
   draw.save();
   draw.translate(col.indexWidth, row.height)
     .translate(-scrollOffset.x, -scrollOffset.y);
-  Object.keys(cellmm).forEach((rindex) => {
-    if (rindex < rowLen) {
-      Object.keys(cellmm[rindex]).forEach((cindex) => {
-        if (cindex < colLen) {
-          renderCell.call(this, rindex, cindex);
-        }
-      });
+  data.rowEach(rowLen - 1, (i) => {
+    data.colEach(colLen - 1, (j) => {
+      renderCell.call(this, i, j);
+    });
+  });
+  // merge
+  data.eachMerges(([[sri, sci]]) => {
+    if (sri < rowLen && sci < colLen) {
+      renderCell.call(this, sri, sci);
     }
   });
   draw.restore();
@@ -239,7 +242,7 @@ function renderFreezeGridAndContent() {
 
 function renderAll(rowLen, colLen, scrollOffset) {
   // const { row, col, scrollOffset } = this;
-  renderContentGrid.call(this, rowLen, colLen, scrollOffset);
+  // renderContentGrid.call(this, rowLen, colLen, scrollOffset);
   renderContent.call(this, rowLen, colLen, scrollOffset);
   renderFixedHeaders.call(this, rowLen, colLen, scrollOffset);
 }

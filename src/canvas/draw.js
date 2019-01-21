@@ -43,15 +43,18 @@ class DrawBox {
     return x;
   }
 
-  texty(align) {
-    const { height } = this;
+  texty(align, fontSize, hoffset) {
+    const { height, padding } = this;
     let { y } = this;
     if (align === 'top') {
-      y += 0;
+      y += padding;
     } else if (align === 'middle') {
-      y += height / 2;
+      const y1 = y + height / 2 - hoffset;
+      const y2 = y + padding + fontSize / 2 + 1;
+      if (y1 < y2) y = y2;
+      else y = y1;
     } else if (align === 'bottom') {
-      y += height;
+      y += height - padding;
     }
     return y;
   }
@@ -155,7 +158,6 @@ class Draw {
       align, valign, font, color,
     } = attr;
     const tx = box.textx(align);
-    let ty = box.texty(valign);
     ctx.save();
     this.attr({
       textAlign: align,
@@ -164,11 +166,16 @@ class Draw {
       fillStyle: color,
     });
     const txtWidth = ctx.measureText(txt).width;
+    let hoffset = 0;
+    if (textWrap) {
+      const n = Math.ceil(txtWidth / box.innerWidth());
+      hoffset = ((n - 1) * font.size) / 2;
+    }
+    let ty = box.texty(valign, font.size, hoffset);
     // console.log('txtWidth: ', txtWidth);
     if (textWrap && txtWidth > box.innerWidth()) {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
-        // console.log('::::::::width:', txt[i], ctx.measureText(txt[i]).width);
         textLine.len += ctx.measureText(txt[i]).width;
         if (textLine.len >= box.innerWidth()) {
           ctx.fillText(txt.substring(textLine.start, i), tx, ty);
@@ -177,7 +184,7 @@ class Draw {
           textLine.start = i;
         }
       }
-      if (textLine.len > 0) {
+      if (textWrap && textLine.len > 0) {
         ctx.fillText(txt.substring(textLine.start), tx, ty);
       }
     } else {
@@ -234,8 +241,11 @@ class Draw {
     } = box;
     ctx.save();
     ctx.beginPath();
-    ctx.fillStyle = bgcolor;
+    ctx.fillStyle = bgcolor || '#fff';
+    // ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#e6e6e6';
     ctx.fillRect(x + 1, y + 1, width - 1, height - 1);
+    ctx.strokeRect(x + 0.5, y + 0.5, width, height);
     // border
     const {
       border, borderTop, borderRight, borderBottom, borderLeft,
