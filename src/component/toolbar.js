@@ -151,6 +151,8 @@ export default class Toolbar {
     this.strikethroughEl.active(style.strikethrough);
     this.ddTextColor.setTitle(style.color);
     this.ddFillColor.setTitle(style.bgcolor);
+    this.ddAlign.setTitle(style.align);
+    this.ddVAlign.setTitle(style.valign);
     this.textwrapEl.active(style.textwrap);
     if (cell) {
       if (cell.format) {

@@ -155,13 +155,18 @@ function addHistory() {
 function deleteCells([sri, sci], [eri, eci], what = 'all') {
   const { d } = this;
   const { cellmm } = d;
+  // console.log('cellmm:', cellmm, ', sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
   Object.keys(cellmm).forEach((ri) => {
+    // console.log('ri:', ri, ', sri:', sri, ', eri:', eri);
     if (ri >= sri && ri <= eri) {
       Object.keys(cellmm[ri]).forEach((ci) => {
         const cell = cellmm[ri][ci];
+        // console.log('cell:', ci, cell);
         if (ci >= sci && ci <= eci) {
           if (what === 'all') {
+            // console.log(':row:', cellm[ri]);
             delete cellmm[ri][`${ci}`];
+            // console.log(':after.row:', cellm[ri]);
           } else if (what === 'text') {
             if (cell.text) delete cell.text;
           } else if (what === 'format') {
@@ -253,6 +258,7 @@ function deleteMerges([sri, sci], [eri, eci]) {
 }
 
 function addMerges(sIndexes, eIndexes) {
+  deleteMerges.call(this, sIndexes, eIndexes);
   this.d.merges.push([sIndexes, eIndexes]);
 }
 
@@ -738,7 +744,8 @@ export default class DataProxy {
       cell.merge = [rn, cn];
       addMerges.call(this, sIndexes, eIndexes);
       // delete merge cells
-      deleteCells.call(this, [sri + 1, sci + 1], eIndexes);
+      deleteCells.call(this, sIndexes, eIndexes);
+      this.setCell(sri, sci, cell, 'all');
       this.change(this.d);
     }
   }
@@ -1051,6 +1058,15 @@ export default class DataProxy {
     return this.options.row.height;
   }
 
+  eachCells(cb) {
+    const { cellmm } = this.d;
+    Object.keys(cellmm).forEach((ri) => {
+      Object.keys(cellmm[ri]).forEach((ci) => {
+        cb(this.getCell(ri, ci), ri, ci);
+      });
+    });
+  }
+
   addBorder(style, color) {
     const { borders } = this.d;
     for (let i = 0; i < borders.length; i += 1) {
@@ -1071,5 +1087,13 @@ export default class DataProxy {
     }
     styles.push(nstyle);
     return styles.length - 1;
+  }
+
+  getStyle(index) {
+    return this.d.styles[index];
+  }
+
+  getBorder(index) {
+    return this.d.borders[index];
   }
 }

@@ -13,11 +13,13 @@ const tableFixedHeaderStyle = {
   lineWidth: 0.5,
   strokeStyle: '#e6e6e6',
 };
+/*
 const tableGridStyle = {
   fillStyle: '#fff',
   lineWidth: 0.5,
   strokeStyle: '#e6e6e6',
 };
+*/
 
 /* private methods */
 /* function renderContentGrid(rowLen, colLen, scrollOffset) {
@@ -51,24 +53,13 @@ function getDrawBox(rindex, cindex) {
 
 function renderCell(rindex, cindex) {
   const { draw, data } = this;
-  const { cellmm, borders } = data.d;
+  const { cellmm } = data.d;
   const cell = data.getCell(rindex, cindex);
 
   const style = data.getCellStyle(rindex, cindex);
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
-  // render cell style
-  const {
-    bgcolor, bi, bti, bri, bbi, bli,
-  } = style;
-  dbox.bgcolor = bgcolor;
-  dbox.setBorders(
-    borders[bi],
-    borders[bti],
-    borders[bri],
-    borders[bbi],
-    borders[bli],
-  );
+  dbox.bgcolor = style.bgcolor;
   draw.save();
   // border, background....
   draw.rect(dbox);
@@ -101,6 +92,31 @@ function renderContent(rowLen, colLen, scrollOffset) {
     data.colEach(colLen - 1, (j) => {
       renderCell.call(this, i, j);
     });
+  });
+  // border
+  data.eachCells((cell, ri, ci) => {
+    // console.log('cell:', cell);
+    if (cell.si !== undefined) {
+      const style = data.getStyle(cell.si);
+      if (style) {
+        const {
+          bi, bti, bri, bbi, bli,
+        } = style;
+        if (bi !== undefined || bti !== undefined || bri !== undefined
+          || bbi !== undefined || bli !== undefined) {
+          // console.log('::::::::::', ri, ci);
+          const dbox = getDrawBox.call(this, ri, ci);
+          dbox.setBorders(
+            data.getBorder(bi),
+            data.getBorder(bti),
+            data.getBorder(bri),
+            data.getBorder(bbi),
+            data.getBorder(bli),
+          );
+          draw.strokeBorders(dbox);
+        }
+      }
+    }
   });
   // merge
   data.eachMerges(([[sri, sci]]) => {
@@ -166,31 +182,32 @@ function renderFixedHeaders(rowLen, colLen, scrollOffset) {
   draw.restore();
 }
 
+/*
 function renderFreezeGridAndContent0(rowLen, colLen, width, height, scrollOffset) {
   const { draw, data } = this;
   const { col, row } = data.options;
   draw.save()
-    .attr(tableGridStyle)
     .translate(col.indexWidth, row.height)
     .translate(-scrollOffset.x, -scrollOffset.y);
 
-  draw.fillRect(0, 0, width, height);
-  draw.line([0, 0], [width, 0]);
-  draw.line([0, 0], [0, height]);
+  // draw.fillRect(0, 0, width, height);
+  // draw.line([0, 0], [width, 0]);
+  // draw.line([0, 0], [0, height]);
   data.rowEach(rowLen - 1, (i, y1, rowHeight) => {
-    const y = y1 + rowHeight;
-    if (y >= 0) {
-      draw.line([0, y], [width, y]);
-      data.colEach(colLen - 1, (j, x) => {
-        if (x >= 0) {
-          draw.line([x, y - rowHeight], [x, y]);
-          renderCell.call(this, i, j);
-        }
-      });
-    }
+    // const y = y1 + rowHeight;
+    // console.log('y:', y);
+    // if (y >= 0) {
+    // draw.line([0, y], [width, y]);
+    data.colEach(colLen - 1, (j, x) => {
+      // if (x >= 0) {
+        // draw.line([x, y - rowHeight], [x, y]);
+      renderCell.call(this, i, j);
+      // }
+    });
   });
   draw.restore();
 }
+*/
 
 function renderFreezeHighlightLine(p1, p2, scrollOffset) {
   const { draw, data } = this;
@@ -203,7 +220,6 @@ function renderFreezeHighlightLine(p1, p2, scrollOffset) {
   draw.restore();
 }
 
-
 function renderFreezeGridAndContent() {
   const { data } = this;
   const [fri, fci] = data.getFreeze();
@@ -211,24 +227,20 @@ function renderFreezeGridAndContent() {
   const sheight = data.rowSumHeight(0, fri);
   const twidth = data.colTotalWidth();
   if (fri > 0) {
-    renderFreezeGridAndContent0.call(
+    renderContent.call(
       this,
       fri,
       data.colLen(),
-      twidth,
-      sheight,
       { x: scroll.x, y: 0 },
     );
   }
   const theight = data.rowTotalHeight();
   const swidth = data.colSumWidth(0, fci);
   if (fci) {
-    renderFreezeGridAndContent0.call(
+    renderContent.call(
       this,
       data.rowLen(),
       fci,
-      swidth,
-      theight,
       { x: 0, y: scroll.y },
     );
   }

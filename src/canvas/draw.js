@@ -203,7 +203,7 @@ class Draw {
     } else if (style === 'thick') {
       ctx.lineWidth = 2.5;
     } else if (style === 'dashed') {
-      ctx.setLineDash([2, 0]);
+      ctx.setLineDash([3, 2]);
     } else if (style === 'dotted') {
       ctx.setLineDash([1, 1]);
     } else if (style === 'double') {
@@ -234,18 +234,14 @@ class Draw {
     }
   }
 
-  rect(box) {
+  strokeBorders(box) {
     const { ctx } = this;
     const {
-      x, y, width, height, bgcolor,
+      x, y, width, height,
     } = box;
     ctx.save();
     ctx.beginPath();
-    ctx.fillStyle = bgcolor || '#fff';
-    // ctx.lineWidth = 0.5;
-    ctx.strokeStyle = '#e6e6e6';
-    ctx.fillRect(x + 1, y + 1, width - 1, height - 1);
-    ctx.strokeRect(x + 0.5, y + 0.5, width, height);
+    ctx.rect(x + 0.5, y + 0.5, width, height);
     // border
     const {
       border, borderTop, borderRight, borderBottom, borderLeft,
@@ -271,6 +267,23 @@ class Draw {
         this.line(box.leftxys());
       }
     }
+    ctx.restore();
+  }
+
+  rect(box) {
+    const { ctx } = this;
+    const {
+      x, y, width, height, bgcolor,
+    } = box;
+    ctx.save();
+    ctx.beginPath();
+    ctx.fillStyle = bgcolor || '#fff';
+    // ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#e6e6e6';
+    ctx.rect(x + 0.5, y + 0.5, width, height);
+    ctx.fill();
+    ctx.stroke();
+    this.strokeBorders(box);
     ctx.restore();
   }
 }
