@@ -61,7 +61,6 @@ function renderCell(rindex, cindex) {
   const dbox = getDrawBox.call(this, rindex, cindex);
   dbox.bgcolor = style.bgcolor;
   draw.save();
-  // border, background....
   draw.rect(dbox);
   if (cell !== null) {
     // render text
@@ -93,6 +92,12 @@ function renderContent(rowLen, colLen, scrollOffset) {
       renderCell.call(this, i, j);
     });
   });
+  // merge
+  data.eachMerges(([[sri, sci]]) => {
+    if (sri < rowLen && sci < colLen) {
+      renderCell.call(this, sri, sci);
+    }
+  });
   // border
   data.eachCells((cell, ri, ci) => {
     // console.log('cell:', cell);
@@ -100,14 +105,14 @@ function renderContent(rowLen, colLen, scrollOffset) {
       const style = data.getStyle(cell.si);
       if (style) {
         const {
-          bi, bti, bri, bbi, bli,
+          bti, bri, bbi, bli,
         } = style;
-        if (bi !== undefined || bti !== undefined || bri !== undefined
+        console.log('bti:', bti);
+        if (bti !== undefined || bri !== undefined
           || bbi !== undefined || bli !== undefined) {
           // console.log('::::::::::', ri, ci);
           const dbox = getDrawBox.call(this, ri, ci);
           dbox.setBorders(
-            data.getBorder(bi),
             data.getBorder(bti),
             data.getBorder(bri),
             data.getBorder(bbi),
@@ -116,12 +121,6 @@ function renderContent(rowLen, colLen, scrollOffset) {
           draw.strokeBorders(dbox);
         }
       }
-    }
-  });
-  // merge
-  data.eachMerges(([[sri, sci]]) => {
-    if (sri < rowLen && sci < colLen) {
-      renderCell.call(this, sri, sci);
     }
   });
   draw.restore();

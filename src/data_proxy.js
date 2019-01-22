@@ -396,7 +396,10 @@ function setStyleBorder(style, [ri, ci], mode, v) {
   const s = style;
   const [[sri, sci], [eri, eci]] = this.selector.getRange();
   if (mode === 'all') {
-    s.bi = v;
+    s.bbi = v;
+    s.bti = v;
+    s.bri = v;
+    s.bli = v;
   } else if (mode === 'inside') {
     if (this.isMultiple()) {
       if (eri !== ri) s.bbi = v;
@@ -430,7 +433,6 @@ function setStyleBorder(style, [ri, ci], mode, v) {
   } else if (mode === 'bottom') {
     s.bbi = v;
   } else if (mode === 'none') {
-    delete s.bi;
     delete s.bli;
     delete s.bti;
     delete s.bri;

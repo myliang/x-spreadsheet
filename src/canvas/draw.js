@@ -7,15 +7,13 @@ class DrawBox {
     this.padding = padding;
     this.bgcolor = '#ffffff';
     // border: [width, style, color]
-    this.border = null;
     this.borderTop = null;
     this.borderRight = null;
     this.borderBottom = null;
     this.borderLeft = null;
   }
 
-  setBorders(b, bt, br, bb, bl) {
-    if (b) this.border = b;
+  setBorders(bt, br, bb, bl) {
     if (bt) this.borderTop = bt;
     if (br) this.borderRight = br;
     if (bb) this.borderBottom = bb;
@@ -241,31 +239,26 @@ class Draw {
     } = box;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x + 0.5, y + 0.5, width, height);
+    // ctx.rect(x + 0.5, y + 0.5, width, height);
     // border
     const {
-      border, borderTop, borderRight, borderBottom, borderLeft,
+      borderTop, borderRight, borderBottom, borderLeft,
     } = box;
-    if (border) {
-      this.border(...border);
-      ctx.stroke();
-    } else {
-      if (borderTop) {
-        this.border(...borderTop);
-        this.line(box.topxys());
-      }
-      if (borderRight) {
-        this.border(...borderRight);
-        this.line(box.rightxys());
-      }
-      if (borderBottom) {
-        this.border(...borderBottom);
-        this.line(box.bottomxys());
-      }
-      if (borderLeft) {
-        this.border(...borderLeft);
-        this.line(box.leftxys());
-      }
+    if (borderTop) {
+      this.border(...borderTop);
+      this.line(...box.topxys());
+    }
+    if (borderRight) {
+      this.border(...borderRight);
+      this.line(...box.rightxys());
+    }
+    if (borderBottom) {
+      this.border(...borderBottom);
+      this.line(...box.bottomxys());
+    }
+    if (borderLeft) {
+      this.border(...borderLeft);
+      this.line(...box.leftxys());
     }
     ctx.restore();
   }
