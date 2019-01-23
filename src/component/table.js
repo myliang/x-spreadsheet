@@ -113,6 +113,7 @@ function renderContent(rowLen, colLen, scrollOffset) {
           || bbi !== undefined || bli !== undefined) {
           // console.log('::::::::::', ri, ci);
           const dbox = getDrawBox.call(this, ri, ci);
+          // console.log('ri:', ri, ',ci:', ci, 'style:', style);
           dbox.setBorders(
             data.getBorder(bti),
             data.getBorder(bri),

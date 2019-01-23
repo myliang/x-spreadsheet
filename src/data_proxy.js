@@ -420,6 +420,7 @@ function cutPaste(srcIndexes, dstIndexes) {
 function setStyleBorder(style, [ri, ci], mode, v) {
   const s = style;
   const [[sri, sci], [eri, eci]] = this.selector.getRange();
+  // console.log('mode:', mode);
   if (mode === 'all') {
     s.bbi = v;
     s.bti = v;
@@ -443,25 +444,23 @@ function setStyleBorder(style, [ri, ci], mode, v) {
       if (sci !== ci) s.bli = v;
     }
   } else if (mode === 'outside') {
-    if (this.isMultiple()) {
-      if (sri === ri) s.bti = v;
-      if (eri === ri) s.bbi = v;
-      if (sci === ci) s.bli = v;
-      if (eci === ci) s.bri = v;
-    }
+    if (sri === ri) s.bti = v;
+    if (eri === ri) s.bbi = v;
+    if (sci === ci) s.bli = v;
+    if (eci === ci) s.bri = v;
   } else if (mode === 'left') {
-    s.bli = v;
+    if (sci === ci) s.bli = v;
   } else if (mode === 'top') {
-    s.bti = v;
+    if (sri === ri) s.bti = v;
   } else if (mode === 'right') {
-    s.bri = v;
+    if (eci === ci) s.bri = v;
   } else if (mode === 'bottom') {
-    s.bbi = v;
+    if (eri === ri) s.bbi = v;
   } else if (mode === 'none') {
-    delete s.bli;
-    delete s.bti;
-    delete s.bri;
-    delete s.bbi;
+    if (s.bli !== undefined) delete s.bli;
+    if (s.bti !== undefined) delete s.bti;
+    if (s.bri !== undefined) delete s.bri;
+    if (s.bbi !== undefined) delete s.bbi;
   }
 }
 
@@ -576,6 +575,7 @@ export default class DataProxy {
           // const { mode, style, color } = value;
           const bi = this.addBorder(value.style, value.color);
           setStyleBorder.call(this, cstyle, [ri, ci], value.mode, bi);
+          // console.log('border.cstyle:', value.mode, cstyle);
           cell.si = this.addStyle(cstyle);
         } else if (property === 'font-bold' || property === 'font-italic'
           || property === 'font-name' || property === 'font-size') {
@@ -1114,6 +1114,7 @@ export default class DataProxy {
 
   addStyle(nstyle) {
     const { styles } = this.d;
+    // console.log('old.styles:', styles, nstyle);
     for (let i = 0; i < styles.length; i += 1) {
       const style = styles[i];
       if (helper.equals(style, nstyle)) return i;

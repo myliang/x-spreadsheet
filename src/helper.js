@@ -24,6 +24,7 @@ const mergeDeep = (object = {}, ...sources) => {
 
 function equals(obj1, obj2) {
   const keys = Object.keys(obj1);
+  if (keys.length !== Object.keys(obj2).length) return false;
   for (let i = 0; i < keys.length; i += 1) {
     const k = keys[i];
     const v1 = obj1[k];
