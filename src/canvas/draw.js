@@ -234,12 +234,8 @@ class Draw {
 
   strokeBorders(box) {
     const { ctx } = this;
-    const {
-      x, y, width, height,
-    } = box;
     ctx.save();
     ctx.beginPath();
-    // ctx.rect(x + 0.5, y + 0.5, width, height);
     // border
     const {
       borderTop, borderRight, borderBottom, borderLeft,
