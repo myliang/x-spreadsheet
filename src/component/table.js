@@ -101,13 +101,14 @@ function renderContent(rowLen, colLen, scrollOffset) {
   // border
   data.eachCells((cell, ri, ci) => {
     // console.log('cell:', cell);
-    if (cell.si !== undefined) {
+    // console.log('ri:', ri, ', ci:', ci, ', rowLen:', rowLen, ', colLen:', colLen);
+    if (ri < rowLen && ci < colLen && cell.si !== undefined) {
       const style = data.getStyle(cell.si);
       if (style) {
         const {
           bti, bri, bbi, bli,
         } = style;
-        console.log('bti:', bti);
+        // console.log('bti:', bti);
         if (bti !== undefined || bri !== undefined
           || bbi !== undefined || bli !== undefined) {
           // console.log('::::::::::', ri, ci);

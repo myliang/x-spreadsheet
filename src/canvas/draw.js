@@ -271,7 +271,6 @@ class Draw {
     ctx.save();
     ctx.beginPath();
     ctx.fillStyle = bgcolor || '#fff';
-    // ctx.lineWidth = 0.5;
     ctx.strokeStyle = '#e6e6e6';
     ctx.rect(x + 0.5, y + 0.5, width, height);
     ctx.fill();

@@ -156,6 +156,22 @@ function deleteCells([sri, sci], [eri, eci], what = 'all') {
   const { d } = this;
   const { cellmm } = d;
   // console.log('cellmm:', cellmm, ', sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
+  for (let i = sri; i <= eri; i += 1) {
+    for (let j = sci; j <= eci; j += 1) {
+      const cell = this.getCell(i, j);
+      if (cell) {
+        if (what === 'all') {
+          delete cellmm[i][`${j}`];
+        } else if (what === 'text') {
+          if (cell.text) delete cell.text;
+        } else if (what === 'format') {
+          if (cell.si !== undefined) delete cell.si;
+          if (cell.merge) delete cell.merge;
+        }
+      }
+    }
+  }
+  /*
   Object.keys(cellmm).forEach((ri) => {
     // console.log('ri:', ri, ', sri:', sri, ', eri:', eri);
     if (ri >= sri && ri <= eri) {
@@ -171,11 +187,13 @@ function deleteCells([sri, sci], [eri, eci], what = 'all') {
             if (cell.text) delete cell.text;
           } else if (what === 'format') {
             if (cell.si !== undefined) delete cell.si;
+            if (cell.merge) delete cell.si;
           }
         }
       });
     }
   });
+  */
 }
 
 function getCellRowByY(y, scrollOffsety) {
@@ -265,6 +283,7 @@ function addMerges(sIndexes, eIndexes) {
 function addMergesByCellIndexes(ri, ci) {
   const cell = this.getCell(ri, ci);
   if (cell && cell.merge) {
+    // console.log('cell:', ri, ci, cell);
     const [rn, cn] = cell.merge;
     if (rn <= 0 && cn <= 0) return;
     addMerges.call(this, [ri, ci], [ri + rn, ci + cn]);
@@ -320,6 +339,11 @@ function copyPaste(srcIndexes, dstIndexes, what, autofill = false) {
     if (deri < sri) dn = drn;
     else dn = dcn;
   }
+  // delete dest merge
+  if (what === 'all' || what === 'format') {
+    deleteCells.call(this, [dsri, dsci], [deri, deci], what);
+    deleteMerges.call(this, [dsri, dsci], [deri, deci]);
+  }
   // console.log('drn:', drn, ', dcn:', dcn);
   for (let i = sri; i <= eri; i += 1) {
     if (cellmm[i]) {
@@ -358,6 +382,7 @@ function copyPaste(srcIndexes, dstIndexes, what, autofill = false) {
                   }
                 }
               }
+              // console.log('ncell:', nri, nci, ncell);
               this.setCell(nri, nci, ncell, what);
               addMergesByCellIndexes.call(this, nri, nci);
             }
@@ -747,6 +772,7 @@ export default class DataProxy {
       addMerges.call(this, sIndexes, eIndexes);
       // delete merge cells
       deleteCells.call(this, sIndexes, eIndexes);
+      // console.log('cell:', cell, this.d);
       this.setCell(sri, sci, cell, 'all');
       this.change(this.d);
     }
@@ -767,7 +793,7 @@ export default class DataProxy {
     const { sIndexes, eIndexes } = this.selector;
     addHistory.call(this);
     deleteCells.call(this, sIndexes, eIndexes, what);
-    if (what === 'all') {
+    if (what === 'all' || what === 'format') {
       deleteMerges.call(this, sIndexes, eIndexes);
     }
     this.change(this.d);
@@ -902,6 +928,7 @@ export default class DataProxy {
     if (cell !== null) {
       if (cell.merge) {
         const [rn, cn] = cell.merge;
+        // console.log('cell.merge:', cell.merge);
         if (rn > 0) {
           for (let i = 1; i <= rn; i += 1) {
             height += this.getRowHeight(ri + i);
@@ -914,6 +941,7 @@ export default class DataProxy {
         }
       }
     }
+    // console.log('data:', this.d);
     return {
       left, top, width, height, cell,
     };
@@ -961,6 +989,7 @@ export default class DataProxy {
     } else if (what === 'format') {
       cellmm[ri][ci] = cellmm[ri][ci] || {};
       cellmm[ri][ci].si = cell.si;
+      if (cell.merge) cellmm[ri][ci].merge = cell.merge;
     }
   }
 
@@ -1041,6 +1070,7 @@ export default class DataProxy {
   getRowHeight(index) {
     const { rowm } = this.d;
     const { row } = this.options;
+    // console.log('rowm.index:', rowm[index], rowm[`${index}`]);
     return rowm[`${index}`] ? rowm[`${index}`].height : row.height;
   }
 
@@ -1062,9 +1092,10 @@ export default class DataProxy {
 
   eachCells(cb) {
     const { cellmm } = this.d;
+    // console.log('celmm:', cellmm);
     Object.keys(cellmm).forEach((ri) => {
       Object.keys(cellmm[ri]).forEach((ci) => {
-        cb(this.getCell(ri, ci), ri, ci);
+        cb(this.getCell(ri, ci), parseInt(ri, 10), parseInt(ci, 10));
       });
     });
   }

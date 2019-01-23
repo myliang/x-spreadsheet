@@ -297,6 +297,7 @@ function colResizerFinished(cRect, distance) {
   const { ci } = cRect;
   const { table, selector, data } = this;
   data.setColWidth(ci, distance);
+  // console.log('data:', data);
   table.render();
   selector.resetAreaOffset();
   horizontalScrollbarSet.call(this);
