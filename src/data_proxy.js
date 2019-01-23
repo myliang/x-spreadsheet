@@ -567,7 +567,7 @@ export default class DataProxy {
         const cell = this.getCellOrNew(ri, ci);
         let cstyle = {};
         if (cell.si !== undefined) {
-          cstyle = styles[cell.si];
+          cstyle = helper.cloneDeep(styles[cell.si]);
         }
         if (property === 'format') {
           cell.format = value;
