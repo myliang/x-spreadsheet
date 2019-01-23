@@ -351,6 +351,9 @@ function toolbarChange(type, value) {
     // filter
   } else {
     data.setSelectedCellAttr(type, value);
+    if (type === 'formula') {
+      editorSet.call(this);
+    }
     sheetReset.call(this);
   }
 }

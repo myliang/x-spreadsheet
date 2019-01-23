@@ -84,6 +84,27 @@ class DrawBox {
   }
 }
 
+
+function drawStrikethrough(tx, ty, align, valign, blheight, blwidth) {
+  const floffset = { x: 0, y: 0 };
+  if (valign === 'bottom') {
+    floffset.y = blheight / 2;
+  } else if (valign === 'top') {
+    floffset.y = -blheight / 2;
+  }
+
+  if (align === 'center') {
+    floffset.x = blwidth / 2;
+  } else if (align === 'right') {
+    floffset.x = blwidth;
+  }
+  this.line(
+    [tx - floffset.x, ty - floffset.y],
+    [tx - floffset.x + blwidth, ty - floffset.y],
+  );
+}
+
+
 class Draw {
   constructor(el) {
     this.el = el;
@@ -153,7 +174,7 @@ class Draw {
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
-      align, valign, font, color,
+      align, valign, font, color, strikethrough,
     } = attr;
     const tx = box.textx(align);
     ctx.save();
@@ -174,19 +195,22 @@ class Draw {
     if (textWrap && txtWidth > box.innerWidth()) {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
-        textLine.len += ctx.measureText(txt[i]).width;
         if (textLine.len >= box.innerWidth()) {
           ctx.fillText(txt.substring(textLine.start, i), tx, ty);
+          drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
           ty += font.size + 2;
           textLine.len = 0;
           textLine.start = i;
         }
+        textLine.len += ctx.measureText(txt[i]).width;
       }
       if (textWrap && textLine.len > 0) {
         ctx.fillText(txt.substring(textLine.start), tx, ty);
+        drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
       }
     } else {
       ctx.fillText(txt, tx, ty);
+      drawStrikethrough.call(this, tx, ty, align, valign, font.size, txtWidth);
     }
     ctx.restore();
     return this;

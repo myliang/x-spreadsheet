@@ -76,6 +76,7 @@ function renderCell(rindex, cindex) {
       valign: style.valign,
       font,
       color: style.color,
+      strikethrough: style.strikethrough,
     }, style.textwrap);
   }
   draw.restore();
