@@ -52,8 +52,8 @@ function italicChange() {
 
 function strikethroughChange() {
   const { strikethroughEl } = this;
-  this.change('strikethrough', strikethroughEl.hasClass('active'));
   strikethroughEl.toggle();
+  this.change('strikethrough', strikethroughEl.hasClass('active'));
 }
 
 function mergeChange() {

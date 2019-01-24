@@ -72,6 +72,7 @@ function renderCell(rindex, cindex) {
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
+    // console.log('style:', style);
     draw.text(cellText, dbox, {
       align: style.align,
       valign: style.valign,

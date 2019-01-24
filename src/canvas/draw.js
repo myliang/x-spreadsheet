@@ -174,7 +174,7 @@ class Draw {
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
-      align, valign, font, color,
+      align, valign, font, color, strikethrough,
     } = attr;
     const tx = box.textx(align);
     ctx.save();
@@ -183,6 +183,7 @@ class Draw {
       textBaseline: valign,
       font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${font.size}px ${font.name}`,
       fillStyle: color,
+      strokeStyle: color,
     });
     const txtWidth = ctx.measureText(txt).width;
     let hoffset = 0;
@@ -197,7 +198,9 @@ class Draw {
       for (let i = 0; i < txt.length; i += 1) {
         if (textLine.len >= box.innerWidth()) {
           ctx.fillText(txt.substring(textLine.start, i), tx, ty);
-          drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
+          if (strikethrough) {
+            drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
+          }
           ty += font.size + 2;
           textLine.len = 0;
           textLine.start = i;
@@ -206,11 +209,15 @@ class Draw {
       }
       if (textWrap && textLine.len > 0) {
         ctx.fillText(txt.substring(textLine.start), tx, ty);
-        drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
+        if (strikethrough) {
+          drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
+        }
       }
     } else {
       ctx.fillText(txt, tx, ty);
-      drawStrikethrough.call(this, tx, ty, align, valign, font.size, txtWidth);
+      if (strikethrough) {
+        drawStrikethrough.call(this, tx, ty, align, valign, font.size, txtWidth);
+      }
     }
     ctx.restore();
     return this;

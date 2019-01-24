@@ -583,7 +583,7 @@ export default class DataProxy {
           nfont[property.split('-')[1]] = value;
           cstyle.font = Object.assign(cstyle.font || {}, nfont);
           cell.si = this.addStyle(cstyle);
-        } else if (property === 'strikethrought' || property === 'textwrap'
+        } else if (property === 'strikethrough' || property === 'textwrap'
           || property === 'align' || property === 'valign'
           || property === 'color' || property === 'bgcolor') {
           cstyle[property] = value;
