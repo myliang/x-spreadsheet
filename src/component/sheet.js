@@ -157,6 +157,7 @@ function sheetReset() {
     overlayerEl,
     overlayerCEl,
     table,
+    data,
   } = this;
   const tOffset = this.getTableOffset();
   const vRect = this.getRect();
@@ -166,6 +167,7 @@ function sheetReset() {
   verticalScrollbarSet.call(this);
   horizontalScrollbarSet.call(this);
   sheetFreeze.call(this);
+  data.setView(vRect);
   table.render();
 }
 

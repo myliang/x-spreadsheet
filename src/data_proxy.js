@@ -476,6 +476,12 @@ export default class DataProxy {
     this.scroll = new Scroll();
     this.selector = new Selector();
     this.change = () => {};
+    this.view = null;
+  }
+
+  // { width, height }
+  setView(view) {
+    this.view = view;
   }
 
   load(data) {
@@ -888,6 +894,7 @@ export default class DataProxy {
     const [
       ci, left, width,
     ] = helper.rangeReduceIf(fci, this.colLen(), 0, 0, x, i => this.getColWidth(i));
+    // console.log('fci:', fci, ', ci:', ci);
     let x1 = left;
     if (x > 0) x1 += width;
     if (scroll.x !== x1) {
@@ -906,7 +913,7 @@ export default class DataProxy {
     let y1 = top;
     if (y > 0) y1 += height;
     if (scroll.y !== y1) {
-      scroll.indexes[0] = y > 0 ? ri : 0;
+      scroll.indexes[0] = y > 0 ? ri - fri : 0;
       scroll.y = y1;
       cb();
     }
@@ -1027,21 +1034,26 @@ export default class DataProxy {
     return helper.rangeSum(min, max, i => this.getRowHeight(i));
   }
 
-  rowEach(rowLen, cb) {
+  rowEach(min, max, cb) {
     let y = 0;
-    for (let i = 0; i <= rowLen; i += 1) {
+    const { view } = this;
+    // console.log('min:', min, ', max:', max, ', scroll:', scroll);
+    for (let i = min; i <= max; i += 1) {
       const rowHeight = this.getRowHeight(i);
       cb(i, y, rowHeight);
       y += rowHeight;
+      if (view !== null && y > view.height) break;
     }
   }
 
-  colEach(colLen, cb) {
+  colEach(min, max, cb) {
     let x = 0;
-    for (let i = 0; i <= colLen; i += 1) {
+    const { view } = this;
+    for (let i = min; i <= max; i += 1) {
       const colWidth = this.getColWidth(i);
       cb(i, x, colWidth);
       x += colWidth;
+      if (view !== null && x > view.width) break;
     }
   }
 
@@ -1098,6 +1110,47 @@ export default class DataProxy {
         cb(this.getCell(ri, ci), parseInt(ri, 10), parseInt(ci, 10));
       });
     });
+  }
+
+  eachCellsInView(rowStart, rowLen, colStart, colLen, jumpMerge = true, cb) {
+    const cmerges = [];
+    const { view } = this;
+    let [x, y] = [0, 0];
+    for (let i = rowStart; i < rowLen; i += 1) {
+      y += this.getRowHeight(i);
+      x = 0;
+      for (let j = colStart; j < colLen; j += 1) {
+        x += this.getColWidth(j);
+        if (jumpMerge) {
+          const cmergeIndexes = [];
+          cmerges.forEach(([mi, mj, rn, cn], index) => {
+            if (mi <= i && i <= mi + rn) {
+              if (j === mj) {
+                j += cn + 1;
+              }
+            }
+            if (i === mi + rn + 1) {
+              cmergeIndexes.push(index);
+            }
+          });
+          cmergeIndexes.forEach((it) => {
+            cmerges.splice(it, 1);
+          });
+        }
+        const cell = this.getCell(i, j);
+        cb(cell, i, j);
+        // renderCell.call(this, i, j);
+        // console.log('cmerges:', cmerges);
+        if (jumpMerge && cell && cell.merge) {
+          const [rn, cn] = cell.merge;
+          // console.log('rn:', rn, ', cn:', cn);
+          cmerges.push([i, j, rn, cn]);
+          j += cn;
+        }
+        if (view !== null && x > view.width) break;
+      }
+      if (view !== null && y > view.height) break;
+    }
   }
 
   addBorder(style, color) {
