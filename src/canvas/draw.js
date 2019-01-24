@@ -174,7 +174,7 @@ class Draw {
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
-      align, valign, font, color, strikethrough,
+      align, valign, font, color,
     } = attr;
     const tx = box.textx(align);
     ctx.save();

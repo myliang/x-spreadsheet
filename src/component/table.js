@@ -22,7 +22,8 @@ const tableGridStyle = {
 */
 
 /* private methods */
-/* function renderContentGrid(rowLen, colLen, scrollOffset) {
+/*
+function renderContentGrid(rowLen, colLen, scrollOffset) {
   const { draw, data } = this;
   const { row, col } = data.options;
   draw.save();
@@ -88,17 +89,51 @@ function renderContent(rowLen, colLen, scrollOffset) {
   draw.save();
   draw.translate(col.indexWidth, row.height)
     .translate(-scrollOffset.x, -scrollOffset.y);
+
+  // [[ri, ci, rn, cn]]
+  const cmerges = [];
+  for (let i = 0; i < rowLen; i += 1) {
+    for (let j = 0; j < colLen; j += 1) {
+      const cmergeIndexes = [];
+      cmerges.forEach(([mi, mj, rn, cn], index) => {
+        if (mi <= i && i <= mi + rn) {
+          if (j === mj) {
+            j += cn + 1;
+          }
+        }
+        if (i === mi + rn + 1) {
+          cmergeIndexes.push(index);
+        }
+      });
+      cmergeIndexes.forEach((it) => {
+        cmerges.splice(it, 1);
+      });
+      renderCell.call(this, i, j);
+      // console.log('cmerges:', cmerges);
+      const cell = data.getCell(i, j);
+      if (cell && cell.merge) {
+        const [rn, cn] = cell.merge;
+        // console.log('rn:', rn, ', cn:', cn);
+        cmerges.push([i, j, rn, cn]);
+        j += cn;
+      }
+    }
+  }
+  /*
   data.rowEach(rowLen - 1, (i) => {
     data.colEach(colLen - 1, (j) => {
       renderCell.call(this, i, j);
     });
   });
+  */
   // merge
+  /*
   data.eachMerges(([[sri, sci]]) => {
     if (sri < rowLen && sci < colLen) {
       renderCell.call(this, sri, sci);
     }
   });
+  */
   // border
   data.eachCells((cell, ri, ci) => {
     // console.log('cell:', cell);
