@@ -1,8 +1,12 @@
 /* global document */
 class Element {
   constructor(tag, className = '') {
-    this.el = document.createElement(tag);
-    this.el.className = className;
+    if (typeof tag === 'string') {
+      this.el = document.createElement(tag);
+      this.el.className = className;
+    } else {
+      this.el = tag;
+    }
     this.data = {};
   }
 
@@ -69,7 +73,7 @@ class Element {
   }
 
   parent() {
-    return this.el.parentNode;
+    return new Element(this.el.parentNode);
   }
 
   children(...eles) {

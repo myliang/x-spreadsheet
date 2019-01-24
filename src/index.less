@@ -27,6 +27,29 @@ body {
   line-height: 0;
 }
 
+.xss-tooltip {
+  position: absolute;
+  padding: 5px 10px;
+  color: #fff;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 1);
+  font-size: 12px;
+
+  &:before {
+    position: absolute;
+    left: calc(50% - 4px);
+    top: -4px;
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: inherit;
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg);
+    z-index: 1;
+    box-shadow: 1px 1px 3px -1px rgba(0, 0, 0, .3);
+  }
+}
+
 .xss-color-palette {
   padding: 5px;
 

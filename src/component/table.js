@@ -100,7 +100,8 @@ function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
           }
         }
       }
-  });
+    },
+  );
   draw.restore();
 }
 

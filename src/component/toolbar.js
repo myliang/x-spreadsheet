@@ -1,4 +1,5 @@
 import { h } from './element';
+import tooltip from './tooltip';
 import DropdownFont from './dropdown_font';
 import DropdownFontSize from './dropdown_fontsize';
 import DropdownFormat from './dropdown_format';
@@ -12,16 +13,20 @@ function buildIcon(name) {
   return new Icon(name);
 }
 
-function buildButton(tooltip) {
-  return h('div', 'xss-toolbar-btn').attr('data-tooltip', tooltip);
+function buildButton(tooltipdata) {
+  return h('div', 'xss-toolbar-btn')
+    .on('mouseenter', (evt) => {
+      tooltip(tooltipdata, evt.target);
+    })
+    .attr('data-tooltip', tooltipdata);
 }
 
 function buildDivider() {
   return h('div', 'xss-toolbar-divider');
 }
 
-function buildButtonWithIcon(tooltip, iconName, change = () => {}) {
-  return buildButton(tooltip)
+function buildButtonWithIcon(tooltipdata, iconName, change = () => {}) {
+  return buildButton(tooltipdata)
     .child(buildIcon(iconName))
     .on('click', () => change());
 }

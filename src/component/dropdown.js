@@ -16,17 +16,18 @@ export default class Dropdown extends Element {
       .children(...children)
       .css('width', width)
       .hide();
-    this.children(
-      h('div', 'xss-dropdown-header')
-        .on('click', () => this.contentEl.show())
-        .children(
-          this.title,
-          showArrow ? h('div', 'xss-icon arrow-right').child(
-            h('div', 'xss-icon-img arrow-down'),
-          ) : '',
-        ),
-      this.contentEl,
+
+    this.headerEl = h('div', 'xss-dropdown-header');
+    this.headerEl.on('click', () => {
+      this.parent().active();
+      this.contentEl.show();
+    }).children(
+      this.title,
+      showArrow ? h('div', 'xss-icon arrow-right').child(
+        h('div', 'xss-icon-img arrow-down'),
+      ) : '',
     );
+    this.children(this.headerEl, this.contentEl);
     bind(window, 'click', (evt) => {
       if (this.el.contains(evt.target)) return;
       this.hide();
@@ -39,6 +40,7 @@ export default class Dropdown extends Element {
   }
 
   hide() {
+    this.parent().active(false);
     this.contentEl.hide();
   }
 }
