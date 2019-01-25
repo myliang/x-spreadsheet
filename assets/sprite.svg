@@ -51,6 +51,13 @@
 </g>
 <g xmlns="http://www.w3.org/2000/svg" transform="translate(180,18)"><path fill="#000000" fill-rule="evenodd" d="M15,0 C15.55,0 16,0.45 16,1 L16,15 C16,15.55 15.55,16 15,16 L1,16 C0.45,16 0,15.55 0,15 L0,1 C0,0.45 0.45,0 1,0 L15,0 Z M2,2 L2,14 L14,14 L14,2 L2,2 Z M6,12 L4,12 L4,7 L6,7 L6,12 L6,12 Z M9,12 L7,12 L7,4 L9,4 L9,12 L9,12 Z M12,12 L10,12 L10,8 L12,8 L12,12 L12,12 Z" transform="translate(1 1)"/>
 </g>
+<g xmlns="http://www.w3.org/2000/svg" transform="translate(198,18)"><g fill="none" fill-rule="evenodd">
+    <path stroke="#000000" d="M1.5 3.5H16.5V15.5H1.5z"/>
+    <path fill="#000000" d="M6 8H7V15H6z"/>
+    <path fill="#D8D8D8" d="M2 4H16V7H2z"/>
+    <path fill="#000000" d="M2 7H16V8H2zM2 11H16V12H2z"/>
+  </g>
+</g>
 <g xmlns="http://www.w3.org/2000/svg" transform="translate(0,36)"><path fill="#000000" fill-rule="evenodd" d="M0,0 L0,14 L14,14 L14,0 L0,0 L0,0 Z M6,12 L2,12 L2,8 L6,8 L6,12 L6,12 Z M6,6 L2,6 L2,2 L6,2 L6,6 L6,6 Z M12,12 L8,12 L8,8 L12,8 L12,12 L12,12 Z M12,6 L8,6 L8,2 L12,2 L12,6 L12,6 Z" transform="translate(2 2)"/>
 </g>
 <g xmlns="http://www.w3.org/2000/svg" transform="translate(18,36)">
