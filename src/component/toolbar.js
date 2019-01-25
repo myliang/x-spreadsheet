@@ -43,46 +43,10 @@ function bindDropdownChange() {
   this.ddBorder.change = it => this.change('border', it);
 }
 
-function boldChange() {
-  const { boldEl } = this;
-  boldEl.toggle();
-  this.change('font-bold', boldEl.hasClass('active'));
-}
-
-function italicChange() {
-  const { italicEl } = this;
-  italicEl.toggle();
-  this.change('font-italic', italicEl.hasClass('active'));
-}
-
-function strikethroughChange() {
-  const { strikethroughEl } = this;
-  strikethroughEl.toggle();
-  this.change('strikethrough', strikethroughEl.hasClass('active'));
-}
-
-function mergeChange() {
-  const { mergeEl } = this;
-  mergeEl.toggle();
-  this.change('merge', mergeEl.hasClass('active'));
-}
-
-function textwrapChange() {
-  const { textwrapEl } = this;
-  textwrapEl.toggle();
-  this.change('textwrap', textwrapEl.hasClass('active'));
-}
-
-function freezeChange() {
-  const { freezeEl } = this;
-  freezeEl.toggle();
-  this.change('freeze', freezeEl.hasClass('active'));
-}
-
-function paintformatChange() {
-  const { paintformatEl } = this;
-  paintformatEl.toggle();
-  this.change('paintformat', paintformatEl.hasClass('active'));
+function toggleChange(elName, type) {
+  const el = this[`${elName}El`];
+  el.toggle();
+  this.change(type, el.hasClass('active'));
 }
 
 export default class Toolbar {
@@ -105,7 +69,7 @@ export default class Toolbar {
         this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
         this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
         this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
-        this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => paintformatChange.call(this)),
+        this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat', 'paintformat')),
         this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
         buildDivider(),
         buildButton('Format').child(this.ddFormat.el),
@@ -113,24 +77,26 @@ export default class Toolbar {
         buildButton('Font').child(this.ddFont.el),
         buildButton('Font size').child(this.ddFontSize.el),
         buildDivider(),
-        this.boldEl = buildButtonWithIcon('Bold', 'bold', () => boldChange.call(this)),
-        this.italicEl = buildButtonWithIcon('Italic', 'italic', () => italicChange.call(this)),
-        this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => strikethroughChange.call(this)),
+        this.boldEl = buildButtonWithIcon('Bold', 'bold', () => toggleChange.call(this, 'bold', 'font-bold')),
+        this.italicEl = buildButtonWithIcon('Italic', 'italic', () => toggleChange.call(this, 'italic', 'font-italic')),
+        this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough', 'strikethrough')),
         buildButton('Text color').child(this.ddTextColor.el),
         buildDivider(),
         buildButton('Fill color').child(this.ddFillColor.el),
         buildButton('Borders').child(this.ddBorder.el),
-        this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => mergeChange.call(this)),
+        this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge', 'merge')),
         buildDivider(),
         buildButton('Horizontal align').child(this.ddAlign.el),
         buildButton('Vertical align').child(this.ddVAlign.el),
-        this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => textwrapChange.call(this)),
+        this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap', 'textwrap')),
         buildDivider(),
         // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
         // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
         // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
-        this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => freezeChange.call(this)),
+        this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze', 'freeze')),
         buildButton('Functions').child(this.ddFormula.el),
+        buildDivider(),
+        this.moreEl = buildButtonWithIcon('More', 'ellipsis', () => {}),
       );
     bindDropdownChange.call(this);
     this.reset();

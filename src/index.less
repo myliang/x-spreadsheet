@@ -427,7 +427,7 @@ body {
 .xss-icon {
   width: 18px;
   height: 18px;
-  margin: 1px 2px 2px 1px;
+  margin: 1px 1px 2px 1px;
   text-align: center;
   vertical-align: middle;
   user-select: none;
@@ -463,11 +463,11 @@ body {
       top: 0;
     }
     &.bold {
-      left: -5 * @icon-size + 1;
+      left: -5 * @icon-size;
       top: 0;
     }
     &.italic {
-      left: -6 * @icon-size + 1;
+      left: -6 * @icon-size;
       top: 0;
     }
     &.underline {
@@ -544,6 +544,10 @@ body {
     }
     &.freeze {
       left: -11 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.ellipsis {
+      left: -12 * @icon-size;
       top: -1 * @icon-size;
     }
     &.border-all {
