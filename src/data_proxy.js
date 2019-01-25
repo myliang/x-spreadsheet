@@ -1012,6 +1012,11 @@ export default class DataProxy {
     return this.d.freeze;
   }
 
+  freezeIsActive() {
+    const [ri, ci] = this.d.freeze;
+    return ri > 0 || ci > 0;
+  }
+
   setFreeze(ri, ci) {
     addHistory.call(this);
     this.d.freeze[0] = ri;

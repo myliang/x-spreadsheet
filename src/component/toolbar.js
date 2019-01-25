@@ -73,6 +73,12 @@ function textwrapChange() {
   this.change('textwrap', textwrapEl.hasClass('active'));
 }
 
+function freezeChange() {
+  const { freezeEl } = this;
+  freezeEl.toggle();
+  this.change('freeze', freezeEl.hasClass('active'));
+}
+
 function paintformatChange() {
   const { paintformatEl } = this;
   paintformatEl.toggle();
@@ -120,9 +126,10 @@ export default class Toolbar {
         buildButton('Vertical align').child(this.ddVAlign.el),
         this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => textwrapChange.call(this)),
         buildDivider(),
-        this.linkEl = buildButtonWithIcon('Insert link', 'link'),
-        this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
-        this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
+        // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
+        // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
+        // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
+        this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => freezeChange.call(this)),
         buildButton('Functions').child(this.ddFormula.el),
       );
     bindDropdownChange.call(this);
@@ -159,6 +166,8 @@ export default class Toolbar {
     this.ddAlign.setTitle(style.align);
     this.ddVAlign.setTitle(style.valign);
     this.textwrapEl.active(style.textwrap);
+    // console.log('freeze is Active:', data.freezeIsActive());
+    this.freezeEl.active(data.freezeIsActive());
     if (cell) {
       if (cell.format) {
         this.ddFormat.setTitle(cell.format);

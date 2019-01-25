@@ -158,6 +158,7 @@ function sheetReset() {
     overlayerCEl,
     table,
     data,
+    toolbar,
   } = this;
   const tOffset = this.getTableOffset();
   const vRect = this.getRect();
@@ -169,6 +170,7 @@ function sheetReset() {
   sheetFreeze.call(this);
   data.setView(vRect);
   table.render();
+  toolbar.reset();
 }
 
 function clearClipboard() {
@@ -351,6 +353,12 @@ function toolbarChange(type, value) {
     // chart
   } else if (type === 'filter') {
     // filter
+  } else if (type === 'freeze') {
+    if (value) {
+      this.freeze(...data.selector.indexes);
+    } else {
+      this.freeze(0, 0);
+    }
   } else {
     data.setSelectedCellAttr(type, value);
     if (type === 'formula') {
