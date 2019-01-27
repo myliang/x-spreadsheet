@@ -34,6 +34,7 @@ body {
   border-radius: 1px;
   background: rgba(0, 0, 0, 1);
   font-size: 12px;
+  z-index: 201;
 
   &:before {
     position: absolute;
@@ -384,13 +385,25 @@ body {
 .xss-toolbar {
   height: 40px;
   text-align: left;
-  padding: 0 60px;
+  padding: 0 30px;
   // border-bottom: 1px solid #D4D4D4;
   // background: #e0e2e4; // #F1F1F1;
   border-bottom: 1px solid #e0e2e4;
   background: #f5f6f7;
 
   display: flex;
+
+  .xss-toolbar-btns {
+    display: inline-flex;
+  }
+
+  .xss-toolbar-more {
+    padding: 0 6px 6px;
+    text-align: left;
+    .xss-toolbar-divider {
+      margin-top: 0;
+    }
+  }
 
   .xss-toolbar-btn {
     flex: 0 0 auto;
@@ -417,8 +430,8 @@ body {
 
 .xss-toolbar-divider {
   display: inline-block;
-  background: #e0e2e4;
-  width: 1px;
+  border-right: 1px solid #e0e2e4;
+  width: 0;
   vertical-align: middle;
   height: 18px;
   margin: 12px 3px 0;

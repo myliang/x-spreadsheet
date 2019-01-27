@@ -1,4 +1,6 @@
+/* global window */
 import { h } from './element';
+import { bind } from '../event';
 import tooltip from './tooltip';
 import DropdownFont from './dropdown_font';
 import DropdownFontSize from './dropdown_fontsize';
@@ -7,6 +9,7 @@ import DropdownFormula from './dropdown_formula';
 import DropdownColor from './dropdown_color';
 import DropdownAlign from './dropdown_align';
 import DropdownBorder from './dropdown_border';
+import Dropdown from './dropdown';
 import Icon from './icon';
 
 function buildIcon(name) {
@@ -49,6 +52,51 @@ function toggleChange(elName, type) {
   this.change(type, el.hasClass('active'));
 }
 
+class DropdownMore extends Dropdown {
+  constructor() {
+    const icon = new Icon('ellipsis');
+    const moreBtns = h('div', 'xss-toolbar-more');
+    super(icon, 'auto', false, moreBtns);
+    this.moreBtns = moreBtns;
+    this.contentEl.css('max-width', '420px').css({ right: 0, left: 'auto' });
+  }
+}
+
+function moreResize() {
+  const {
+    el, btns, moreEl, ddMore, btnChildren,
+  } = this;
+  const { moreBtns, contentEl } = ddMore;
+  const elBox = el.box();
+
+  let sumWidth = 160;
+  let sumWidth2 = 12;
+  const list1 = [];
+  const list2 = [];
+  // console.log('elBox:', elBox);
+  btnChildren.forEach((it) => {
+    const rect = it.box();
+    sumWidth += rect.width;
+    // console.log('sumWidth:', sumWidth, elBox.width);
+    if (it.attr('data-tooltip') === 'More' || sumWidth < elBox.width) {
+      list1.push(it);
+    } else {
+      // console.log('margin:', it.computedStyle());
+      const { marginLeft, marginRight } = it.computedStyle();
+      sumWidth2 += rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10) + 1;
+      list2.push(it);
+    }
+  });
+  btns.html('').children(...list1);
+  moreBtns.html('').children(...list2);
+  contentEl.css('width', `${sumWidth2}px`);
+  if (list2.length > 0) {
+    moreEl.show();
+  } else {
+    moreEl.hide();
+  }
+}
+
 export default class Toolbar {
   constructor(data) {
     this.data = data;
@@ -64,42 +112,51 @@ export default class Toolbar {
     this.ddAlign = new DropdownAlign(['left', 'center', 'right'], style.align);
     this.ddVAlign = new DropdownAlign(['top', 'middle', 'bottom'], style.valign);
     this.ddBorder = new DropdownBorder();
-    this.el = h('div', 'xss-toolbar')
-      .children(
-        this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
-        this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
-        this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
-        this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat', 'paintformat')),
-        this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
-        buildDivider(),
-        buildButton('Format').child(this.ddFormat.el),
-        buildDivider(),
-        buildButton('Font').child(this.ddFont.el),
-        buildButton('Font size').child(this.ddFontSize.el),
-        buildDivider(),
-        this.boldEl = buildButtonWithIcon('Bold', 'bold', () => toggleChange.call(this, 'bold', 'font-bold')),
-        this.italicEl = buildButtonWithIcon('Italic', 'italic', () => toggleChange.call(this, 'italic', 'font-italic')),
-        this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough', 'strikethrough')),
-        buildButton('Text color').child(this.ddTextColor.el),
-        buildDivider(),
-        buildButton('Fill color').child(this.ddFillColor.el),
-        buildButton('Borders').child(this.ddBorder.el),
-        this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge', 'merge')),
-        buildDivider(),
-        buildButton('Horizontal align').child(this.ddAlign.el),
-        buildButton('Vertical align').child(this.ddVAlign.el),
-        this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap', 'textwrap')),
-        buildDivider(),
-        // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
-        // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
-        // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
-        this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze', 'freeze')),
-        buildButton('Functions').child(this.ddFormula.el),
-        buildDivider(),
-        this.moreEl = buildButtonWithIcon('More', 'ellipsis', () => {}),
-      );
+    this.ddMore = new DropdownMore();
+    this.btnChildren = [
+      this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
+      this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
+      this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
+      this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat', 'paintformat')),
+      this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
+      buildDivider(),
+      buildButton('Format').child(this.ddFormat.el),
+      buildDivider(),
+      buildButton('Font').child(this.ddFont.el),
+      buildButton('Font size').child(this.ddFontSize.el),
+      buildDivider(),
+      this.boldEl = buildButtonWithIcon('Bold', 'bold', () => toggleChange.call(this, 'bold', 'font-bold')),
+      this.italicEl = buildButtonWithIcon('Italic', 'italic', () => toggleChange.call(this, 'italic', 'font-italic')),
+      this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough', 'strikethrough')),
+      buildButton('Text color').child(this.ddTextColor.el),
+      buildDivider(),
+      buildButton('Fill color').child(this.ddFillColor.el),
+      buildButton('Borders').child(this.ddBorder.el),
+      this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge', 'merge')),
+      buildDivider(),
+      buildButton('Horizontal align').child(this.ddAlign.el),
+      buildButton('Vertical align').child(this.ddVAlign.el),
+      this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap', 'textwrap')),
+      buildDivider(),
+      // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
+      // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
+      // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
+      this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze', 'freeze')),
+      buildButton('Functions').child(this.ddFormula.el),
+      // buildDivider(),
+      this.moreEl = buildButton('More').child(this.ddMore.el).hide(),
+    ];
+    this.el = h('div', 'xss-toolbar');
+    this.btns = h('div', 'xss-toolbar-btns').children(...this.btnChildren);
+    this.el.child(this.btns);
     bindDropdownChange.call(this);
     this.reset();
+    setTimeout(() => {
+      moreResize.call(this);
+    }, 0);
+    bind(window, 'resize', () => {
+      moreResize.call(this);
+    });
   }
 
   paintformatActive() {

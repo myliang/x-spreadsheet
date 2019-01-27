@@ -484,6 +484,10 @@ export default class DataProxy {
     this.view = view;
   }
 
+  getView() {
+    return this.view;
+  }
+
   load(data) {
     this.d = helper.merge(defaultData, data);
   }

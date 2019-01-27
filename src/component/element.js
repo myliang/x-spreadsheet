@@ -1,4 +1,5 @@
 /* global document */
+/* global window */
 class Element {
   constructor(tag, className = '') {
     if (typeof tag === 'string') {
@@ -77,9 +78,44 @@ class Element {
   }
 
   children(...eles) {
+    if (arguments.length === 0) {
+      return this.el.childNodes;
+    }
     eles.forEach(ele => this.child(ele));
     return this;
   }
+
+  /*
+  first() {
+    return this.el.firstChild;
+  }
+
+  last() {
+    return this.el.lastChild;
+  }
+
+  remove(ele) {
+    return this.el.removeChild(ele);
+  }
+
+  prepend(ele) {
+    const { el } = this;
+    if (el.children.length > 0) {
+      el.insertBefore(ele, el.firstChild);
+    } else {
+      el.appendChild(ele);
+    }
+    return this;
+  }
+
+  prev() {
+    return this.el.previousSibling;
+  }
+
+  next() {
+    return this.el.nextSibling;
+  }
+  */
 
   child(arg) {
     let ele = arg;
@@ -198,6 +234,10 @@ class Element {
       return this;
     }
     return this.el.style[name];
+  }
+
+  computedStyle() {
+    return window.getComputedStyle(this.el, null);
   }
 
   show() {

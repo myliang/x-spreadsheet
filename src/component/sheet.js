@@ -608,6 +608,8 @@ export default class Sheet {
     );
     sheetInitEvents.call(this);
     sheetReset.call(this);
+    // init selector [0, 0]
+    selectorSet.call(this, false, 0, 0);
   }
 
   loadData(data) {
