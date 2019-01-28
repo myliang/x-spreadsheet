@@ -158,6 +158,7 @@ function sheetReset() {
     table,
     data,
     toolbar,
+    selector,
   } = this;
   const tOffset = this.getTableOffset();
   const vRect = this.getRect();
@@ -170,6 +171,7 @@ function sheetReset() {
   data.setView(vRect);
   table.render();
   toolbar.reset();
+  selector.reset();
 }
 
 function clearClipboard() {

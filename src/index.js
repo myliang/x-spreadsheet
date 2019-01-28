@@ -83,11 +83,14 @@ class Spreadsheet {
   }
 }
 
-const xspreadsheet = (el, options = {}) => new Spreadsheet(el, options);
+const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 
 if (window) {
   window.x = window.x || {};
-  window.x.spreadsheet = xspreadsheet;
+  window.x.spreadsheet = spreadsheet;
 }
 
-export default xspreadsheet;
+export default Spreadsheet;
+export {
+  spreadsheet,
+};

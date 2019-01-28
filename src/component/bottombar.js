@@ -1,3 +1,5 @@
+import { h } from './element';
+
 export default class Bottombar {
   constructor(datas) {
     this.datas = datas;

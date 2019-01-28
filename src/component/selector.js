@@ -272,7 +272,11 @@ export default class Selector {
     [sIndexes, eIndexes] = data.calRangeIndexes2(sIndexes, eIndexes);
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
-    setAllAreaOffset.call(this, data.getSelectedRect());
+    this.reset();
+  }
+
+  reset() {
+    setAllAreaOffset.call(this, this.data.getSelectedRect());
   }
 
   showAutofill(ri, ci) {
