@@ -2,7 +2,6 @@
   "name": "x-spreadsheet",
   "version": "1.0.0",
   "description": "a javascript xpreadsheet",
-  "private": true,
   "scripts": {
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "test": "./node_modules/mocha/bin/mocha --require babel-core/register test/*",
