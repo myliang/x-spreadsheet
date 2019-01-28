@@ -12,7 +12,7 @@ export default class DropdownColor extends Dropdown {
       this.setTitle(v);
       this.change(v);
     };
-    super(icon, 'auto', false, colorPalette.el);
+    super(icon, 'auto', false, 'bottom-left', colorPalette.el);
   }
 
   setTitle(color) {

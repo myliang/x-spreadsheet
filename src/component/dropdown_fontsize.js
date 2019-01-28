@@ -10,6 +10,6 @@ export default class DropdownFontSize extends Dropdown {
         this.change(it);
       })
       .child(`${it.pt}`));
-    super('10', '60px', true, ...nfontSizes);
+    super('10', '60px', true, 'bottom-left', ...nfontSizes);
   }
 }

@@ -3,8 +3,8 @@ import { Element, h } from './element';
 import { bind } from '../event';
 
 export default class Dropdown extends Element {
-  constructor(title, width, showArrow, ...children) {
-    super('div', 'xss-dropdown');
+  constructor(title, width, showArrow, placement, ...children) {
+    super('div', `xss-dropdown ${placement}`);
     this.title = title;
     this.change = () => {};
     if (typeof title === 'string') {

@@ -56,9 +56,9 @@ class DropdownMore extends Dropdown {
   constructor() {
     const icon = new Icon('ellipsis');
     const moreBtns = h('div', 'xss-toolbar-more');
-    super(icon, 'auto', false, moreBtns);
+    super(icon, 'auto', false, 'bottom-right', moreBtns);
     this.moreBtns = moreBtns;
-    this.contentEl.css('max-width', '420px').css({ right: 0, left: 'auto' });
+    this.contentEl.css('max-width', '420px');
   }
 }
 

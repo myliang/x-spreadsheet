@@ -137,11 +137,23 @@ body {
 
   .xss-dropdown-content {
     position: absolute;
-    top: calc(~'100% + 5px');
-    left: 0;
     z-index: 200;
     background: #fff;
     box-shadow: 1px 2px 5px 2px rgba(51,51,51,.15);
+  }
+
+  &.bottom-left {
+    .xss-dropdown-content {
+      top: calc(~'100% + 5px');
+      left: 0;
+    }
+  }
+
+  &.bottom-right {
+    .xss-dropdown-content {
+      top: calc(~'100% + 5px');
+      right: 0;
+    }
   }
 
   .xss-dropdown-title {
@@ -561,6 +573,10 @@ body {
     }
     &.ellipsis {
       left: -12 * @icon-size;
+      top: -1 * @icon-size;
+    }
+    &.add {
+      left: -13 * @icon-size;
       top: -1 * @icon-size;
     }
     &.border-all {

@@ -27,6 +27,6 @@ export default class DropdownLineType extends Dropdown {
         h('div', 'xss-line-type').html(it[1]),
       ));
 
-    super(icon, 'auto', false, ...lineTypeEls);
+    super(icon, 'auto', false, 'bottom-left', ...lineTypeEls);
   }
 }

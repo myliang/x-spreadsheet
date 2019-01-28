@@ -386,6 +386,11 @@ function sheetInitEvents() {
     .on('mousemove', (evt) => {
       overlayerMousemove.call(this, evt);
     })
+    .on('mouseleave', (evt) => {
+      if (evt.target.className !== 'xss-resizer-hover') return;
+      rowResizer.hide();
+      colResizer.hide();
+    })
     .on('mousedown', (evt) => {
       // console.log('mousedown.evt:', evt);
       if (evt.buttons === 2) {
