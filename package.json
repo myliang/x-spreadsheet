@@ -1,7 +1,14 @@
 {
-  "name": "xss",
+  "name": "x-data-spreadsheet",
   "version": "1.0.0",
   "description": "a javascript xpreadsheet",
+  "main": "src/index.js",
+  "author": "myliang <liangyuliang0335@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/myliang/x-spreadsheet.git"
+  },
   "scripts": {
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "test": "./node_modules/mocha/bin/mocha --require babel-core/register test/*",
@@ -10,10 +17,9 @@
   },
   "keywords": [
     "javascript",
-    "spreadsheet"
+    "spreadsheet",
+    "canvas",
   ],
-  "author": "myliang",
-  "license": "MIT",
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.2",

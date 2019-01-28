@@ -6,13 +6,13 @@
 
 <p align="center">
   <a href="https://github.com/myliang/x-spreadsheet">
-    <img width="100%" src="/docs/demo.png?raw=true">
+    <img width="100%" src="https://raw.githubusercontent.com/myliang/x-spreadsheet/master/docs/demo.png">
   </a>
 </p>
 
 ## Install
 ``` shell
-npm install x-spreadsheet
+npm install x-data-spreadsheet
 ``` 
 
 ## Quick Start
@@ -21,7 +21,7 @@ npm install x-spreadsheet
 ```
 
 ``` javascript
-import Spreadsheet from 'x-spreadsheet';
+import Spreadsheet from 'x-data-spreadsheet';
 new Spreadsheet(document.getElementById('example')).loadData({});
 ```
 
