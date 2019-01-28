@@ -1,31 +1,25 @@
-mkdir x-spreadsheet && cd x-spreadsheet
-npm init -y
-npm install webpack webpack-cli --save-dev
+# x-spreadsheet
+> a javascript(canvas) spreadsheet for web
+[![npm package](https://img.shields.io/npm/v/x-spreadsheet.svg)](https://www.npmjs.org/package/x-spreadsheet)
+[![NPM downloads](http://img.shields.io/npm/dm/x-spreadsheet.svg)](https://npmjs.org/package/x-spreadsheet)
 
-mkdir dist src
-touch webpack.config.js
+## Install
+``` shell
+npm install x-spreadsheet
+``` 
 
+## Quick Start
+``` html
+<div id="example"></div>
+```
 
-npm install --save-dev file-loader css-loader file-loader
-npm install --save-dev html-webpack-plugin
-npm install --save-dev clean-webpack-plugin
-npm install --save-dev webpack-dev-server
-npm install --save-dev webpack-merge
+``` javascript
+import Spreadsheet from 'x-spreadsheet';
+new Spreadsheet(document.getElementById('example')).loadData({});
+```
 
-# less
-npm install less --save-dev
-npm install less-loader --save-dev
+## Browser Support
+Modern browsers and Internet Explorer 9+(no test).
 
-npm install eslint --save-dev
-./node_modules/.bin/eslint --init # airbnb
-
-
-# test mocha
-npm install --save-dev mocha
-
-# babel
-npm install --save-dev babel-loader babel-core babel-preset-env
-# for macha
-npm install --save-dev babel-register
-# npm install --save-dev babel-plugin-transform-runtime
-# npm install --save babel-runtime
+## LICENSE
+MIT
