@@ -17,16 +17,25 @@ npm install x-data-spreadsheet
 
 ## Quick Start
 ``` html
-<div id="example"></div>
+<div id="xss-demo"></div>
 ```
 
 ``` javascript
 import Spreadsheet from 'x-data-spreadsheet';
-new Spreadsheet(document.getElementById('example')).loadData({});
+new Spreadsheet(document.getElementById('xss-demo')).loadData({});
 ```
 
+## Development
+``` sheel
+git clone https://github.com/myliang/x-spreadsheet.git
+cd x-spreadsheet
+npm install
+npm run dev
+```
+Open your browser and visit http://127.0.0.1:8080.
+
 ## Browser Support
-Modern browsers and Internet Explorer 9+(no test).
+Modern browsers(chrome, firefox, Safari).
 
 ## LICENSE
 MIT
