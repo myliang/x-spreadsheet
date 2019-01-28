@@ -128,7 +128,14 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
   for (let i = 0; i < srcStack.length; i += 1) {
     // console.log(':::>>>', srcStack[i]);
     if (srcStack[i] === '+') {
-      stack.push(stack.pop() + stack.pop());
+      const top = stack.pop();
+      const bottom = stack.pop();
+      // Add if numeric. Concatenate otherwise.
+      if (!isNaN(top) && !isNaN(bottom)) {
+        stack.push(Number(top) + Number(bottom));
+      } else {
+        stack.push(bottom + top);
+      }
     } else if (srcStack[i] === '-') {
       const top = stack.pop();
       stack.push(stack.pop() - top);
