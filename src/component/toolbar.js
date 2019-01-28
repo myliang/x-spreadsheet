@@ -83,7 +83,7 @@ function moreResize() {
     } else {
       // console.log('margin:', it.computedStyle());
       const { marginLeft, marginRight } = it.computedStyle();
-      sumWidth2 += rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10) + 1;
+      sumWidth2 += rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10);
       list2.push(it);
     }
   });

@@ -3,6 +3,7 @@ import helper from './helper';
 import { h } from './component/element';
 import DataProxy from './data_proxy';
 import Sheet from './component/sheet';
+// import Bottombar from './component/bottombar';
 import './index.less';
 
 const defaultOptions = {
