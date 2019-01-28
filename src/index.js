@@ -81,6 +81,11 @@ class Spreadsheet {
     this.sheet.loadData(data);
     return this;
   }
+
+  change(cb) {
+    this.data.change(cb);
+    return this;
+  }
 }
 
 const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);

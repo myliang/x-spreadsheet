@@ -1,6 +1,6 @@
 # x-spreadsheet
-[![npm package](https://img.shields.io/npm/v/x-spreadsheet.svg)](https://www.npmjs.org/package/x-spreadsheet)
-[![NPM downloads](http://img.shields.io/npm/dm/x-spreadsheet.svg)](https://npmjs.org/package/x-spreadsheet)
+[![npm package](https://img.shields.io/npm/v/x-data-spreadsheet.svg)](https://www.npmjs.org/package/x-data-spreadsheet)
+[![NPM downloads](http://img.shields.io/npm/dm/x-data-spreadsheet.svg)](https://npmjs.org/package/x-data-spreadsheet)
 
 > a javascript(canvas) spreadsheet for web
 
