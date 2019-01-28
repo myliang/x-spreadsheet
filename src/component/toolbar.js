@@ -116,7 +116,7 @@ export default class Toolbar {
     this.btnChildren = [
       this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
       this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
-      this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
+      // this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
       this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat', 'paintformat')),
       this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
       buildDivider(),

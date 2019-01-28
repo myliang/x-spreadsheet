@@ -90,11 +90,10 @@ function selectorMove(multiple, direction) {
 
 // private methods
 function overlayerMousemove(evt) {
-  // console.log('evt.buttons: ', evt.buttons, evt);
+  // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
   if (evt.buttons !== 0) return;
   if (evt.target.className === 'xss-resizer-hover') return;
   const { offsetX, offsetY } = evt;
-  // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
   const {
     rowResizer, colResizer, tableEl, data,
   } = this;
@@ -385,11 +384,6 @@ function sheetInitEvents() {
   overlayerEl
     .on('mousemove', (evt) => {
       overlayerMousemove.call(this, evt);
-    })
-    .on('mouseleave', (evt) => {
-      if (evt.target.className !== 'xss-resizer-hover') return;
-      rowResizer.hide();
-      colResizer.hide();
     })
     .on('mousedown', (evt) => {
       // console.log('mousedown.evt:', evt);
