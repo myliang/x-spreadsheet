@@ -32,7 +32,9 @@ const infixExprToSuffixExpr = (src) => {
     const c = src.charAt(i);
     // console.log('c:', c);
     if (c !== ' ') {
-      if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')) {
+      if (c >= 'a' && c <= 'z') {
+        subStrs.push(c.toUpperCase());
+      } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')) {
         subStrs.push(c);
       } else if (c === '"') {
         i += 1;
