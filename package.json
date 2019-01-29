@@ -3,6 +3,10 @@
   "version": "1.0.1",
   "description": "a javascript xpreadsheet",
   "main": "src/index.js",
+  "files": [
+    "assets",
+    "src"
+  ],
   "author": "myliang <liangyuliang0335@gmail.com>",
   "license": "MIT",
   "repository": {
