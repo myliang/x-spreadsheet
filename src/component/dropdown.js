@@ -19,8 +19,14 @@ export default class Dropdown extends Element {
 
     this.headerEl = h('div', 'xss-dropdown-header');
     this.headerEl.on('click', () => {
-      this.parent().active();
-      this.contentEl.show();
+      if (this.contentEl.css('display') !== 'block') {
+        this.contentEl.show();
+        this.parent().active();
+      }
+      else {
+        this.contentEl.hide();
+        this.parent().active(false);
+      }
     }).children(
       this.title,
       showArrow ? h('div', 'xss-icon arrow-right').child(
