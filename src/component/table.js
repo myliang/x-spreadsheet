@@ -243,11 +243,26 @@ function renderAll(rowStart, rowLen, colStart, colLen, scrollOffset) {
   renderFixedHeaders.call(this, rowStart, rowLen, colStart, colLen);
 }
 
+/*
+function canvasSupportHighDPIDevices(el, ctx) {
+  const canvas = el;
+  const dpr = window.devicePixelRatio || 1;
+  // setTimeout(() => {
+  //   const rect = canvas.getBoundingClientRect();
+  //   console.log('rect:', rect.width);
+  //   canvas.width = rect.width * dpr;
+  //   canvas.height = rect.height * dpr;
+  //   ctx.scale(dpr, dpr);
+  // }, 0);
+}
+*/
+
 /** end */
 class Table {
   constructor(el, data) {
     this.el = el;
     this.context = el.getContext('2d');
+    // canvasSupportHighDPIDevices(el, this.context);
     this.draw = new Draw(el);
     this.data = data;
   }

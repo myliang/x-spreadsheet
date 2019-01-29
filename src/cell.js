@@ -133,7 +133,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
       const top = stack.pop();
       const bottom = stack.pop();
       // Add if numeric. Concatenate otherwise.
-      if (!isNaN(top) && !isNaN(bottom)) {
+      if (!Number.isNaN(top) && !Number.isNaN(bottom)) {
         stack.push(Number(top) + Number(bottom));
       } else {
         stack.push(bottom + top);
