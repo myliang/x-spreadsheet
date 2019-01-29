@@ -155,13 +155,11 @@ class Element {
   }
 
   toggle(cls = 'active') {
-    this.toggleClass(cls);
-    return this;
+    return this.toggleClass(cls);
   }
 
   toggleClass(name) {
-    this.el.classList.toggle(name);
-    return this;
+    return this.el.classList.toggle(name);
   }
 
   active(flag = true) {
