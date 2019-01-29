@@ -13,7 +13,7 @@
 ## Install
 ``` shell
 npm install x-data-spreadsheet
-``` 
+```
 
 ## Quick Start
 ``` html
@@ -33,6 +33,12 @@ npm install
 npm run dev
 ```
 Open your browser and visit http://127.0.0.1:8080.
+
+<hr>
+
+You can also build & run x-spreadsheet in a free online workspace using Gitpod:
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/myliang/x-spreadsheet)
 
 ## Browser Support
 Modern browsers(chrome, firefox, Safari).
