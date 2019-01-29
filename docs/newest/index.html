@@ -6,13 +6,10 @@
   <title>x-spreadsheet</title>
 <link href="xspreadsheet.css" rel="stylesheet"></head>
 <body onload="load()">
-  <div id="app">
-    <div id="xss"></div>
-  </div>
-  
+  <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
-      x.spreadsheet(document.getElementById('xss'))
+      x.spreadsheet(document.getElementById('x-spreadsheet-demo'))
         .loadData({
           freeze: [2, 2],
           borders: [

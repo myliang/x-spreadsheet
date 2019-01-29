@@ -1,15 +1,16 @@
 /* global window */
 import { h } from './element';
 import { mouseMoveUp } from '../event';
+import { cssPrefix } from '../config';
 
 export default class Resizer {
   constructor(vertical = false, minDistance) {
     this.moving = false;
     this.vertical = vertical;
-    this.el = h('div', `xss-resizer ${vertical ? 'vertical' : 'horizontal'}`).children(
-      this.hoverEl = h('div', 'xss-resizer-hover')
+    this.el = h('div', `${cssPrefix}-resizer ${vertical ? 'vertical' : 'horizontal'}`).children(
+      this.hoverEl = h('div', `${cssPrefix}-resizer-hover`)
         .on('mousedown.stop', evt => this.mousedownHandler(evt)),
-      this.lineEl = h('div', 'xss-resizer-line').hide(),
+      this.lineEl = h('div', `${cssPrefix}-resizer-line`).hide(),
     ).hide();
     // cell rect
     this.cRect = null;

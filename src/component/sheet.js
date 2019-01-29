@@ -8,6 +8,7 @@ import Editor from './editor';
 import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar';
+import { cssPrefix } from '../config';
 
 function scrollbarMove() {
   const {
@@ -92,7 +93,7 @@ function selectorMove(multiple, direction) {
 function overlayerMousemove(evt) {
   // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
   if (evt.buttons !== 0) return;
-  if (evt.target.className === 'xss-resizer-hover') return;
+  if (evt.target.className === `${cssPrefix}-resizer-hover`) return;
   const { offsetX, offsetY } = evt;
   const {
     rowResizer, colResizer, tableEl, data,
@@ -212,7 +213,7 @@ function overlayerMousedown(evt) {
   const {
     selector, data, table,
   } = this;
-  const isAutofillEl = evt.target.className === 'xss-selector-corner';
+  const isAutofillEl = evt.target.className === `${cssPrefix}-selector-corner`;
   let { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   // console.log('ri:', ri, ', ci:', ci);
   if (!evt.shiftKey) {
@@ -560,7 +561,7 @@ function sheetInitEvents() {
 
 export default class Sheet {
   constructor(targetEl, data) {
-    this.el = h('div', 'xss-sheet');
+    this.el = h('div', `${cssPrefix}-sheet`);
     this.toolbar = new Toolbar(data);
     targetEl.children(this.toolbar.el, this.el);
     // console.log('elRect:', elRect);
@@ -572,7 +573,7 @@ export default class Sheet {
     this.row = row;
     this.data = data;
     // table
-    this.tableEl = h('canvas', 'xss-table');
+    this.tableEl = h('canvas', `${cssPrefix}-table`);
     this.table = new Table(this.tableEl.el, data);
     // resizer
     this.rowResizer = new Resizer(false, row.height);
@@ -590,12 +591,12 @@ export default class Sheet {
     this.contextMenu = new ContextMenu(() => this.getTableOffset());
     // selector
     this.selector = new Selector(data);
-    this.overlayerCEl = h('div', 'xss-overlayer-content')
+    this.overlayerCEl = h('div', `${cssPrefix}-overlayer-content`)
       .children(
         this.editor.el,
         this.selector.el,
       );
-    this.overlayerEl = h('div', 'xss-overlayer')
+    this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);
     // root element
     this.el.children(

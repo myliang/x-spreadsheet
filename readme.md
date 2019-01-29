@@ -17,12 +17,12 @@ npm install x-data-spreadsheet
 
 ## Quick Start
 ``` html
-<div id="xss-demo"></div>
+<div id="x-spreadsheet-demo"></div>
 ```
 
 ``` javascript
 import Spreadsheet from 'x-data-spreadsheet';
-new Spreadsheet(document.getElementById('xss-demo')).loadData({});
+new Spreadsheet(document.getElementById('x-spreadsheet-demo')).loadData({});
 ```
 
 ## Development

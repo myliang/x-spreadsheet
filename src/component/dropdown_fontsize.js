@@ -1,10 +1,11 @@
 import Dropdown from './dropdown';
 import { h } from './element';
 import { fontSizes } from '../font';
+import { cssPrefix } from '../config';
 
 export default class DropdownFontSize extends Dropdown {
   constructor() {
-    const nfontSizes = fontSizes.map(it => h('div', 'xss-item')
+    const nfontSizes = fontSizes.map(it => h('div', `${cssPrefix}-item`)
       .on('click', () => {
         this.setTitle(`${it.pt}`);
         this.change(it);

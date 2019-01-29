@@ -1,10 +1,11 @@
 import { h } from './element';
+import { cssPrefix } from '../config';
 
 export default class Scrollbar {
   constructor(vertical) {
     this.vertical = vertical;
     this.moveFn = null;
-    this.el = h('div', `xss-scrollbar ${vertical ? 'vertical' : 'horizontal'}`)
+    this.el = h('div', `${cssPrefix}-scrollbar ${vertical ? 'vertical' : 'horizontal'}`)
       .child(this.contentEl = h('div', ''))
       .on('mousemove.stop', () => {})
       .on('scroll.stop', (evt) => {

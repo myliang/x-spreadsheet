@@ -11,13 +11,14 @@ import DropdownAlign from './dropdown_align';
 import DropdownBorder from './dropdown_border';
 import Dropdown from './dropdown';
 import Icon from './icon';
+import { cssPrefix } from '../config';
 
 function buildIcon(name) {
   return new Icon(name);
 }
 
 function buildButton(tooltipdata) {
-  return h('div', 'xss-toolbar-btn')
+  return h('div', `${cssPrefix}-toolbar-btn`)
     .on('mouseenter', (evt) => {
       tooltip(tooltipdata, evt.target);
     })
@@ -25,7 +26,7 @@ function buildButton(tooltipdata) {
 }
 
 function buildDivider() {
-  return h('div', 'xss-toolbar-divider');
+  return h('div', `${cssPrefix}-toolbar-divider`);
 }
 
 function buildButtonWithIcon(tooltipdata, iconName, change = () => {}) {
@@ -55,7 +56,7 @@ function toggleChange(elName, type) {
 class DropdownMore extends Dropdown {
   constructor() {
     const icon = new Icon('ellipsis');
-    const moreBtns = h('div', 'xss-toolbar-more');
+    const moreBtns = h('div', `${cssPrefix}-toolbar-more`);
     super(icon, 'auto', false, 'bottom-right', moreBtns);
     this.moreBtns = moreBtns;
     this.contentEl.css('max-width', '420px');
@@ -146,8 +147,8 @@ export default class Toolbar {
       // buildDivider(),
       this.moreEl = buildButton('More').child(this.ddMore.el).hide(),
     ];
-    this.el = h('div', 'xss-toolbar');
-    this.btns = h('div', 'xss-toolbar-btns').children(...this.btnChildren);
+    this.el = h('div', `${cssPrefix}-toolbar`);
+    this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(...this.btnChildren);
     this.el.child(this.btns);
     bindDropdownChange.call(this);
     this.reset();

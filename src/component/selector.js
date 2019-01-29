@@ -1,16 +1,17 @@
 import { h } from './element';
+import { cssPrefix } from '../config';
 
 const selectorHeightBorderWidth = 2 * 2 - 1;
 let startZIndex = 10;
 
 class SelectorElement {
   constructor() {
-    this.cornerEl = h('div', 'xss-selector-corner');
-    this.areaEl = h('div', 'xss-selector-area')
+    this.cornerEl = h('div', `${cssPrefix}-selector-corner`);
+    this.areaEl = h('div', `${cssPrefix}-selector-area`)
       .child(this.cornerEl).hide();
-    this.clipboardEl = h('div', 'xss-selector-clipboard').hide();
-    this.autofillEl = h('div', 'xss-selector-autofill').hide();
-    this.el = h('div', 'xss-selector')
+    this.clipboardEl = h('div', `${cssPrefix}-selector-clipboard`).hide();
+    this.autofillEl = h('div', `${cssPrefix}-selector-autofill`).hide();
+    this.el = h('div', `${cssPrefix}-selector`)
       .css('z-index', `${startZIndex}`)
       .children(this.areaEl, this.clipboardEl, this.autofillEl)
       .hide();
@@ -191,7 +192,7 @@ export default class Selector {
     this.eIndexes = null;
     this.saIndexes = null;
     this.eaIndexes = null;
-    this.el = h('div', 'xss-selectors')
+    this.el = h('div', `${cssPrefix}-selectors`)
       .children(
         this.tl.el,
         this.t.el,

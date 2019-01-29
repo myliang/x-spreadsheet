@@ -1,6 +1,7 @@
 import Dropdown from './dropdown';
 import { h } from './element';
 import { baseFormats } from '../format';
+import { cssPrefix } from '../config';
 
 export default class DropdownFormat extends Dropdown {
   constructor() {
@@ -8,7 +9,7 @@ export default class DropdownFormat extends Dropdown {
     nformats.splice(2, 0, { key: 'divider' });
     nformats.splice(7, 0, { key: 'divider' });
     nformats = nformats.map((it) => {
-      const item = h('div', 'xss-item');
+      const item = h('div', `${cssPrefix}-item`);
       if (it.key === 'divider') {
         item.addClass('divider');
       } else {

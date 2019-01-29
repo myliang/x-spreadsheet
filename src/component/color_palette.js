@@ -1,4 +1,5 @@
 import { h } from './element';
+import { cssPrefix } from '../config';
 
 const themeColorPlaceHolders = ['#ffffff', '#000100', '#e7e5e6', '#445569', '#5b9cd6', '#ed7d31', '#a5a5a5', '#ffc001', '#4371c6', '#71ae47'];
 
@@ -14,7 +15,7 @@ const standardColors = ['#c00000', '#fe0000', '#fdc101', '#ffff01', '#93d051', '
 
 function buildTd(bgcolor) {
   return h('td', '').child(
-    h('div', 'xss-color-palette-cell')
+    h('div', `${cssPrefix}-color-palette-cell`)
       .on('click.stop', () => this.change(bgcolor))
       .css('background-color', bgcolor),
   );
@@ -22,17 +23,17 @@ function buildTd(bgcolor) {
 
 export default class ColorPalette {
   constructor() {
-    this.el = h('div', 'xss-color-palette');
+    this.el = h('div', `${cssPrefix}-color-palette`);
     this.change = () => {};
     const table = h('table', '').children(
       h('tbody', '').children(
-        h('tr', 'xss-theme-color-placeholders').children(
+        h('tr', `${cssPrefix}-theme-color-placeholders`).children(
           ...themeColorPlaceHolders.map(color => buildTd.call(this, color)),
         ),
-        ...themeColors.map(it => h('tr', 'xss-theme-colors').children(
+        ...themeColors.map(it => h('tr', `${cssPrefix}-theme-colors`).children(
           ...it.map(color => buildTd.call(this, color)),
         )),
-        h('tr', 'xss-standard-colors').children(
+        h('tr', `${cssPrefix}-standard-colors`).children(
           ...standardColors.map(color => buildTd.call(this, color)),
         ),
       ),

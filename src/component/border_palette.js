@@ -2,6 +2,7 @@ import { h } from './element';
 import Icon from './icon';
 import DropdownColor from './dropdown_color';
 import DropdownLineType from './dropdown_linetype';
+import { cssPrefix } from '../config';
 
 function buildTable(...trs) {
   return h('table', '').child(
@@ -11,7 +12,7 @@ function buildTable(...trs) {
 
 function buildTd(iconName) {
   return h('td', '').child(
-    h('div', 'xss-border-palette-cell').child(
+    h('div', `${cssPrefix}-border-palette-cell`).child(
       new Icon(`border-${iconName}`),
     ).on('click', () => {
       this.mode = iconName;
@@ -35,10 +36,10 @@ export default class BorderPalette {
     this.ddType.change = ([s]) => {
       this.style = s;
     };
-    this.el = h('div', 'xss-border-palette');
+    this.el = h('div', `${cssPrefix}-border-palette`);
     const table = buildTable(
       h('tr', '').children(
-        h('td', 'xss-border-palette-left').child(
+        h('td', `${cssPrefix}-border-palette-left`).child(
           buildTable(
             h('tr', '').children(
               ...['all', 'inside', 'horizontal', 'vertical', 'outside'].map(it => buildTd.call(this, it)),
@@ -48,9 +49,9 @@ export default class BorderPalette {
             ),
           ),
         ),
-        h('td', 'xss-border-palette-right').children(
-          h('div', 'xss-toolbar-btn').child(this.ddColor.el),
-          h('div', 'xss-toolbar-btn').child(this.ddType.el),
+        h('td', `${cssPrefix}-border-palette-right`).children(
+          h('div', `${cssPrefix}-toolbar-btn`).child(this.ddColor.el),
+          h('div', `${cssPrefix}-toolbar-btn`).child(this.ddType.el),
         ),
       ),
     );

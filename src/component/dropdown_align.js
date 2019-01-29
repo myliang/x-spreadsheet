@@ -1,9 +1,10 @@
 import Dropdown from './dropdown';
 import { h } from './element';
 import Icon from './icon';
+import { cssPrefix } from '../config';
 
 function buildItemWithIcon(iconName) {
-  return h('div', 'xss-item').child(new Icon(iconName));
+  return h('div', `${cssPrefix}-item`).child(new Icon(iconName));
 }
 
 export default class DropdownAlign extends Dropdown {

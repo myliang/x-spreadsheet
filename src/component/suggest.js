@@ -1,6 +1,7 @@
 /* global window */
 import { h } from './element';
 import { bind } from '../event';
+import { cssPrefix } from '../config';
 
 function inputMovePrev(evt) {
   evt.preventDefault();
@@ -70,7 +71,7 @@ export default class Suggest {
   constructor(items, itemClick) {
     this.filterItems = [];
     this.items = items;
-    this.el = h('div', 'xss-suggest').hide();
+    this.el = h('div', `${cssPrefix}-suggest`).hide();
     this.itemClick = itemClick;
     this.itemIndex = 0;
   }
@@ -92,7 +93,7 @@ export default class Suggest {
       items = items.filter(it => it.key.startsWith(word.toUpperCase()));
     }
     items = items.map((it) => {
-      const item = h('div', 'xss-item')
+      const item = h('div', `${cssPrefix}-item`)
         .child(it.key)
         .on('click.stop', () => {
           this.itemClick(it);

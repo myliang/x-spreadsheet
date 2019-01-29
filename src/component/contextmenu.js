@@ -1,6 +1,7 @@
 /* global window */
 import { h } from './element';
 import { bind } from '../event';
+import { cssPrefix } from '../config';
 
 const menuItems = [
   { key: 'copy', title: 'Copy', label: 'Ctrl+C' },
@@ -19,9 +20,9 @@ const menuItems = [
 
 function buildMenuItem(item) {
   if (item.key === 'divider') {
-    return h('div', 'xss-item divider');
+    return h('div', `${cssPrefix}-item divider`);
   }
-  return h('div', 'xss-item')
+  return h('div', `${cssPrefix}-item`)
     .on('click', () => {
       this.itemClick(item.key);
       this.hide();
@@ -38,7 +39,7 @@ function buildMenu() {
 
 export default class ContextMenu {
   constructor(viewFn) {
-    this.el = h('div', 'xss-contextmenu')
+    this.el = h('div', `${cssPrefix}-contextmenu`)
       .children(...buildMenu.call(this))
       .hide();
     this.viewFn = viewFn;

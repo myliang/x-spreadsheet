@@ -1,6 +1,7 @@
 //* global window */
 import { h } from './element';
 import Suggest from './suggest';
+import { cssPrefix } from '../config';
 // import { mouseMoveUp } from '../event';
 
 function resetTextareaSize() {
@@ -80,7 +81,7 @@ export default class Editor {
     this.suggest = new Suggest(formulas, (it) => {
       suggestItemClick.call(this, it);
     });
-    this.areaEl = h('div', 'xss-editor-area')
+    this.areaEl = h('div', `${cssPrefix}-editor-area`)
       .children(
         this.textEl = h('textarea', '')
           .on('input', evt => inputEventHandler.call(this, evt)),
@@ -89,7 +90,7 @@ export default class Editor {
       )
       .on('mousemove.stop', () => {})
       .on('mousedown.stop', () => {});
-    this.el = h('div', 'xss-editor')
+    this.el = h('div', `${cssPrefix}-editor`)
       .child(this.areaEl).hide();
     this.suggest.bindInputEvents(this.textEl);
 
