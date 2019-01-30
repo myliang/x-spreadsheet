@@ -260,6 +260,7 @@ function editorSetOffset() {
   }
   editor.setOffset(sOffset, sPosition);
 }
+
 function editorSet() {
   const {
     editor, data, selector,
@@ -267,6 +268,7 @@ function editorSet() {
   const [ri, ci] = selector.indexes;
   editorSetOffset.call(this);
   editor.setCell(data.getCell(ri, ci));
+  clearClipboard.call(this);
 }
 
 function verticalScrollbarMove(distance) {
@@ -394,7 +396,6 @@ function sheetInitEvents() {
         }
       } else if (evt.detail === 2) {
         editorSet.call(this);
-        clearClipboard.call(this);
       } else {
         editor.clear();
         overlayerMousedown.call(this, evt);
@@ -544,7 +545,7 @@ function sheetInitEvents() {
           break;
       }
 
-      // console.log('keyCode:', keyCode, evt);
+      // console.log('keyCode:', keyCode, evt.key);
       if ((keyCode >= 65 && keyCode <= 90)
         || (keyCode >= 48 && keyCode <= 57)
         || (keyCode >= 96 && keyCode <= 105)
@@ -552,7 +553,9 @@ function sheetInitEvents() {
       ) {
         dataSetCellText.call(this, evt.key);
         editorSet.call(this);
-        clearClipboard.call(this);
+      } else if (keyCode === 113) {
+        // F2
+        editorSet.call(this);
       }
     }
   });
