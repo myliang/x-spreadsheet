@@ -1,4 +1,4 @@
-/* global window */
+/* global window, document */
 import helper from './helper';
 import { h } from './component/element';
 import DataProxy from './data_proxy';
@@ -9,7 +9,8 @@ import './index.less';
 
 const defaultOptions = {
   view: {
-    height: () => 800,
+    height: () => document.documentElement.clientHeight - 41,
+    width: () => document.documentElement.clientWidth,
   },
   formats: [],
   fonts: [],

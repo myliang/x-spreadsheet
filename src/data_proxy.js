@@ -476,16 +476,10 @@ export default class DataProxy {
     this.scroll = new Scroll();
     this.selector = new Selector();
     this.change = () => {};
-    this.view = null;
-  }
-
-  // { width, height }
-  setView(view) {
-    this.view = view;
   }
 
   getView() {
-    return this.view;
+    return this.options.view;
   }
 
   load(data) {
@@ -1045,24 +1039,24 @@ export default class DataProxy {
 
   rowEach(min, max, cb) {
     let y = 0;
-    const { view } = this;
+    const { view } = this.options;
     // console.log('min:', min, ', max:', max, ', scroll:', scroll);
     for (let i = min; i <= max; i += 1) {
       const rowHeight = this.getRowHeight(i);
       cb(i, y, rowHeight);
       y += rowHeight;
-      if (view !== null && y > view.height) break;
+      if (y > view.height()) break;
     }
   }
 
   colEach(min, max, cb) {
     let x = 0;
-    const { view } = this;
+    const { view } = this.options;
     for (let i = min; i <= max; i += 1) {
       const colWidth = this.getColWidth(i);
       cb(i, x, colWidth);
       x += colWidth;
-      if (view !== null && x > view.width) break;
+      if (x > view.width()) break;
     }
   }
 
@@ -1123,7 +1117,7 @@ export default class DataProxy {
 
   eachCellsInView(rowStart, rowLen, colStart, colLen, jumpMerge = true, cb) {
     const cmerges = [];
-    const { view } = this;
+    const { view } = this.options;
     let [x, y] = [0, 0];
     for (let i = rowStart; i < rowLen; i += 1) {
       y += this.getRowHeight(i);
@@ -1156,9 +1150,9 @@ export default class DataProxy {
           cmerges.push([i, j, rn, cn]);
           j += cn;
         }
-        if (view !== null && x > view.width) break;
+        if (x > view.width()) break;
       }
-      if (view !== null && y > view.height) break;
+      if (y > view.height()) break;
     }
   }
 

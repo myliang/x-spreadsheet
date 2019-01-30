@@ -1,3 +1,11 @@
+/* global window */
+const dpr = window.devicePixelRatio || 1;
+const thinLineWidth = dpr - 0.5;
+
+function getScalePixel(px) {
+  return px * dpr;
+}
+
 class DrawBox {
   constructor(x, y, w, h, padding = 0) {
     this.x = x;
@@ -106,9 +114,19 @@ function drawStrikethrough(tx, ty, align, valign, blheight, blwidth) {
 
 
 class Draw {
-  constructor(el) {
+  constructor(el, width, height) {
     this.el = el;
     this.ctx = el.getContext('2d');
+    this.resize(width, height);
+    this.ctx.scale(dpr, dpr);
+  }
+
+  resize(width, height) {
+    // console.log('dpr:', dpr);
+    this.el.style.width = `${width}px`;
+    this.el.style.height = `${height}px`;
+    this.el.width = width * dpr;
+    this.el.height = height * dpr;
   }
 
   clear() {
@@ -139,17 +157,17 @@ class Draw {
   }
 
   translate(x, y) {
-    this.ctx.translate(x, y);
+    this.ctx.translate(x * dpr, y * dpr);
     return this;
   }
 
   fillRect(x, y, w, h) {
-    this.ctx.fillRect(x, y, w, h);
+    this.ctx.fillRect((x * dpr) - 0.5, (y * dpr) - 0.5, w * dpr, h * dpr);
     return this;
   }
 
   fillText(text, x, y) {
-    this.ctx.fillText(text, x, y);
+    this.ctx.fillText(text, x * dpr, y * dpr);
     return this;
   }
 
@@ -181,7 +199,7 @@ class Draw {
     this.attr({
       textAlign: align,
       textBaseline: valign,
-      font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${font.size}px ${font.name}`,
+      font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${font.size * dpr}px ${font.name}`,
       fillStyle: color,
       strokeStyle: color,
     });
@@ -192,12 +210,12 @@ class Draw {
       hoffset = ((n - 1) * font.size) / 2;
     }
     let ty = box.texty(valign, font.size, hoffset);
-    // console.log('txtWidth: ', txtWidth);
+    // console.log('tx: ', tx, ', ty:', ty);
     if (textWrap && txtWidth > box.innerWidth()) {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
         if (textLine.len >= box.innerWidth()) {
-          ctx.fillText(txt.substring(textLine.start, i), tx, ty);
+          this.fillText(txt.substring(textLine.start, i), tx, ty);
           if (strikethrough) {
             drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
           }
@@ -208,13 +226,13 @@ class Draw {
         textLine.len += ctx.measureText(txt[i]).width;
       }
       if (textWrap && textLine.len > 0) {
-        ctx.fillText(txt.substring(textLine.start), tx, ty);
+        this.fillText(txt.substring(textLine.start), tx, ty);
         if (strikethrough) {
           drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
         }
       }
     } else {
-      ctx.fillText(txt, tx, ty);
+      this.fillText(txt, tx, ty);
       if (strikethrough) {
         drawStrikethrough.call(this, tx, ty, align, valign, font.size, txtWidth);
       }
@@ -225,28 +243,19 @@ class Draw {
 
   border(style, color) {
     const { ctx } = this;
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = thinLineWidth;
     ctx.strokeStyle = color;
     if (style === 'medium') {
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = (1 * dpr) + 0.5;
     } else if (style === 'thick') {
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = (2 * dpr) + 0.5;
     } else if (style === 'dashed') {
-      ctx.setLineDash([3, 2]);
+      ctx.setLineDash([3 * dpr, 2 * dpr]);
     } else if (style === 'dotted') {
-      ctx.setLineDash([1, 1]);
+      ctx.setLineDash([1 * dpr, 1 * dpr]);
     } else if (style === 'double') {
-      ctx.setLineDash([2, 0]);
+      ctx.setLineDash([2 * dpr, 0]);
     }
-    return this;
-  }
-
-  lineStyle(width, lineDash, color) {
-    this.attr({
-      lineWidth: width - 0.5,
-      strokeStyle: color,
-    });
-    this.ctx.setLineDash(lineDash);
     return this;
   }
 
@@ -254,13 +263,14 @@ class Draw {
     const { ctx } = this;
     if (xys.length > 1) {
       const [x, y] = xys[0];
-      ctx.moveTo(x + 0.5, y + 0.5);
+      ctx.moveTo((x * dpr) - 0.5, (y * dpr) - 0.5);
       for (let i = 1; i < xys.length; i += 1) {
         const [x1, y1] = xys[i];
-        ctx.lineTo(x1 + 0.5, y1 + 0.5);
+        ctx.lineTo((x1 * dpr) - 0.5, (y1 * dpr) - 0.5);
       }
       ctx.stroke();
     }
+    return this;
   }
 
   strokeBorders(box) {
@@ -299,15 +309,18 @@ class Draw {
     ctx.beginPath();
     ctx.fillStyle = bgcolor || '#fff';
     ctx.strokeStyle = '#e6e6e6';
-    ctx.rect(x + 0.5, y + 0.5, width, height);
+    ctx.rect((x * dpr) - 0.5, (y * dpr) - 0.5, width * dpr, height * dpr);
     ctx.fill();
     ctx.stroke();
     this.strokeBorders(box);
     ctx.restore();
   }
 }
+
 export default {};
 export {
   Draw,
   DrawBox,
+  thinLineWidth,
+  getScalePixel,
 };

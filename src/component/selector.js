@@ -35,8 +35,8 @@ class SelectorElement {
     this.areaEl.offset({
       width: width - selectorHeightBorderWidth,
       height: height - selectorHeightBorderWidth,
-      left,
-      top,
+      left: left - 1,
+      top: top - 1,
     }).show();
   }
 
@@ -45,8 +45,8 @@ class SelectorElement {
       left, top, width, height,
     } = v;
     this.clipboardEl.offset({
-      left: left + 1,
-      top: top + 1,
+      left,
+      top,
       width: width - 5,
       height: height - 5,
     });

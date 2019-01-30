@@ -1,16 +1,18 @@
 import alphabet from '../alphabet';
 import { getFontSizePxByPt } from '../font';
 import _cell from '../cell';
-import { Draw, DrawBox } from '../canvas/draw';
+import {
+  Draw, DrawBox, thinLineWidth, getScalePixel,
+} from '../canvas/draw';
 // gobal var
 const cellPaddingWidth = 5;
 const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
 const tableFixedHeaderStyle = {
   textAlign: 'center',
   textBaseline: 'middle',
-  font: '500 12px sans-serif',
+  font: `500 ${getScalePixel(12)}px Source Sans Pro`,
   fillStyle: '#585757',
-  lineWidth: 0.5,
+  lineWidth: thinLineWidth,
   strokeStyle: '#e6e6e6',
 };
 
@@ -31,7 +33,6 @@ function renderCell(rindex, cindex) {
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
   dbox.bgcolor = style.bgcolor;
-  draw.save();
   draw.rect(dbox);
   if (cell !== null) {
     // render text
@@ -51,7 +52,6 @@ function renderCell(rindex, cindex) {
       strikethrough: style.strikethrough,
     }, style.textwrap);
   }
-  draw.restore();
 }
 
 function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
@@ -157,7 +157,9 @@ function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
   draw.line([0, row.height], [sumWidth, row.height]);
   // left-top-cell
   draw.attr({ fillStyle: '#f4f5f8' })
-    .fillRect(0, 0, col.indexWidth, row.height);
+    .fillRect(0, 0, col.indexWidth, row.height)
+    .line([col.indexWidth, 0], [col.indexWidth, row.height])
+    .line([0, row.height], [col.indexWidth, row.height]);
   // context.closePath();
   draw.restore();
 }
@@ -243,31 +245,20 @@ function renderAll(rowStart, rowLen, colStart, colLen, scrollOffset) {
   renderFixedHeaders.call(this, rowStart, rowLen, colStart, colLen);
 }
 
-/*
-function canvasSupportHighDPIDevices(el, ctx) {
-  const canvas = el;
-  const dpr = window.devicePixelRatio || 1;
-  // setTimeout(() => {
-  //   const rect = canvas.getBoundingClientRect();
-  //   console.log('rect:', rect.width);
-  //   canvas.width = rect.width * dpr;
-  //   canvas.height = rect.height * dpr;
-  //   ctx.scale(dpr, dpr);
-  // }, 0);
-}
-*/
-
 /** end */
 class Table {
   constructor(el, data) {
     this.el = el;
-    this.context = el.getContext('2d');
-    // canvasSupportHighDPIDevices(el, this.context);
-    this.draw = new Draw(el);
+    const view = data.getView();
+    this.draw = new Draw(el, view.width(), view.height());
     this.data = data;
   }
 
   render() {
+    // resize canvas
+    const view = this.data.getView();
+    this.draw.resize(view.width(), view.height());
+    //
     this.clear();
     const { data } = this;
     const { indexes } = data.scroll;

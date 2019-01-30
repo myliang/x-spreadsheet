@@ -157,7 +157,6 @@ function sheetReset() {
     overlayerEl,
     overlayerCEl,
     table,
-    data,
     toolbar,
     selector,
   } = this;
@@ -169,7 +168,6 @@ function sheetReset() {
   verticalScrollbarSet.call(this);
   horizontalScrollbarSet.call(this);
   sheetFreeze.call(this);
-  data.setView(vRect);
   table.render();
   toolbar.reset();
   selector.reset();
@@ -574,7 +572,6 @@ export default class Sheet {
     this.data = data;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
-    this.table = new Table(this.tableEl.el, data);
     // resizer
     this.rowResizer = new Resizer(false, row.height);
     this.colResizer = new Resizer(true, col.minWidth);
@@ -608,6 +605,8 @@ export default class Sheet {
       this.horizontalScrollbar.el,
       this.contextMenu.el,
     );
+    // table
+    this.table = new Table(this.tableEl.el, data);
     sheetInitEvents.call(this);
     sheetReset.call(this);
     // init selector [0, 0]
@@ -644,8 +643,8 @@ export default class Sheet {
   }
 
   getRect() {
-    const { width } = this.el.box();
     const height = this.view.height();
+    const width = this.view.width();
     return { width, height };
   }
 
