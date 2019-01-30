@@ -45,6 +45,7 @@ export default class ContextMenu {
     this.viewFn = viewFn;
     this.itemClick = () => {};
     bind(window, 'click', (evt) => {
+      // console.log('outside:::', this.el.contains(evt.target));
       if (this.el.contains(evt.target)) return;
       this.hide();
     });
@@ -60,12 +61,13 @@ export default class ContextMenu {
     const view = this.viewFn();
     let top = y;
     let left = x;
-    // console.log('x:', x, ',y:', y, ',viewH:', viewHeight, ',h:', height);
     if (view.height - y <= height) {
-      top -= height;
+      // -1 : firefox bug, focus contextmenu
+      top -= height - 1;
     }
     if (view.width - x <= width) {
-      left -= width;
+      // -1 : firefox bug, focus contextmenu
+      left -= width - 1;
     }
     el.offset({ left, top });
   }

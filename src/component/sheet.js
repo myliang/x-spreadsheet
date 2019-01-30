@@ -385,9 +385,7 @@ function sheetInitEvents() {
   overlayerEl
     .on('mousemove', (evt) => {
       overlayerMousemove.call(this, evt);
-    })
-    .on('mousedown', (evt) => {
-      // console.log('mousedown.evt:', evt);
+    }).on('mousedown', (evt) => {
       if (evt.buttons === 2) {
         if (data.xyInSelectedRect(evt.offsetX, evt.offsetY)) {
           contextMenu.setPosition(evt.offsetX, evt.offsetY);
@@ -473,12 +471,13 @@ function sheetInitEvents() {
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
     // console.log('keydown.evt: ', evt);
+    const keyCode = evt.keyCode || evt.which;
     if (evt.ctrlKey) {
       // const { sIndexes, eIndexes } = selector;
       let what = 'all';
       if (evt.shiftKey) what = 'text';
       if (evt.altKey) what = 'format';
-      switch (evt.keyCode) {
+      switch (keyCode) {
         case 90:
           // undo: ctrl + z
           this.undo();
@@ -510,7 +509,7 @@ function sheetInitEvents() {
       // return;
     } else {
       // console.log('evt.keyCode:', evt.keyCode);
-      switch (evt.keyCode) {
+      switch (keyCode) {
         case 27: // esc
           contextMenu.hide();
           clearClipboard.call(this);
@@ -545,9 +544,11 @@ function sheetInitEvents() {
           break;
       }
 
-      if ((evt.keyCode >= 65 && evt.keyCode <= 90)
-        || (evt.keyCode >= 48 && evt.keyCode <= 57)
-        || (evt.keyCode >= 96 && evt.keyCode <= 105)
+      // console.log('keyCode:', keyCode, evt);
+      if ((keyCode >= 65 && keyCode <= 90)
+        || (keyCode >= 48 && keyCode <= 57)
+        || (keyCode >= 96 && keyCode <= 105)
+        || evt.key === '='
       ) {
         dataSetCellText.call(this, evt.key);
         editorSet.call(this);

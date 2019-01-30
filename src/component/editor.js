@@ -30,6 +30,7 @@ function resetTextareaSize() {
 
 function inputEventHandler(evt) {
   const v = evt.target.value;
+  // console.log(evt, 'v:', v);
   this.inputText = v;
   const start = v.lastIndexOf('=');
   const { suggest, textlineEl } = this;
@@ -52,6 +53,9 @@ function setTextareaRange(position) {
 
 function setText(text, position) {
   const { textEl, textlineEl } = this;
+  // firefox bug
+  textEl.el.blur();
+
   textEl.val(text);
   textlineEl.html(text);
   setTextareaRange.call(this, position);
@@ -156,6 +160,7 @@ export default class Editor {
     this.cell = cell;
     const text = (cell && cell.text) || '';
     this.inputText = text;
+    // console.log('text>>:', text);
     setText.call(this, text, text.length);
     resetTextareaSize.call(this);
   }
