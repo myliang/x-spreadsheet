@@ -143,8 +143,8 @@ export default class Editor {
         elOffset.left = freeze.w;
       }
       el.offset(elOffset);
-      areaEl.offset({ left: left - elOffset.left - 0.5, top: top - elOffset.top - 0.5 });
-      textEl.offset({ width: width - 9, height: height - 3 });
+      areaEl.offset({ left: left - elOffset.left - 0.8, top: top - elOffset.top - 0.8 });
+      textEl.offset({ width: width - 9 + 0.8, height: height - 3 + 0.8 });
       const sOffset = { left: 0 };
       sOffset[suggestPosition] = height;
       suggest.setOffset(sOffset);
