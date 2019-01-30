@@ -69,14 +69,18 @@ Cell: {
 */
 
 class Spreadsheet {
-  constructor(tel, options = {}) {
+  constructor(selectors, options = {}) {
+    let targetEl = selectors;
+    if (typeof selectors === 'string') {
+      targetEl = document.querySelector(selectors);
+    }
     this.options = helper.merge(defaultOptions, options);
     this.data = new DataProxy(this.options);
     const rootEl = h('div', `${cssPrefix}`)
       .on('contextmenu', evt => evt.preventDefault());
-    this.sheet = new Sheet(rootEl, this.data);
     // create canvas element
-    tel.appendChild(rootEl.el);
+    targetEl.appendChild(rootEl.el);
+    this.sheet = new Sheet(rootEl, this.data);
   }
 
   loadData(data) {
