@@ -21,6 +21,7 @@ body {
   line-height: 0;
 }
 .x-spreadsheet-tooltip {
+  font-family: 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   position: absolute;
   padding: 5px 10px;
   color: #fff;
