@@ -2,38 +2,37 @@
 [![npm package](https://img.shields.io/npm/v/x-data-spreadsheet.svg)](https://www.npmjs.org/package/x-data-spreadsheet)
 [![NPM downloads](http://img.shields.io/npm/dm/x-data-spreadsheet.svg)](https://npmjs.org/package/x-data-spreadsheet)
 
-> a javascript(canvas) spreadsheet for web
-
+> Una hoja de cálculo javascript (canvas) para web
 <p align="center">
   <a href="https://github.com/myliang/x-spreadsheet">
     <img width="100%" src="https://raw.githubusercontent.com/myliang/x-spreadsheet/master/docs/demo.png">
   </a>
 </p>
 
-## Install
+## Instalación
 ``` shell
 npm install x-data-spreadsheet
 ``` 
 
-## Quick Start
+## Inicio rápido
 ``` html
 <div id="x-spreadsheet-demo"></div>
 ```
 
 ``` javascript
 import Spreadsheet from 'x-data-spreadsheet';
-// If you need to override the default options, you can set the override
+// Si necesita anular las opciones predeterminadas, puede establecer la anulación
 // const options = {};
 // new Spreadsheet('#x-spreadsheet-demo', options);
 new Spreadsheet('#x-spreadsheet-demo')
-  .loadData({}) // load data
+  .loadData({}) // Cargar datos
   .change((data) => {
-    // save data to db
+    // guardar datos en la db
   });
 ```
 
 ```javascript
-// default options
+// opciones predeterminadas
 {
   view: {
     height: () => document.documentElement.clientHeight - 41,
@@ -70,17 +69,17 @@ new Spreadsheet('#x-spreadsheet-demo')
 }
 ```
 
-## Development
+## Desarrollo
 ``` sheel
 git clone https://github.com/myliang/x-spreadsheet.git
 cd x-spreadsheet
 npm install
 npm run dev
 ```
-Open your browser and visit http://127.0.0.1:8080.
+Abre tu navegador y visita http://127.0.0.1:8080.
 
-## Browser Support
-Modern browsers(chrome, firefox, Safari).
+## Navegadores Soportados
+Navegadores modernos (chrome, firefox, safari).
 
-## LICENSE
+## LICENCIA
 MIT
