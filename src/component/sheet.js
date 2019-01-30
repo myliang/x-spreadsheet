@@ -333,6 +333,8 @@ function insertDeleteRowColumn(type) {
     data.deleteCell();
   } else if (type === 'delete-cell-format') {
     data.deleteCell('format');
+  } else if (type === 'delete-cell-text') {
+    data.deleteCell('text');
   }
   clearClipboard.call(this);
   sheetReset.call(this);
@@ -575,6 +577,10 @@ function sheetInitEvents() {
         case 13: // enter
           editor.clear();
           selectorMove.call(this, evt.shiftKey, 'down');
+          evt.preventDefault();
+          break;
+        case 46: // del
+          insertDeleteRowColumn.call(this, 'delete-cell-text');
           evt.preventDefault();
           break;
         default:
