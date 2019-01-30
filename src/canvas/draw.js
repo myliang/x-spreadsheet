@@ -1,9 +1,14 @@
 /* global window */
-const dpr = window.devicePixelRatio || 1;
-const thinLineWidth = dpr - 0.5;
+function dpr() {
+  return window.devicePixelRatio || 1;
+}
 
-function getScalePixel(px) {
-  return px * dpr;
+function thinLineWidth() {
+  return dpr() - 0.5;
+}
+
+function npx(px) {
+  return px * dpr();
 }
 
 class DrawBox {
@@ -118,15 +123,15 @@ class Draw {
     this.el = el;
     this.ctx = el.getContext('2d');
     this.resize(width, height);
-    this.ctx.scale(dpr, dpr);
+    this.ctx.scale(dpr(), dpr());
   }
 
   resize(width, height) {
     // console.log('dpr:', dpr);
     this.el.style.width = `${width}px`;
     this.el.style.height = `${height}px`;
-    this.el.width = width * dpr;
-    this.el.height = height * dpr;
+    this.el.width = npx(width);
+    this.el.height = npx(height);
   }
 
   clear() {
@@ -157,17 +162,17 @@ class Draw {
   }
 
   translate(x, y) {
-    this.ctx.translate(x * dpr, y * dpr);
+    this.ctx.translate(npx(x), npx(y));
     return this;
   }
 
   fillRect(x, y, w, h) {
-    this.ctx.fillRect((x * dpr) - 0.5, (y * dpr) - 0.5, w * dpr, h * dpr);
+    this.ctx.fillRect(npx(x) - 0.5, npx(y) - 0.5, npx(w), npx(h));
     return this;
   }
 
   fillText(text, x, y) {
-    this.ctx.fillText(text, x * dpr, y * dpr);
+    this.ctx.fillText(text, npx(x), npx(y));
     return this;
   }
 
@@ -199,7 +204,7 @@ class Draw {
     this.attr({
       textAlign: align,
       textBaseline: valign,
-      font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${font.size * dpr}px ${font.name}`,
+      font: `${font.italic ? 'italic' : ''} ${font.bold ? 'bold' : ''} ${npx(font.size)}px ${font.name}`,
       fillStyle: color,
       strokeStyle: color,
     });
@@ -246,15 +251,15 @@ class Draw {
     ctx.lineWidth = thinLineWidth;
     ctx.strokeStyle = color;
     if (style === 'medium') {
-      ctx.lineWidth = (1 * dpr) + 0.5;
+      ctx.lineWidth = npx(1) + 0.5;
     } else if (style === 'thick') {
-      ctx.lineWidth = (2 * dpr) + 0.5;
+      ctx.lineWidth = npx(2) + 0.5;
     } else if (style === 'dashed') {
-      ctx.setLineDash([3 * dpr, 2 * dpr]);
+      ctx.setLineDash([npx(3), npx(2)]);
     } else if (style === 'dotted') {
-      ctx.setLineDash([1 * dpr, 1 * dpr]);
+      ctx.setLineDash([npx(1), npx(1)]);
     } else if (style === 'double') {
-      ctx.setLineDash([2 * dpr, 0]);
+      ctx.setLineDash([npx(2), 0]);
     }
     return this;
   }
@@ -263,10 +268,10 @@ class Draw {
     const { ctx } = this;
     if (xys.length > 1) {
       const [x, y] = xys[0];
-      ctx.moveTo((x * dpr) - 0.5, (y * dpr) - 0.5);
+      ctx.moveTo(npx(x) - 0.5, npx(y) - 0.5);
       for (let i = 1; i < xys.length; i += 1) {
         const [x1, y1] = xys[i];
-        ctx.lineTo((x1 * dpr) - 0.5, (y1 * dpr) - 0.5);
+        ctx.lineTo(npx(x1) - 0.5, npx(y1) - 0.5);
       }
       ctx.stroke();
     }
@@ -309,7 +314,7 @@ class Draw {
     ctx.beginPath();
     ctx.fillStyle = bgcolor || '#fff';
     ctx.strokeStyle = '#e6e6e6';
-    ctx.rect((x * dpr) - 0.5, (y * dpr) - 0.5, width * dpr, height * dpr);
+    ctx.rect(npx(x) - 0.5, npx(y) - 0.5, npx(width), npx(height));
     ctx.fill();
     ctx.stroke();
     this.strokeBorders(box);
@@ -322,5 +327,5 @@ export {
   Draw,
   DrawBox,
   thinLineWidth,
-  getScalePixel,
+  npx,
 };

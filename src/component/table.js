@@ -2,19 +2,21 @@ import alphabet from '../alphabet';
 import { getFontSizePxByPt } from '../font';
 import _cell from '../cell';
 import {
-  Draw, DrawBox, thinLineWidth, getScalePixel,
+  Draw, DrawBox, thinLineWidth, npx,
 } from '../canvas/draw';
 // gobal var
 const cellPaddingWidth = 5;
 const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
-const tableFixedHeaderStyle = {
-  textAlign: 'center',
-  textBaseline: 'middle',
-  font: `500 ${getScalePixel(12)}px Source Sans Pro`,
-  fillStyle: '#585757',
-  lineWidth: thinLineWidth,
-  strokeStyle: '#e6e6e6',
-};
+function tableFixedHeaderStyle() {
+  return {
+    textAlign: 'center',
+    textBaseline: 'middle',
+    font: `500 ${npx(12)}px Source Sans Pro`,
+    fillStyle: '#585757',
+    lineWidth: thinLineWidth(),
+    strokeStyle: '#e6e6e6',
+  };
+}
 
 function getDrawBox(rindex, cindex) {
   const { data } = this;
@@ -128,7 +130,7 @@ function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
   // console.log(data.selectIndexes);
   // draw text
   // text font, align...
-  draw.attr(tableFixedHeaderStyle);
+  draw.attr(tableFixedHeaderStyle());
   // y-header-text
   data.rowEach(rowStart, rowLen, (i, y1, rowHeight) => {
     const y = y1 + row.height;

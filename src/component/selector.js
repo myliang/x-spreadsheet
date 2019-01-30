@@ -35,8 +35,8 @@ class SelectorElement {
     this.areaEl.offset({
       width: width - selectorHeightBorderWidth,
       height: height - selectorHeightBorderWidth,
-      left: left - 1,
-      top: top - 1,
+      left: left - 0.5,
+      top: top - 0.5,
     }).show();
   }
 
