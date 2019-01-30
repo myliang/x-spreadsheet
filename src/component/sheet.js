@@ -60,10 +60,10 @@ function selectorSetByEvent(multiple, ri, ci) {
 }
 
 // multiple: boolean
-// direction: left | right | up | down
+// direction: left | right | up | down | row-first | row-last | col-first | col-last
 function selectorMove(multiple, direction) {
   const {
-    selector, col, row,
+    selector, data,
   } = this;
   let [ri, ci] = selector.indexes;
   const [eri, eci] = selector.eIndexes;
@@ -75,12 +75,20 @@ function selectorMove(multiple, direction) {
     if (ci > 0) ci -= 1;
   } else if (direction === 'right') {
     if (eci !== ci) ci = eci;
-    if (ci < col.len) ci += 1;
+    if (ci < data.colLen() - 1) ci += 1;
   } else if (direction === 'up') {
     if (ri > 0) ri -= 1;
   } else if (direction === 'down') {
     if (eri !== ri) ri = eri;
-    if (ri < row.len) ri += 1;
+    if (ri < data.rowLen() - 1) ri += 1;
+  } else if (direction === 'row-first') {
+    ci = 0;
+  } else if (direction === 'row-last') {
+    ci = data.colLen() - 1;
+  } else if (direction === 'col-first') {
+    ri = 0;
+  } else if (direction === 'col-last') {
+    ri = data.rowLen() - 1;
   }
   if (multiple) {
     selector.moveIndexes = [ri, ci];
@@ -502,6 +510,26 @@ function sheetInitEvents() {
         case 86:
           // ctrl + v
           paste.call(this, what);
+          evt.preventDefault();
+          break;
+        case 37:
+          // ctrl + left
+          selectorMove.call(this, evt.shiftKey, 'row-first');
+          evt.preventDefault();
+          break;
+        case 38:
+          // ctrl + up
+          selectorMove.call(this, evt.shiftKey, 'col-first');
+          evt.preventDefault();
+          break;
+        case 39:
+          // ctrl + right
+          selectorMove.call(this, evt.shiftKey, 'row-last');
+          evt.preventDefault();
+          break;
+        case 40:
+          // ctrl + down
+          selectorMove.call(this, evt.shiftKey, 'col-last');
           evt.preventDefault();
           break;
         default:
