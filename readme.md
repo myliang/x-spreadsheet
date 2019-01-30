@@ -22,7 +22,52 @@ npm install x-data-spreadsheet
 
 ``` javascript
 import Spreadsheet from 'x-data-spreadsheet';
-new Spreadsheet(document.getElementById('x-spreadsheet-demo')).loadData({});
+// If you need to override the default options, you can set the override
+// const options = {};
+// new Spreadsheet('#x-spreadsheet-demo', options);
+new Spreadsheet('#x-spreadsheet-demo')
+  .loadData({}) // load data
+  .change((data) => {
+    // save data to db
+  });
+```
+
+```javascript
+// default options
+{
+  view: {
+    height: () => document.documentElement.clientHeight - 41,
+    width: () => document.documentElement.clientWidth,
+  },
+  formats: [],
+  fonts: [],
+  formula: [],
+  row: {
+    len: 100,
+    height: 25,
+  },
+  col: {
+    len: 26,
+    width: 100,
+    indexWidth: 60,
+    minWidth: 60,
+  },
+  style: {
+    bgcolor: '#ffffff',
+    align: 'left',
+    valign: 'middle',
+    textwrap: false,
+    textDecoration: 'normal',
+    strikethrough: false,
+    color: '#0a0a0a',
+    font: {
+      name: 'Helvetica',
+      size: 10,
+      bold: false,
+      italic: false,
+    },
+  },
+}
 ```
 
 ## Development
