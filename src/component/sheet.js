@@ -39,6 +39,8 @@ function scrollbarMove() {
 }
 
 function selectorSet(multiple, ri, ci) {
+  if (ri === -1 && ci === -1) return;
+  // console.log(multiple, ', ri:', ri, ', ci:', ci);
   const {
     table, selector, toolbar,
   } = this;
@@ -49,14 +51,6 @@ function selectorSet(multiple, ri, ci) {
   }
   toolbar.reset();
   table.render();
-}
-
-function selectorSetByEvent(multiple, ri, ci) {
-  // const { data } = this;
-  // const { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
-  // console.log('ri:', ri, ', ci:', ci, ', eri:', eri, ', eci:', eci);
-  if (ri === -1 && ci === -1) return;
-  selectorSet.call(this, multiple, ri, ci);
 }
 
 // multiple: boolean
@@ -227,7 +221,7 @@ function overlayerMousedown(evt) {
     if (isAutofillEl) {
       selector.showAutofill(ri, ci);
     } else {
-      selectorSetByEvent.call(this, false, ri, ci);
+      selectorSet.call(this, false, ri, ci);
     }
 
     // mouse move up
@@ -237,7 +231,7 @@ function overlayerMousedown(evt) {
       if (isAutofillEl) {
         selector.showAutofill(ri, ci);
       } else if (e.buttons === 1 && !e.shiftKey) {
-        selectorSetByEvent.call(this, true, ri, ci);
+        selectorSet.call(this, true, ri, ci);
       }
     }, () => {
       if (isAutofillEl) {
@@ -252,7 +246,7 @@ function overlayerMousedown(evt) {
   if (!isAutofillEl && evt.buttons === 1) {
     if (evt.shiftKey) {
       // console.log('shiftKey::::');
-      selectorSetByEvent.call(this, true, ri, ci);
+      selectorSet.call(this, true, ri, ci);
     }
   }
 }
@@ -479,8 +473,8 @@ function sheetInitEvents() {
   // for selector
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
-    // console.log('keydown.evt: ', evt);
     const keyCode = evt.keyCode || evt.which;
+    // console.log('keydown.evt: ', keyCode);
     if (evt.ctrlKey) {
       // const { sIndexes, eIndexes } = selector;
       let what = 'all';
@@ -532,10 +526,24 @@ function sheetInitEvents() {
           selectorMove.call(this, evt.shiftKey, 'col-last');
           evt.preventDefault();
           break;
+        case 32:
+          // ctrl + space, all cells in col
+          selectorSet.call(this, false, -1, data.selector.indexes[1]);
+          evt.preventDefault();
+          break;
         default:
           break;
       }
       // return;
+    } else if (evt.shiftKey) {
+      switch (keyCode) {
+        case 32:
+          // shift + space, all cells in row
+          selectorSet.call(this, false, data.selector.indexes[0], -1);
+          break;
+        default:
+          break;
+      }
     } else {
       // console.log('evt.keyCode:', evt.keyCode);
       switch (keyCode) {
