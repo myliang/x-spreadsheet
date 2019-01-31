@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "files": [
     "assets",
+    "dist",
     "src"
   ],
   "author": "myliang <liangyuliang0335@gmail.com>",
