@@ -19,10 +19,13 @@ class Element {
     return this.data[key];
   }
 
-  on(eventName, handler) {
-    const [fen, ...oen] = eventName.split('.');
-    // console.log('fen:', fen, oen);
-    this.el.addEventListener(fen, (evt) => {
+  on(eventNames, handler) {
+    const [fen, ...oen] = eventNames.split('.');
+    let eventName = fen;
+    if (eventName === 'mousewheel' && /Firefox/i.test(window.navigator.userAgent)) {
+      eventName = 'DOMMouseScroll';
+    }
+    this.el.addEventListener(eventName, (evt) => {
       handler(evt);
       for (let i = 0; i < oen.length; i += 1) {
         const k = oen[i];

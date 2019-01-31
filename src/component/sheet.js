@@ -126,6 +126,27 @@ function overlayerMousemove(evt) {
   }
 }
 
+function overlayerMousescroll(evt) {
+  const { verticalScrollbar, data } = this;
+  const { top } = verticalScrollbar.scroll();
+  // console.log('evt:::', evt.wheelDelta, evt.detail * 40);
+  let delta = evt.deltaY;
+  if (evt.detail) delta = evt.detail * 40;
+  if (delta > 0) {
+    // up
+    const ri = data.scroll.indexes[0] + 1;
+    if (ri < data.rowLen()) {
+      verticalScrollbar.move({ top: top + data.getRowHeight(ri) - 1 });
+    }
+  } else {
+    // down
+    const ri = data.scroll.indexes[0] - 1;
+    if (ri >= 0) {
+      verticalScrollbar.move({ top: ri === 0 ? 0 : top - data.getRowHeight(ri) });
+    }
+  }
+}
+
 function verticalScrollbarSet() {
   const { data, verticalScrollbar } = this;
   const { height } = this.getTableOffset();
@@ -404,6 +425,8 @@ function sheetInitEvents() {
         editor.clear();
         overlayerMousedown.call(this, evt);
       }
+    }).on('mousewheel.stop', (evt) => {
+      overlayerMousescroll.call(this, evt);
     });
 
   // toolbar change
@@ -452,24 +475,6 @@ function sheetInitEvents() {
 
   bind(window, 'click', (evt) => {
     this.focusing = overlayerEl.contains(evt.target);
-  });
-
-  bind(window, 'mousewheel', (evt) => {
-    if (!this.focusing) return;
-    const { top } = this.verticalScrollbar.scroll();
-    if (evt.deltaY > 0) {
-      // up
-      const ri = data.scroll.indexes[0] + 1;
-      if (ri < row.len) {
-        this.verticalScrollbar.move({ top: top + data.getRowHeight(ri) });
-      }
-    } else {
-      // down
-      const ri = data.scroll.indexes[0] - 1;
-      if (ri >= 0) {
-        this.verticalScrollbar.move({ top: ri === 0 ? 0 : top - data.getRowHeight(ri) });
-      }
-    }
   });
 
   // for selector
