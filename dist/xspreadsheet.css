@@ -391,6 +391,11 @@ body {
   height: 18px;
   margin: 12px 3px 0;
 }
+@media screen and (min-width: 320px) and (max-width: 480px) {
+  .x-spreadsheet-toolbar {
+    display: none;
+  }
+}
 .x-spreadsheet-icon {
   width: 18px;
   height: 18px;

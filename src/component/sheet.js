@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { bind, mouseMoveUp } from '../event';
+import { bind, mouseMoveUp, bindTouch } from '../event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -144,6 +144,18 @@ function overlayerMousescroll(evt) {
     if (ri >= 0) {
       verticalScrollbar.move({ top: ri === 0 ? 0 : top - data.getRowHeight(ri) });
     }
+  }
+}
+
+function overlayerTouch(direction, distance) {
+  const { verticalScrollbar, horizontalScrollbar } = this;
+  const { top } = verticalScrollbar.scroll();
+  const { left } = horizontalScrollbar.scroll();
+  // console.log('direction:', direction, ', distance:', distance);
+  if (direction === 'left' || direction === 'right') {
+    horizontalScrollbar.move({ left: left - distance });
+  } else if (direction === 'up' || direction === 'down') {
+    verticalScrollbar.move({ top: top - distance });
   }
 }
 
@@ -405,7 +417,6 @@ function sheetInitEvents() {
     editor,
     contextMenu,
     data,
-    row,
     toolbar,
   } = this;
   // overlayer
@@ -428,6 +439,13 @@ function sheetInitEvents() {
     }).on('mousewheel.stop', (evt) => {
       overlayerMousescroll.call(this, evt);
     });
+
+  // slide on mobile
+  bindTouch(overlayerEl.el, {
+    move: (direction, d) => {
+      overlayerTouch.call(this, direction, d);
+    },
+  });
 
   // toolbar change
   toolbar.change = (type, value) => toolbarChange.call(this, type, value);
