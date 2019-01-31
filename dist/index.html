@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>x-spreadsheet</title>
+<link href="xspreadsheet.css" rel="stylesheet"></head>
+<body onload="load()">
+  <div id="x-spreadsheet-demo"></div>
+  <script>
+    function load(){
+      x.spreadsheet('#x-spreadsheet-demo')
+        .loadData({
+          freeze: [2, 2],
+          borders: [
+            ['thin', '#0366d6'],
+          ],
+          styles: [
+            { bgcolor: '#f4f5f8', wrapText: true, color: '#900b09', bbi: 0, bti: 0, bri: 0, bli: 0 },
+          ],
+          merges: [
+            [[2, 2], [3, 3]],
+          ],
+          cellmm: {
+            1: {
+              0: { text: 'testingtesttestetst' },
+              2: { text: 'testing' },
+            },
+            2: {
+              0: { text: 'render', si: 0 },
+              1: { text: 'Hello' },
+              2: { text: 'haha', merge: [1, 1] },
+              3: { text: 'overlayerll' },
+            },
+            8: {
+              8: { text: 'border test', si: 0 },
+            }
+          },
+        }).change((cdata) => console.log(cdata));
+    }
+  </script>
+<script type="text/javascript" src="xspreadsheet.js"></script></body>
+</html>
