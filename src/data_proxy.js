@@ -7,8 +7,8 @@ import { expr2expr } from './cell';
 
 /*
 Cell: {
-  text: string
-  merge: [rowLen, colLen]
+  text: string,
+  merge: [rowLen, colLen],
   format: string,
   si: style-index
 }

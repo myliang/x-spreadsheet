@@ -56,6 +56,33 @@ function renderCell(rindex, cindex) {
   }
 }
 
+function renderCellBorder(cell, ri, ci) {
+  const { draw, data } = this;
+  if (cell && cell.si !== undefined) {
+    // console.log('cell:', cell, ri, ci);
+    const style = data.getStyle(cell.si);
+    if (style) {
+      const {
+        bti, bri, bbi, bli,
+      } = style;
+      // console.log('bti:', bti);
+      if (bti !== undefined || bri !== undefined
+        || bbi !== undefined || bli !== undefined) {
+        // console.log('::::::::::', ri, ci);
+        const dbox = getDrawBox.call(this, ri, ci);
+        // console.log('ri:', ri, ',ci:', ci, 'style:', style, dbox);
+        dbox.setBorders(
+          data.getBorder(bti),
+          data.getBorder(bri),
+          data.getBorder(bbi),
+          data.getBorder(bli),
+        );
+        draw.strokeBorders(dbox);
+      }
+    }
+  }
+}
+
 function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
   const { draw, data } = this;
   const { col, row } = data.options;
@@ -69,7 +96,9 @@ function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
     colStart,
     colLen,
     true,
-    (cell, i, j) => renderCell.call(this, i, j),
+    (cell, ri, ci) => {
+      renderCell.call(this, ri, ci);
+    },
   );
   // border
   data.eachCellsInView(
@@ -77,31 +106,9 @@ function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
     rowLen,
     colStart,
     colLen,
-    false,
+    true,
     (cell, ri, ci) => {
-      if (cell && cell.si !== undefined) {
-        // console.log('cell:', cell, ri, ci);
-        const style = data.getStyle(cell.si);
-        if (style) {
-          const {
-            bti, bri, bbi, bli,
-          } = style;
-          // console.log('bti:', bti);
-          if (bti !== undefined || bri !== undefined
-            || bbi !== undefined || bli !== undefined) {
-            // console.log('::::::::::', ri, ci);
-            const dbox = getDrawBox.call(this, ri, ci);
-            // console.log('ri:', ri, ',ci:', ci, 'style:', style, dbox);
-            dbox.setBorders(
-              data.getBorder(bti),
-              data.getBorder(bri),
-              data.getBorder(bbi),
-              data.getBorder(bli),
-            );
-            draw.strokeBorders(dbox);
-          }
-        }
-      }
+      renderCellBorder.call(this, cell, ri, ci);
     },
   );
   draw.restore();
