@@ -600,6 +600,9 @@ function sheetInitEvents() {
           selectorMove.call(this, evt.shiftKey, 'down');
           evt.preventDefault();
           break;
+        case 8: // backspace
+          insertDeleteRowColumn.call(this, 'delete-cell-text');
+          evt.preventDefault();
         default:
           break;
       }
