@@ -496,6 +496,7 @@ function sheetInitEvents() {
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
+    const key = evt.key;
     // console.log('keydown.evt: ', keyCode);
     if (evt.ctrlKey) {
       // const { sIndexes, eIndexes } = selector;
@@ -599,16 +600,14 @@ function sheetInitEvents() {
           selectorMove.call(this, evt.shiftKey, 'down');
           evt.preventDefault();
           break;
-        case 46: // del
-          insertDeleteRowColumn.call(this, 'delete-cell-text');
-          evt.preventDefault();
-          break;
         default:
           break;
       }
 
-      // console.log('keyCode:', keyCode, evt.key);
-      if ((keyCode >= 65 && keyCode <= 90)
+      if (key === 'Delete') {
+        insertDeleteRowColumn.call(this, 'delete-cell-text');
+        evt.preventDefault();
+      } else if ((keyCode >= 65 && keyCode <= 90)
         || (keyCode >= 48 && keyCode <= 57)
         || (keyCode >= 96 && keyCode <= 105)
         || evt.key === '='
