@@ -552,6 +552,10 @@ export default class DataProxy {
     return this.getCell(...this.selector.indexes);
   }
 
+  setSelectedCellText(text) {
+    this.setCellText(...this.selector.indexes, text);
+  }
+
   getSelectedRect() {
     return this.getRect(...this.selector.getRange());
   }

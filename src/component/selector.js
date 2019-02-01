@@ -258,7 +258,7 @@ export default class Selector {
   set(ri, ci) {
     const { data } = this;
     const [sIndexes, eIndexes] = data.calRangeIndexes(ri, ci);
-    if (ri > 0 && ci > 0) {
+    if (ri >= 0 && ci >= 0) {
       data.setSelectedCurrentIndexes(sIndexes);
       this.indexes = sIndexes;
     }

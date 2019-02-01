@@ -297,12 +297,9 @@ function editorSetOffset() {
 }
 
 function editorSet() {
-  const {
-    editor, data, selector,
-  } = this;
-  const [ri, ci] = selector.indexes;
+  const { editor, data } = this;
   editorSetOffset.call(this);
-  editor.setCell(data.getCell(ri, ci));
+  editor.setCell(data.getSelectedCell());
   clearClipboard.call(this);
 }
 
@@ -346,9 +343,9 @@ function colResizerFinished(cRect, distance) {
 }
 
 function dataSetCellText(text) {
-  const { selector, data, table } = this;
-  const [ri, ci] = selector.indexes;
-  data.setCellText(ri, ci, text);
+  const { data, table } = this;
+  // const [ri, ci] = selector.indexes;
+  data.setSelectedCellText(text);
   table.render();
 }
 
