@@ -564,6 +564,16 @@ function sheetInitEvents() {
           // shift + space, all cells in row
           selectorSet.call(this, false, data.selector.indexes[0], -1);
           break;
+        case 9:
+          // shift + tab, moves left
+          selectorMove.call(this, false, 'left');
+          evt.preventDefault();
+          break;
+        case 13:
+          //shift + enter, moves up
+          selectorMove.call(this, false, 'up');
+          evt.preventDefault();
+          break;
         default:
           break;
       }
