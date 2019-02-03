@@ -163,6 +163,10 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
 };
 
 const cellRender = (src, formulaMap, getCellText) => {
+  const recursiveReferenceCell = searchForRecursiveReferences(src, getCellText, []);
+  if(recursiveReferenceCell){
+    return "RECURSIVE " + recursiveReferenceCell;
+  }
   // console.log(':::::::::::::src:', src);
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
@@ -173,6 +177,37 @@ const cellRender = (src, formulaMap, getCellText) => {
   }
   return src;
 };
+
+//renderStack: The stack produced by the callRender fucntion
+//getCellText: Function that fetches a cell's text given an x and y
+//cellLine: The list of cells that have led to this one's reference
+const searchForRecursiveReferences = (src, getCellText, cellLine) => {
+  if(src[0] !== '='){
+    return '';
+  }
+  const srcStack = infixExprToSuffixExpr(src.substring(1));
+  for (let i = 0; i < srcStack.length; i += 1) {
+    if (!['+', '-', '*', '/'].includes(srcStack[i]) && !Array.isArray(srcStack[i])) {
+      //We've found a reference to another cell
+      //Let's find out what that cell references
+      //Check if it references something from the cellLine
+      if(cellLine.includes(srcStack[i])){
+        return srcStack[i];
+      }
+      //Hasn't been seen yet, look further
+      cellLine.push(srcStack[i]);
+      const [x, y] = expr2xy(srcStack[i]);
+      const subSrc = getCellText(x, y - 1);
+      let recRef = searchForRecursiveReferences(subSrc, getCellText, cellLine)
+      if(recRef){
+        return recRef;
+      }
+      //No recursiveness here, forget this reference
+      cellLine.pop();
+    }
+  }
+  return '';
+}
 
 export default {
   render: cellRender,
