@@ -554,6 +554,12 @@ function sheetInitEvents() {
           selectorSet.call(this, false, -1, data.selector.indexes[1]);
           evt.preventDefault();
           break;
+        case 66:
+          this.change('bold', 'font-bold');
+          break;
+        case 73:
+          this.change('italic', 'font-italic');
+          break;
         default:
           break;
       }
@@ -736,4 +742,11 @@ export default class Sheet {
       top: row.height,
     };
   }
+
+  change(elName, type) {
+    const el = this.toolbar[`${elName}El`];
+    el.toggle();
+    this.toolbar.change(type, el.hasClass('active'));
+  }
+
 }
