@@ -47,7 +47,16 @@ function bindDropdownChange() {
   this.ddBorder.change = it => this.change('border', it);
 }
 
-function toggleChange(elName, type) {
+
+function toggleChange(type) {
+  let elName = type;
+  const types = type.split('-');
+  if (types.length > 1) {
+    types.forEach((t, i) => {
+      if (i === 0) elName = t;
+      else elName += t[0].toUpperCase() + t.substring(1);
+    });
+  }
   const el = this[`${elName}El`];
   el.toggle();
   this.change(type, el.hasClass('active'));
@@ -118,7 +127,7 @@ export default class Toolbar {
       this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
       this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
       // this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
-      this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat', 'paintformat')),
+      this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat')),
       this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
       buildDivider(),
       buildButton('Format').child(this.ddFormat.el),
@@ -126,23 +135,23 @@ export default class Toolbar {
       buildButton('Font').child(this.ddFont.el),
       buildButton('Font size').child(this.ddFontSize.el),
       buildDivider(),
-      this.boldEl = buildButtonWithIcon('Bold', 'bold', () => toggleChange.call(this, 'bold', 'font-bold')),
-      this.italicEl = buildButtonWithIcon('Italic', 'italic', () => toggleChange.call(this, 'italic', 'font-italic')),
-      this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough', 'strikethrough')),
+      this.fontBoldEl = buildButtonWithIcon('Bold (Ctrl+B)', 'bold', () => toggleChange.call(this, 'font-bold')),
+      this.fontItalicEl = buildButtonWithIcon('Italic (Ctrl+I)', 'italic', () => toggleChange.call(this, 'font-italic')),
+      this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough')),
       buildButton('Text color').child(this.ddTextColor.el),
       buildDivider(),
       buildButton('Fill color').child(this.ddFillColor.el),
       buildButton('Borders').child(this.ddBorder.el),
-      this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge', 'merge')),
+      this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge')),
       buildDivider(),
       buildButton('Horizontal align').child(this.ddAlign.el),
       buildButton('Vertical align').child(this.ddVAlign.el),
-      this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap', 'textwrap')),
+      this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap')),
       buildDivider(),
       // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
       // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
       // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
-      this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze', 'freeze')),
+      this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze')),
       buildButton('Functions').child(this.ddFormula.el),
       // buildDivider(),
       this.moreEl = buildButton('More').child(this.ddMore.el).hide(),
@@ -168,6 +177,10 @@ export default class Toolbar {
     this.paintformatEl.toggle();
   }
 
+  trigger(type) {
+    toggleChange.call(this, type);
+  }
+
   reset() {
     const { data } = this;
     const style = data.getSelectedCellStyle();
@@ -182,8 +195,8 @@ export default class Toolbar {
     const { font } = style;
     this.ddFont.setTitle(font.name);
     this.ddFontSize.setTitle(font.size);
-    this.boldEl.active(font.bold);
-    this.italicEl.active(font.italic);
+    this.fontBoldEl.active(font.bold);
+    this.fontItalicEl.active(font.italic);
     this.strikethroughEl.active(style.strikethrough);
     this.ddTextColor.setTitle(style.color);
     this.ddFillColor.setTitle(style.bgcolor);

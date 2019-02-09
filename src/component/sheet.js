@@ -554,6 +554,14 @@ function sheetInitEvents() {
           selectorSet.call(this, false, -1, data.selector.indexes[1]);
           evt.preventDefault();
           break;
+        case 66:
+          // ctrl + B
+          toolbar.trigger('font-bold');
+          break;
+        case 73:
+          // ctrl + I
+          toolbar.trigger('font-italic');
+          break;
         default:
           break;
       }
