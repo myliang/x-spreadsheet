@@ -34,7 +34,7 @@ const infixExprToSuffixExpr = (src) => {
     if (c !== ' ') {
       if (c >= 'a' && c <= 'z') {
         subStrs.push(c.toUpperCase());
-      } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')) {
+      } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c === '.') {
         subStrs.push(c);
       } else if (c === '"') {
         i += 1;
@@ -132,20 +132,15 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
     if (srcStack[i] === '+') {
       const top = stack.pop();
       const bottom = stack.pop();
-      // Add if numeric. Concatenate otherwise.
-      if (!Number.isNaN(top) && !Number.isNaN(bottom)) {
-        stack.push(Number(top) + Number(bottom));
-      } else {
-        stack.push(bottom + top);
-      }
+      stack.push(Number(bottom) + Number(top));
     } else if (srcStack[i] === '-') {
       const top = stack.pop();
-      stack.push(stack.pop() - top);
+      stack.push(Number(stack.pop()) - Number(top));
     } else if (srcStack[i] === '*') {
-      stack.push(stack.pop() * stack.pop());
+      stack.push(Number(stack.pop()) * Number(stack.pop()));
     } else if (srcStack[i] === '/') {
       const top = stack.pop();
-      stack.push(stack.pop() / top);
+      stack.push(Number(stack.pop()) / Number(top));
     } else if (Array.isArray(srcStack[i])) {
       const [formula, len] = srcStack[i];
       const params = [];
@@ -158,7 +153,6 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
     }
     // console.log('stack:', stack);
   }
-  // console.log('::::::', stack);
   return stack[0];
 };
 
