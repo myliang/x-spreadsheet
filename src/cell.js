@@ -162,14 +162,19 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender) => {
   return stack[0];
 };
 
-const cellRender = (src, formulaMap, getCellText) => {
-  // console.log(':::::::::::::src:', src);
+const cellRender = (sri, sci, src, formulaMap, getCellText) => {
+  // const srcExpr = alphabet.stringAt(sci) + (sri + 1);
+  // console.log(':::::::::::::src:', src, srcExpr);
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
+    // if (stack.includes(srcExpr)) return '';
     // console.log('suffixExpr:', stack);
     if (stack.length <= 0) return src;
-    const cb = (x, y) => cellRender(getCellText(x, y - 1), formulaMap, getCellText);
-    return evalSuffixExpr(stack, formulaMap, cb);
+    // const cb = (x, y) => cellRender(sri, sci, getCellText(x, y - 1), formulaMap, getCellText);
+    return evalSuffixExpr(stack, formulaMap, (x, y) => {
+      const cellText = (sri === y - 1 && sci === x) ? 0 : getCellText(x, y - 1);
+      return cellRender(sri, sci, cellText, formulaMap, getCellText);
+    });
   }
   return src;
 };

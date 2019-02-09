@@ -29,10 +29,10 @@ describe('format', () => {
       assert.equal(gformats.percent.render('50.456'), '50.456%');
     });
     it('RMB: should return ￥1,200.33 when the value is 1200.333', () => {
-      assert.equal(gformats.RMB.render('1200.333'), '￥1,200.33');
+      assert.equal(gformats.rmb.render('1200.333'), '￥1,200.33');
     });
     it('USD: should return $1,200.33 when the value is 1200.333', () => {
-      assert.equal(gformats.USD.render('1200.333'), '$1,200.33');
+      assert.equal(gformats.usd.render('1200.333'), '$1,200.33');
     });
   });
 });

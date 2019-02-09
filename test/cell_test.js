@@ -38,14 +38,14 @@ describe('infixExprToSuffixExpr', () => {
 
 describe('cell', () => {
   describe('.render()', () => {
-    it('should return 1 + 3 + 3 + 7 + 50 + 21 when the value is =SUM(A1,B2, C1, C5) + 50 + B20', () => {
-      assert.equal(cell.render('=SUM(A1,B2, C1, C5) + 50 + B20', formulas(), (x, y) => x + y), 1 + 3 + 3 + 7 + 50 + 21);
+    it('should return 0 + 2 + 2 + 6 + 49 + 20 when the value is =SUM(A1,B2, C1, C5) + 50 + B20', () => {
+      assert.equal(cell.render(0, 0, '=SUM(A1,B2, C1, C5) + 50 + B20', formulas(), (x, y) => x + y), 0 + 2 + 2 + 6 + 50 + 20);
     });
-    it('should return 50 + 21 when the value is =50 + B20', () => {
-      assert.equal(cell.render('=50 + B20', formulas(), (x, y) => x + y), 50 + 21);
+    it('should return 50 + 20 when the value is =50 + B20', () => {
+      assert.equal(cell.render(0, 0, '=50 + B20', formulas(), (x, y) => x + y), 50 + 20);
     });
-    it('should return 2 + 500 - 21 when the value is =AVERAGE(A1:A3) + 50 * 10 - B20', () => {
-      assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', formulas(), (x, y) => x + y), (2 + 500) - 21);
+    it('should return 1 + 500 - 20 when the value is =AVERAGE(A1:A3) + 50 * 10 - B20', () => {
+      assert.equal(cell.render(0, 0, '=AVERAGE(A1:A3) + 50 * 10 - B20', formulas(), (x, y) => x + y), (1 + 500) - 20);
     });
   });
 });

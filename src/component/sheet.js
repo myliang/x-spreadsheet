@@ -496,7 +496,7 @@ function sheetInitEvents() {
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
-    const key = evt.key;
+    const { key } = evt;
     // console.log('keydown.evt: ', keyCode);
     if (evt.ctrlKey) {
       // const { sIndexes, eIndexes } = selector;
@@ -578,7 +578,7 @@ function sheetInitEvents() {
           evt.preventDefault();
           break;
         case 13:
-          //shift + enter, moves up
+          // shift + enter, moves up
           selectorMove.call(this, false, 'up');
           evt.preventDefault();
           break;
@@ -621,6 +621,7 @@ function sheetInitEvents() {
         case 8: // backspace
           insertDeleteRowColumn.call(this, 'delete-cell-text');
           evt.preventDefault();
+          break;
         default:
           break;
       }

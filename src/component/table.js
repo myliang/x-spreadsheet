@@ -38,7 +38,7 @@ function renderCell(rindex, cindex) {
   draw.rect(dbox);
   if (cell !== null) {
     // render text
-    let cellText = _cell.render(cell.text || '', data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
+    let cellText = _cell.render(rindex, cindex, cell.text || '', data.formulam, (y, x) => (cellmm[x] && cellmm[x][y] && cellmm[x][y].text) || '');
     if (cell.format) {
       // console.log(data.formatm, '>>', cell.format);
       cellText = data.formatm[cell.format].render(cellText);
