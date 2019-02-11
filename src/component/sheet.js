@@ -38,7 +38,7 @@ function scrollbarMove() {
   }
 }
 
-function selectorSet(multiple, ri, ci) {
+function selectorSet(multiple, ri, ci, indexesUpdated = true) {
   if (ri === -1 && ci === -1) return;
   // console.log(multiple, ', ri:', ri, ', ci:', ci);
   const {
@@ -47,7 +47,7 @@ function selectorSet(multiple, ri, ci) {
   if (multiple) {
     selector.setEnd(ri, ci);
   } else {
-    selector.set(ri, ci);
+    selector.set(ri, ci, indexesUpdated);
   }
   toolbar.reset();
   table.render();
@@ -558,7 +558,7 @@ function sheetInitEvents() {
           break;
         case 32:
           // ctrl + space, all cells in col
-          selectorSet.call(this, false, -1, data.selector.indexes[1]);
+          selectorSet.call(this, false, -1, data.selector.indexes[1], false);
           evt.preventDefault();
           break;
         case 66:
@@ -578,7 +578,7 @@ function sheetInitEvents() {
         case 32:
           if (shiftKey) {
             // shift + space, all cells in row
-            selectorSet.call(this, false, data.selector.indexes[0], -1);
+            selectorSet.call(this, false, data.selector.indexes[0], -1, false);
           }
           break;
         case 27: // esc

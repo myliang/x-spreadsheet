@@ -255,13 +255,17 @@ export default class Selector {
     this.resetOffset();
   }
 
-  set(ri, ci) {
+  set(ri, ci, indexesUpdated = true) {
     const { data } = this;
     const [sIndexes, eIndexes] = data.calRangeIndexes(ri, ci);
-    if (ri >= 0 && ci >= 0) {
-      data.setSelectedCurrentIndexes(sIndexes);
-      this.indexes = sIndexes;
+    if (indexesUpdated) {
+      let [cri, cci] = [ri, ci];
+      if (ri < 0) cri = 0;
+      if (ci < 0) cci = 0;
+      data.setSelectedCurrentIndexes([cri, cci]);
+      this.indexes = [cri, cci];
     }
+
     this.moveIndexes = sIndexes;
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
@@ -271,8 +275,7 @@ export default class Selector {
 
   setEnd(ri, ci) {
     const { data } = this;
-    let [sIndexes, eIndexes] = data.calRangeIndexes2(this.indexes, [ri, ci]);
-    [sIndexes, eIndexes] = data.calRangeIndexes2(sIndexes, eIndexes);
+    let [sIndexes, eIndexes] = data.calRangeIndexes2(ri, ci);
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
     this.reset();

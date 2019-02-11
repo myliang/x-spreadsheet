@@ -671,15 +671,20 @@ export default class DataProxy {
   }
   /* for selector end */
 
-  calRangeIndexes2(sIndexes, eIndexes) {
+  calRangeIndexes2(ri, ci) {
+    const { indexes, sIndexes, eIndexes } = this.selector;
+    let [cri, cci] = indexes;
     let [sri, sci] = sIndexes;
     let [eri, eci] = eIndexes;
-    if (sri >= eri) {
-      [sri, eri] = [eri, sri];
-    }
-    if (sci >= eci) {
-      [sci, eci] = [eci, sci];
-    }
+    let [nri, nci] = [ri, ci];
+    if (ri < 0) nri = this.rowLen() - 1;
+    if (ci < 0) nci = this.colLen() - 1;
+    // row index
+    if (nri <= cri) [sri, eri] = [nri, cri];
+    else eri = nri;
+    // col index
+    if (nci <= cci) [sci, eci] = [nci, cci];
+    else eci = nci;
     eachMerges.call(this, ([[msri, msci], [meri, meci]]) => {
       // console.log(msri, eri, sri, meri, msci, eci, sci, meci);
       if (msri > eri || sri > meri || msci > eci || sci > meci) {
