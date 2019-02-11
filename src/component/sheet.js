@@ -496,13 +496,15 @@ function sheetInitEvents() {
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
-    const { key } = evt;
+    const {
+      key, ctrlKey, shiftKey, altKey,
+    } = evt;
     // console.log('keydown.evt: ', keyCode);
-    if (evt.ctrlKey) {
+    if (ctrlKey) {
       // const { sIndexes, eIndexes } = selector;
       let what = 'all';
-      if (evt.shiftKey) what = 'text';
-      if (evt.altKey) what = 'format';
+      if (shiftKey) what = 'text';
+      if (altKey) what = 'format';
       switch (keyCode) {
         case 90:
           // undo: ctrl + z
@@ -531,22 +533,22 @@ function sheetInitEvents() {
           break;
         case 37:
           // ctrl + left
-          selectorMove.call(this, evt.shiftKey, 'row-first');
+          selectorMove.call(this, shiftKey, 'row-first');
           evt.preventDefault();
           break;
         case 38:
           // ctrl + up
-          selectorMove.call(this, evt.shiftKey, 'col-first');
+          selectorMove.call(this, shiftKey, 'col-first');
           evt.preventDefault();
           break;
         case 39:
           // ctrl + right
-          selectorMove.call(this, evt.shiftKey, 'row-last');
+          selectorMove.call(this, shiftKey, 'row-last');
           evt.preventDefault();
           break;
         case 40:
           // ctrl + down
-          selectorMove.call(this, evt.shiftKey, 'col-last');
+          selectorMove.call(this, shiftKey, 'col-last');
           evt.preventDefault();
           break;
         case 32:
@@ -565,74 +567,47 @@ function sheetInitEvents() {
         default:
           break;
       }
-      // return;
-    } else if (evt.shiftKey) {
-      let selector = data.selector;
-      switch (keyCode) {
-        case 32:
-          // shift + space, all cells in row
-          selectorSet.call(this, false, selector.indexes[0], -1);
-          break;
-        case 37:
-          // shift + left, remove right cell/column from the selection
-          selectorSet.call(this, true, selector.eIndexes[0], selector.eIndexes[1] - 1)
-          break;
-        case 38:
-          // shift + up, remove above cell/row from the selection
-          selectorSet.call(this, true, selector.eIndexes[0] - 1, selector.eIndexes[1])
-          break;
-        case 39:
-          // shift + right, add right cell/column to the selection
-          selectorSet.call(this, true, selector.eIndexes[0], selector.eIndexes[1] + 1)
-          break;
-        case 40:
-          // shift + down, add below cell/row to the selection
-          selectorSet.call(this, true, selector.eIndexes[0] + 1, selector.eIndexes[1])
-          break;
-        case 9:
-          // shift + tab, moves left
-          selectorMove.call(this, false, 'left');
-          evt.preventDefault();
-          break;
-        case 13:
-          // shift + enter, moves up
-          selectorMove.call(this, false, 'up');
-          evt.preventDefault();
-          break;
-        default:
-          break;
-      }
     } else {
       // console.log('evt.keyCode:', evt.keyCode);
       switch (keyCode) {
+        case 32:
+          if (shiftKey) {
+            // shift + space, all cells in row
+            selectorSet.call(this, false, data.selector.indexes[0], -1);
+          }
+          break;
         case 27: // esc
           contextMenu.hide();
           clearClipboard.call(this);
           break;
         case 37: // left
-          selectorMove.call(this, evt.shiftKey, 'left');
+          selectorMove.call(this, shiftKey, 'left');
           evt.preventDefault();
           break;
         case 38: // up
-          selectorMove.call(this, evt.shiftKey, 'up');
+          selectorMove.call(this, shiftKey, 'up');
           evt.preventDefault();
           break;
         case 39: // right
-          selectorMove.call(this, evt.shiftKey, 'right');
+          selectorMove.call(this, shiftKey, 'right');
           evt.preventDefault();
           break;
         case 40: // down
-          selectorMove.call(this, evt.shiftKey, 'down');
+          selectorMove.call(this, shiftKey, 'down');
           evt.preventDefault();
           break;
         case 9: // tab
           editor.clear();
-          selectorMove.call(this, evt.shiftKey, 'right');
+          // shift + tab => move left
+          // tab => move right
+          selectorMove.call(this, false, shiftKey ? 'left' : 'right');
           evt.preventDefault();
           break;
         case 13: // enter
           editor.clear();
-          selectorMove.call(this, evt.shiftKey, 'down');
+          // shift + enter => move up
+          // enter => move down
+          selectorMove.call(this, false, shiftKey ? 'up' : 'down');
           evt.preventDefault();
           break;
         case 8: // backspace
