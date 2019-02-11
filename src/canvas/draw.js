@@ -267,10 +267,11 @@ class Draw {
     const { ctx } = this;
     ctx.lineWidth = thinLineWidth;
     ctx.strokeStyle = color;
+    // console.log('style:', style);
     if (style === 'medium') {
       ctx.lineWidth = npx(1) + 0.5;
     } else if (style === 'thick') {
-      ctx.lineWidth = npx(2) + 0.5;
+      ctx.lineWidth = npx(2);
     } else if (style === 'dashed') {
       ctx.setLineDash([npx(3), npx(2)]);
     } else if (style === 'dotted') {
