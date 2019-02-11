@@ -62,6 +62,7 @@ new Spreadsheet("#x-spreadsheet-demo")
     textwrap: false,
     textDecoration: 'normal',
     strikethrough: false,
+    underline: false,
     color: '#0a0a0a',
     font: {
       name: 'Helvetica',

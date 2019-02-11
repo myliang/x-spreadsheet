@@ -52,6 +52,7 @@ function renderCell(rindex, cindex) {
       font,
       color: style.color,
       strikethrough: style.strikethrough,
+      underline: style.underline,
     }, style.textwrap);
   }
 }

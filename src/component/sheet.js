@@ -524,6 +524,11 @@ function sheetInitEvents() {
           cut.call(this);
           evt.preventDefault();
           break;
+        case 85:
+          // ctrl + u
+          toolbar.trigger('underline');
+          evt.preventDefault();
+          break;
         case 86:
           // ctrl + v
           paste.call(this, what);

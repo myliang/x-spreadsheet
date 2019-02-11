@@ -118,6 +118,28 @@ function drawStrikethrough(tx, ty, align, valign, blheight, blwidth) {
 }
 
 
+function drawUnderline(tx, ty, align, valign, blheight, blwidth) {
+  const floffset = { x: 0, y: 0 };
+  if (valign === 'bottom') {
+    floffset.y = 0;
+  } else if (valign === 'top') {
+    floffset.y = -blheight;
+  } else {
+    floffset.y = -blheight / 2;
+  }
+
+  if (align === 'center') {
+    floffset.x = blwidth / 2;
+  } else if (align === 'right') {
+    floffset.x = blwidth;
+  }
+  this.line(
+    [tx - floffset.x, ty - floffset.y],
+    [tx - floffset.x + blwidth, ty - floffset.y],
+  );
+}
+
+
 class Draw {
   constructor(el, width, height) {
     this.el = el;
@@ -197,7 +219,7 @@ class Draw {
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
-      align, valign, font, color, strikethrough,
+      align, valign, font, color, strikethrough, underline
     } = attr;
     const tx = box.textx(align);
     ctx.save();
@@ -224,6 +246,9 @@ class Draw {
           if (strikethrough) {
             drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
           }
+          if (underline) {
+            drawUnderline.call(this, tx, ty, align, valign, font.size, textLine.len);
+          }
           ty += font.size + 2;
           textLine.len = 0;
           textLine.start = i;
@@ -235,11 +260,17 @@ class Draw {
         if (strikethrough) {
           drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
         }
+        if (underline) {
+          drawUnderline.call(this, tx, ty, align, valign, font.size, textLine.len);
+        }
       }
     } else {
       this.fillText(txt, tx, ty);
       if (strikethrough) {
         drawStrikethrough.call(this, tx, ty, align, valign, font.size, txtWidth);
+      }
+      if (underline) {
+        drawUnderline.call(this, tx, ty, align, valign, font.size, txtWidth);
       }
     }
     ctx.restore();
