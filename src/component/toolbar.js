@@ -137,6 +137,7 @@ export default class Toolbar {
       buildDivider(),
       this.fontBoldEl = buildButtonWithIcon('Bold (Ctrl+B)', 'bold', () => toggleChange.call(this, 'font-bold')),
       this.fontItalicEl = buildButtonWithIcon('Italic (Ctrl+I)', 'italic', () => toggleChange.call(this, 'font-italic')),
+      this.underlineEl = buildButtonWithIcon('Underline (Ctrl+U)', 'underline', () => toggleChange.call(this, 'underline')),
       this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough')),
       buildButton('Text color').child(this.ddTextColor.el),
       buildDivider(),
@@ -197,6 +198,7 @@ export default class Toolbar {
     this.ddFontSize.setTitle(font.size);
     this.fontBoldEl.active(font.bold);
     this.fontItalicEl.active(font.italic);
+    this.underlineEl.active(style.underline);
     this.strikethroughEl.active(style.strikethrough);
     this.ddTextColor.setTitle(style.color);
     this.ddFillColor.setTitle(style.bgcolor);
