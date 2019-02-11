@@ -567,10 +567,27 @@ function sheetInitEvents() {
       }
       // return;
     } else if (evt.shiftKey) {
+      let selector = data.selector;
       switch (keyCode) {
         case 32:
           // shift + space, all cells in row
-          selectorSet.call(this, false, data.selector.indexes[0], -1);
+          selectorSet.call(this, false, selector.indexes[0], -1);
+          break;
+        case 37:
+          // shift + left, remove right cell/column from the selection
+          selectorSet.call(this, true, selector.eIndexes[0], selector.eIndexes[1] - 1)
+          break;
+        case 38:
+          // shift + up, remove above cell/row from the selection
+          selectorSet.call(this, true, selector.eIndexes[0] - 1, selector.eIndexes[1])
+          break;
+        case 39:
+          // shift + right, add right cell/column to the selection
+          selectorSet.call(this, true, selector.eIndexes[0], selector.eIndexes[1] + 1)
+          break;
+        case 40:
+          // shift + down, add below cell/row to the selection
+          selectorSet.call(this, true, selector.eIndexes[0] + 1, selector.eIndexes[1])
           break;
         case 9:
           // shift + tab, moves left
