@@ -8,7 +8,7 @@ function thinLineWidth() {
 }
 
 function npx(px) {
-  return px * dpr();
+  return parseInt(px * dpr(), 10);
 }
 
 class DrawBox {
@@ -65,7 +65,7 @@ class DrawBox {
       if (y1 < y2) y = y2;
       else y = y1;
     } else if (align === 'bottom') {
-      y += height - padding;
+      y += height - hoffset * 2 - padding;
     }
     return y;
   }
@@ -97,13 +97,22 @@ class DrawBox {
   }
 }
 
-
-function drawStrikethrough(tx, ty, align, valign, blheight, blwidth) {
+function drawFontLine(type, tx, ty, align, valign, blheight, blwidth) {
   const floffset = { x: 0, y: 0 };
-  if (valign === 'bottom') {
-    floffset.y = blheight / 2;
-  } else if (valign === 'top') {
-    floffset.y = -blheight / 2;
+  if (type === 'underline') {
+    if (valign === 'bottom') {
+      floffset.y = 0;
+    } else if (valign === 'top') {
+      floffset.y = -(blheight + 2);
+    } else {
+      floffset.y = -blheight / 2;
+    }
+  } else if (type === 'strikethrough') {
+    if (valign === 'bottom') {
+      floffset.y = blheight / 2;
+    } else if (valign === 'top') {
+      floffset.y = -((blheight / 2) + 2);
+    }
   }
 
   if (align === 'center') {
@@ -116,29 +125,6 @@ function drawStrikethrough(tx, ty, align, valign, blheight, blwidth) {
     [tx - floffset.x + blwidth, ty - floffset.y],
   );
 }
-
-
-function drawUnderline(tx, ty, align, valign, blheight, blwidth) {
-  const floffset = { x: 0, y: 0 };
-  if (valign === 'bottom') {
-    floffset.y = 0;
-  } else if (valign === 'top') {
-    floffset.y = -blheight;
-  } else {
-    floffset.y = -blheight / 2;
-  }
-
-  if (align === 'center') {
-    floffset.x = blwidth / 2;
-  } else if (align === 'right') {
-    floffset.x = blwidth;
-  }
-  this.line(
-    [tx - floffset.x, ty - floffset.y],
-    [tx - floffset.x + blwidth, ty - floffset.y],
-  );
-}
-
 
 class Draw {
   constructor(el, width, height) {
@@ -219,7 +205,7 @@ class Draw {
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
-      align, valign, font, color, strikethrough, underline
+      align, valign, font, color, strikethrough, underline,
     } = attr;
     const tx = box.textx(align);
     ctx.save();
@@ -244,10 +230,10 @@ class Draw {
         if (textLine.len >= box.innerWidth()) {
           this.fillText(txt.substring(textLine.start, i), tx, ty);
           if (strikethrough) {
-            drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
+            drawFontLine.call(this, 'strikethrough', tx, ty, align, valign, font.size, textLine.len);
           }
           if (underline) {
-            drawUnderline.call(this, tx, ty, align, valign, font.size, textLine.len);
+            drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, textLine.len);
           }
           ty += font.size + 2;
           textLine.len = 0;
@@ -258,19 +244,19 @@ class Draw {
       if (textWrap && textLine.len > 0) {
         this.fillText(txt.substring(textLine.start), tx, ty);
         if (strikethrough) {
-          drawStrikethrough.call(this, tx, ty, align, valign, font.size, textLine.len);
+          drawFontLine.call(this, 'strikethrough', tx, ty, align, valign, font.size, textLine.len);
         }
         if (underline) {
-          drawUnderline.call(this, tx, ty, align, valign, font.size, textLine.len);
+          drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, textLine.len);
         }
       }
     } else {
       this.fillText(txt, tx, ty);
       if (strikethrough) {
-        drawStrikethrough.call(this, tx, ty, align, valign, font.size, txtWidth);
+        drawFontLine.call(this, 'strikethrough', tx, ty, align, valign, font.size, txtWidth);
       }
       if (underline) {
-        drawUnderline.call(this, tx, ty, align, valign, font.size, txtWidth);
+        drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, txtWidth);
       }
     }
     ctx.restore();
