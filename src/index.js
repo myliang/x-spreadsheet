@@ -89,6 +89,10 @@ class Spreadsheet {
     return this;
   }
 
+  getData() {
+    return this.data.d;
+  }
+
   change(cb) {
     this.data.change = cb;
     return this;
