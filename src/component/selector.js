@@ -275,7 +275,7 @@ export default class Selector {
 
   setEnd(ri, ci) {
     const { data } = this;
-    let [sIndexes, eIndexes] = data.calRangeIndexes2(ri, ci);
+    const [sIndexes, eIndexes] = data.calRangeIndexes2(ri, ci);
     this.sIndexes = sIndexes;
     this.eIndexes = eIndexes;
     this.reset();

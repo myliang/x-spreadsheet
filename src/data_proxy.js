@@ -20,7 +20,7 @@ const defaultData = {
   colm: {}, // Map<int, Row>, len
   cellmm: {}, // Map<int, Map<int, Cell>>
   styles: [],
-  borders: [],
+  borders: [], // [[[sri, sci], [eri, eci], mode, style, color], ...]
 };
 
 class History {
@@ -171,29 +171,6 @@ function deleteCells([sri, sci], [eri, eci], what = 'all') {
       }
     }
   }
-  /*
-  Object.keys(cellmm).forEach((ri) => {
-    // console.log('ri:', ri, ', sri:', sri, ', eri:', eri);
-    if (ri >= sri && ri <= eri) {
-      Object.keys(cellmm[ri]).forEach((ci) => {
-        const cell = cellmm[ri][ci];
-        // console.log('cell:', ci, cell);
-        if (ci >= sci && ci <= eci) {
-          if (what === 'all') {
-            // console.log(':row:', cellm[ri]);
-            delete cellmm[ri][`${ci}`];
-            // console.log(':after.row:', cellm[ri]);
-          } else if (what === 'text') {
-            if (cell.text) delete cell.text;
-          } else if (what === 'format') {
-            if (cell.si !== undefined) delete cell.si;
-            if (cell.merge) delete cell.si;
-          }
-        }
-      });
-    }
-  });
-  */
 }
 
 function getCellRowByY(y, scrollOffsety) {
@@ -241,7 +218,6 @@ function getCellColByX(x, scrollOffsetx) {
 
 function eachMerges(cb) {
   const { merges } = this.d;
-  // console.log('merges:', merges);
   if (merges.length > 0) {
     for (let i = 0; i < merges.length; i += 1) {
       cb(merges[i]);
@@ -417,6 +393,7 @@ function cutPaste(srcIndexes, dstIndexes) {
   clipboard.clear();
 }
 
+/*
 function setStyleBorder(style, [ri, ci], mode, v) {
   const s = style;
   const [[sri, sci], [eri, eci]] = this.selector.getRange();
@@ -463,6 +440,178 @@ function setStyleBorder(style, [ri, ci], mode, v) {
     if (s.bbi !== undefined) delete s.bbi;
   }
 }
+*/
+
+function deleteBorders([sri, sci], [eri, eci]) {
+  const { borders } = this.d;
+  const nborders = [];
+  borders.forEach((border) => {
+    const [bsri, bsci, beri, beci] = border;
+    if (bsri > eri || sri > beri || bsci > eci || sci > beci) {
+      nborders.push(border);
+    }
+  });
+  this.d.borders = nborders;
+}
+
+function addBorder([sri, sci], [eri, eci], mode, style, color) {
+  if (mode === 'none') {
+    deleteBorders.call(this, [sri, sci], [eri, eci]);
+  }
+  const { borders } = this.d;
+  for (let i = 0; i < borders.length; i += 1) {
+    const [osri, osci, oeri, oeci] = borders[i];
+    if (sri === osri && sci === osci && eri === oeri && eci === oeci) {
+      borders[i][4] = mode;
+      borders[i][5] = style;
+      borders[i][6] = mode;
+      return;
+    }
+  }
+  if (mode !== 'none') {
+    borders.push([sri, sci, eri, eci, mode, style, color]);
+  }
+}
+
+function getViewRangeIndexes(rowStart, rowLen, colStart, colLen) {
+  const { view } = this.options;
+  let [x, y] = [0, 0];
+  let [rowEnd, colEnd] = [rowStart, colStart];
+  for (let i = rowStart; i < rowLen; i += 1) {
+    y += this.getRowHeight(i);
+    rowEnd = i;
+    if (y > view.height()) break;
+  }
+  for (let j = colStart; j < colLen; j += 1) {
+    x += this.getColWidth(j);
+    colEnd = j;
+    if (x > view.width()) break;
+  }
+  return [rowStart, colStart, rowEnd, colEnd];
+}
+
+function eachBordersInView(viewRangeIndexes, cb) {
+  const { borders } = this.d;
+  const [vsri, vsci, veri, veci] = viewRangeIndexes;
+  for (let i = 0; i < borders.length; i += 1) {
+    const [sri, sci, eri, eci, mode, style, color] = borders[i];
+    const bs = [style, color];
+    if (vsri > eri || sri > veri || vsci > eci || sci > veci) {
+      // no intersection
+    } else {
+      switch (mode) {
+        case 'all':
+          helper.rangeEach(sri, eri + 1, (ri) => {
+            helper.rangeEach(sci, eci + 1, (ci) => {
+              cb(ri, ci, {
+                bb: bs, br: bs, bl: bs, bt: bs,
+              });
+            });
+          });
+          break;
+        case 'inside':
+          helper.rangeEach(sri, eri + 1, (ri) => {
+            helper.rangeEach(sci, eci + 1, (ci) => {
+              const bss = {};
+              if (ci <= eci) bss.br = bs;
+              if (ri <= eri) bss.bb = bs;
+              cb(ri, ci, bss);
+            });
+          });
+          break;
+        case 'horizontal':
+          helper.rangeEach(sri, eri, (ri) => {
+            helper.rangeEach(sci, eci + 1, (ci) => {
+              cb(ri, ci, { bb: bs });
+            });
+          });
+          break;
+        case 'vertical':
+          helper.rangeEach(sri, eri + 1, (ri) => {
+            helper.rangeEach(sci, eci, (ci) => {
+              cb(ri, ci, { br: bs });
+            });
+          });
+          break;
+        case 'outside':
+          helper.rangeEach(sci, eci + 1, (ci) => {
+            cb(sri, ci, { bt: bs });
+            cb(eri, ci, { bb: bs });
+          });
+          helper.rangeEach(sri, eri + 1, (ri) => {
+            cb(ri, sci, { bl: bs });
+            cb(ri, eci, { br: bs });
+          });
+          break;
+        case 'top':
+          helper.rangeEach(sci, eci + 1, ci => cb(sri, ci, { bt: bs }));
+          break;
+        case 'bottom':
+          helper.rangeEach(sci, eci + 1, ci => cb(eri, ci, { bb: bs }));
+          break;
+        case 'left':
+          helper.rangeEach(sri, eri + 1, ri => cb(ri, sci, { bl: bs }));
+          break;
+        case 'right':
+          helper.rangeEach(sri, eri + 1, ri => cb(ri, eci, { br: bs }));
+          break;
+        case 'none':
+          break;
+        default:
+          break;
+      }
+    }
+  }
+}
+
+function eachMergesInView(viewRangeIndexes, cb) {
+  const { merges } = this.d;
+  const [vsri, vsci, veri, veci] = viewRangeIndexes;
+  for (let i = 0; i < merges.length; i += 1) {
+    const [[sri, sci], [eri, eci]] = merges[i];
+    if (vsri > eri || sri > veri || vsci > eci || sci > veci) {
+      // no intersection
+    } else {
+      cb(this.getCell(sri, sci), sri, sci);
+    }
+  }
+}
+
+function eachCellsInView(viewRangeIndexes, cb) {
+  const [sri, sci, eri, eci] = viewRangeIndexes;
+  for (let i = sri; i <= eri; i += 1) {
+    for (let j = sci; j <= eci; j += 1) {
+      cb(this.getCell(i, j), i, j);
+    }
+  }
+}
+
+/*
+function eachCellsInView(rowStart, rowLen, colStart, colLen, jumpMerge = true, cb) {
+  const { view } = this.options;
+  let [x, y] = [0, 0];
+  for (let i = rowStart; i < rowLen; i += 1) {
+    y += this.getRowHeight(i);
+    x = 0;
+    for (let j = colStart; j < colLen; j += 1) {
+      x += this.getColWidth(j);
+      if (jumpMerge) {
+        inMerges.call(this, i, j, ([[msri, msci], [meri, meci]]) => {
+          if (msri !== i || msci !== j) {
+            j += (meci - j) + 1;
+          }
+        });
+      }
+
+      const cell = this.getCell(i, j);
+      cb(cell, i, j);
+
+      if (x > view.width()) break;
+    }
+    if (y > view.height()) break;
+  }
+}
+*/
 
 export default class DataProxy {
   constructor(options) {
@@ -567,6 +716,9 @@ export default class DataProxy {
     if (property === 'merge') {
       if (value) this.merge();
       else this.unmerge();
+    } else if (property === 'border') {
+      const { mode, style, color } = value;
+      addBorder.call(this, selector.sIndexes, selector.eIndexes, mode, style, color);
     } else if (property === 'formula') {
       const cell = this.getCellOrNew(...selector.indexes);
       cell.text = `=${value}()`;
@@ -581,10 +733,10 @@ export default class DataProxy {
           cell.format = value;
         } else if (property === 'border') {
           // const { mode, style, color } = value;
-          const bi = this.addBorder(value.style, value.color);
-          setStyleBorder.call(this, cstyle, [ri, ci], value.mode, bi);
+          // const bi = this.addBorder(value.style, value.color);
+          // setStyleBorder.call(this, cstyle, [ri, ci], value.mode, bi);
           // console.log('border.cstyle:', value.mode, cstyle);
-          cell.si = this.addStyle(cstyle);
+          // cell.si = this.addStyle(cstyle);
         } else if (property === 'font-bold' || property === 'font-italic'
           || property === 'font-name' || property === 'font-size') {
           const nfont = {};
@@ -673,7 +825,7 @@ export default class DataProxy {
 
   calRangeIndexes2(ri, ci) {
     const { indexes, sIndexes, eIndexes } = this.selector;
-    let [cri, cci] = indexes;
+    const [cri, cci] = indexes;
     let [sri, sci] = sIndexes;
     let [eri, eci] = eIndexes;
     let [nri, nci] = [ri, ci];
@@ -1125,47 +1277,24 @@ export default class DataProxy {
     });
   }
 
-  eachCellsInView(rowStart, rowLen, colStart, colLen, jumpMerge = true, cb) {
-    const cmerges = [];
-    const { view } = this.options;
-    let [x, y] = [0, 0];
-    for (let i = rowStart; i < rowLen; i += 1) {
-      y += this.getRowHeight(i);
-      x = 0;
-      for (let j = colStart; j < colLen; j += 1) {
-        x += this.getColWidth(j);
-        if (jumpMerge) {
-          const cmergeIndexes = [];
-          cmerges.forEach(([mi, mj, rn, cn], index) => {
-            if (mi <= i && i <= mi + rn) {
-              if (j === mj) {
-                j += cn + 1;
-              }
-            }
-            if (i === mi + rn + 1) {
-              cmergeIndexes.push(index);
-            }
-          });
-          cmergeIndexes.forEach((it) => {
-            cmerges.splice(it, 1);
-          });
-        }
-        const cell = this.getCell(i, j);
-        cb(cell, i, j);
-        // renderCell.call(this, i, j);
-        // console.log('cmerges:', cmerges);
-        if (jumpMerge && cell && cell.merge) {
-          const [rn, cn] = cell.merge;
-          // console.log('rn:', rn, ', cn:', cn);
-          cmerges.push([i, j, rn, cn]);
-          j += cn;
-        }
-        if (x > view.width()) break;
-      }
-      if (y > view.height()) break;
-    }
+  eachBordersInView(viewRangeIndexes, cb) {
+    eachBordersInView.call(this, viewRangeIndexes, cb);
   }
 
+  eachMergesInView(viewRangeIndexes, cb) {
+    eachMergesInView.call(this, viewRangeIndexes, cb);
+  }
+
+  eachCellsInView(viewRangeIndexes, cb) {
+    eachCellsInView.call(this, viewRangeIndexes, cb);
+  }
+
+  // return [sri, sci, eri, eci]
+  getViewRangeIndexes(rowStart, rowLen, colStart, colLen) {
+    return getViewRangeIndexes.call(this, rowStart, rowLen, colStart, colLen);
+  }
+
+  /*
   addBorder(style, color) {
     const { borders } = this.d;
     for (let i = 0; i < borders.length; i += 1) {
@@ -1177,6 +1306,7 @@ export default class DataProxy {
     borders.push([style, color]);
     return borders.length - 1;
   }
+  */
 
   addStyle(nstyle) {
     const { styles } = this.d;

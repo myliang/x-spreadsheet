@@ -79,11 +79,18 @@ function rangeSum(min, max, getv) {
   return s;
 }
 
+function rangeEach(min, max, cb) {
+  for (let i = min; i < max; i += 1) {
+    cb(i);
+  }
+}
+
 export default {
   cloneDeep,
   merge: (...sources) => mergeDeep({}, ...sources),
   equals,
   sum,
+  rangeEach,
   rangeSum,
   rangeReduceIf,
   deleteProperty,
