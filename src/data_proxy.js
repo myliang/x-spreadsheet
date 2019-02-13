@@ -20,7 +20,7 @@ const defaultData = {
   colm: {}, // Map<int, Row>, len
   cellmm: {}, // Map<int, Map<int, Cell>>
   styles: [],
-  borders: [], // [[[sri, sci], [eri, eci], mode, style, color], ...]
+  // borders: [], // [[[sri, sci], [eri, eci], mode, style, color], ...]
 };
 
 class History {
@@ -393,83 +393,118 @@ function cutPaste(srcIndexes, dstIndexes) {
   clipboard.clear();
 }
 
-/*
-function setStyleBorder(style, [ri, ci], mode, v) {
-  const s = style;
+// bss: { bt, bb, bl, br }
+function setStyleBorder(ri, ci, bss) {
+  const { styles } = this.d;
+  const cell = this.getCellOrNew(ri, ci);
+  let cstyle = {};
+  if (cell.si !== undefined) {
+    cstyle = helper.cloneDeep(styles[cell.si]);
+  }
+  Object.assign(cstyle, bss);
+  cell.si = this.addStyle(cstyle);
+}
+
+function setStyleBorders({ mode, style, color }) {
+  const { styles } = this.d;
   const [[sri, sci], [eri, eci]] = this.selector.getRange();
-  // console.log('mode:', mode);
-  if (mode === 'all') {
-    s.bbi = v;
-    s.bti = v;
-    s.bri = v;
-    s.bli = v;
-  } else if (mode === 'inside') {
-    if (this.isMultiple()) {
-      if (eri !== ri) s.bbi = v;
-      if (sri !== ri) s.bti = v;
-      if (eci !== ci) s.bri = v;
-      if (sci !== ci) s.bli = v;
-    }
-  } else if (mode === 'horizontal') {
-    if (this.isMultiple()) {
-      if (eri !== ri) s.bbi = v;
-      if (sri !== ri) s.bti = v;
-    }
-  } else if (mode === 'vertical') {
-    if (this.isMultiple()) {
-      if (eci !== ci) s.bri = v;
-      if (sci !== ci) s.bli = v;
-    }
-  } else if (mode === 'outside') {
-    if (sri === ri) s.bti = v;
-    if (eri === ri) s.bbi = v;
-    if (sci === ci) s.bli = v;
-    if (eci === ci) s.bri = v;
-  } else if (mode === 'left') {
-    if (sci === ci) s.bli = v;
-  } else if (mode === 'top') {
-    if (sri === ri) s.bti = v;
-  } else if (mode === 'right') {
-    if (eci === ci) s.bri = v;
-  } else if (mode === 'bottom') {
-    if (eri === ri) s.bbi = v;
-  } else if (mode === 'none') {
-    if (s.bli !== undefined) delete s.bli;
-    if (s.bti !== undefined) delete s.bti;
-    if (s.bri !== undefined) delete s.bri;
-    if (s.bbi !== undefined) delete s.bbi;
-  }
-}
-*/
-
-function deleteBorders([sri, sci], [eri, eci]) {
-  const { borders } = this.d;
-  const nborders = [];
-  borders.forEach((border) => {
-    const [bsri, bsci, beri, beci] = border;
-    if (bsri > eri || sri > beri || bsci > eci || sci > beci) {
-      nborders.push(border);
-    }
-  });
-  this.d.borders = nborders;
-}
-
-function addBorder([sri, sci], [eri, eci], mode, style, color) {
-  if (mode === 'none') {
-    deleteBorders.call(this, [sri, sci], [eri, eci]);
-  }
-  const { borders } = this.d;
-  for (let i = 0; i < borders.length; i += 1) {
-    const [osri, osci, oeri, oeci] = borders[i];
-    if (sri === osri && sci === osci && eri === oeri && eci === oeci) {
-      borders[i][4] = mode;
-      borders[i][5] = style;
-      borders[i][6] = mode;
+  const multiple = this.isMultiple();
+  if (!multiple) {
+    if (mode === 'inside' || mode === 'horizontal' || mode === 'vertical') {
       return;
     }
   }
-  if (mode !== 'none') {
-    borders.push([sri, sci, eri, eci, mode, style, color]);
+  if (mode === 'outside' && !multiple) {
+    setStyleBorder.call(this, sri, sci, {
+      bt: [style, color], bb: [style, color], bl: [style, color], br: [style, color],
+    });
+  } else if (mode === 'none') {
+    for (let ri = sri; ri <= eri; ri += 1) {
+      for (let ci = sci; ci <= eci; ci += 1) {
+        const cell = this.getCell(ri, ci);
+        if (cell && cell.si !== undefined) {
+          const ns = helper.cloneDeep(styles[cell.si]);
+          ['bb', 'bt', 'bl', 'br'].forEach((prop) => {
+            if (ns[prop]) delete ns[prop];
+          });
+          cell.si = this.addStyle(ns);
+        }
+      }
+    }
+  } else if (mode === 'all' || mode === 'inside' || mode === 'outside'
+    || mode === 'horizontal' || mode === 'vertical') {
+    const merges = [];
+    for (let ri = sri; ri <= eri; ri += 1) {
+      for (let ci = sci; ci <= eci; ci += 1) {
+        // jump merges -- start
+        const mergeIndexes = [];
+        for (let ii = 0; ii < merges.length; ii += 1) {
+          const [mri, mci, rn, cn] = merges[ii];
+          if (ri === mri + rn + 1) mergeIndexes.push(ii);
+          if (mri <= ri && ri <= mri + rn) {
+            if (ci === mci) {
+              ci += cn + 1;
+              break;
+            }
+          }
+        }
+        mergeIndexes.forEach(it => merges.splice(it, 1));
+        if (ci > eci) break;
+        // jump merges -- end
+        const cell = this.getCell(ri, ci);
+        let [rn, cn] = [0, 0];
+        if (cell && cell.merge) {
+          [rn, cn] = cell.merge;
+          merges.push([ri, ci, rn, cn]);
+        }
+        const mrl = rn > 0 && ri + rn === eri;
+        const mcl = cn > 0 && ci + cn === eci;
+        let bss = {};
+        if (mode === 'all') {
+          bss = {
+            bb: [style, color], br: [style, color], bl: [style, color], bt: [style, color],
+          };
+        } else if (mode === 'inside') {
+          if (!mcl && ci < eci) bss.br = [style, color];
+          if (!mrl && ri < eri) bss.bb = [style, color];
+        } else if (mode === 'horizontal') {
+          if (!mrl && ri < eri) bss.bb = [style, color];
+        } else if (mode === 'vertical') {
+          if (!mcl && ci < eci) bss.br = [style, color];
+        } else if (mode === 'outside' && multiple) {
+          if (sri === ri) bss.bt = [style, color];
+          if (mrl || eri === ri) bss.bb = [style, color];
+          if (sci === ci) bss.bl = [style, color];
+          if (mcl || eci === ci) bss.br = [style, color];
+        }
+        if (Object.keys(bss).length > 0) {
+          setStyleBorder.call(this, ri, ci, bss);
+        }
+        ci += cn;
+      }
+    }
+  } else if (mode === 'top' || mode === 'bottom') {
+    for (let ci = sci; ci <= eci; ci += 1) {
+      if (mode === 'top') {
+        setStyleBorder.call(this, sri, ci, { bt: [style, color] });
+        ci += this.getCellMerge(sri, ci)[1];
+      }
+      if (mode === 'bottom') {
+        setStyleBorder.call(this, eri, ci, { bb: [style, color] });
+        ci += this.getCellMerge(eri, ci)[1];
+      }
+    }
+  } else if (mode === 'left' || mode === 'right') {
+    for (let ri = sri; ri <= eri; ri += 1) {
+      if (mode === 'left') {
+        setStyleBorder.call(this, ri, sci, { bl: [style, color] });
+        ri += this.getCellMerge(ri, sci)[0];
+      }
+      if (mode === 'right') {
+        setStyleBorder.call(this, ri, eci, { br: [style, color] });
+        ri += this.getCellMerge(ri, eci)[0];
+      }
+    }
   }
 }
 
@@ -488,80 +523,6 @@ function getViewRangeIndexes(rowStart, rowLen, colStart, colLen) {
     if (x > view.width()) break;
   }
   return [rowStart, colStart, rowEnd, colEnd];
-}
-
-function eachBordersInView(viewRangeIndexes, cb) {
-  const { borders } = this.d;
-  const [vsri, vsci, veri, veci] = viewRangeIndexes;
-  for (let i = 0; i < borders.length; i += 1) {
-    const [sri, sci, eri, eci, mode, style, color] = borders[i];
-    const bs = [style, color];
-    if (vsri > eri || sri > veri || vsci > eci || sci > veci) {
-      // no intersection
-    } else {
-      switch (mode) {
-        case 'all':
-          helper.rangeEach(sri, eri + 1, (ri) => {
-            helper.rangeEach(sci, eci + 1, (ci) => {
-              cb(ri, ci, {
-                bb: bs, br: bs, bl: bs, bt: bs,
-              });
-            });
-          });
-          break;
-        case 'inside':
-          helper.rangeEach(sri, eri + 1, (ri) => {
-            helper.rangeEach(sci, eci + 1, (ci) => {
-              const bss = {};
-              if (ci <= eci) bss.br = bs;
-              if (ri <= eri) bss.bb = bs;
-              cb(ri, ci, bss);
-            });
-          });
-          break;
-        case 'horizontal':
-          helper.rangeEach(sri, eri, (ri) => {
-            helper.rangeEach(sci, eci + 1, (ci) => {
-              cb(ri, ci, { bb: bs });
-            });
-          });
-          break;
-        case 'vertical':
-          helper.rangeEach(sri, eri + 1, (ri) => {
-            helper.rangeEach(sci, eci, (ci) => {
-              cb(ri, ci, { br: bs });
-            });
-          });
-          break;
-        case 'outside':
-          helper.rangeEach(sci, eci + 1, (ci) => {
-            cb(sri, ci, { bt: bs });
-            cb(eri, ci, { bb: bs });
-          });
-          helper.rangeEach(sri, eri + 1, (ri) => {
-            cb(ri, sci, { bl: bs });
-            cb(ri, eci, { br: bs });
-          });
-          break;
-        case 'top':
-          helper.rangeEach(sci, eci + 1, ci => cb(sri, ci, { bt: bs }));
-          break;
-        case 'bottom':
-          helper.rangeEach(sci, eci + 1, ci => cb(eri, ci, { bb: bs }));
-          break;
-        case 'left':
-          helper.rangeEach(sri, eri + 1, ri => cb(ri, sci, { bl: bs }));
-          break;
-        case 'right':
-          helper.rangeEach(sri, eri + 1, ri => cb(ri, eci, { br: bs }));
-          break;
-        case 'none':
-          break;
-        default:
-          break;
-      }
-    }
-  }
 }
 
 function eachMergesInView(viewRangeIndexes, cb) {
@@ -585,33 +546,6 @@ function eachCellsInView(viewRangeIndexes, cb) {
     }
   }
 }
-
-/*
-function eachCellsInView(rowStart, rowLen, colStart, colLen, jumpMerge = true, cb) {
-  const { view } = this.options;
-  let [x, y] = [0, 0];
-  for (let i = rowStart; i < rowLen; i += 1) {
-    y += this.getRowHeight(i);
-    x = 0;
-    for (let j = colStart; j < colLen; j += 1) {
-      x += this.getColWidth(j);
-      if (jumpMerge) {
-        inMerges.call(this, i, j, ([[msri, msci], [meri, meci]]) => {
-          if (msri !== i || msci !== j) {
-            j += (meci - j) + 1;
-          }
-        });
-      }
-
-      const cell = this.getCell(i, j);
-      cb(cell, i, j);
-
-      if (x > view.width()) break;
-    }
-    if (y > view.height()) break;
-  }
-}
-*/
 
 export default class DataProxy {
   constructor(options) {
@@ -717,8 +651,7 @@ export default class DataProxy {
       if (value) this.merge();
       else this.unmerge();
     } else if (property === 'border') {
-      const { mode, style, color } = value;
-      addBorder.call(this, selector.sIndexes, selector.eIndexes, mode, style, color);
+      setStyleBorders.call(this, value);
     } else if (property === 'formula') {
       const cell = this.getCellOrNew(...selector.indexes);
       cell.text = `=${value}()`;
@@ -731,12 +664,6 @@ export default class DataProxy {
         }
         if (property === 'format') {
           cell.format = value;
-        } else if (property === 'border') {
-          // const { mode, style, color } = value;
-          // const bi = this.addBorder(value.style, value.color);
-          // setStyleBorder.call(this, cstyle, [ri, ci], value.mode, bi);
-          // console.log('border.cstyle:', value.mode, cstyle);
-          // cell.si = this.addStyle(cstyle);
         } else if (property === 'font-bold' || property === 'font-italic'
           || property === 'font-name' || property === 'font-size') {
           const nfont = {};
@@ -1122,6 +1049,12 @@ export default class DataProxy {
     };
   }
 
+  getCellMerge(ri, ci) {
+    const cell = this.getCell(ri, ci);
+    if (cell && cell.merge) return cell.merge;
+    return [0, 0];
+  }
+
   getCell(ri, ci) {
     const { cellmm } = this.d;
     if (cellmm[ri] !== undefined && cellmm[ri][ci] !== undefined) {
@@ -1277,10 +1210,6 @@ export default class DataProxy {
     });
   }
 
-  eachBordersInView(viewRangeIndexes, cb) {
-    eachBordersInView.call(this, viewRangeIndexes, cb);
-  }
-
   eachMergesInView(viewRangeIndexes, cb) {
     eachMergesInView.call(this, viewRangeIndexes, cb);
   }
@@ -1293,20 +1222,6 @@ export default class DataProxy {
   getViewRangeIndexes(rowStart, rowLen, colStart, colLen) {
     return getViewRangeIndexes.call(this, rowStart, rowLen, colStart, colLen);
   }
-
-  /*
-  addBorder(style, color) {
-    const { borders } = this.d;
-    for (let i = 0; i < borders.length; i += 1) {
-      const [s, c] = borders[i];
-      if (s === style && c === color) {
-        return i;
-      }
-    }
-    borders.push([style, color]);
-    return borders.length - 1;
-  }
-  */
 
   addStyle(nstyle) {
     const { styles } = this.d;
@@ -1321,9 +1236,5 @@ export default class DataProxy {
 
   getStyle(index) {
     return this.d.styles[index];
-  }
-
-  getBorder(index) {
-    return this.d.borders[index];
   }
 }

@@ -32,6 +32,11 @@ function equals(obj1, obj2) {
     if (v2 === undefined) return false;
     if (typeof v1 === 'string' || typeof v1 === 'number' || typeof v1 === 'boolean') {
       if (v1 !== v2) return false;
+    } else if (Array.isArray(v1)) {
+      if (v1.length !== v2.length) return false;
+      for (let ai = 0; ai < v1.length; ai += 1) {
+        if (!equals(v1[ai], v2[ai])) return false;
+      }
     } else if (typeof v1 !== 'function' && !Array.isArray(v1) && v1 instanceof Object) {
       if (!equals(v1, v2)) return false;
     }

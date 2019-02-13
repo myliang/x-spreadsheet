@@ -12,13 +12,8 @@
       x.spreadsheet('#x-spreadsheet-demo')
         .loadData({
           freeze: [2, 2],
-          borders: [
-            [2, 0, 2, 0, 'all', 'thin', '#0366d6'],
-            [8, 8, 8, 8, 'all', 'thin', '#0366d6'],
-          ],
           styles: [
-            // { bgcolor: '#f4f5f8', wrapText: true, color: '#900b09', bbi: 0, bti: 0, bri: 0, bli: 0 },
-            { bgcolor: '#f4f5f8', wrapText: true, color: '#900b09' },
+            { bgcolor: '#f4f5f8', wrapText: true, color: '#900b09', bb: ['thin', '#0366d6'], bt: ['thin', '#0366d6'], br: ['thin', '#0366d6'], bl: ['thin', '#0366d6'] },
           ],
           merges: [
             [[2, 2], [3, 3]],
