@@ -225,8 +225,7 @@ function eachMerges(cb) {
   }
 }
 
-function inMerges(ri, ci, cb) {
-  const { merges } = this.d;
+function inMerges(merges, ri, ci, cb) {
   // console.log('merges:', merges);
   if (merges.length > 0) {
     for (let i = 0; i < merges.length; i += 1) {
@@ -525,24 +524,41 @@ function getViewRangeIndexes(rowStart, rowLen, colStart, colLen) {
   return [rowStart, colStart, rowEnd, colEnd];
 }
 
-function eachMergesInView(viewRangeIndexes, cb) {
-  const { merges } = this.d;
-  const [vsri, vsci, veri, veci] = viewRangeIndexes;
+function getMergesInView(merges, viewRangeIndexes) {
+  const [sri, sci, eri, eci] = viewRangeIndexes;
+  const nmerges = [];
   for (let i = 0; i < merges.length; i += 1) {
-    const [[sri, sci], [eri, eci]] = merges[i];
-    if (vsri > eri || sri > veri || vsci > eci || sci > veci) {
+    const [[msri, msci], [meri, meci]] = merges[i];
+    // console.log(viewRangeIndexes, ':', merges[i]);
+    if (msri > eri || sri > meri || msci > eci || sci > meci) {
       // no intersection
     } else {
-      cb(this.getCell(sri, sci), sri, sci);
+      nmerges.push(merges[i]);
     }
   }
+  return nmerges;
+}
+
+function eachMergesInView(viewRangeIndexes, cb) {
+  getMergesInView(this.d.merges, viewRangeIndexes).forEach(([[sri, sci]]) => {
+    cb(sri, sci);
+  });
 }
 
 function eachCellsInView(viewRangeIndexes, cb) {
   const [sri, sci, eri, eci] = viewRangeIndexes;
+  const merges = getMergesInView(this.d.merges, viewRangeIndexes);
+  // console.log('merges:', merges);
   for (let i = sri; i <= eri; i += 1) {
     for (let j = sci; j <= eci; j += 1) {
-      cb(this.getCell(i, j), i, j);
+      let [mri, mci] = [i, j];
+      inMerges(merges, i, j, ([[msri, msci], [, meci]]) => {
+        [mri, mci] = [msri, msci];
+        if (msri !== i || msci !== j) {
+          j += (meci - j) + 1;
+        }
+      });
+      cb(i, j, mri, mci);
     }
   }
 }
@@ -726,7 +742,7 @@ export default class DataProxy {
   }
 
   getCellRectByXY(x, y) {
-    const { scroll } = this;
+    const { scroll, d } = this;
     let { ri, top, height } = getCellRowByY.call(this, y, scroll.y);
     let { ci, left, width } = getCellColByX.call(this, x, scroll.x);
     if (ci === -1) {
@@ -736,7 +752,7 @@ export default class DataProxy {
       height = this.rowTotalHeight();
     }
     if (ri >= 0 || ci >= 0) {
-      inMerges.call(this, ri, ci, ([[sri, sci]]) => {
+      inMerges(d.merges, ri, ci, ([[sri, sci]]) => {
         ri = sri;
         ci = sci;
         ({
@@ -791,7 +807,7 @@ export default class DataProxy {
       eIndexes[1] = this.colLen() - 1;
     }
     let mIndexes = [sIndexes, eIndexes];
-    inMerges.call(this, ri, ci, (merge) => {
+    inMerges(this.d.merges, ri, ci, (merge) => {
       // console.log('merge:', merge);
       mIndexes = merge;
     });

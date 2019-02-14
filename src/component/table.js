@@ -57,8 +57,9 @@ function renderCell(rindex, cindex) {
   }
 }
 
-function renderCellBorder(cell, ri, ci) {
+function renderCellBorder(ri, ci) {
   const { draw, data } = this;
+  const cell = data.getCell(ri, ci);
   if (cell && cell.si !== undefined) {
     const style = data.getStyle(cell.si);
     if (style) {
@@ -98,11 +99,15 @@ function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
     .translate(-scrollOffset.x, -scrollOffset.y);
 
   const viewRangeIndexes = data.getViewRangeIndexes(rowStart, rowLen, colStart, colLen);
-  data.eachCellsInView(viewRangeIndexes, (cell, ri, ci) => renderCell.call(this, ri, ci));
-  data.eachMergesInView(viewRangeIndexes, (cell, ri, ci) => renderCell.call(this, ri, ci));
-  data.eachCellsInView(viewRangeIndexes, (cell, ri, ci) => {
+  // console.log('data.scroll:', data.scroll.indexes, ':', viewRangeIndexes);
+  // render cell at first
+  data.eachCellsInView(viewRangeIndexes, (ri, ci) => renderCell.call(this, ri, ci));
+  // render mergeCell at second
+  data.eachMergesInView(viewRangeIndexes, (ri, ci) => renderCell.call(this, ri, ci));
+  // render border at last
+  data.eachCellsInView(viewRangeIndexes, (ri, ci, mri, mci) => {
     // renderCellBorder.call(this, ri, ci, bt, br, bb, bl);
-    renderCellBorder.call(this, cell, ri, ci);
+    renderCellBorder.call(this, mri, mci);
   });
 
   /*
