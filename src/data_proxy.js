@@ -555,7 +555,7 @@ function eachCellsInView(viewRangeIndexes, cb) {
       inMerges(merges, i, j, ([[msri, msci], [, meci]]) => {
         [mri, mci] = [msri, msci];
         if (msri !== i || msci !== j) {
-          j += (meci - j) + 1;
+          j += (meci - j);
         }
       });
       cb(i, j, mri, mci);
