@@ -31,5 +31,6 @@ export default class DropdownFormat extends Dropdown {
         this.title.html(baseFormats[i].title);
       }
     }
+    this.hide();
   }
 }
