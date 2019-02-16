@@ -1,5 +1,6 @@
 /* eslint no-new-wrappers: "error" */
 import helper from './helper';
+import Language from './language/language';
 import { formulas as _formulas } from './formula';
 import { formats as _formats } from './format';
 import { fonts as _fonts } from './font';
@@ -566,6 +567,7 @@ function eachCellsInView(viewRangeIndexes, cb) {
 export default class DataProxy {
   constructor(options) {
     this.options = options;
+    this.language = new Language(options.language);
     this.formulam = _formulas(options.formulas);
     this.formatm = _formats(options.formats);
     this.fontm = _fonts(options.fonts);

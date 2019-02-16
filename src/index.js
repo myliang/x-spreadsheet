@@ -8,6 +8,7 @@ import { cssPrefix } from './config';
 import './index.less';
 
 const defaultOptions = {
+  language: 'EN',
   view: {
     height: () => document.documentElement.clientHeight - 41,
     width: () => document.documentElement.clientWidth,
