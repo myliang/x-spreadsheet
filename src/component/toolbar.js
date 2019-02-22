@@ -111,7 +111,7 @@ export default class Toolbar {
   constructor(data) {
     this.data = data;
     this.change = () => {};
-    const { style } = data.options;
+    const style = data.defaultStyle();
     // console.log('data:', data);
     this.ddFormat = new DropdownFormat();
     this.ddFont = new DropdownFont();
@@ -190,7 +190,7 @@ export default class Toolbar {
     this.undoEl.disabled(!data.canUndo());
     this.redoEl.disabled(!data.canRedo());
     this.mergeEl.active(data.canUnmerge())
-      .disabled(data.selector.seqe());
+      .disabled(!data.selector.multiple());
     // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
     const { font } = style;
