@@ -345,10 +345,10 @@ function colResizerFinished(cRect, distance) {
   editorSetOffset.call(this);
 }
 
-function dataSetCellText(text) {
+function dataSetCellText(text, triggerChange = true) {
   const { data, table } = this;
   // const [ri, ci] = selector.indexes;
-  data.setSelectedCellText(text);
+  data.setSelectedCellText(text, triggerChange);
   table.render();
 }
 
@@ -635,7 +635,7 @@ function sheetInitEvents() {
         || (keyCode >= 96 && keyCode <= 105)
         || evt.key === '='
       ) {
-        dataSetCellText.call(this, evt.key);
+        dataSetCellText.call(this, evt.key, false);
         editorSet.call(this);
       } else if (keyCode === 113) {
         // F2

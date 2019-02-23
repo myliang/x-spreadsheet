@@ -446,9 +446,9 @@ export default class DataProxy {
     });
   }
 
-  setSelectedCellText(text) {
+  setSelectedCellText(text, triggerChange = true) {
     const { ri, ci } = this.selector;
-    this.setCellText(ri, ci, text);
+    this.setCellText(ri, ci, text, triggerChange);
   }
 
   getSelectedCell() {
@@ -758,10 +758,14 @@ export default class DataProxy {
     return this.getCellStyleOrDefault(ri, ci);
   }
 
-  setCellText(ri, ci, text) {
-    this.changeData(() => {
+  setCellText(ri, ci, text, triggerChange = true) {
+    if (triggerChange) {
+      this.changeData(() => {
+        this.rows.setCellText(ri, ci, text);
+      });
+    } else {
       this.rows.setCellText(ri, ci, text);
-    });
+    }
   }
 
   freezeIsActive() {
