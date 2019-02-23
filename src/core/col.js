@@ -27,13 +27,19 @@ class Cols {
     return this.width;
   }
 
-  setWidth(i, width) {
-    const col = this._[i];
-    if (col) {
-      col.width = width;
-    } else {
-      this._[i] = { width };
-    }
+  getOrNew(ci) {
+    this._[ci] = this._[ci] || {};
+    return this._[ci];
+  }
+
+  setWidth(ci, width) {
+    const col = this.getOrNew(ci);
+    col.width = width;
+  }
+
+  setStyle(ci, style) {
+    const col = this.getOrNew(ci);
+    col.style = style;
   }
 
   sumWidth(min, max) {

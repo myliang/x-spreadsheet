@@ -15,4 +15,8 @@ export default class Selector {
     this.ri = ri;
     this.ci = ci;
   }
+
+  size() {
+    return this.range.size();
+  }
 }

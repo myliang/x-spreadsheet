@@ -9,6 +9,7 @@ import helper from '../helper';
 import { Rows } from './row';
 import { Cols } from './col';
 import { CellRange } from './cell_range';
+import { expr2xy, xy2expr } from './alphabet';
 
 // private methods
 /*
@@ -128,8 +129,8 @@ function cutPaste(srcCellRange, dstCellRange) {
 
 // bss: { top, bottom, left, right }
 function setStyleBorder(ri, ci, bss) {
-  const { styles } = this.d;
-  const cell = this.getCellOrNew(ri, ci);
+  const { styles, rows } = this;
+  const cell = rows.getCellOrNew(ri, ci);
   let cstyle = {};
   if (cell.style !== undefined) {
     cstyle = helper.cloneDeep(styles[cell.style]);
@@ -143,7 +144,7 @@ function setStyleBorders({ mode, style, color }) {
   const {
     sri, sci, eri, eci,
   } = selector.range;
-  const { multiple } = selector;
+  const multiple = !this.isSignleSelected();
   if (!multiple) {
     if (mode === 'inside' || mode === 'horizontal' || mode === 'vertical') {
       return;
@@ -158,9 +159,10 @@ function setStyleBorders({ mode, style, color }) {
       const cell = rows.getCell(ri, ci);
       if (cell && cell.style !== undefined) {
         const ns = helper.cloneDeep(styles[cell.style]);
-        ['bottom', 'top', 'left', 'right'].forEach((prop) => {
-          if (ns[prop]) delete ns[prop];
-        });
+        delete ns.border;
+        // ['bottom', 'top', 'left', 'right'].forEach((prop) => {
+        //   if (ns[prop]) delete ns[prop];
+        // });
         cell.style = this.addStyle(ns);
       }
     });
@@ -210,7 +212,7 @@ function setStyleBorders({ mode, style, color }) {
         } else if (mode === 'outside' && multiple) {
           if (sri === ri) bss.top = [style, color];
           if (mrl || eri === ri) bss.bottom = [style, color];
-          if (sci === ci) bss.bl = [style, color];
+          if (sci === ci) bss.left = [style, color];
           if (mcl || eci === ci) bss.right = [style, color];
         }
         if (Object.keys(bss).length > 0) {
@@ -377,9 +379,10 @@ export default class DataProxy {
     // col index
     if (nci <= cci) [sci, eci] = [nci, cci];
     else eci = nci;
-    selector.range = merges.union({
+    selector.range = merges.union(new CellRange(
       sri, sci, eri, eci,
-    });
+    ));
+    // console.log('selector.range:', selector.range);
     return selector.range;
   }
 
@@ -388,6 +391,7 @@ export default class DataProxy {
       selector, rows, cols, merges,
     } = this;
     let cellRange = merges.getFirstIncludes(ri, ci);
+    // console.log('cellRange:', cellRange, ri, ci, merges);
     if (cellRange === null) {
       cellRange = new CellRange(ri, ci, ri, ci);
       if (ri === -1) {
@@ -423,19 +427,19 @@ export default class DataProxy {
           }
           if (property === 'format') {
             cstyle.format = value;
-            cell.si = this.addStyle(cstyle);
+            cell.style = this.addStyle(cstyle);
           } else if (property === 'font-bold' || property === 'font-italic'
             || property === 'font-name' || property === 'font-size') {
             const nfont = {};
             nfont[property.split('-')[1]] = value;
             cstyle.font = Object.assign(cstyle.font || {}, nfont);
-            cell.si = this.addStyle(cstyle);
-          } else if (property === 'strikethrough' || property === 'textwrap'
+            cell.style = this.addStyle(cstyle);
+          } else if (property === 'strike' || property === 'textwrap'
             || property === 'underline'
             || property === 'align' || property === 'valign'
             || property === 'color' || property === 'bgcolor') {
             cstyle[property] = value;
-            cell.si = this.addStyle(cstyle);
+            cell.style = this.addStyle(cstyle);
           }
         });
       }
@@ -539,6 +543,18 @@ export default class DataProxy {
     };
   }
 
+  isSignleSelected() {
+    const {
+      sri, sci, eri, eci,
+    } = this.selector.range;
+    const cell = this.getCell(sri, sci);
+    if (cell && cell.merge) {
+      const [rn, cn] = cell.merge;
+      if (sri + rn === eri && sci + cn === eci) return true;
+    }
+    return !this.selector.multiple();
+  }
+
   canUnmerge() {
     const {
       sri, sci, eri, eci,
@@ -552,14 +568,14 @@ export default class DataProxy {
   }
 
   merge() {
-    const { selector } = this;
-    if (!selector.multiple) return;
+    const { selector, rows } = this;
+    if (this.isSignleSelected()) return;
     const [rn, cn] = selector.size();
     // console.log('merge:', rn, cn);
     if (rn > 1 || cn > 1) {
       const { sri, sci } = selector.range;
       this.changeData(() => {
-        const cell = this.rows.getCellOrNew(sri, sci);
+        const cell = rows.getCellOrNew(sri, sci);
         cell.merge = [rn - 1, cn - 1];
         this.merges.add(selector.range);
         // delete merge cells
@@ -572,7 +588,7 @@ export default class DataProxy {
 
   unmerge() {
     const { selector } = this;
-    if (selector.multiple) return;
+    if (!this.isSignleSelected()) return;
     const { sri, sci } = selector.range;
     this.changeData(() => {
       this.rows.deleteCell(sri, sci, 'merge');
@@ -720,6 +736,14 @@ export default class DataProxy {
     return (cell && cell.text) ? cell.text : '';
   }
 
+  getCellStyle(ri, ci) {
+    const cell = this.getCell(ri, ci);
+    if (cell && cell.style !== undefined) {
+      return this.styles[cell.style];
+    }
+    return null;
+  }
+
   getCellStyleOrDefault(ri, ci) {
     const { styles, rows } = this;
     const cell = rows.getCell(ri, ci);
@@ -799,7 +823,8 @@ export default class DataProxy {
   }
 
   eachMergesInView(viewRange, cb) {
-    this.merges.filterInView(viewRange).forEach(it => cb(it));
+    this.merges.filterInView(viewRange)
+      .forEach(it => cb(it));
   }
 
   eachCellsInView(viewRange, cb) {
@@ -862,10 +887,6 @@ export default class DataProxy {
     return styles.length - 1;
   }
 
-  getStyle(index) {
-    return this.styles[index];
-  }
-
   changeData(cb) {
     this.history.add(this.getData());
     cb();
@@ -876,6 +897,8 @@ export default class DataProxy {
     Object.keys(d).forEach((property) => {
       if (property === 'merges' || property === 'rows' || property === 'cols') {
         this[property].setData(d[property]);
+      } else if (property === 'freeze') {
+        this.freeze = expr2xy(d[property]);
       } else if (d[property] !== undefined) {
         this[property] = d[property];
       }
@@ -889,7 +912,7 @@ export default class DataProxy {
     } = this;
     return {
       name,
-      freeze,
+      freeze: xy2expr(...freeze),
       styles,
       merges: merges.getData(),
       rows: rows.getData(),

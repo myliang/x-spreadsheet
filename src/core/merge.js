@@ -14,7 +14,7 @@ class Merges {
   }
 
   getFirstIncludes(ri, ci) {
-    for (let i = 0; i < this.length; i += 1) {
+    for (let i = 0; i < this._.length; i += 1) {
       const it = this._[i];
       if (it.includes(ri, ci)) {
         return it;

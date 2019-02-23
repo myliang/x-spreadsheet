@@ -22,6 +22,11 @@ class Rows {
     row.height = v;
   }
 
+  setStyle(ri, style) {
+    const row = this.getOrNew(ri);
+    row.style = style;
+  }
+
   sumHeight(min, max) {
     return helper.rangeSum(min, max, i => this.getHeight(i));
   }

@@ -61,7 +61,7 @@ function selectorMove(multiple, direction) {
     selector, data,
   } = this;
   const { rows, cols } = data;
-  let [ri, ci] = selector;
+  let [ri, ci] = selector.indexes;
   const { eri, eci } = selector.range;
   if (multiple) {
     [ri, ci] = selector.moveIndexes;
@@ -133,7 +133,7 @@ function overlayerMousescroll(evt) {
   const { top } = verticalScrollbar.scroll();
   // console.log('evt:::', evt.wheelDelta, evt.detail * 40);
   let delta = evt.deltaY;
-  const { rows, cols } = data;
+  const { rows } = data;
   if (evt.detail) delta = evt.detail * 40;
   if (delta > 0) {
     // up
@@ -562,7 +562,7 @@ function sheetInitEvents() {
           break;
         case 32:
           // ctrl + space, all cells in col
-          selectorSet.call(this, false, -1, data.selector.indexes[1], false);
+          selectorSet.call(this, false, -1, data.selector.ci, false);
           evt.preventDefault();
           break;
         case 66:
@@ -582,7 +582,7 @@ function sheetInitEvents() {
         case 32:
           if (shiftKey) {
             // shift + space, all cells in row
-            selectorSet.call(this, false, data.selector.indexes[0], -1, false);
+            selectorSet.call(this, false, data.selector.ri, -1, false);
           }
           break;
         case 27: // esc

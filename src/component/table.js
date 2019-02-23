@@ -1,4 +1,4 @@
-import alphabet from '../core/alphabet';
+import { stringAt } from '../core/alphabet';
 import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
 import { formulam } from '../core/formula';
@@ -53,7 +53,7 @@ function renderCell(rindex, cindex) {
       valign: style.valign,
       font,
       color: style.color,
-      strikethrough: style.strike,
+      strike: style.strike,
       underline: style.underline,
     }, style.textwrap);
   }
@@ -61,14 +61,11 @@ function renderCell(rindex, cindex) {
 
 function renderCellBorder(ri, ci) {
   const { draw, data } = this;
-  const cell = data.getCell(ri, ci);
-  if (cell && cell.si !== undefined) {
-    const style = data.getStyle(cell.style);
-    if (style && style.border) {
-      const dbox = getDrawBox.call(this, ri, ci);
-      dbox.setBorders(style.border);
-      draw.strokeBorders(dbox);
-    }
+  const style = data.getCellStyle(ri, ci);
+  if (style && style.border) {
+    const dbox = getDrawBox.call(this, ri, ci);
+    dbox.setBorders(style.border);
+    draw.strokeBorders(dbox);
   }
 }
 
@@ -94,14 +91,18 @@ function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
   draw.translate(cols.indexWidth, rows.height)
     .translate(-scrollOffset.x, -scrollOffset.y);
 
-  const viewRangeIndexes = data.viewRange(rowStart, rowLen, colStart, colLen);
+  const viewRange = data.viewRange(rowStart, rowLen, colStart, colLen);
   // console.log('data.scroll:', data.scroll.indexes, ':', viewRangeIndexes);
   // render cell at first
-  data.eachCellsInView(viewRangeIndexes, (ri, ci) => renderCell.call(this, ri, ci));
+  data.eachCellsInView(viewRange, (ri, ci) => {
+    renderCell.call(this, ri, ci);
+  });
   // render mergeCell at second
-  data.eachMergesInView(viewRangeIndexes, (ri, ci) => renderCell.call(this, ri, ci));
+  data.eachMergesInView(viewRange, ({ sri, sci }) => {
+    renderCell.call(this, sri, sci);
+  });
   // render border at last
-  data.eachCellsInView(viewRangeIndexes, (ri, ci, mri, mci) => {
+  data.eachCellsInView(viewRange, (ri, ci, mri, mci) => {
     // renderCellBorder.call(this, ri, ci, bt, br, bb, bl);
     renderCellBorder.call(this, mri, mci);
   });
@@ -180,7 +181,7 @@ function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
       if (sci <= i && i < eci + 1) {
         renderSelectedHeaderCell.call(this, x, 0, colWidth, rows.height);
       }
-      draw.fillText(alphabet.stringAt(i), x + (colWidth / 2), rows.height / 2);
+      draw.fillText(stringAt(i), x + (colWidth / 2), rows.height / 2);
     }
   });
   draw.line([0, rows.height], [sumWidth, rows.height]);

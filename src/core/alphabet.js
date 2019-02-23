@@ -1,6 +1,6 @@
 const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
-function stringAt(index) {
+export function stringAt(index) {
   let str = '';
   let cindex = index;
   while (cindex >= alphabets.length) {
@@ -13,7 +13,7 @@ function stringAt(index) {
   return str;
 }
 
-function indexAt(str) {
+export function indexAt(str) {
   let ret = 0;
   for (let i = 0; i < str.length - 1; i += 1) {
     const cindex = str.charCodeAt(i) - 65;
@@ -25,7 +25,7 @@ function indexAt(str) {
 }
 
 // B10 => x,y
-function expr2xy(src) {
+export function expr2xy(src) {
   let x = '';
   let y = '';
   for (let i = 0; i < src.length; i += 1) {
@@ -38,22 +38,17 @@ function expr2xy(src) {
   return [indexAt(x), parseInt(y, 10) - 1];
 }
 
-function expr2expr(src, xn, yn) {
+export function expr2expr(src, xn, yn) {
   const [x, y] = expr2xy(src);
   return stringAt(x + xn) + (y + yn);
 }
 
 // x,y => B10
-function xy2expr(x, y) {
+export function xy2expr(x, y) {
   return `${stringAt(x)}${y + 1}`;
 }
 
 export default {
-  stringAt,
-  indexAt,
-};
-
-export {
   stringAt,
   indexAt,
   expr2xy,
