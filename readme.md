@@ -40,12 +40,9 @@ new Spreadsheet("#x-spreadsheet-demo")
 // default options
 {
   view: {
-    height: () => document.documentElement.clientHeight - 41,
+    height: () => document.documentElement.clientHeight,
     width: () => document.documentElement.clientWidth,
   },
-  formats: [],
-  fonts: [],
-  formula: [],
   row: {
     len: 100,
     height: 25,
@@ -61,7 +58,6 @@ new Spreadsheet("#x-spreadsheet-demo")
     align: 'left',
     valign: 'middle',
     textwrap: false,
-    textDecoration: 'normal',
     strike: false,
     underline: false,
     color: '#0a0a0a',

@@ -606,7 +606,7 @@ export default class DataProxy {
     });
   }
 
-  // type: row | col
+  // type: row | column
   insert(type, n = 1) {
     this.changeData(() => {
       const { sri, sci } = this.selector.range;
@@ -614,7 +614,7 @@ export default class DataProxy {
       let si = sri;
       if (type === 'row') {
         rows.insert(sri, n);
-      } else if (type === 'col') {
+      } else if (type === 'column') {
         rows.insertColumn(sci, n);
         si = sci;
         cols.len += 1;
@@ -627,7 +627,7 @@ export default class DataProxy {
     });
   }
 
-  // type: row | col
+  // type: row | column
   delete(type) {
     this.changeData(() => {
       const {
@@ -642,17 +642,19 @@ export default class DataProxy {
       let size = rsize;
       if (type === 'row') {
         rows.delete(sri, eri);
-      } else if (type === 'col') {
+      } else if (type === 'column') {
         rows.deleteColumn(sci, eci);
         si = range.sci;
         size = csize;
         cols.len -= 1;
       }
-      merges.shift(type, si, size, (ri, ci, rn, cn) => {
+      // console.log('type:', type, ', si:', si, ', size:', size);
+      merges.shift(type, si, -size, (ri, ci, rn, cn) => {
+        // console.log('ri:', ri, ', ci:', ci, ', rn:', rn, ', cn:', cn);
         const cell = rows.getCell(ri, ci);
-        cell.merge[0] -= rn;
-        cell.merge[1] -= cn;
-        if (cell[0] === 0 && cell[1] === 0) {
+        cell.merge[0] += rn;
+        cell.merge[1] += cn;
+        if (cell.merge[0] === 0 && cell.merge[1] === 0) {
           delete cell.merge;
         }
       });

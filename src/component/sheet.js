@@ -271,7 +271,7 @@ function overlayerMousedown(evt) {
       }
     }, () => {
       if (isAutofillEl) {
-        data.autofill(selector.saIndexes, selector.eaIndexes, 'all');
+        data.autofill(selector.arange, 'all');
         table.render();
       }
       selector.hideAutofill();

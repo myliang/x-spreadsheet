@@ -42,7 +42,7 @@ class Merges {
     this._.push(cr);
   }
 
-  // type: row | col
+  // type: row | column
   shift(type, index, n, cbWithin) {
     this._.forEach((cellRange) => {
       const {
@@ -54,15 +54,15 @@ class Merges {
           range.sri += n;
           range.eri += n;
         } else if (sri < index && index <= eri) {
-          range.sri += n;
+          range.eri += n;
           cbWithin(sri, sci, n, 0);
         }
-      } else if (type === 'col') {
+      } else if (type === 'column') {
         if (sci > index) {
           range.sci += n;
           range.eci += n;
-        } else if (eci < index && index <= eci) {
-          range.sci += n;
+        } else if (sci < index && index <= eci) {
+          range.eci += n;
           cbWithin(sri, sci, 0, n);
         }
       }
