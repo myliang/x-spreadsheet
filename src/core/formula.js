@@ -32,18 +32,25 @@ const baseFormulas = [
   },
 ];
 
-const formulas = (formulaAry = []) => {
-  const formulaMap = {};
-  baseFormulas.concat(formulaAry).forEach((f) => {
-    formulaMap[f.key] = f;
-  });
-  return formulaMap;
-};
+const formulas = baseFormulas;
+
+// const formulas = (formulaAry = []) => {
+//   const formulaMap = {};
+//   baseFormulas.concat(formulaAry).forEach((f) => {
+//     formulaMap[f.key] = f;
+//   });
+//   return formulaMap;
+// };
+const formulam = {};
+baseFormulas.forEach((f) => {
+  formulam[f.key] = f;
+});
 
 export default {
 };
 
 export {
+  formulam,
   formulas,
   baseFormulas,
 };

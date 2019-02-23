@@ -62,7 +62,7 @@ new Spreadsheet("#x-spreadsheet-demo")
     valign: 'middle',
     textwrap: false,
     textDecoration: 'normal',
-    strikethrough: false,
+    strike: false,
     underline: false,
     color: '#0a0a0a',
     font: {

@@ -1,22 +1,8 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import { formulas, baseFormulas } from '../src/formula';
+import { formulam } from '../../src/core/formula';
 
-describe('formulas()', () => {
-  it('should return baseFormats.length formulas when this value is empty', () => {
-    assert.equal(Object.keys(formulas()).length, baseFormulas.length);
-  });
-  it('should return baseFormats.length + 1 formulas when this value is [{key: "sin", title: "sin", render: () => {}}]', () => {
-    const no = formulas([{ key: 'sin', title: 'sin', render: () => {} }]);
-    assert.equal(Object.keys(no).length, baseFormulas.length + 1);
-  });
-  it('should return value include sin when this value is [{key: "sin", title: "sin", render: () => {}}]', () => {
-    const no = formulas([{ key: 'sin', title: 'sin', render: () => {} }]);
-    assert.ok(Object.keys(no).includes('sin'));
-  });
-});
-
-const gformulas = formulas();
+const gformulas = formulam;
 describe('formula', () => {
   describe('#render()', () => {
     it('SUM: should return 36 when the value is [\'12\', \'12\', 12]', () => {

@@ -1,23 +1,4 @@
-import alphabet from './alphabet';
-
-// B10 => x,y
-const expr2xy = (src) => {
-  let x = '';
-  let y = '';
-  for (let i = 0; i < src.length; i += 1) {
-    if (src.charAt(i) >= '0' && src.charAt(i) <= '9') {
-      y += src.charAt(i);
-    } else {
-      x += src.charAt(i);
-    }
-  }
-  return [alphabet.indexAt(x), parseInt(y, 10)];
-};
-
-const expr2expr = (src, xn, yn) => {
-  const [x, y] = expr2xy(src);
-  return alphabet.stringAt(x + xn) + (y + yn);
-};
+import { expr2xy, xy2expr } from './alphabet';
 
 // Converting infix expression to a suffix expression
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
@@ -58,7 +39,7 @@ const infixExprToSuffixExpr = (src) => {
             let rangelen = 0;
             for (let x = sx; x <= ex; x += 1) {
               for (let y = sy; y <= ey; y += 1) {
-                stack.push(alphabet.stringAt(x) + y);
+                stack.push(xy2expr(x, y));
                 rangelen += 1;
               }
             }
@@ -164,9 +145,8 @@ const cellRender = (sri, sci, src, formulaMap, getCellText) => {
     // if (stack.includes(srcExpr)) return '';
     // console.log('suffixExpr:', stack);
     if (stack.length <= 0) return src;
-    // const cb = (x, y) => cellRender(sri, sci, getCellText(x, y - 1), formulaMap, getCellText);
     return evalSuffixExpr(stack, formulaMap, (x, y) => {
-      const cellText = (sri === y - 1 && sci === x) ? 0 : getCellText(x, y - 1);
+      const cellText = (sri === y && sci === x) ? 0 : getCellText(x, y);
       return cellRender(sri, sci, cellText, formulaMap, getCellText);
     });
   }
@@ -178,6 +158,4 @@ export default {
 };
 export {
   infixExprToSuffixExpr,
-  expr2xy,
-  expr2expr,
 };

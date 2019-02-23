@@ -26,11 +26,13 @@ class DrawBox {
     this.borderLeft = null;
   }
 
-  setBorders(bt, br, bb, bl) {
-    if (bt) this.borderTop = bt;
-    if (br) this.borderRight = br;
-    if (bb) this.borderBottom = bb;
-    if (bl) this.borderLeft = bl;
+  setBorders({
+    top, bottom, left, right,
+  }) {
+    if (top) this.borderTop = top;
+    if (right) this.borderRight = right;
+    if (bottom) this.borderBottom = bottom;
+    if (left) this.borderLeft = left;
   }
 
   innerWidth() {
@@ -107,7 +109,7 @@ function drawFontLine(type, tx, ty, align, valign, blheight, blwidth) {
     } else {
       floffset.y = -blheight / 2;
     }
-  } else if (type === 'strikethrough') {
+  } else if (type === 'strike') {
     if (valign === 'bottom') {
       floffset.y = blheight / 2;
     } else if (valign === 'top') {
@@ -191,8 +193,7 @@ class Draw {
       align: left | center | right
       valign: top | middle | bottom
       color: '#333333',
-      textDecoration: 'normal',
-      strikethrought: false,
+      strike: false,
       font: {
         name: 'Arial',
         size: 14,
@@ -205,7 +206,7 @@ class Draw {
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
-      align, valign, font, color, strikethrough, underline,
+      align, valign, font, color, strike, underline,
     } = attr;
     const tx = box.textx(align);
     ctx.save();
@@ -229,8 +230,8 @@ class Draw {
       for (let i = 0; i < txt.length; i += 1) {
         if (textLine.len >= box.innerWidth()) {
           this.fillText(txt.substring(textLine.start, i), tx, ty);
-          if (strikethrough) {
-            drawFontLine.call(this, 'strikethrough', tx, ty, align, valign, font.size, textLine.len);
+          if (strike) {
+            drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
           }
           if (underline) {
             drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, textLine.len);
@@ -243,8 +244,8 @@ class Draw {
       }
       if (textWrap && textLine.len > 0) {
         this.fillText(txt.substring(textLine.start), tx, ty);
-        if (strikethrough) {
-          drawFontLine.call(this, 'strikethrough', tx, ty, align, valign, font.size, textLine.len);
+        if (strike) {
+          drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
         }
         if (underline) {
           drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, textLine.len);
@@ -252,8 +253,8 @@ class Draw {
       }
     } else {
       this.fillText(txt, tx, ty);
-      if (strikethrough) {
-        drawFontLine.call(this, 'strikethrough', tx, ty, align, valign, font.size, txtWidth);
+      if (strike) {
+        drawFontLine.call(this, 'striket', tx, ty, align, valign, font.size, txtWidth);
       }
       if (underline) {
         drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, txtWidth);

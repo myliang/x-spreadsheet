@@ -111,7 +111,7 @@ export default class Toolbar {
   constructor(data) {
     this.data = data;
     this.change = () => {};
-    const { style } = data.options;
+    const style = data.defaultStyle();
     // console.log('data:', data);
     this.ddFormat = new DropdownFormat();
     this.ddFont = new DropdownFont();
@@ -138,7 +138,7 @@ export default class Toolbar {
       this.fontBoldEl = buildButtonWithIcon('Bold (Ctrl+B)', 'bold', () => toggleChange.call(this, 'font-bold')),
       this.fontItalicEl = buildButtonWithIcon('Italic (Ctrl+I)', 'italic', () => toggleChange.call(this, 'font-italic')),
       this.underlineEl = buildButtonWithIcon('Underline (Ctrl+U)', 'underline', () => toggleChange.call(this, 'underline')),
-      this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough')),
+      this.striketEl = buildButtonWithIcon('Strike', 'strike', () => toggleChange.call(this, 'strike')),
       buildButton('Text color').child(this.ddTextColor.el),
       buildDivider(),
       buildButton('Fill color').child(this.ddFillColor.el),
@@ -190,7 +190,7 @@ export default class Toolbar {
     this.undoEl.disabled(!data.canUndo());
     this.redoEl.disabled(!data.canRedo());
     this.mergeEl.active(data.canUnmerge())
-      .disabled(data.selector.seqe());
+      .disabled(!data.selector.multiple());
     // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
     const { font } = style;
@@ -199,7 +199,7 @@ export default class Toolbar {
     this.fontBoldEl.active(font.bold);
     this.fontItalicEl.active(font.italic);
     this.underlineEl.active(style.underline);
-    this.strikethroughEl.active(style.strikethrough);
+    this.striketEl.active(style.strike);
     this.ddTextColor.setTitle(style.color);
     this.ddFillColor.setTitle(style.bgcolor);
     this.ddAlign.setTitle(style.align);

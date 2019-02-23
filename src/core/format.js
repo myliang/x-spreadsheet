@@ -80,17 +80,21 @@ const baseFormats = [
   },
 ];
 
-const formats = (ary = []) => {
-  const map = {};
-  baseFormats.concat(ary).forEach((f) => {
-    map[f.key] = f;
-  });
-  return map;
-};
+// const formats = (ary = []) => {
+//   const map = {};
+//   baseFormats.concat(ary).forEach((f) => {
+//     map[f.key] = f;
+//   });
+//   return map;
+// };
+const formatm = {};
+baseFormats.forEach((f) => {
+  formatm[f.key] = f;
+});
 
 export default {
 };
 export {
-  formats,
+  formatm,
   baseFormats,
 };
