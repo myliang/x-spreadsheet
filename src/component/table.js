@@ -37,26 +37,27 @@ function renderCell(rindex, cindex) {
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
   dbox.bgcolor = style.bgcolor;
-  draw.rect(dbox);
-  if (cell !== null) {
-    // render text
-    let cellText = _cell.render(rindex, cindex, cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
-    if (style.format) {
-      // console.log(data.formatm, '>>', cell.format);
-      cellText = formatm[style.format].render(cellText);
+  draw.rect(dbox, () => {
+    if (cell !== null) {
+      // render text
+      let cellText = _cell.render(rindex, cindex, cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+      if (style.format) {
+        // console.log(data.formatm, '>>', cell.format);
+        cellText = formatm[style.format].render(cellText);
+      }
+      const font = Object.assign({}, style.font);
+      font.size = getFontSizePxByPt(font.size);
+      // console.log('style:', style);
+      draw.text(cellText, dbox, {
+        align: style.align,
+        valign: style.valign,
+        font,
+        color: style.color,
+        strike: style.strike,
+        underline: style.underline,
+      }, style.textwrap);
     }
-    const font = Object.assign({}, style.font);
-    font.size = getFontSizePxByPt(font.size);
-    // console.log('style:', style);
-    draw.text(cellText, dbox, {
-      align: style.align,
-      valign: style.valign,
-      font,
-      color: style.color,
-      strike: style.strike,
-      underline: style.underline,
-    }, style.textwrap);
-  }
+  });
 }
 
 function renderCellBorder(ri, ci) {
