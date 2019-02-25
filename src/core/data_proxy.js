@@ -812,47 +812,33 @@ export default class DataProxy {
     return this.settings.view.width();
   }
 
-  viewRange(rowStart, rowLen, colStart, colLen) {
+  freezeViewRange() {
+    const [ri, ci] = this.freeze;
+    return new CellRange(0, 0, ri, ci);
+  }
+
+  viewRange() {
+    const { scroll, rows, cols } = this;
+    const { ri, ci } = scroll;
     let [x, y] = [0, 0];
-    let [rowEnd, colEnd] = [rowStart, colStart];
-    for (let i = rowStart; i < rowLen; i += 1) {
-      y += this.rows.getHeight(i);
-      rowEnd = i;
+    let [eri, eci] = [rows.len, cols.len];
+    for (let i = ri; i < rows.len; i += 1) {
+      y += rows.getHeight(i);
+      eri = i;
       if (y > this.viewHeight()) break;
     }
-    for (let j = colStart; j < colLen; j += 1) {
-      x += this.cols.getWidth(j);
-      colEnd = j;
+    for (let j = ci; j < cols.len; j += 1) {
+      x += cols.getWidth(j);
+      eci = j;
       if (x > this.viewWidth()) break;
     }
-    return new CellRange(rowStart, colStart, rowEnd, colEnd);
+    // console.log(ri, ci, eri, eci);
+    return new CellRange(ri, ci, eri, eci);
   }
 
   eachMergesInView(viewRange, cb) {
-    this.merges.filterInView(viewRange)
+    this.merges.filterIntersects(viewRange)
       .forEach(it => cb(it));
-  }
-
-  eachCellsInView(viewRange, cb) {
-    const merges = this.merges.filterInView(viewRange);
-    const {
-      sri, sci, eri, eci,
-    } = viewRange;
-    // console.log('merges:', merges);
-    for (let i = sri; i <= eri; i += 1) {
-      for (let j = sci; j <= eci; j += 1) {
-        let [mri, mci] = [i, j];
-        const merge = merges.getFirstIncludes(i, j);
-        if (merge) {
-          mri = merge.sri;
-          mci = merge.sci;
-          if (merge.sri !== i || merge.sci !== j) {
-            j += merge.eci - j;
-          }
-        }
-        cb(i, j, mri, mci);
-      }
-    }
   }
 
   rowEach(min, max, cb) {

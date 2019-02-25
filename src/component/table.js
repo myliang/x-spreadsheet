@@ -3,6 +3,7 @@ import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
 import { formulam } from '../core/formula';
 import { formatm } from '../core/format';
+import { CellRange } from '../core/cell_range';
 
 import {
   Draw, DrawBox, thinLineWidth, npx,
@@ -10,6 +11,11 @@ import {
 // gobal var
 const cellPaddingWidth = 5;
 const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
+const tableGridStyle = {
+  fillStyle: '#fff',
+  lineWidth: thinLineWidth,
+  strokeStyle: '#e6e6e6',
+};
 function tableFixedHeaderStyle() {
   return {
     textAlign: 'center',
@@ -37,6 +43,9 @@ function renderCell(rindex, cindex) {
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
   dbox.bgcolor = style.bgcolor;
+  if (style.border !== undefined) {
+    dbox.setBorders(style.border);
+  }
   draw.rect(dbox, () => {
     if (cell !== null) {
       // render text
@@ -60,77 +69,25 @@ function renderCell(rindex, cindex) {
   });
 }
 
-function renderCellBorder(ri, ci) {
-  const { draw, data } = this;
-  const style = data.getCellStyle(ri, ci);
-  if (style && style.border) {
-    const dbox = getDrawBox.call(this, ri, ci);
-    dbox.setBorders(style.border);
-    draw.strokeBorders(dbox);
-  }
-}
-
-/*
-function renderCellBorder(ri, ci, bs) {
-  const {
-    bt, br, bb, bl,
-  } = bs;
-  const { draw } = this;
-  if (bt !== undefined || br !== undefined
-    || bb !== undefined || bl !== undefined) {
-    const dbox = getDrawBox.call(this, ri, ci);
-    dbox.setBorders(bt, br, bb, bl);
-    draw.strokeBorders(dbox);
-  }
-}
-*/
-
-function renderContent(rowStart, rowLen, colStart, colLen, scrollOffset) {
+function renderContent({
+  sri, sci, eri, eci,
+}, scrollOffset) {
   const { draw, data } = this;
   const { cols, rows } = data;
   draw.save();
   draw.translate(cols.indexWidth, rows.height)
     .translate(-scrollOffset.x, -scrollOffset.y);
 
-  const viewRange = data.viewRange(rowStart, rowLen, colStart, colLen);
-  // console.log('data.scroll:', data.scroll.indexes, ':', viewRangeIndexes);
   // render cell at first
-  data.eachCellsInView(viewRange, (ri, ci) => {
+  const nviewRange = new CellRange(sri, sci, eri - 1, eci - 1);
+  nviewRange.each((ri, ci) => {
     renderCell.call(this, ri, ci);
   });
   // render mergeCell at second
-  data.eachMergesInView(viewRange, ({ sri, sci }) => {
-    renderCell.call(this, sri, sci);
-  });
-  // render border at last
-  data.eachCellsInView(viewRange, (ri, ci, mri, mci) => {
-    // renderCellBorder.call(this, ri, ci, bt, br, bb, bl);
-    renderCellBorder.call(this, mri, mci);
+  data.eachMergesInView(nviewRange, (r) => {
+    renderCell.call(this, r.sri, r.sci);
   });
 
-  /*
-  data.eachCellsInView(
-    rowStart,
-    rowLen,
-    colStart,
-    colLen,
-    true,
-    (cell, ri, ci) => {
-      renderCell.call(this, ri, ci);
-    },
-  );
-  // border
-  data.eachCellsInView(
-    rowStart,
-    rowLen,
-    colStart,
-    colLen,
-    false,
-    (cell, ri, ci) => {
-      renderCellBorder.call(this, cell, ri, ci);
-    },
-  );
-  */
   draw.restore();
 }
 
@@ -142,12 +99,12 @@ function renderSelectedHeaderCell(x, y, w, h) {
   draw.restore();
 }
 
-function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
+function renderFixedHeaders(viewRange) {
   const { draw, data } = this;
   const { cols, rows } = data;
   draw.save();
-  const sumHeight = rows.sumHeight(0, rowLen) + rows.height;
-  const sumWidth = cols.sumWidth(0, colLen) + cols.indexWidth;
+  const sumHeight = rows.sumHeight(viewRange.sri, viewRange.eri) + rows.height;
+  const sumWidth = cols.sumWidth(viewRange.sci, viewRange.eci) + cols.indexWidth;
   // draw rect background
   draw.attr(tableFixedHeaderCleanStyle)
     .fillRect(0, 0, cols.indexWidth, sumHeight)
@@ -161,11 +118,11 @@ function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
   // text font, align...
   draw.attr(tableFixedHeaderStyle());
   // y-header-text
-  data.rowEach(rowStart, rowLen, (i, y1, rowHeight) => {
+  data.rowEach(viewRange.sri, viewRange.eri, (i, y1, rowHeight) => {
     const y = y1 + rows.height;
     // console.log('y1:', y1, ', i:', i);
     draw.line([0, y], [cols.indexWidth, y]);
-    if (i !== rowLen) {
+    if (i !== viewRange.eri) {
       if (sri <= i && i < eri + 1) {
         renderSelectedHeaderCell.call(this, 0, y, cols.indexWidth, rowHeight);
       }
@@ -174,11 +131,11 @@ function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
   });
   draw.line([cols.indexWidth, 0], [cols.indexWidth, sumHeight]);
   // x-header-text
-  data.colEach(colStart, colLen, (i, x1, colWidth) => {
+  data.colEach(viewRange.sci, viewRange.eci, (i, x1, colWidth) => {
     const x = x1 + cols.indexWidth;
     // console.log('x1:', x1, ', i:', i);
     draw.line([x, 0], [x, rows.height]);
-    if (i !== colLen) {
+    if (i !== viewRange.eci) {
       if (sci <= i && i < eci + 1) {
         renderSelectedHeaderCell.call(this, x, 0, colWidth, rows.height);
       }
@@ -195,85 +152,87 @@ function renderFixedHeaders(rowStart, rowLen, colStart, colLen) {
   draw.restore();
 }
 
-/*
-function renderFreezeGridAndContent0(rowLen, colLen, width, height, scrollOffset) {
+function renderContentGrid({
+  sri, sci, eri, eci,
+}, scrollOffset = { x: 0, y: 0 }) {
   const { draw, data } = this;
-  const { col, row } = data.options;
-  draw.save()
-    .translate(col.indexWidth, row.height)
-    .translate(-scrollOffset.x, -scrollOffset.y);
-
-  // draw.fillRect(0, 0, width, height);
-  // draw.line([0, 0], [width, 0]);
-  // draw.line([0, 0], [0, height]);
-  data.rowEach(rowLen - 1, (i, y1, rowHeight) => {
-    // const y = y1 + rowHeight;
-    // console.log('y:', y);
-    // if (y >= 0) {
-    // draw.line([0, y], [width, y]);
-    data.colEach(colLen - 1, (j, x) => {
-      // if (x >= 0) {
-        // draw.line([x, y - rowHeight], [x, y]);
-      renderCell.call(this, i, j);
-      // }
-    });
+  const { cols, rows } = data;
+  draw.save();
+  draw.attr(tableGridStyle)
+    .translate(cols.indexWidth, rows.height)
+    .translate(scrollOffset.x, scrollOffset.y);
+  const sumWidth = cols.sumWidth(sci, eci);
+  const sumHeight = rows.sumHeight(sri, eri);
+  // console.log('sumWidth:', sumWidth);
+  draw.fillRect(0, 0, sumWidth, sumHeight);
+  // console.log('rowStart:', rowStart, ', rowLen:', rowLen);
+  data.rowEach(sri, eri, (i, y) => {
+    draw.line([0, y], [sumWidth, y]);
+  });
+  data.colEach(sci, eci, (i, x) => {
+    draw.line([x, 0], [x, sumHeight]);
   });
   draw.restore();
 }
-*/
 
-function renderFreezeHighlightLine(p1, p2, scrollOffset) {
+function renderFreezeHighlightLine(p1, p2) {
   const { draw, data } = this;
   const { rows, cols } = data;
   draw.save()
     .translate(cols.indexWidth, rows.height)
-    .translate(-scrollOffset.x, -scrollOffset.y)
     .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' });
   draw.line(p1, p2);
   draw.restore();
 }
 
-function renderFreezeGridAndContent() {
+function renderFreezeGridAndContent({ eri, eci }) {
   const { data } = this;
   const [fri, fci] = data.freeze;
   const { scroll, cols, rows } = data;
   const sheight = rows.sumHeight(0, fri);
-  const twidth = cols.totalWidth();
+  const twidth = data.viewWidth();
+  const ftw = data.freezeTotalWidth();
+  const fth = data.freezeTotalHeight();
   if (fri > 0) {
+    renderContentGrid.call(
+      this,
+      new CellRange(0, fci + data.scroll.ci, fri, eci),
+      { x: ftw, y: 0 },
+    );
     renderContent.call(
       this,
-      0,
-      fri,
-      0,
-      cols.len,
+      new CellRange(0, fci, fri, eci),
       { x: scroll.x, y: 0 },
     );
   }
-  const theight = rows.totalHeight();
+  const theight = data.viewHeight();
   const swidth = cols.sumWidth(0, fci);
-  if (fci) {
+  if (fci > 0) {
+    renderContentGrid.call(
+      this,
+      new CellRange(fri + data.scroll.ri, 0, eri, fci),
+      { x: 0, y: fth },
+    );
     renderContent.call(
       this,
-      0,
-      rows.len,
-      0,
-      fci,
+      new CellRange(fri, 0, eri, fci),
       { x: 0, y: scroll.y },
     );
   }
   renderFreezeHighlightLine.call(
-    this, [0, sheight], [twidth, sheight], { x: scroll.x, y: 0 },
+    this, [0, sheight], [twidth, sheight],
   );
   renderFreezeHighlightLine.call(
-    this, [swidth, 0], [swidth, theight], { x: 0, y: scroll.y },
+    this, [swidth, 0], [swidth, theight],
   );
 }
 
-function renderAll(rowStart, rowLen, colStart, colLen, scrollOffset) {
+function renderAll(viewRange, scrollOffset) {
   // const { row, col, scrollOffset } = this;
-  // renderContentGrid.call(this, rowLen, colLen, scrollOffset);
-  renderContent.call(this, rowStart, rowLen, colStart, colLen, scrollOffset);
-  renderFixedHeaders.call(this, rowStart, rowLen, colStart, colLen);
+  // console.log('viewRange:', viewRange);
+  renderContentGrid.call(this, viewRange);
+  renderContent.call(this, viewRange, scrollOffset);
+  renderFixedHeaders.call(this, viewRange);
 }
 
 /** end */
@@ -287,16 +246,14 @@ class Table {
   render() {
     // resize canvas
     const { data } = this;
-    const { rows, cols } = data;
     this.draw.resize(data.viewWidth(), data.viewHeight());
-    //
     this.clear();
-    const { ri, ci } = data.scroll;
-    renderAll.call(this, ri, rows.len, ci, cols.len, data.scroll);
+    const viewRange = data.viewRange();
+    renderAll.call(this, data.viewRange(), data.scroll);
     const [fri, fci] = data.freeze;
     if (fri > 0 || fci > 0) {
-      renderFreezeGridAndContent.call(this);
-      renderAll.call(this, 0, fri, 0, fci, { x: 0, y: 0 });
+      renderFreezeGridAndContent.call(this, viewRange);
+      renderAll.call(this, data.freezeViewRange(), { x: 0, y: 0 });
     }
   }
 

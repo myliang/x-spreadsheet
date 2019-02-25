@@ -332,11 +332,11 @@ class Draw {
     ctx.save();
     ctx.beginPath();
     ctx.fillStyle = bgcolor || '#fff';
-    ctx.strokeStyle = '#e6e6e6';
+    // ctx.strokeStyle = '#e6e6e6';
     ctx.rect(npx(x) - 0.5, npx(y) - 0.5, npx(width), npx(height));
     ctx.clip();
     ctx.fill();
-    ctx.stroke();
+    // ctx.stroke();
     this.strokeBorders(box);
     dtextcb();
     ctx.restore();

@@ -23,8 +23,8 @@ class Merges {
     return null;
   }
 
-  filterInView(cellRange) {
-    return new Merges(this._.filter(it => it.within(cellRange)));
+  filterIntersects(cellRange) {
+    return new Merges(this._.filter(it => it.intersects(cellRange)));
   }
 
   union(cellRange) {
