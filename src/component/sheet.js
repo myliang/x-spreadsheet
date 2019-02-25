@@ -345,10 +345,10 @@ function colResizerFinished(cRect, distance) {
   editorSetOffset.call(this);
 }
 
-function dataSetCellText(text, triggerChange = true) {
+function dataSetCellText(text, state = 'finished') {
   const { data, table } = this;
   // const [ri, ci] = selector.indexes;
-  data.setSelectedCellText(text, triggerChange);
+  data.setSelectedCellText(text, state);
   table.render();
 }
 
@@ -466,9 +466,8 @@ function sheetInitEvents() {
     horizontalScrollbarMove.call(this, distance, evt);
   };
   // editor
-  editor.change = (itext) => {
-    dataSetCellText.call(this, itext);
-    toolbar.reset();
+  editor.change = (state, itext) => {
+    dataSetCellText.call(this, itext, state);
   };
   // contextmenu
   contextMenu.itemClick = (type) => {
@@ -635,7 +634,7 @@ function sheetInitEvents() {
         || (keyCode >= 96 && keyCode <= 105)
         || evt.key === '='
       ) {
-        dataSetCellText.call(this, evt.key, false);
+        dataSetCellText.call(this, evt.key, 'input');
         editorSet.call(this);
       } else if (keyCode === 113) {
         // F2

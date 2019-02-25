@@ -41,6 +41,7 @@ function inputEventHandler(evt) {
   }
   textlineEl.html(v);
   resetTextareaSize.call(this);
+  this.change('input', v);
 }
 
 function setTextareaRange(position) {
@@ -113,8 +114,9 @@ export default class Editor {
   clear() {
     const { cell } = this;
     const cellText = (cell && cell.text) || '';
-    if (cellText !== this.inputText) {
-      this.change(this.inputText);
+    // console.log(cellText, ':', this.inputText === '');
+    if (this.inputText !== '') {
+      this.change('finished', this.inputText);
     }
     this.cell = null;
     this.areaOffset = null;

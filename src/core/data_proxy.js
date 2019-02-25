@@ -446,9 +446,10 @@ export default class DataProxy {
     });
   }
 
-  setSelectedCellText(text, triggerChange = true) {
+  // state: input | finished
+  setSelectedCellText(text, state = 'input') {
     const { ri, ci } = this.selector;
-    this.setCellText(ri, ci, text, triggerChange);
+    this.setCellText(ri, ci, text, state);
   }
 
   getSelectedCell() {
@@ -758,13 +759,15 @@ export default class DataProxy {
     return this.getCellStyleOrDefault(ri, ci);
   }
 
-  setCellText(ri, ci, text, triggerChange = true) {
-    if (triggerChange) {
-      this.changeData(() => {
-        this.rows.setCellText(ri, ci, text);
-      });
+  // state: input | finished
+  setCellText(ri, ci, text, state) {
+    if (state === 'finished') {
+      this.rows.setCellText(ri, ci, '');
+      this.history.add(this.getData());
+      this.rows.setCellText(ri, ci, text);
     } else {
       this.rows.setCellText(ri, ci, text);
+      this.change(this.getData());
     }
   }
 
