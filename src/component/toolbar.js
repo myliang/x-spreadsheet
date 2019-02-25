@@ -108,7 +108,7 @@ function moreResize() {
 }
 
 export default class Toolbar {
-  constructor(data) {
+  constructor(data, isHide = false) {
     this.data = data;
     this.change = () => {};
     const style = data.defaultStyle();
@@ -160,6 +160,7 @@ export default class Toolbar {
     this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(...this.btnChildren);
     this.el.child(this.btns);
+    if (isHide) this.el.hide();
     bindDropdownChange.call(this);
     this.reset();
     setTimeout(() => {

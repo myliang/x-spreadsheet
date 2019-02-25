@@ -39,6 +39,8 @@ new Spreadsheet("#x-spreadsheet-demo")
 ```javascript
 // default options
 {
+  showToolbar: true,
+  showGrid: true,
   view: {
     height: () => document.documentElement.clientHeight,
     width: () => document.documentElement.clientWidth,

@@ -648,7 +648,7 @@ function sheetInitEvents() {
 export default class Sheet {
   constructor(targetEl, data) {
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(data);
+    this.toolbar = new Toolbar(data, !data.settings.showToolbar);
     targetEl.children(this.toolbar.el, this.el);
     this.data = data;
     // table

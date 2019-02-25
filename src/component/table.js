@@ -156,7 +156,9 @@ function renderContentGrid({
   sri, sci, eri, eci,
 }, scrollOffset = { x: 0, y: 0 }) {
   const { draw, data } = this;
-  const { cols, rows } = data;
+  const { cols, rows, settings } = data;
+  if (!settings.showGrid) return;
+
   draw.save();
   draw.attr(tableGridStyle)
     .translate(cols.indexWidth, rows.height)
