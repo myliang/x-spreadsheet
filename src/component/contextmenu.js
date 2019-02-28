@@ -2,20 +2,21 @@
 import { h } from './element';
 import { bind } from '../event';
 import { cssPrefix } from '../config';
+import { t } from '../locale/locale';
 
 const menuItems = [
-  { key: 'copy', title: 'Copy', label: 'Ctrl+C' },
-  { key: 'cut', title: 'Cut', label: 'Ctrl+X' },
-  { key: 'paste', title: 'Paste', label: 'Ctrl+V' },
-  { key: 'paste-value', title: 'Paste values only', label: 'Ctrl+Shift+V' },
-  { key: 'paste-format', title: 'Paste format only', label: 'Ctrl+Alt+V' },
+  { key: 'copy', title: t('contextmenu.copy'), label: 'Ctrl+C' },
+  { key: 'cut', title: t('contextmenu.cut'), label: 'Ctrl+X' },
+  { key: 'paste', title: t('contextmenu.paste'), label: 'Ctrl+V' },
+  { key: 'paste-value', title: t('contextmenu.pasteValue'), label: 'Ctrl+Shift+V' },
+  { key: 'paste-format', title: t('contextmenu.pasteFormat'), label: 'Ctrl+Alt+V' },
   { key: 'divider' },
-  { key: 'insert-row', title: 'Insert row' },
-  { key: 'insert-column', title: 'Insert column' },
+  { key: 'insert-row', title: t('contextmenu.insertRow') },
+  { key: 'insert-column', title: t('contextmenu.insertColumn') },
   { key: 'divider' },
-  { key: 'delete-row', title: 'Delete row' },
-  { key: 'delete-column', title: 'Delete column' },
-  { key: 'delete-cell-text', title: 'Delete cell' },
+  { key: 'delete-row', title: t('contextmenu.deleteRow') },
+  { key: 'delete-column', title: t('contextmenu.deleteColumn') },
+  { key: 'delete-cell-text', title: t('contextmenu.deleteCellText') },
 ];
 
 function buildMenuItem(item) {

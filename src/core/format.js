@@ -1,3 +1,5 @@
+import { t } from '../locale/locale';
+
 const formatStringRender = v => v;
 
 const formatNumberRender = (v) => {
@@ -12,68 +14,68 @@ const formatNumberRender = (v) => {
 const baseFormats = [
   {
     key: 'normal',
-    title: 'Normal',
+    title: t('format.normal'),
     type: 'string',
     render: formatStringRender,
   },
   {
     key: 'text',
-    title: 'Plain Text',
+    title: t('format.text'),
     type: 'string',
     render: formatStringRender,
   },
   {
     key: 'number',
-    title: 'Number',
+    title: t('format.number'),
     type: 'number',
     label: '1,000.12',
     render: formatNumberRender,
   },
   {
     key: 'percent',
-    title: 'Percent',
+    title: t('format.percent'),
     type: 'number',
     label: '10.12%',
     render: v => `${v}%`,
   },
   {
     key: 'rmb',
-    title: 'RMB',
+    title: t('format.rmb'),
     type: 'number',
     label: '￥10.00',
     render: v => `￥${formatNumberRender(v)}`,
   },
   {
     key: 'usd',
-    title: 'USD',
+    title: t('format.usd'),
     type: 'number',
     label: '$10.00',
     render: v => `$${formatNumberRender(v)}`,
   },
   {
     key: 'date',
-    title: 'Date',
+    title: t('format.date'),
     type: 'date',
     label: '26/09/2008',
     render: formatStringRender,
   },
   {
     key: 'time',
-    title: 'Time',
+    title: t('format.time'),
     type: 'date',
     label: '15:59:00',
     render: formatStringRender,
   },
   {
     key: 'datetime',
-    title: 'Date time',
+    title: t('format.datetime'),
     type: 'date',
     label: '26/09/2008 15:59:00',
     render: formatStringRender,
   },
   {
     key: 'duration',
-    title: 'Duration',
+    title: t('format.duration'),
     type: 'date',
     label: '24:01:00',
     render: formatStringRender,

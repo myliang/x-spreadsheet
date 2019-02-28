@@ -12,6 +12,7 @@ import DropdownBorder from './dropdown_border';
 import Dropdown from './dropdown';
 import Icon from './icon';
 import { cssPrefix } from '../config';
+import { t } from '../locale/locale';
 
 function buildIcon(name) {
   return new Icon(name);
@@ -52,9 +53,9 @@ function toggleChange(type) {
   let elName = type;
   const types = type.split('-');
   if (types.length > 1) {
-    types.forEach((t, i) => {
-      if (i === 0) elName = t;
-      else elName += t[0].toUpperCase() + t.substring(1);
+    types.forEach((it, i) => {
+      if (i === 0) elName = it;
+      else elName += it[0].toUpperCase() + it.substring(1);
     });
   }
   const el = this[`${elName}El`];
@@ -124,38 +125,38 @@ export default class Toolbar {
     this.ddBorder = new DropdownBorder();
     this.ddMore = new DropdownMore();
     this.btnChildren = [
-      this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
-      this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
+      this.undoEl = buildButtonWithIcon(`${t('toolbar.undo')} (Ctrl+Z)`, 'undo', () => this.change('undo')),
+      this.redoEl = buildButtonWithIcon(`${t('toolbar.undo')} (Ctrl+Y)`, 'redo', () => this.change('redo')),
       // this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
-      this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat')),
-      this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
+      this.paintformatEl = buildButtonWithIcon(`${t('toolbar.paintformat')}`, 'paintformat', () => toggleChange.call(this, 'paintformat')),
+      this.clearformatEl = buildButtonWithIcon(`${t('toolbar.clearformat')}`, 'clearformat', () => this.change('clearformat')),
       buildDivider(),
-      buildButton('Format').child(this.ddFormat.el),
+      buildButton(`${t('toolbar.format')}`).child(this.ddFormat.el),
       buildDivider(),
-      buildButton('Font').child(this.ddFont.el),
-      buildButton('Font size').child(this.ddFontSize.el),
+      buildButton(`${t('toolbar.font')}`).child(this.ddFont.el),
+      buildButton(`${t('toolbar.fontSize')}`).child(this.ddFontSize.el),
       buildDivider(),
-      this.fontBoldEl = buildButtonWithIcon('Bold (Ctrl+B)', 'bold', () => toggleChange.call(this, 'font-bold')),
-      this.fontItalicEl = buildButtonWithIcon('Italic (Ctrl+I)', 'italic', () => toggleChange.call(this, 'font-italic')),
-      this.underlineEl = buildButtonWithIcon('Underline (Ctrl+U)', 'underline', () => toggleChange.call(this, 'underline')),
-      this.striketEl = buildButtonWithIcon('Strike', 'strike', () => toggleChange.call(this, 'strike')),
-      buildButton('Text color').child(this.ddTextColor.el),
+      this.fontBoldEl = buildButtonWithIcon(`${t('toolbar.fontBold')} (Ctrl+B)`, 'bold', () => toggleChange.call(this, 'font-bold')),
+      this.fontItalicEl = buildButtonWithIcon(`${t('toolbar.fontItalic')} (Ctrl+I)`, 'italic', () => toggleChange.call(this, 'font-italic')),
+      this.underlineEl = buildButtonWithIcon(`${t('toolbar.underline')} (Ctrl+U)`, 'underline', () => toggleChange.call(this, 'underline')),
+      this.striketEl = buildButtonWithIcon(`${t('toolbar.strike')}`, 'strike', () => toggleChange.call(this, 'strike')),
+      buildButton(`${t('toolbar.textColor')}`).child(this.ddTextColor.el),
       buildDivider(),
-      buildButton('Fill color').child(this.ddFillColor.el),
-      buildButton('Borders').child(this.ddBorder.el),
-      this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge')),
+      buildButton(`${t('toolbar.fillColor')}`).child(this.ddFillColor.el),
+      buildButton(`${t('toolbar.border')}`).child(this.ddBorder.el),
+      this.mergeEl = buildButtonWithIcon(`${t('toolbar.merge')}`, 'merge', () => toggleChange.call(this, 'merge')),
       buildDivider(),
-      buildButton('Horizontal align').child(this.ddAlign.el),
-      buildButton('Vertical align').child(this.ddVAlign.el),
-      this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap')),
+      buildButton(`${t('toolbar.align')}`).child(this.ddAlign.el),
+      buildButton(`${t('toolbar.valign')}`).child(this.ddVAlign.el),
+      this.textwrapEl = buildButtonWithIcon(`${t('toolbar.textwrap')}`, 'textwrap', () => toggleChange.call(this, 'textwrap')),
       buildDivider(),
       // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
       // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
       // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
-      this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze')),
-      buildButton('Functions').child(this.ddFormula.el),
+      this.freezeEl = buildButtonWithIcon(`${t('toolbar.freeze')}`, 'freeze', () => toggleChange.call(this, 'freeze')),
+      buildButton(`${t('toolbar.formula')}`).child(this.ddFormula.el),
       // buildDivider(),
-      this.moreEl = buildButton('More').child(this.ddMore.el).hide(),
+      this.moreEl = buildButton(`${t('toolbar.more')}`).child(this.ddMore.el).hide(),
     ];
     this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(...this.btnChildren);

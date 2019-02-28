@@ -3,6 +3,7 @@ import { h } from './component/element';
 import DataProxy from './core/data_proxy';
 import Sheet from './component/sheet';
 import { cssPrefix } from './config';
+import { locale } from './locale/locale';
 // import Bottombar from './component/bottombar';
 import './index.less';
 
@@ -41,6 +42,7 @@ const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 if (window) {
   window.x = window.x || {};
   window.x.spreadsheet = spreadsheet;
+  window.x.spreadsheet.locale = (lang, message) => locale(lang, message);
 }
 
 export default Spreadsheet;

@@ -15,9 +15,9 @@
     "url": "https://github.com/myliang/x-spreadsheet.git"
   },
   "scripts": {
-    "dev": "webpack-dev-server --open --config webpack.dev.js",
+    "dev": "webpack-dev-server --open --config build/webpack.dev.js",
     "test": "./node_modules/mocha/bin/mocha --require babel-core/register test/*",
-    "build": "webpack --config webpack.prod.js",
+    "build": "webpack --config build/webpack.prod.js",
     "lint": "./node_modules/eslint/bin/eslint.js src"
   },
   "keywords": [
@@ -27,7 +27,7 @@
   ],
   "devDependencies": {
     "babel-core": "^6.26.3",
-    "babel-loader": "^8.0.2",
+    "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
     "clean-webpack-plugin": "^0.1.19",
     "css-loader": "^1.0.0",

@@ -4,30 +4,32 @@
     title
     render
 */
+import { t } from '../locale/locale';
+
 const baseFormulas = [
   {
     key: 'SUM',
-    title: '求和',
+    title: t('formula.sum'),
     render: ary => ary.reduce((a, b) => Number(a) + Number(b), 0),
   },
   {
     key: 'AVERAGE',
-    title: '求平均值',
+    title: t('formula.average'),
     render: ary => ary.reduce((a, b) => Number(a) + Number(b), 0) / ary.length,
   },
   {
     key: 'MAX',
-    title: '最大值',
+    title: t('formula.max'),
     render: ary => Math.max(...ary.map(v => Number(v))),
   },
   {
     key: 'MIN',
-    title: '最小值',
+    title: t('formula.min'),
     render: ary => Math.min(...ary.map(v => Number(v))),
   },
   {
     key: 'CONCAT',
-    title: '字符串拼接',
+    title: t('formula.concat'),
     render: ary => ary.join(''),
   },
 ];
