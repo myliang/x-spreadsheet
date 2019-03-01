@@ -35,6 +35,10 @@ class Spreadsheet {
     this.data.change = cb;
     return this;
   }
+
+  static locale(lang, message) {
+    locale(lang, message);
+  }
 }
 
 const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);

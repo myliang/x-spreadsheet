@@ -12,6 +12,16 @@
   </a>
 </p>
 
+## CDN
+```html
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.7/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.7/dist/xspreadsheet.js"></script>
+
+<script>
+   x.spreadsheet('#xspreadsheet');
+</script>
+```
+
 ## Install
 
 ```shell
