@@ -16,7 +16,7 @@
   },
   "scripts": {
     "dev": "webpack-dev-server --open --config build/webpack.dev.js",
-    "test": "./node_modules/mocha/bin/mocha --require babel-core/register test/*",
+    "test": "./node_modules/mocha/bin/mocha --require @babel/register test/*",
     "build": "webpack --config build/webpack.prod.js",
     "build-locale": "webpack --config build/webpack.locale.js",
     "lint": "./node_modules/eslint/bin/eslint.js src"
@@ -29,6 +29,7 @@
   "devDependencies": {
     "@babel/core": "^7.3.4",
     "@babel/preset-env": "^7.3.4",
+    "@babel/register": "^7.0.0",
     "babel-loader": "^8.0.5",
     "clean-webpack-plugin": "^0.1.19",
     "css-loader": "^1.0.0",

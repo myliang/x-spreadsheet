@@ -13,9 +13,9 @@ export default class DropdownFormat extends Dropdown {
       if (it.key === 'divider') {
         item.addClass('divider');
       } else {
-        item.child(it.title)
+        item.child(it.title())
           .on('click', () => {
-            this.setTitle(it.title);
+            this.setTitle(it.title());
             this.change(it);
           });
         if (it.label) item.child(h('div', 'label').html(it.label));

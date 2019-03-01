@@ -4,7 +4,6 @@ import DataProxy from './core/data_proxy';
 import Sheet from './component/sheet';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
-// import Bottombar from './component/bottombar';
 import './index.less';
 
 

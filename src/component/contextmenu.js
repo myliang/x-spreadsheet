@@ -2,21 +2,21 @@
 import { h } from './element';
 import { bind } from '../event';
 import { cssPrefix } from '../config';
-import { t } from '../locale/locale';
+import { tf } from '../locale/locale';
 
 const menuItems = [
-  { key: 'copy', title: t('contextmenu.copy'), label: 'Ctrl+C' },
-  { key: 'cut', title: t('contextmenu.cut'), label: 'Ctrl+X' },
-  { key: 'paste', title: t('contextmenu.paste'), label: 'Ctrl+V' },
-  { key: 'paste-value', title: t('contextmenu.pasteValue'), label: 'Ctrl+Shift+V' },
-  { key: 'paste-format', title: t('contextmenu.pasteFormat'), label: 'Ctrl+Alt+V' },
+  { key: 'copy', title: tf('contextmenu.copy'), label: 'Ctrl+C' },
+  { key: 'cut', title: tf('contextmenu.cut'), label: 'Ctrl+X' },
+  { key: 'paste', title: tf('contextmenu.paste'), label: 'Ctrl+V' },
+  { key: 'paste-value', title: tf('contextmenu.pasteValue'), label: 'Ctrl+Shift+V' },
+  { key: 'paste-format', title: tf('contextmenu.pasteFormat'), label: 'Ctrl+Alt+V' },
   { key: 'divider' },
-  { key: 'insert-row', title: t('contextmenu.insertRow') },
-  { key: 'insert-column', title: t('contextmenu.insertColumn') },
+  { key: 'insert-row', title: tf('contextmenu.insertRow') },
+  { key: 'insert-column', title: tf('contextmenu.insertColumn') },
   { key: 'divider' },
-  { key: 'delete-row', title: t('contextmenu.deleteRow') },
-  { key: 'delete-column', title: t('contextmenu.deleteColumn') },
-  { key: 'delete-cell-text', title: t('contextmenu.deleteCellText') },
+  { key: 'delete-row', title: tf('contextmenu.deleteRow') },
+  { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
+  { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
 ];
 
 function buildMenuItem(item) {
@@ -29,7 +29,7 @@ function buildMenuItem(item) {
       this.hide();
     })
     .children(
-      item.title,
+      item.title(),
       h('div', 'label').child(item.label || ''),
     );
 }

@@ -29,6 +29,10 @@ function t(key) {
   return v || '';
 }
 
+function tf(key) {
+  return () => t(key);
+}
+
 function locale(lang, message) {
   $lang = lang;
   if (message) {
@@ -43,4 +47,5 @@ export default {
 export {
   locale,
   t,
+  tf,
 };
