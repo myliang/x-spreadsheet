@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title><%= htmlWebpackPlugin.options.title %></title>
+    
 </head>
 <body onload="load()">
   <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
-      // x.spreadsheet.locale('en');
+      x.spreadsheet.locale('zh-cn');
       x.spreadsheet('#x-spreadsheet-demo')
         .loadData({
           freeze: 'C3',

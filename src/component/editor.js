@@ -112,8 +112,8 @@ export default class Editor {
   }
 
   clear() {
-    const { cell } = this;
-    const cellText = (cell && cell.text) || '';
+    // const { cell } = this;
+    // const cellText = (cell && cell.text) || '';
     // console.log(cellText, ':', this.inputText === '');
     if (this.inputText !== '') {
       this.change('finished', this.inputText);
