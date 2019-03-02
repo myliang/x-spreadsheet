@@ -1,4 +1,4 @@
-import helper from '../helper';
+// import helper from '../helper';
 
 export default class History {
   constructor() {
@@ -7,7 +7,7 @@ export default class History {
   }
 
   add(data) {
-    this.undoItems.push(helper.cloneDeep(data));
+    this.undoItems.push(JSON.stringify(data));
     this.redoItems = [];
   }
 
@@ -22,16 +22,16 @@ export default class History {
   undo(currentd, cb) {
     const { undoItems, redoItems } = this;
     if (this.canUndo()) {
-      redoItems.push(helper.cloneDeep(currentd));
-      cb(undoItems.pop());
+      redoItems.push(JSON.stringify(currentd));
+      cb(JSON.parse(undoItems.pop()));
     }
   }
 
   redo(currentd, cb) {
     const { undoItems, redoItems } = this;
     if (this.canRedo()) {
-      undoItems.push(helper.cloneDeep(currentd));
-      cb(redoItems.pop());
+      undoItems.push(JSON.stringify(currentd));
+      cb(JSON.parse(redoItems.pop()));
     }
   }
 }

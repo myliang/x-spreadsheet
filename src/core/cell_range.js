@@ -111,10 +111,10 @@ class CellRange {
   static valueOf(ref) {
     // B1:B8, B1 => 1 x 1 cell range
     const refs = ref.split(':');
-    const [sri, sci] = expr2xy(refs[0]);
+    const [sci, sri] = expr2xy(refs[0]);
     let [eri, eci] = [sri, sci];
     if (refs.length > 1) {
-      [eri, eci] = expr2xy(refs[1]);
+      [eci, eri] = expr2xy(refs[1]);
     }
     return new CellRange(sri, sci, eri, eci);
   }
