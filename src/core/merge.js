@@ -73,8 +73,10 @@ class Merges {
     this._.forEach((it1) => {
       const it = it1;
       if (it.within(cellRange)) {
+        it.eri += rn;
         it.sri += rn;
         it.sci += cn;
+        it.eci += cn;
       }
     });
   }

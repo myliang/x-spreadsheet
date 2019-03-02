@@ -277,13 +277,13 @@ export default class Selector {
   setEnd(ri, ci) {
     const { data } = this;
     this.range = data.calSelectedRangeByEnd(ri, ci);
-    // this.sIndexes = sIndexes;
-    // this.eIndexes = eIndexes;
-    this.reset();
+    setAllAreaOffset.call(this, this.data.getSelectedRect());
   }
 
   reset() {
-    setAllAreaOffset.call(this, this.data.getSelectedRect());
+    // console.log('::::', this.data);
+    const { eri, eci } = this.data.selector.range;
+    this.setEnd(eri, eci);
   }
 
   showAutofill(ri, ci) {
