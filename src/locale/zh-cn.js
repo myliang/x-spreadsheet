@@ -54,4 +54,17 @@ export default {
     min: '求最小值',
     concat: '字符拼接',
   },
+  validation: {
+    required: '此值必填',
+    notMatch: '此值不匹配验证规则',
+    between: '此值应在 {} 和 {} 之间',
+    notBetween: '此值不应在 {} 和 {} 之间',
+    equal: '此值应该等于 {}',
+    notEqual: '此值不应该等于 {}',
+    lessThan: '此值应该小于 {}',
+    lessThanEqual: '此值应该小于等于 {}',
+    greaterThan: '此值应该大于 {}',
+    greaterThanEqual: '此值应该大于等于 {}',
+  },
+
 };

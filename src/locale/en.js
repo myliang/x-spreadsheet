@@ -54,4 +54,16 @@ export default {
     min: 'Min',
     concat: 'Concat',
   },
+  validation: {
+    required: 'it must be required',
+    notMatch: 'it not match its validation rule',
+    between: 'it is between {} and {}',
+    notBetween: 'it is not between {} and {}',
+    equal: 'it equal to {}',
+    notEqual: 'it not equal to {}',
+    lessThan: 'it less than {}',
+    lessThanEqual: 'it less than or equal to {}',
+    greaterThan: 'it greater than {}',
+    greaterThanEqual: 'it greater than or equal to {}',
+  },
 };
