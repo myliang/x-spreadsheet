@@ -1,6 +1,7 @@
 //* global window */
 import { h } from './element';
 import Suggest from './suggest';
+import Datepicker from './datepicker';
 import { cssPrefix } from '../config';
 // import { mouseMoveUp } from '../event';
 
@@ -86,12 +87,19 @@ export default class Editor {
     this.suggest = new Suggest(formulas, (it) => {
       suggestItemClick.call(this, it);
     });
+    this.datepicker = new Datepicker();
+    this.datepicker.change((d) => {
+      // console.log('d:', d);
+      this.setText(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`);
+      this.clear();
+    });
     this.areaEl = h('div', `${cssPrefix}-editor-area`)
       .children(
         this.textEl = h('textarea', '')
           .on('input', evt => inputEventHandler.call(this, evt)),
         this.textlineEl = h('div', 'textline'),
         this.suggest.el,
+        this.datepicker.el,
       )
       .on('mousemove.stop', () => {})
       .on('mousedown.stop', () => {});
@@ -159,8 +167,16 @@ export default class Editor {
 
   setCell(cell) {
     this.el.show();
+    this.datepicker.show();
     this.cell = cell;
     const text = (cell && cell.text) || '';
+    this.setText(text);
+    if (!/^\s*$/.test(text)) {
+      this.datepicker.setValue(new Date(text.replace(new RegExp('-', 'g'), '/')));
+    }
+  }
+
+  setText(text) {
     this.inputText = text;
     // console.log('text>>:', text);
     setText.call(this, text, text.length);

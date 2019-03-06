@@ -34,6 +34,7 @@ export default {
     deleteColumn: '删除列',
     deleteCell: '删除',
     deleteCellText: '删除数据',
+    validation: '数据验证',
   },
   format: {
     normal: '正常',
@@ -66,5 +67,8 @@ export default {
     greaterThan: '此值应该大于 {}',
     greaterThanEqual: '此值应该大于等于 {}',
   },
-
+  calendar: {
+    weeks: ['日', '一', '二', '三', '四', '五', '六'],
+    months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+  },
 };

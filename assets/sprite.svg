@@ -124,8 +124,12 @@
 </g>
 <g xmlns="http://www.w3.org/2000/svg" transform="translate(18,54)"><polygon fill="#000000" fill-rule="evenodd" points="5 0 .5 4.5 1.56 5.56 5 2.12 8.44 5.56 9.5 4.5" transform="translate(4 6)"/>
 </g>
-<g xmlns="http://www.w3.org/2000/svg" transform="translate(36,54)"><polygon fill="#000000" fill-rule="evenodd" points="12 5 3.125 5 7.06 1.06 6 0 0 6 6 12 7.06 10.94 3.125 7 12 7" transform="matrix(-1 0 0 1 15 3)"/>
+<g xmlns="http://www.w3.org/2000/svg" transform="translate(36,54)"><polygon fill="#000000" fill-rule="evenodd" points="8.44 .44 5 3.88 1.56 .44 .5 1.5 5 6 9.5 1.5" transform="rotate(90 4 8)"/>
 </g>
-<g xmlns="http://www.w3.org/2000/svg" transform="translate(54,54)"><polygon fill="#000000" fill-rule="evenodd" points="12 5 3.125 5 7.06 1.06 6 0 0 6 6 12 7.06 10.94 3.125 7 12 7" transform="translate(3 3)"/>
+<g xmlns="http://www.w3.org/2000/svg" transform="translate(54,54)"><polygon fill="#000000" fill-rule="evenodd" points="5 0 .5 4.5 1.56 5.56 5 2.12 8.44 5.56 9.5 4.5" transform="rotate(90 4 8)"/>
+</g>
+<g xmlns="http://www.w3.org/2000/svg" transform="translate(72,54)"><polygon fill="#000000" fill-rule="evenodd" points="12 5 3.125 5 7.06 1.06 6 0 0 6 6 12 7.06 10.94 3.125 7 12 7" transform="matrix(-1 0 0 1 15 3)"/>
+</g>
+<g xmlns="http://www.w3.org/2000/svg" transform="translate(90,54)"><polygon fill="#000000" fill-rule="evenodd" points="12 5 3.125 5 7.06 1.06 6 0 0 6 6 12 7.06 10.94 3.125 7 12 7" transform="translate(3 3)"/>
 </g>
 </svg>

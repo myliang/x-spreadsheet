@@ -34,6 +34,7 @@ export default {
     deleteColumn: 'Delete column',
     deleteCell: 'Delete cell',
     deleteCellText: 'Delete cell text',
+    validation: 'Data validations',
   },
   format: {
     normal: 'Normal',
@@ -65,5 +66,9 @@ export default {
     lessThanEqual: 'it less than or equal to {}',
     greaterThan: 'it greater than {}',
     greaterThanEqual: 'it greater than or equal to {}',
+  },
+  calendar: {
+    weeks: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   },
 };

@@ -386,7 +386,7 @@ body {
   box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
   background: #fff;
   z-index: 100;
-  max-height: 360px;
+  /* max-height: 360px; */
   width: 260px;
   pointer-events: auto;
   overflow: auto;
@@ -453,6 +453,80 @@ body {
   vertical-align: middle;
   height: 18px;
   margin: 12px 3px 0;
+}
+
+.x-spreadsheet-calendar {
+  color: rgba(0,0,0,.65);
+  background: #ffffff;
+  user-select: none;
+  
+  .calendar-header {
+    font-weight: 700;
+    line-height: 30px;
+    text-align: center;
+    width: 100%;
+    float: left;
+    background: #f9fafb;
+
+    .calendar-header-left {
+      padding-left: 5px;
+      float: left;
+    }
+
+    .calendar-header-right {
+      float: right;
+      
+      a {
+        padding: 3px 0;
+        margin-right: 2px;
+        border-radius: 2px;
+      }
+      a:hover {
+        background: rgba(0,0,0,.08);
+      }
+    }
+  }
+  
+  .calendar-body {
+    border-collapse: collapse;
+    border-spacing: 0;
+    
+    th, td {
+      width: 100%/7;
+      min-width: 32px;
+      text-align: center;
+      font-weight: 700;
+      line-height: 30px;
+      padding: 0;
+    }
+    
+    td > .cell {
+      // border: 1px solid rgba(0,0,0,.05);
+      
+      &:hover {
+        background: #ecf6fd;
+      }
+      
+      &.active, &.active:hover {
+        background: #ecf6fd;
+        color: #2185D0;
+      }
+      
+      &.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+.x-spreadsheet-datepicker {
+    box-shadow: 2px 2px 5px rgba(0,0,0,.2);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 5px);
+    z-index: 10;
+    width: auto;
 }
 
 @media screen and (min-width: 320px) and (max-width: 480px) {
@@ -638,6 +712,22 @@ body {
     &.line-type {
       left: -11 * @icon-size;
       top: -2 * @icon-size;
+    }
+    &.chevron-down {
+      left: 0;
+      top: -3 * @icon-size;
+    }
+    &.chevron-up {
+      left: -1 * @icon-size;
+      top: -3 * @icon-size;
+    }
+    &.chevron-left {
+      left: -2 * @icon-size;
+      top: -3 * @icon-size;
+    }
+    &.chevron-right {
+      left: -3 * @icon-size;
+      top: -3 * @icon-size;
     }
   }
 }

@@ -8,6 +8,7 @@ import { Merges } from './merge';
 import helper from '../helper';
 import { Rows } from './row';
 import { Cols } from './col';
+import { Validations } from './validation';
 import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
 
@@ -295,7 +296,7 @@ export default class DataProxy {
     this.merges = new Merges(); // [CellRange, ...]
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
-    // this.validations = [];
+    this.validations = new Validations();
     this.hyperlinks = {};
     this.comments = {};
     // save data end
@@ -890,7 +891,8 @@ export default class DataProxy {
 
   setData(d) {
     Object.keys(d).forEach((property) => {
-      if (property === 'merges' || property === 'rows' || property === 'cols') {
+      if (property === 'merges' || property === 'rows'
+        || property === 'cols' || property === 'validations') {
         this[property].setData(d[property]);
       } else if (property === 'freeze') {
         this.freeze = expr2xy(d[property]);
@@ -903,7 +905,7 @@ export default class DataProxy {
 
   getData() {
     const {
-      name, freeze, styles, merges, rows, cols,
+      name, freeze, styles, merges, rows, cols, validations,
     } = this;
     return {
       name,
@@ -912,6 +914,7 @@ export default class DataProxy {
       merges: merges.getData(),
       rows: rows.getData(),
       cols: cols.getData(),
+      validations: validations.getData(),
     };
   }
 }
