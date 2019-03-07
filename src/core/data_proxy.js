@@ -909,7 +909,7 @@ export default class DataProxy {
     } = this;
     return {
       name,
-      freeze: xy2expr(...freeze),
+      freeze: xy2expr(freeze[1], freeze[0]),
       styles,
       merges: merges.getData(),
       rows: rows.getData(),
