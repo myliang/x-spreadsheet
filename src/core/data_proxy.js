@@ -895,7 +895,8 @@ export default class DataProxy {
         || property === 'cols' || property === 'validations') {
         this[property].setData(d[property]);
       } else if (property === 'freeze') {
-        this.freeze = expr2xy(d[property]);
+        const [x, y] = expr2xy(d[property]);
+        this.freeze = [y, x];
       } else if (d[property] !== undefined) {
         this[property] = d[property];
       }
