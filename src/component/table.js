@@ -69,9 +69,7 @@ function renderCell(rindex, cindex) {
   });
 }
 
-function renderContent({
-  sri, sci, eri, eci,
-}, scrollOffset) {
+function renderContent(viewRange, scrollOffset) {
   const { draw, data } = this;
   const { cols, rows } = data;
   draw.save();
@@ -79,12 +77,11 @@ function renderContent({
     .translate(-scrollOffset.x, -scrollOffset.y);
 
   // render cell at first
-  const nviewRange = new CellRange(sri, sci, eri - 1, eci - 1);
-  nviewRange.each((ri, ci) => {
+  viewRange.each((ri, ci) => {
     renderCell.call(this, ri, ci);
   });
   // render mergeCell at second
-  data.eachMergesInView(nviewRange, (r) => {
+  data.eachMergesInView(viewRange, (r) => {
     renderCell.call(this, r.sri, r.sci);
   });
 
@@ -103,8 +100,8 @@ function renderFixedHeaders(viewRange) {
   const { draw, data } = this;
   const { cols, rows } = data;
   draw.save();
-  const sumHeight = rows.sumHeight(viewRange.sri, viewRange.eri) + rows.height;
-  const sumWidth = cols.sumWidth(viewRange.sci, viewRange.eci) + cols.indexWidth;
+  const sumHeight = rows.sumHeight(viewRange.sri, viewRange.eri + 1) + rows.height;
+  const sumWidth = cols.sumWidth(viewRange.sci, viewRange.eci + 1) + cols.indexWidth;
   // draw rect background
   draw.attr(tableFixedHeaderCleanStyle)
     .fillRect(0, 0, cols.indexWidth, sumHeight)
@@ -122,26 +119,24 @@ function renderFixedHeaders(viewRange) {
     const y = y1 + rows.height;
     // console.log('y1:', y1, ', i:', i);
     draw.line([0, y], [cols.indexWidth, y]);
-    if (i !== viewRange.eri) {
-      if (sri <= i && i < eri + 1) {
-        renderSelectedHeaderCell.call(this, 0, y, cols.indexWidth, rowHeight);
-      }
-      draw.fillText(i + 1, cols.indexWidth / 2, y + (rowHeight / 2));
+    if (sri <= i && i < eri + 1) {
+      renderSelectedHeaderCell.call(this, 0, y, cols.indexWidth, rowHeight);
     }
+    draw.fillText(i + 1, cols.indexWidth / 2, y + (rowHeight / 2));
   });
+  draw.line([0, sumHeight], [cols.indexWidth, sumHeight]);
   draw.line([cols.indexWidth, 0], [cols.indexWidth, sumHeight]);
   // x-header-text
   data.colEach(viewRange.sci, viewRange.eci, (i, x1, colWidth) => {
     const x = x1 + cols.indexWidth;
     // console.log('x1:', x1, ', i:', i);
     draw.line([x, 0], [x, rows.height]);
-    if (i !== viewRange.eci) {
-      if (sci <= i && i < eci + 1) {
-        renderSelectedHeaderCell.call(this, x, 0, colWidth, rows.height);
-      }
-      draw.fillText(stringAt(i), x + (colWidth / 2), rows.height / 2);
+    if (sci <= i && i < eci + 1) {
+      renderSelectedHeaderCell.call(this, x, 0, colWidth, rows.height);
     }
+    draw.fillText(stringAt(i), x + (colWidth / 2), rows.height / 2);
   });
+  draw.line([sumWidth, 0], [sumWidth, rows.height]);
   draw.line([0, rows.height], [sumWidth, rows.height]);
   // left-top-cell
   draw.attr({ fillStyle: '#f4f5f8' })
@@ -163,16 +158,22 @@ function renderContentGrid({
   draw.attr(tableGridStyle)
     .translate(cols.indexWidth, rows.height)
     .translate(scrollOffset.x, scrollOffset.y);
-  const sumWidth = cols.sumWidth(sci, eci);
-  const sumHeight = rows.sumHeight(sri, eri);
+  const sumWidth = cols.sumWidth(sci, eci + 1);
+  const sumHeight = rows.sumHeight(sri, eri + 1);
   // console.log('sumWidth:', sumWidth);
   draw.fillRect(0, 0, sumWidth, sumHeight);
   // console.log('rowStart:', rowStart, ', rowLen:', rowLen);
-  data.rowEach(sri, eri, (i, y) => {
+  data.rowEach(sri, eri, (i, y, h) => {
     draw.line([0, y], [sumWidth, y]);
+    if (i === eri) {
+      draw.line([0, y + h], [sumWidth, y + h]);
+    }
   });
-  data.colEach(sci, eci, (i, x) => {
+  data.colEach(sci, eci, (i, x, w) => {
     draw.line([x, 0], [x, sumHeight]);
+    if (i === eci) {
+      draw.line([x + w, 0], [x + w, sumHeight]);
+    }
   });
   draw.restore();
 }
@@ -191,41 +192,40 @@ function renderFreezeGridAndContent({ eri, eci }) {
   const { data } = this;
   const [fri, fci] = data.freeze;
   const { scroll, cols, rows } = data;
-  const sheight = rows.sumHeight(0, fri);
+  // const sheight = rows.sumHeight(0, fri);
   const twidth = data.viewWidth();
   const ftw = data.freezeTotalWidth();
   const fth = data.freezeTotalHeight();
   if (fri > 0) {
     renderContentGrid.call(
       this,
-      new CellRange(0, fci + data.scroll.ci, fri, eci),
+      new CellRange(0, fci + data.scroll.ci, fri - 1, eci),
       { x: ftw, y: 0 },
     );
     renderContent.call(
       this,
-      new CellRange(0, fci, fri, eci),
+      new CellRange(0, fci, fri - 1, eci),
       { x: scroll.x, y: 0 },
     );
   }
   const theight = data.viewHeight();
-  const swidth = cols.sumWidth(0, fci);
   if (fci > 0) {
     renderContentGrid.call(
       this,
-      new CellRange(fri + data.scroll.ri, 0, eri, fci),
+      new CellRange(fri + data.scroll.ri, 0, eri, fci - 1),
       { x: 0, y: fth },
     );
     renderContent.call(
       this,
-      new CellRange(fri, 0, eri, fci),
+      new CellRange(fri, 0, eri, fci - 1),
       { x: 0, y: scroll.y },
     );
   }
   renderFreezeHighlightLine.call(
-    this, [0, sheight], [twidth, sheight],
+    this, [0, fth], [twidth, fth],
   );
   renderFreezeHighlightLine.call(
-    this, [swidth, 0], [swidth, theight],
+    this, [ftw, 0], [ftw, theight],
   );
 }
 
@@ -251,7 +251,7 @@ class Table {
     this.draw.resize(data.viewWidth(), data.viewHeight());
     this.clear();
     const viewRange = data.viewRange();
-    renderAll.call(this, data.viewRange(), data.scroll);
+    renderAll.call(this, viewRange, data.scroll);
     const [fri, fci] = data.freeze;
     if (fri > 0 || fci > 0) {
       renderFreezeGridAndContent.call(this, viewRange);
