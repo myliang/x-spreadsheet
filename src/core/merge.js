@@ -50,7 +50,7 @@ class Merges {
       } = cellRange;
       const range = cellRange;
       if (type === 'row') {
-        if (sri > index) {
+        if (sri >= index) {
           range.sri += n;
           range.eri += n;
         } else if (sri < index && index <= eri) {
@@ -58,7 +58,7 @@ class Merges {
           cbWithin(sri, sci, n, 0);
         }
       } else if (type === 'column') {
-        if (sci > index) {
+        if (sci >= index) {
           range.sci += n;
           range.eci += n;
         } else if (sci < index && index <= eci) {
