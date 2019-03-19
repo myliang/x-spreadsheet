@@ -3,6 +3,7 @@ import { h } from './element';
 import { bind } from '../event';
 import { cssPrefix } from '../config';
 import { tf } from '../locale/locale';
+import Modal from './modal';
 
 const menuItems = [
   { key: 'copy', title: tf('contextmenu.copy'), label: 'Ctrl+C' },

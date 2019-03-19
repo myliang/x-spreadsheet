@@ -472,7 +472,8 @@ function sheetInitEvents() {
   // contextmenu
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
-    if (type === 'copy') {
+    if (type === 'validation') {
+    } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
       cut.call(this);

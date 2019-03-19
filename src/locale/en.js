@@ -71,4 +71,9 @@ export default {
     weeks: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   },
+  dataValidation: {
+    mode: 'Mode',
+    range: 'Cell Range',
+    criteria: 'Criteria',
+  },
 };
