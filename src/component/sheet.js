@@ -8,6 +8,7 @@ import Editor from './editor';
 import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar';
+import ModalValidation from './modal_validation';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
 
@@ -419,6 +420,7 @@ function sheetInitEvents() {
     contextMenu,
     data,
     toolbar,
+    dataValidation,
   } = this;
   // overlayer
   overlayerEl
@@ -473,6 +475,7 @@ function sheetInitEvents() {
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
     if (type === 'validation') {
+      dataValidation.setValue();
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -665,6 +668,8 @@ export default class Sheet {
       () => this.getTableOffset(),
       data.rows.height,
     );
+    // data validation
+    this.dataValidation = new ModalValidation();
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getTableOffset());
     // selector
@@ -685,6 +690,7 @@ export default class Sheet {
       this.verticalScrollbar.el,
       this.horizontalScrollbar.el,
       this.contextMenu.el,
+      this.dataValidation.el,
     );
     // table
     this.table = new Table(this.tableEl.el, data);

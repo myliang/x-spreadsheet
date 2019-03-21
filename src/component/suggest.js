@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bind, unbind } from '../event';
 import { cssPrefix } from '../config';
 
 function inputMovePrev(evt) {
@@ -8,7 +8,7 @@ function inputMovePrev(evt) {
   evt.stopPropagation();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
-  filterItems[this.itemIndex].toggle();
+  if (this.itemIndex >= 0) filterItems[this.itemIndex].toggle();
   this.itemIndex -= 1;
   if (this.itemIndex < 0) {
     this.itemIndex = filterItems.length - 1;
@@ -20,7 +20,7 @@ function inputMoveNext(evt) {
   evt.stopPropagation();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
-  filterItems[this.itemIndex].toggle();
+  if (this.itemIndex >= 0) filterItems[this.itemIndex].toggle();
   this.itemIndex += 1;
   if (this.itemIndex > filterItems.length - 1) {
     this.itemIndex = 0;
@@ -33,6 +33,7 @@ function inputEnter(evt) {
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
   evt.stopPropagation();
+  if (this.itemIndex < 0) this.itemIndex = 0;
   filterItems[this.itemIndex].el.click();
   this.hide();
 }
@@ -68,12 +69,16 @@ function inputKeydownHandler(evt) {
 }
 
 export default class Suggest {
-  constructor(items, itemClick) {
+  constructor(items, itemClick, width = '200px', wrapEl) {
     this.filterItems = [];
     this.items = items;
-    this.el = h('div', `${cssPrefix}-suggest`).hide();
+    this.el = h('div', `${cssPrefix}-suggest`).css('width', width).hide();
     this.itemClick = itemClick;
-    this.itemIndex = 0;
+    this.itemIndex = -1;
+    this.outsideClick = (evt) => {
+      if ((wrapEl || this.el).contains(evt.target)) return;
+      this.hide();
+    };
   }
 
   setOffset(v) {
@@ -83,8 +88,9 @@ export default class Suggest {
 
   hide() {
     this.filterItems = [];
-    this.itemIndex = 0;
+    this.itemIndex = -1;
     this.el.hide();
+    unbind(window, 'click', this.outsideClick);
   }
 
   search(word) {
@@ -99,22 +105,19 @@ export default class Suggest {
           this.itemClick(it);
           this.hide();
         });
-      item.child(h('div', 'label').html(it.title || it.label));
+      item.child(h('div', 'label').html(it.label));
       return item;
     });
     this.filterItems = items;
     if (items.length <= 0) {
       return;
     }
-    items[0].toggle();
+    // items[0].toggle();
     this.el.html('').children(...items).show();
+    bind(window, 'click', this.outsideClick);
   }
 
   bindInputEvents(input) {
     input.on('keydown', evt => inputKeydownHandler.call(this, evt));
-    bind(window, 'click', (evt) => {
-      if (this.el.contains(evt.target)) return;
-      this.hide();
-    });
   }
 }

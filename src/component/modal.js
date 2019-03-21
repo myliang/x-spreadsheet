@@ -3,19 +3,25 @@ import Icon from './icon';
 import { cssPrefix } from '../config';
 
 export default class Modal {
-  constructor(title, content) {
+  constructor(title, content, width = '500px') {
     this.title = title;
-    this.el = h('div', `${cssPrefix}-modal`).children(
+    this.el = h('div', `${cssPrefix}-modal`).css('width', width).children(
       h('div', `${cssPrefix}-modal-header`).children(
-        new Icon('close'),
+        new Icon('close').on('click.stop', () => this.hide()),
         this.title,
       ),
-      h('div', `${cssPrefix}-modal-content`).html(content),
+      h('div', `${cssPrefix}-modal-content`).children(...content),
     );
   }
 
   show() {
-    this.el.show();
+    const { width, height } = this.el.box();
+    const clientHeight = document.documentElement.clientHeight;
+    const clientWidth = document.documentElement.clientWidth;
+    this.el.offset({
+      left: (clientWidth - width) / 2,
+      top: (clientHeight - height) / 3,
+    }).show();
   }
 
   hide() {
