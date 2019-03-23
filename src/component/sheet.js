@@ -428,9 +428,14 @@ function sheetInitEvents() {
       overlayerMousemove.call(this, evt);
     })
     .on('mousedown', (evt) => {
+      // the left mouse button: mousedown → mouseup → click
+      // the right mouse button: mousedown → contenxtmenu → mouseup
       if (evt.buttons === 2) {
         if (data.xyInSelectedRect(evt.offsetX, evt.offsetY)) {
           contextMenu.setPosition(evt.offsetX, evt.offsetY);
+          evt.stopPropagation();
+        } else {
+          contextMenu.hide();
         }
       } else if (evt.detail === 2) {
         editorSet.call(this);

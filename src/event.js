@@ -7,16 +7,21 @@ export function unbind(target, name, fn) {
 }
 export function unbindClickoutside(el) {
   if (el.xclickoutside) {
-    unbind(window, 'click', el.xclickoutside);
+    unbind(window.document.body, 'click', el.xclickoutside);
   }
 }
+
+// the left mouse button: mousedown → mouseup → click
+// the right mouse button: mousedown → contenxtmenu → mouseup
+// the right mouse button in firefox(>65.0): mousedown → contenxtmenu → mouseup → click on window
 export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
   el.xclickoutside = (evt) => {
+    // console.log('clickoutside::');
     if (el.contains(evt.target)) return;
     cb(el);
     unbindClickoutside(el);
   };
-  bind(window, 'click', el.xclickoutside);
+  bind(window.document.body, 'click', el.xclickoutside);
 }
 export function mouseMoveUp(target, movefunc, upfunc) {
   bind(target, 'mousemove', movefunc);
