@@ -1,6 +1,5 @@
-/* global window */
 import { h } from './element';
-import { bind, unbind } from '../event';
+import { bindClickoutside, unbindClickoutside } from '../event';
 import { cssPrefix } from '../config';
 
 function inputMovePrev(evt) {
@@ -69,16 +68,12 @@ function inputKeydownHandler(evt) {
 }
 
 export default class Suggest {
-  constructor(items, itemClick, width = '200px', wrapEl) {
+  constructor(items, itemClick, width = '200px') {
     this.filterItems = [];
     this.items = items;
     this.el = h('div', `${cssPrefix}-suggest`).css('width', width).hide();
     this.itemClick = itemClick;
     this.itemIndex = -1;
-    this.outsideClick = (evt) => {
-      if ((wrapEl || this.el).contains(evt.target)) return;
-      this.hide();
-    };
   }
 
   setOffset(v) {
@@ -90,7 +85,7 @@ export default class Suggest {
     this.filterItems = [];
     this.itemIndex = -1;
     this.el.hide();
-    unbind(window, 'click', this.outsideClick);
+    unbindClickoutside(this.el);
   }
 
   search(word) {
@@ -114,7 +109,7 @@ export default class Suggest {
     }
     // items[0].toggle();
     this.el.html('').children(...items).show();
-    bind(window, 'click', this.outsideClick);
+    bindClickoutside(this.el);
   }
 
   bindInputEvents(input) {

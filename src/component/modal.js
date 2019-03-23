@@ -1,3 +1,4 @@
+/* global document */
 import { h } from './element';
 import Icon from './icon';
 import { cssPrefix } from '../config';
@@ -16,8 +17,7 @@ export default class Modal {
 
   show() {
     const { width, height } = this.el.box();
-    const clientHeight = document.documentElement.clientHeight;
-    const clientWidth = document.documentElement.clientWidth;
+    const { clientHeight, clientWidth } = document.documentElement;
     this.el.offset({
       left: (clientWidth - width) / 2,
       top: (clientHeight - height) / 3,

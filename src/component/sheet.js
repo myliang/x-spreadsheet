@@ -426,12 +426,11 @@ function sheetInitEvents() {
   overlayerEl
     .on('mousemove', (evt) => {
       overlayerMousemove.call(this, evt);
-    }).on('mousedown', (evt) => {
+    })
+    .on('mousedown', (evt) => {
       if (evt.buttons === 2) {
         if (data.xyInSelectedRect(evt.offsetX, evt.offsetY)) {
           contextMenu.setPosition(evt.offsetX, evt.offsetY);
-        } else {
-          contextMenu.hide();
         }
       } else if (evt.detail === 2) {
         editorSet.call(this);

@@ -1,9 +1,7 @@
-/* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bindClickoutside, unbindClickoutside } from '../event';
 import { cssPrefix } from '../config';
 import { tf } from '../locale/locale';
-import Modal from './modal';
 
 const menuItems = [
   { key: 'copy', title: tf('contextmenu.copy'), label: 'Ctrl+C' },
@@ -48,15 +46,11 @@ export default class ContextMenu {
       .hide();
     this.viewFn = viewFn;
     this.itemClick = () => {};
-    bind(window, 'click', (evt) => {
-      // console.log('outside:::', this.el.contains(evt.target));
-      if (this.el.contains(evt.target)) return;
-      this.hide();
-    });
   }
 
   hide() {
     this.el.hide();
+    unbindClickoutside(this.el);
   }
 
   setPosition(x, y) {
@@ -66,13 +60,12 @@ export default class ContextMenu {
     let top = y;
     let left = x;
     if (view.height - y <= height) {
-      // -1 : firefox bug, focus contextmenu
-      top -= height - 1;
+      top -= height;
     }
     if (view.width - x <= width) {
-      // -1 : firefox bug, focus contextmenu
-      left -= width - 1;
+      left -= width;
     }
     el.offset({ left, top });
+    bindClickoutside(el);
   }
 }

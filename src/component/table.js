@@ -191,7 +191,7 @@ function renderFreezeHighlightLine(p1, p2) {
 function renderFreezeGridAndContent({ eri, eci }) {
   const { data } = this;
   const [fri, fci] = data.freeze;
-  const { scroll, cols, rows } = data;
+  const { scroll } = data;
   // const sheight = rows.sumHeight(0, fri);
   const twidth = data.viewWidth();
   const ftw = data.freezeTotalWidth();

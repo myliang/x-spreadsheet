@@ -1,8 +1,22 @@
+/* global window */
 export function bind(target, name, fn) {
   target.addEventListener(name, fn);
 }
 export function unbind(target, name, fn) {
   target.removeEventListener(name, fn);
+}
+export function unbindClickoutside(el) {
+  if (el.xclickoutside) {
+    unbind(window, 'click', el.xclickoutside);
+  }
+}
+export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
+  el.xclickoutside = (evt) => {
+    if (el.contains(evt.target)) return;
+    cb(el);
+    unbindClickoutside(el);
+  };
+  bind(window, 'click', el.xclickoutside);
 }
 export function mouseMoveUp(target, movefunc, upfunc) {
   bind(target, 'mousemove', movefunc);

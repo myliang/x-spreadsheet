@@ -10,11 +10,10 @@ const fieldLabelWidth = 100;
 
 export default class ModalValidation extends Modal {
   constructor() {
-    const content = ``;
     const mf = new FormField(
       new FormSelect('cell', ['cell', 'column', 'row'], '70px'),
       { required: true },
-      t('dataValidation.range') + ':',
+      `${t('dataValidation.range')}:`,
       fieldLabelWidth,
     );
     const rf = new FormField(
@@ -25,7 +24,7 @@ export default class ModalValidation extends Modal {
         this.criteriaSelected(it);
       }),
       { required: true },
-      t('dataValidation.criteria') + ':',
+      `${t('dataValidation.criteria')}:`,
       fieldLabelWidth,
     );
     super(t('contextmenu.validation'), [
@@ -42,10 +41,7 @@ export default class ModalValidation extends Modal {
     this.cf = cf;
   }
 
-  criteriaSelected(it) {
-  }
-
-  setValue(v) {
+  setValue() {
     this.show();
   }
 }
