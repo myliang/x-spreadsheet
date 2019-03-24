@@ -167,12 +167,12 @@ export default class Editor {
 
   setCell(cell) {
     this.el.show();
-    this.datepicker.show();
+    // this.datepicker.show();
     this.cell = cell;
     const text = (cell && cell.text) || '';
     this.setText(text);
     if (!/^\s*$/.test(text)) {
-      this.datepicker.setValue(new Date(text.replace(new RegExp('-', 'g'), '/')));
+      // this.datepicker.setValue(text);
     }
   }
 

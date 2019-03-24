@@ -17,7 +17,8 @@ export function unbindClickoutside(el) {
 export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
   el.xclickoutside = (evt) => {
     // console.log('clickoutside::');
-    if (el.contains(evt.target)) return;
+    const parent = el.parent ? el.parent() : el.parentNode;
+    if (parent.contains(evt.target)) return;
     cb(el);
     unbindClickoutside(el);
   };
