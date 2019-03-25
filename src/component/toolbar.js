@@ -109,7 +109,7 @@ function moreResize() {
 }
 
 export default class Toolbar {
-  constructor(data, isHide = false) {
+  constructor(data, width, isHide = false) {
     this.data = data;
     this.change = () => {};
     const style = data.defaultStyle();
@@ -158,7 +158,7 @@ export default class Toolbar {
       // buildDivider(),
       this.moreEl = buildButton(`${t('toolbar.more')}`).child(this.ddMore.el).hide(),
     ];
-    this.el = h('div', `${cssPrefix}-toolbar`);
+    this.el = h('div', `${cssPrefix}-toolbar`).css('width', `${width - 60}px`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(...this.btnChildren);
     this.el.child(this.btns);
     if (isHide) this.el.hide();

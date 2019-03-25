@@ -198,12 +198,14 @@ function sheetReset() {
     table,
     toolbar,
     selector,
+    el,
   } = this;
   const tOffset = this.getTableOffset();
   const vRect = this.getRect();
   tableEl.attr(vRect);
   overlayerEl.offset(vRect);
   overlayerCEl.offset(tOffset);
+  el.css('width', `${vRect.width}px`);
   verticalScrollbarSet.call(this);
   horizontalScrollbarSet.call(this);
   sheetFreeze.call(this);
@@ -654,8 +656,9 @@ function sheetInitEvents() {
 
 export default class Sheet {
   constructor(targetEl, data) {
+    const { view } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(data, !data.settings.showToolbar);
+    this.toolbar = new Toolbar(data, view.width(), !data.settings.showToolbar);
     targetEl.children(this.toolbar.el, this.el);
     this.data = data;
     // table
