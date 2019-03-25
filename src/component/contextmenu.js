@@ -49,8 +49,9 @@ export default class ContextMenu {
   }
 
   hide() {
-    this.el.hide();
-    unbindClickoutside(this.el);
+    const { el } = this;
+    el.hide();
+    unbindClickoutside(el);
   }
 
   setPosition(x, y) {

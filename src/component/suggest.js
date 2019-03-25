@@ -82,14 +82,15 @@ export default class Suggest {
   }
 
   hide() {
+    const { el } = this;
     this.filterItems = [];
     this.itemIndex = -1;
-    this.el.hide();
-    unbindClickoutside(this.el);
+    el.hide();
+    unbindClickoutside(this.el.parent());
   }
 
   search(word) {
-    let { items } = this;
+    let { items, el } = this;
     if (!/^\s*$/.test(word)) {
       items = items.filter(it => it.key.startsWith(word.toUpperCase()));
     }
@@ -108,8 +109,8 @@ export default class Suggest {
       return;
     }
     // items[0].toggle();
-    this.el.html('').children(...items).show();
-    bindClickoutside(this.el);
+    el.html('').children(...items).show();
+    bindClickoutside(el.parent());
   }
 
   bindInputEvents(input) {

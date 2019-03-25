@@ -12,7 +12,7 @@ export default class Modal {
         this.title,
       ),
       h('div', `${cssPrefix}-modal-content`).children(...content),
-    );
+    ).hide();
   }
 
   show() {
