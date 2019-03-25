@@ -309,6 +309,18 @@ export default class DataProxy {
     this.change = () => {};
   }
 
+  addValidation(mode, ref, type, validator) {
+    this.changeData(() => {
+      this.validations.add(mode, ref, type, validator);
+    });
+  }
+
+  removeValidation() {
+    this.changeData(() => {
+      this.validations.remove();
+    });
+  }
+
   canUndo() {
     return this.history.canUndo();
   }

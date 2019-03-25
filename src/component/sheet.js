@@ -422,7 +422,7 @@ function sheetInitEvents() {
     contextMenu,
     data,
     toolbar,
-    dataValidation,
+    modalValidation,
   } = this;
   // overlayer
   overlayerEl
@@ -477,11 +477,25 @@ function sheetInitEvents() {
   editor.change = (state, itext) => {
     dataSetCellText.call(this, itext, state);
   };
+  // modal validation
+  modalValidation.change = (
+    action,
+    mode,
+    ref,
+    type,
+    { required, value, operator },
+  ) => {
+    if (action === 'save') {
+      data.addValidation(mode, ref, type, { required, value, operator });
+    } else {
+      data.removeValidation();
+    }
+  };
   // contextmenu
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
     if (type === 'validation') {
-      dataValidation.setValue();
+      modalValidation.setValue();
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -676,7 +690,7 @@ export default class Sheet {
       data.rows.height,
     );
     // data validation
-    this.dataValidation = new ModalValidation();
+    this.modalValidation = new ModalValidation();
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getTableOffset());
     // selector
@@ -697,7 +711,7 @@ export default class Sheet {
       this.verticalScrollbar.el,
       this.horizontalScrollbar.el,
       this.contextMenu.el,
-      this.dataValidation.el,
+      this.modalValidation.el,
     );
     // table
     this.table = new Table(this.tableEl.el, data);

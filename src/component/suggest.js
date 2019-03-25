@@ -90,13 +90,13 @@ export default class Suggest {
   }
 
   search(word) {
-    let { items, el } = this;
+    let { items } = this;
     if (!/^\s*$/.test(word)) {
       items = items.filter(it => it.key.startsWith(word.toUpperCase()));
     }
     items = items.map((it) => {
       const item = h('div', `${cssPrefix}-item`)
-        .child(it.key)
+        .child(typeof it.title === 'function' ? it.title() : it.title)
         .on('click.stop', () => {
           this.itemClick(it);
           this.hide();
@@ -108,9 +108,10 @@ export default class Suggest {
     if (items.length <= 0) {
       return;
     }
+    const { el } = this;
     // items[0].toggle();
     el.html('').children(...items).show();
-    bindClickoutside(el.parent());
+    bindClickoutside(el.parent(), () => { this.hide(); });
   }
 
   bindInputEvents(input) {

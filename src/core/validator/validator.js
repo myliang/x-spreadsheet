@@ -33,7 +33,7 @@ export default class Validator {
     }
     if (operator) {
       const v1 = this.parseValue(v);
-      if (operator === 'b') {
+      if (operator === 'be') {
         const [min, max] = value;
         return this.setMessageIfFalse(
           v1 >= this.parseValue(min) && v1 <= this.parseValue(max),
@@ -42,7 +42,7 @@ export default class Validator {
           max,
         );
       }
-      if (operator === 'nb') {
+      if (operator === 'nbe') {
         const [min, max] = value;
         return this.setMessageIfFalse(
           v1 < this.parseValue(min) || v1 > this.parseValue(max),

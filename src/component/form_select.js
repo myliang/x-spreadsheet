@@ -3,15 +3,18 @@ import Suggest from './suggest';
 import { cssPrefix } from '../config';
 
 export default class FormSelect {
-  constructor(item, items, width, change = () => {}) {
-    this.item = item;
-    this.el = h('div', `${cssPrefix}-form-selector`).css('width', width);
-    this.suggest = new Suggest(items.map(it => ({ key: it })), (it) => {
+  constructor(key, items, width, getTitle = it => it, change = () => {}) {
+    this.key = key;
+    this.getTitle = getTitle;
+    this.vchange = () => {};
+    this.el = h('div', `${cssPrefix}-form-select`);
+    this.suggest = new Suggest(items.map(it => ({ key: it, title: this.getTitle(it) })), (it) => {
       this.itemClick(it.key);
       change(it.key);
+      this.vchange(it.key);
     }, width, this.el);
     this.el.children(
-      this.itemEl = h('div', 'input-text').html(item),
+      this.itemEl = h('div', 'input-text').html(this.getTitle(key)),
       this.suggest.el,
     ).on('click', () => this.show());
   }
@@ -21,15 +24,16 @@ export default class FormSelect {
   }
 
   itemClick(it) {
-    this.item = it;
-    this.itemEl.html(it);
+    this.key = it;
+    this.itemEl.html(this.getTitle(it));
   }
 
   val(v) {
     if (v !== undefined) {
-      this.itemEl.html(v);
+      this.key = v;
+      this.itemEl.html(this.getTitle(v));
       return this;
     }
-    return this.item;
+    return this.key;
   }
 }

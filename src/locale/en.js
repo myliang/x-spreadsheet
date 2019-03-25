@@ -71,9 +71,36 @@ export default {
     weeks: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   },
+  button: {
+    cancel: 'Cancel',
+    remove: 'Remove',
+    save: 'Save',
+  },
   dataValidation: {
     mode: 'Mode',
     range: 'Cell Range',
     criteria: 'Criteria',
+    modeType: {
+      cell: 'Cell',
+      column: 'Colun',
+      row: 'Row',
+    },
+    type: {
+      list: 'List',
+      number: 'Number',
+      date: 'Date',
+      phone: 'Phone',
+      email: 'Email',
+    },
+    operator: {
+      be: 'between',
+      nbe: 'not betwwen',
+      lt: 'less than',
+      lte: 'less than or equal to',
+      gt: 'greater than',
+      gte: 'greater than or equal to',
+      eq: 'equal to',
+      neq: 'not equal to',
+    },
   },
 };

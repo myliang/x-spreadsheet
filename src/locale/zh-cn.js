@@ -71,9 +71,36 @@ export default {
     weeks: ['日', '一', '二', '三', '四', '五', '六'],
     months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
   },
+  button: {
+    cancel: '取消',
+    remove: '删除',
+    save: '保存',
+  },
   dataValidation: {
     mode: '模式',
     range: '单元区间',
     criteria: '条件',
+    modeType: {
+      cell: '单元格',
+      column: '列模式',
+      row: '行模式',
+    },
+    type: {
+      list: '列表',
+      number: '数字',
+      date: '日期',
+      phone: '手机号',
+      email: '电子邮件',
+    },
+    operator: {
+      be: '在区间',
+      nbe: '不在区间',
+      lt: '小于',
+      lte: '小于等于',
+      gt: '大于',
+      gte: '大于等于',
+      eq: '等于',
+      neq: '不等于',
+    },
   },
 };

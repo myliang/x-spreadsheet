@@ -4,7 +4,7 @@ import Icon from './icon';
 import { cssPrefix } from '../config';
 
 export default class Modal {
-  constructor(title, content, width = '500px') {
+  constructor(title, content, width = '600px') {
     this.title = title;
     this.el = h('div', `${cssPrefix}-modal`).css('width', width).children(
       h('div', `${cssPrefix}-modal-header`).children(
@@ -16,12 +16,12 @@ export default class Modal {
   }
 
   show() {
-    const { width, height } = this.el.box();
+    const { width, height } = this.el.show().box();
     const { clientHeight, clientWidth } = document.documentElement;
     this.el.offset({
       left: (clientWidth - width) / 2,
       top: (clientHeight - height) / 3,
-    }).show();
+    });
   }
 
   hide() {
