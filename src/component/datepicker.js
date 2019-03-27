@@ -7,7 +7,7 @@ export default class Datepicker {
     this.calendar = new Calendar(new Date());
     this.el = h('div', `${cssPrefix}-datepicker`).child(
       this.calendar.el,
-    );
+    ).hide();
   }
 
   setValue(date) {
@@ -21,6 +21,7 @@ export default class Datepicker {
     } else if (date instanceof Date) {
       calendar.setValue(date);
     }
+    return this;
   }
 
   change(cb) {
