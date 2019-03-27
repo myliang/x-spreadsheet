@@ -182,13 +182,13 @@ export default class ModalValidation extends Modal {
   setValue(v) {
     if (v) {
       const {
-        mf, rf, cf, of, minvf, maxvf, vf,
+        mf, rf, cf, of,
       } = this;
       const {
         mode, ref, type, validator,
       } = v;
       const {
-        required, value, rule, operator,
+        operator,
       } = validator;
       mf.val(mode);
       rf.val(ref);

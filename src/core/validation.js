@@ -6,11 +6,15 @@ import PhoneValidator from './validator/phone_validator';
 import EmailValidator from './validator/email_validator';
 
 class Validation {
-  constructor(mode, ref, type, validator) {
-    this.ref = ref;
+  constructor(mode, type, validator) {
+    this.refs = [];
     this.mode = mode; // column | row | range
     this.type = type; // date, number, ....
     this.validator = validator;
+  }
+
+  addRef(ref) {
+    this.refs.push(ref);
   }
 }
 class Validations {
