@@ -495,7 +495,7 @@ function sheetInitEvents() {
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
     if (type === 'validation') {
-      modalValidation.setValue();
+      modalValidation.setValue(data.getSelectedValidation());
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {

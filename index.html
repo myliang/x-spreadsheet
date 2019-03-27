@@ -11,12 +11,7 @@
   <script>
     function load(){
       // x.spreadsheet.locale('zh-cn');
-      x.spreadsheet('#x-spreadsheet-demo', {
-        view: {
-          width: () => 1000,
-          height: () => 800,
-        }
-      })
+      x.spreadsheet('#x-spreadsheet-demo', {})
         .loadData({
           freeze: 'E3',
           styles: [

@@ -321,6 +321,11 @@ export default class DataProxy {
     });
   }
 
+  getSelectedValidation() {
+    const { ri, ci } = this.selector;
+    return this.validations.get(ri, ci);
+  }
+
   canUndo() {
     return this.history.canUndo();
   }

@@ -11,6 +11,11 @@ function npx(px) {
   return parseInt(px * dpr(), 10);
 }
 
+function npxLine(px) {
+  const n = npx(px);
+  return n > 0 ? n - 0.5 : 0.5;
+}
+
 class DrawBox {
   constructor(x, y, w, h, padding = 0) {
     this.x = x;
@@ -270,9 +275,9 @@ class Draw {
     ctx.strokeStyle = color;
     // console.log('style:', style);
     if (style === 'medium') {
-      ctx.lineWidth = npx(1) + 0.5;
+      ctx.lineWidth = npx(2) - 0.5;
     } else if (style === 'thick') {
-      ctx.lineWidth = npx(2);
+      ctx.lineWidth = npx(3);
     } else if (style === 'dashed') {
       ctx.setLineDash([npx(3), npx(2)]);
     } else if (style === 'dotted') {
@@ -287,10 +292,10 @@ class Draw {
     const { ctx } = this;
     if (xys.length > 1) {
       const [x, y] = xys[0];
-      ctx.moveTo(npx(x) - 0.5, npx(y) - 0.5);
+      ctx.moveTo(npxLine(x), npxLine(y));
       for (let i = 1; i < xys.length; i += 1) {
         const [x1, y1] = xys[i];
-        ctx.lineTo(npx(x1) - 0.5, npx(y1) - 0.5);
+        ctx.lineTo(npxLine(x1), npxLine(y1));
       }
       ctx.stroke();
     }
@@ -307,6 +312,7 @@ class Draw {
     } = box;
     if (borderTop) {
       this.border(...borderTop);
+      // console.log('box.topxys:', box.topxys());
       this.line(...box.topxys());
     }
     if (borderRight) {
@@ -333,11 +339,11 @@ class Draw {
     ctx.beginPath();
     ctx.fillStyle = bgcolor || '#fff';
     // ctx.strokeStyle = '#e6e6e6';
-    ctx.rect(npx(x) - 0.5, npx(y) - 0.5, npx(width), npx(height));
+    ctx.rect(npxLine(x + 1), npxLine(y + 1), npx(width) - 2, npx(height) - 2);
     ctx.clip();
     ctx.fill();
     // ctx.stroke();
-    this.strokeBorders(box);
+    // this.strokeBorders(box);
     dtextcb();
     ctx.restore();
   }

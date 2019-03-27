@@ -94,7 +94,11 @@ class CellRange {
     const {
       sri, sci, eri, eci,
     } = this;
-    return `${xy2expr(sci, sri)}:${xy2expr(eci, eri)}`;
+    let ref = xy2expr(sci, sri);
+    if (this.multiple()) {
+      ref = `${ref}:${xy2expr(eci, eri)}`;
+    }
+    return ref;
   }
 
   toJSON() {

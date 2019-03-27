@@ -47,13 +47,14 @@ class Validations {
     }
   }
 
-  get(ref) {
-    const [x1, y1] = expr2xy(ref);
+  get(ri, ci) {
+    // const [x1, y1] = expr2xy(ref);
+    const [x1, y1] = [ci, ri];
     for (let i = 0; i < this._.length; i += 1) {
       this.cindex = i;
       const v = this._[i];
       const exprs = v.ref.split(':');
-      if (exprs.length > 1 && v.mode === 'range') {
+      if (exprs.length > 1 && v.mode === 'cell') {
         const [sx, sy] = expr2xy(exprs[0]);
         const [ex, ey] = expr2xy(exprs[1]);
         if (sx <= x1 && x1 <= ex && sy <= y1 && y1 <= ey) return v;
