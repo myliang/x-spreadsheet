@@ -215,6 +215,7 @@ class Draw {
     } = attr;
     const tx = box.textx(align);
     ctx.save();
+    ctx.beginPath();
     this.attr({
       textAlign: align,
       textBaseline: valign,
