@@ -43,7 +43,7 @@ export default class Dropdown extends Element {
     contentEl.show();
     this.parent().active();
     bindClickoutside(this.parent(), () => {
-      contentEl.hide();
+      this.hide();
     });
   }
 
