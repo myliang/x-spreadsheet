@@ -14,8 +14,8 @@
 
 ## CDN
 ```html
-<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.7/dist/xspreadsheet.css">
-<script src="https://unpkg.com/x-data-spreadsheet@1.0.7/dist/xspreadsheet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.js"></script>
 
 <script>
    x.spreadsheet('#xspreadsheet');
@@ -82,6 +82,34 @@ new Spreadsheet("#x-spreadsheet-demo")
   },
 }
 ```
+
+## Internationalization
+[wiki](https://github.com/myliang/x-spreadsheet/wiki/Internationalization)
+
+## Features
+  - Undo & Redo
+  - Paint format
+  - Clear format
+  - Format
+  - Font
+  - Font size
+  - Font bold
+  - Font italic
+  - Underline
+  - Strike
+  - Text color
+  - Fill color
+  - Borders
+  - Merge cells
+  - Align
+  - Text wrapping
+  - Freeze cell
+  - Functions
+  - Resize row-height, col-width
+  - Copy, Cut, Paste
+  - Autofill
+  - Insert row, column
+  - Delete row, column
 
 ## Development
 
