@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { mouseMoveUp } from '../event';
+import { mouseMoveUp } from './event';
 import { cssPrefix } from '../config';
 
 export default class Resizer {

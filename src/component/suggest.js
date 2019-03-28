@@ -1,5 +1,5 @@
 import { h } from './element';
-import { bindClickoutside, unbindClickoutside } from '../event';
+import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 function inputMovePrev(evt) {

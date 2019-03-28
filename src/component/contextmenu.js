@@ -1,5 +1,5 @@
 import { h } from './element';
-import { bindClickoutside, unbindClickoutside } from '../event';
+import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 import { tf } from '../locale/locale';
 
@@ -16,8 +16,8 @@ const menuItems = [
   { key: 'delete-row', title: tf('contextmenu.deleteRow') },
   { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
   { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
-  // { key: 'divider' },
-  // { key: 'validation', title: tf('contextmenu.validation') },
+  { key: 'divider' },
+  { key: 'validation', title: tf('contextmenu.validation') },
 ];
 
 function buildMenuItem(item) {

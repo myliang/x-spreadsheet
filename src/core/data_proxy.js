@@ -5,7 +5,7 @@ import Scroll from './scroll';
 import History from './history';
 import Clipboard from './clipboard';
 import { Merges } from './merge';
-import helper from '../helper';
+import helper from './helper';
 import { Rows } from './row';
 import { Cols } from './col';
 import { Validations } from './validation';

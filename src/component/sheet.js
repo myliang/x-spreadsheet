@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { bind, mouseMoveUp, bindTouch } from '../event';
+import { bind, mouseMoveUp, bindTouch } from './event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -672,7 +672,7 @@ export default class Sheet {
   constructor(targetEl, data) {
     const { view } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(data, view.width(), !data.settings.showToolbar);
+    this.toolbar = new Toolbar(data, view.width, !data.settings.showToolbar);
     targetEl.children(this.toolbar.el, this.el);
     this.data = data;
     // table

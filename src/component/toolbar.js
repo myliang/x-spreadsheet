@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bind } from './event';
 import tooltip from './tooltip';
 import DropdownFont from './dropdown_font';
 import DropdownFontSize from './dropdown_fontsize';
@@ -73,28 +73,32 @@ class DropdownMore extends Dropdown {
   }
 }
 
+function initBtns2() {
+  this.btns2 = this.btnChildren.map((it) => {
+    const rect = it.box();
+    const { marginLeft, marginRight } = it.computedStyle();
+    return [it, rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10)];
+  });
+}
+
 function moreResize() {
   const {
-    el, btns, moreEl, ddMore, btnChildren,
+    el, btns, moreEl, ddMore, btns2,
   } = this;
   const { moreBtns, contentEl } = ddMore;
+  el.css('width', `${this.widthFn() - 60}px`);
   const elBox = el.box();
 
   let sumWidth = 160;
   let sumWidth2 = 12;
   const list1 = [];
   const list2 = [];
-  // console.log('elBox:', elBox);
-  btnChildren.forEach((it) => {
-    const rect = it.box();
-    sumWidth += rect.width;
-    // console.log('sumWidth:', sumWidth, elBox.width);
-    if (it.attr('data-tooltip') === 'More' || sumWidth < elBox.width) {
+  btns2.forEach(([it, w], index) => {
+    sumWidth += w;
+    if (index === btns2.length - 1 || sumWidth < elBox.width) {
       list1.push(it);
     } else {
-      // console.log('margin:', it.computedStyle());
-      const { marginLeft, marginRight } = it.computedStyle();
-      sumWidth2 += rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10);
+      sumWidth2 += w;
       list2.push(it);
     }
   });
@@ -109,9 +113,10 @@ function moreResize() {
 }
 
 export default class Toolbar {
-  constructor(data, width, isHide = false) {
+  constructor(data, widthFn, isHide = false) {
     this.data = data;
     this.change = () => {};
+    this.widthFn = widthFn;
     const style = data.defaultStyle();
     // console.log('data:', data);
     this.ddFormat = new DropdownFormat();
@@ -158,13 +163,14 @@ export default class Toolbar {
       // buildDivider(),
       this.moreEl = buildButton(`${t('toolbar.more')}`).child(this.ddMore.el).hide(),
     ];
-    this.el = h('div', `${cssPrefix}-toolbar`).css('width', `${width - 60}px`);
+    this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(...this.btnChildren);
     this.el.child(this.btns);
     if (isHide) this.el.hide();
     bindDropdownChange.call(this);
     this.reset();
     setTimeout(() => {
+      initBtns2.call(this);
       moreResize.call(this);
     }, 0);
     bind(window, 'resize', () => {

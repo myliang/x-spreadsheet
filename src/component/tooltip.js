@@ -1,6 +1,6 @@
 /* global document */
 import { h } from './element';
-import { bind } from '../event';
+import { bind } from './event';
 import { cssPrefix } from '../config';
 
 export default function tooltip(html, target) {

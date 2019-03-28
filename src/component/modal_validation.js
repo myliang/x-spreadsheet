@@ -13,7 +13,7 @@ export default class ModalValidation extends Modal {
   constructor() {
     const mf = new FormField(
       new FormSelect('cell',
-        ['cell', 'column', 'row'],
+        ['cell'], // cell|row|column
         '100%',
         it => t(`dataValidation.modeType.${it}`)),
       { required: true },
@@ -22,7 +22,7 @@ export default class ModalValidation extends Modal {
     );
     const rf = new FormField(
       new FormInput('120px', 'E3 or E3:F12'),
-      { required: true },
+      { required: true, pattern: /^([A-Z]{1,2}[1-9]\d*)(:[A-Z]{1,2}[1-9]\d*)?$/ },
     );
     const cf = new FormField(
       new FormSelect('list',

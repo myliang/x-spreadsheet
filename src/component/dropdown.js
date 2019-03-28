@@ -1,5 +1,5 @@
 import { Element, h } from './element';
-import { bindClickoutside, unbindClickoutside } from '../event';
+import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 export default class Dropdown extends Element {

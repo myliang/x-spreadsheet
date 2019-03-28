@@ -1,4 +1,4 @@
-import helper from '../helper';
+import helper from './helper';
 import { expr2expr } from './alphabet';
 
 class Rows {
