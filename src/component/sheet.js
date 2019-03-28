@@ -518,10 +518,10 @@ function sheetInitEvents() {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
     const {
-      key, ctrlKey, shiftKey, altKey,
+      key, ctrlKey, shiftKey, altKey, metaKey,
     } = evt;
     // console.log('keydown.evt: ', keyCode);
-    if (ctrlKey) {
+    if (ctrlKey || metaKey) {
       // const { sIndexes, eIndexes } = selector;
       let what = 'all';
       if (shiftKey) what = 'text';
