@@ -81,7 +81,80 @@ class CellRange {
       other.eci > eci ? other.eci : eci,
     );
   }
+
   // intersection
+  // intersection(other) {}
+
+  // Returns Array<CellRange> that represents that part of this that does not intersect with other
+  // difference
+  difference(other) {
+    const ret = [];
+    const addRet = (sri, sci, eri, eci) => {
+      ret.push(new CellRange(sri, sci, eri, eci));
+    };
+    const {
+      sri, sci, eri, eci,
+    } = this;
+    const dsr = other.sri - sri;
+    const dsc = other.sci - sci;
+    const der = eri - other.eri;
+    const dec = eci - other.eci;
+    if (dsr > 0) {
+      addRet(sri, sci, other.sri - 1, eci);
+      if (der > 0) {
+        addRet(other.eri + 1, sci, eri, eci);
+        if (dsc > 0) {
+          addRet(other.sri, sci, other.eri, other.sci - 1);
+        }
+        if (dec > 0) {
+          addRet(other.sri, other.eci + 1, other.eri, eci);
+        }
+      } else {
+        if (dsc > 0) {
+          addRet(other.sri, sci, eri, other.sci - 1);
+        }
+        if (dec > 0) {
+          addRet(other.sri, other.eci + 1, eri, eci);
+        }
+      }
+    } else if (der > 0) {
+      addRet(other.eri + 1, sci, eri, eci);
+      if (dsc > 0) {
+        addRet(sri, sci, other.eri, other.sci - 1);
+      }
+      if (dec > 0) {
+        addRet(sri, other.eci + 1, other.eri, eci);
+      }
+    }
+    if (dsc > 0) {
+      addRet(sri, sci, eri, other.sci - 1);
+      if (dec > 0) {
+        addRet(sri, other.eri + 1, eri, eci);
+        if (dsr > 0) {
+          addRet(sri, other.sci, other.sri - 1, other.eci);
+        }
+        if (der > 0) {
+          addRet(other.sri + 1, other.sci, eri, other.eci);
+        }
+      } else {
+        if (dsr > 0) {
+          addRet(sri, other.sci, other.sri - 1, eci);
+        }
+        if (der > 0) {
+          addRet(other.sri + 1, other.sci, eri, eci);
+        }
+      }
+    } else if (dec > 0) {
+      addRet(eri, other.eci + 1, eri, eci);
+      if (dsr > 0) {
+        addRet(sri, sci, other.sri - 1, other.eci);
+      }
+      if (der > 0) {
+        addRet(other.eri + 1, sci, eri, other.eci);
+      }
+    }
+    return ret;
+  }
 
   size() {
     return [

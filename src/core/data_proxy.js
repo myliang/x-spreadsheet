@@ -309,9 +309,9 @@ export default class DataProxy {
     this.change = () => {};
   }
 
-  addValidation(mode, ref, type, validator) {
+  addValidation(mode, ref, validator) {
     this.changeData(() => {
-      this.validations.add(mode, ref, type, validator);
+      this.validations.add(mode, ref, validator);
     });
   }
 

@@ -17,6 +17,10 @@ export default class FormField {
       .children(this.label, input.el, this.tip);
   }
 
+  isShow() {
+    return this.el.css('display') !== 'none';
+  }
+
   show() {
     this.el.show();
   }

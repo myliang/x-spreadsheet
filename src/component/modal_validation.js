@@ -158,6 +158,17 @@ export default class ModalValidation extends Modal {
     } else if (action === 'remove') {
       this.change('remove');
     } else if (action === 'save') {
+      // validate
+      const attrs = ['mf', 'rf', 'cf', 'of', 'svf', 'vf', 'minvf', 'maxvf'];
+      for (let i = 0; i < attrs.length; i += 1) {
+        const field = this[attrs[i]];
+        // console.log('field:', field);
+        if (field.isShow()) {
+          // console.log('it:', it);
+          if (!field.validate()) return;
+        }
+      }
+
       const mode = this.mf.val();
       const ref = this.rf.val();
       const type = this.cf.val();
@@ -173,8 +184,9 @@ export default class ModalValidation extends Modal {
       this.change('save',
         mode,
         ref,
-        type,
-        { operator, required: false, value });
+        {
+          type, operator, required: false, value,
+        });
     }
   }
 

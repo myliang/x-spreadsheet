@@ -478,15 +478,9 @@ function sheetInitEvents() {
     dataSetCellText.call(this, itext, state);
   };
   // modal validation
-  modalValidation.change = (
-    action,
-    mode,
-    ref,
-    type,
-    { required, value, operator },
-  ) => {
-    if (action === 'save') {
-      data.addValidation(mode, ref, type, { required, value, operator });
+  modalValidation.change = (...args) => {
+    if (args[0] === 'save') {
+      data.addValidation(...args);
     } else {
       data.removeValidation();
     }
