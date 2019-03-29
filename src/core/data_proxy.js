@@ -92,7 +92,7 @@ const defaultSettings = {
     underline: false,
     color: '#0a0a0a',
     font: {
-      name: 'Helvetica',
+      name: 'Arial',
       size: 10,
       bold: false,
       italic: false,
@@ -310,20 +310,34 @@ export default class DataProxy {
   }
 
   addValidation(mode, ref, validator) {
+    // console.log('mode:', mode, ', ref:', ref, ', validator:', validator);
     this.changeData(() => {
       this.validations.add(mode, ref, validator);
     });
   }
 
   removeValidation() {
+    const { range } = this.selector;
     this.changeData(() => {
-      this.validations.remove();
+      this.validations.remove(range);
     });
   }
 
-  getSelectedValidation() {
+  getSelectedValidator() {
     const { ri, ci } = this.selector;
-    return this.validations.get(ri, ci);
+    const v = this.validations.get(ri, ci);
+    return v ? v.validator : null;
+  }
+
+  getSelectedValidation() {
+    const { ri, ci, range } = this.selector;
+    const v = this.validations.get(ri, ci);
+    const ret = { ref: range.toString() };
+    if (v !== null) {
+      ret.mode = v.mode;
+      ret.validator = v.validator;
+    }
+    return ret;
   }
 
   canUndo() {

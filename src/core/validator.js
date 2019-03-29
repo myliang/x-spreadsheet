@@ -49,6 +49,10 @@ export default class Validator {
     return flag;
   }
 
+  values() {
+    return this.value.split(',');
+  }
+
   validate(v) {
     const {
       required, operator, value, type,
@@ -60,7 +64,7 @@ export default class Validator {
       return this.setMessageIfFalse(false, 'notMatch');
     }
     if (type === 'list') {
-      return value.split(',').includes(v);
+      return this.values().includes(v);
     }
     if (operator) {
       const v1 = this.parseValue(v);

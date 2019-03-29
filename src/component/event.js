@@ -8,6 +8,7 @@ export function unbind(target, name, fn) {
 export function unbindClickoutside(el) {
   if (el.xclickoutside) {
     unbind(window.document.body, 'click', el.xclickoutside);
+    delete el.xclickoutside;
   }
 }
 

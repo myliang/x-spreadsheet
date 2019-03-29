@@ -31,7 +31,7 @@ export default class FormField {
   }
 
   val(v) {
-    this.input.val(v);
+    return this.input.val(v);
   }
 
   validate() {

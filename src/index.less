@@ -61,13 +61,13 @@ body {
   line-height: normal;
   user-select: none;
   -moz-user-select: none;
-  font-family: 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: content-box;
   background: #fff;
   -webkit-font-smoothing: antialiased;
 
   textarea {
-    font: 400 13px 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+    font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
   }
 }
 
@@ -78,7 +78,7 @@ body {
 }
 
 .x-spreadsheet-tooltip {
-  font-family: 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   position: absolute;
   padding: 5px 10px;
   color: #fff;
@@ -352,8 +352,7 @@ body {
       resize: none;
       text-align: start;
       overflow-y: hidden;
-      font-family: inherit;
-      font-size: inherit;
+      font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
       color: inherit;
       white-space: normal;
       word-wrap: break-word;
@@ -433,11 +432,9 @@ body {
 
 .x-spreadsheet-suggest, .x-spreadsheet-contextmenu {
   position: absolute;
-  top: calc(100% + 2px);
   box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
   background: #fff;
   z-index: 100;
-  /* max-height: 360px; */
   width: 260px;
   pointer-events: auto;
   overflow: auto;

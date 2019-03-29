@@ -1,38 +1,25 @@
-import { expr2xy } from './alphabet';
 import Validator from './validator';
 import { CellRange } from './cell_range';
 
 class Validation {
-  constructor(mode, ref, validator) {
-    this.refs = [ref];
+  constructor(mode, refs, validator) {
+    this.refs = refs;
     this.mode = mode; // cell
     this.validator = validator;
   }
 
-  addRef(ref) {
-    const { refs } = this;
-    refs.push(ref);
-  }
-
   includes(ri, ci) {
-    const { refs, mode } = this;
-    const [x1, y1] = [ci, ri];
+    const { refs } = this;
     for (let i = 0; i < refs.length; i += 1) {
-      const exprs = refs[i].split(':');
-      if (exprs.length > 1 && mode === 'cell') {
-        const [sx, sy] = expr2xy(exprs[0]);
-        const [ex, ey] = expr2xy(exprs[1]);
-        if (sx <= x1 && x1 <= ex && sy <= y1 && y1 <= ey) return true;
-      } else {
-        const [x, y] = expr2xy(exprs[0]);
-        if (mode === 'column') {
-          if (x1 >= x) return true;
-        } else if (mode === 'row') {
-          if (y1 >= y) return true;
-        } else if (x1 === x && y1 === y) return true;
-      }
+      const cr = CellRange.valueOf(refs[i]);
+      if (cr.includes(ri, ci)) return true;
     }
     return false;
+  }
+
+  addRef(ref) {
+    this.remove(CellRange.valueOf(ref));
+    this.refs.push(ref);
   }
 
   remove(cellRange) {
@@ -47,6 +34,22 @@ class Validation {
       }
     });
     this.refs = nrefs;
+  }
+
+  getData() {
+    const { refs, mode, validator } = this;
+    const {
+      type, required, operator, value,
+    } = validator;
+    return {
+      refs, mode, type, required, operator, value,
+    };
+  }
+
+  static valueOf({
+    refs, mode, type, required, operator, value,
+  }) {
+    return new Validation(mode, refs, new Validator(type, required, value, operator));
   }
 }
 class Validations {
@@ -66,7 +69,7 @@ class Validations {
     if (v !== null) {
       v.addRef(ref);
     } else {
-      this._.push(new Validation(mode, ref, validator));
+      this._.push(new Validation(mode, [ref], validator));
     }
   }
 
@@ -82,8 +85,8 @@ class Validations {
 
   get(ri, ci) {
     for (let i = 0; i < this._.length; i += 1) {
-      const v = this._[i].get(ri, ci);
-      if (v !== null) return v;
+      const v = this._[i];
+      if (v.includes(ri, ci)) return v;
     }
     return null;
   }
@@ -99,11 +102,11 @@ class Validations {
   }
 
   getData() {
-    return this._;
+    return this._.filter(it => it.refs.length > 0).map(it => it.getData());
   }
 
   setData(d) {
-    this._ = d;
+    this._ = d.map(it => Validation.valueOf(it));
   }
 }
 

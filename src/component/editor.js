@@ -32,13 +32,21 @@ function resetTextareaSize() {
 function inputEventHandler(evt) {
   const v = evt.target.value;
   // console.log(evt, 'v:', v);
+  const { suggest, textlineEl, validator } = this;
   this.inputText = v;
-  const start = v.lastIndexOf('=');
-  const { suggest, textlineEl } = this;
-  if (start !== -1) {
-    suggest.search(v.substring(start + 1));
+  if (validator) {
+    if (validator.type === 'list') {
+      suggest.search(v);
+    } else {
+      suggest.hide();
+    }
   } else {
-    suggest.hide();
+    const start = v.lastIndexOf('=');
+    if (start !== -1) {
+      suggest.search(v.substring(start + 1));
+    } else {
+      suggest.hide();
+    }
   }
   textlineEl.html(v);
   resetTextareaSize.call(this);
@@ -64,26 +72,37 @@ function setText(text, position) {
 }
 
 function suggestItemClick(it) {
-  const { inputText } = this;
-  const start = inputText.lastIndexOf('=');
-  const sit = inputText.substring(0, start + 1);
-  let eit = inputText.substring(start + 1);
-  if (eit.indexOf(')') !== -1) {
-    eit = eit.substring(eit.indexOf(')'));
+  const { inputText, validator } = this;
+  let position = 0;
+  if (validator && validator.type === 'list') {
+    this.inputText = it;
+    position = this.inputText.length;
   } else {
-    eit = '';
+    const start = inputText.lastIndexOf('=');
+    const sit = inputText.substring(0, start + 1);
+    let eit = inputText.substring(start + 1);
+    if (eit.indexOf(')') !== -1) {
+      eit = eit.substring(eit.indexOf(')'));
+    } else {
+      eit = '';
+    }
+    this.inputText = `${sit + it.key}(`;
+    // console.log('inputText:', this.inputText);
+    position = this.inputText.length;
+    this.inputText += `)${eit}`;
   }
-  this.inputText = `${sit + it.key}(`;
-  // console.log('inputText:', this.inputText);
-  const position = this.inputText.length;
-  this.inputText += `)${eit}`;
   setText.call(this, this.inputText, position);
+}
+
+function resetSuggestItems() {
+  this.suggest.setItems(this.formulas);
 }
 
 export default class Editor {
   constructor(formulas, viewFn, rowHeight) {
     this.viewFn = viewFn;
     this.rowHeight = rowHeight;
+    this.formulas = formulas;
     this.suggest = new Suggest(formulas, (it) => {
       suggestItemClick.call(this, it);
     });
@@ -132,6 +151,7 @@ export default class Editor {
     this.el.hide();
     this.textEl.val('');
     this.textlineEl.html('');
+    resetSuggestItems.call(this);
   }
 
   setOffset(offset, suggestPosition = 'top') {
@@ -165,14 +185,26 @@ export default class Editor {
     }
   }
 
-  setCell(cell) {
-    this.el.show();
-    // this.datepicker.show();
+  setCell(cell, validator) {
+    // console.log('::', validator);
+    const { el, datepicker, suggest } = this;
+    el.show();
     this.cell = cell;
     const text = (cell && cell.text) || '';
     this.setText(text);
-    if (!/^\s*$/.test(text)) {
-      // this.datepicker.setValue(text);
+
+    this.validator = validator;
+    if (validator) {
+      const { type } = validator;
+      if (type === 'date') {
+        datepicker.show();
+        if (!/^\s*$/.test(text)) {
+          datepicker.setValue(text);
+        }
+      }
+      if (type === 'list') {
+        suggest.setItems(validator.values());
+      }
     }
   }
 

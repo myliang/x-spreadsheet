@@ -1,7 +1,9 @@
 /* global document */
+/* global window */
 import { h } from './element';
 import Icon from './icon';
 import { cssPrefix } from '../config';
+import { bind, unbind } from './event';
 
 export default class Modal {
   constructor(title, content, width = '600px') {
@@ -22,9 +24,17 @@ export default class Modal {
       left: (clientWidth - width) / 2,
       top: (clientHeight - height) / 3,
     });
+    window.xkeydownEsc = (evt) => {
+      if (evt.keyCode === 27) {
+        this.hide();
+      }
+    };
+    bind(window, 'keydown', window.xkeydownEsc);
   }
 
   hide() {
     this.el.hide();
+    unbind(window, 'keydown', window.xkeydownEsc);
+    delete window.xkeydownEsc;
   }
 }

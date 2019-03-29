@@ -67,10 +67,11 @@ class DrawBox {
     if (align === 'top') {
       y += padding;
     } else if (align === 'middle') {
-      const y1 = y + height / 2 - hoffset;
-      const y2 = y + padding + fontSize / 2 + 1;
-      if (y1 < y2) y = y2;
-      else y = y1;
+      y = y + height / 2 - hoffset;
+      // y = y1;
+      // const y2 = y + padding + fontSize / 2 + 1;
+      // if (y1 < y2) y = y2;
+      // else y = y1;
     } else if (align === 'bottom') {
       y += height - hoffset * 2 - padding;
     }

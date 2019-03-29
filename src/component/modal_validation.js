@@ -157,6 +157,7 @@ export default class ModalValidation extends Modal {
       this.hide();
     } else if (action === 'remove') {
       this.change('remove');
+      this.hide();
     } else if (action === 'save') {
       // validate
       const attrs = ['mf', 'rf', 'cf', 'of', 'svf', 'vf', 'minvf', 'maxvf'];
@@ -181,12 +182,14 @@ export default class ModalValidation extends Modal {
           value = this.vf.val();
         }
       }
+      // console.log(mode, ref, type, operator, value);
       this.change('save',
         mode,
         ref,
         {
           type, operator, required: false, value,
         });
+      this.hide();
     }
   }
 
@@ -194,19 +197,26 @@ export default class ModalValidation extends Modal {
   setValue(v) {
     if (v) {
       const {
-        mf, rf, cf, of,
+        mf, rf, cf, of, svf, vf, minvf, maxvf,
       } = this;
       const {
-        mode, ref, type, validator,
+        mode, ref, validator,
       } = v;
       const {
-        operator,
-      } = validator;
-      mf.val(mode);
+        type, operator, value,
+      } = validator || { type: 'list' };
+      mf.val(mode || 'cell');
       rf.val(ref);
       cf.val(type);
       of.val(operator);
-      this.crieriaSelected(operator);
+      if (Array.isArray(value)) {
+        minvf.val(value[0]);
+        maxvf.val(value[1]);
+      } else {
+        svf.val(value || '');
+        vf.val(value || '');
+      }
+      this.criteriaSelected(type);
     }
     this.show();
   }

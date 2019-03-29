@@ -305,7 +305,7 @@ function editorSetOffset() {
 function editorSet() {
   const { editor, data } = this;
   editorSetOffset.call(this);
-  editor.setCell(data.getSelectedCell());
+  editor.setCell(data.getSelectedCell(), data.getSelectedValidator());
   clearClipboard.call(this);
 }
 
@@ -478,8 +478,8 @@ function sheetInitEvents() {
     dataSetCellText.call(this, itext, state);
   };
   // modal validation
-  modalValidation.change = (...args) => {
-    if (args[0] === 'save') {
+  modalValidation.change = (action, ...args) => {
+    if (action === 'save') {
       data.addValidation(...args);
     } else {
       data.removeValidation();
