@@ -2,7 +2,12 @@ import { h } from './element';
 import { cssPrefix } from '../config';
 import { t } from '../locale/locale';
 
-// rule: { required: false, pattern: // }
+const patterns = {
+  number: /(^\d+$)|(^\d+(\.\d{0,4})?$)/,
+  date: /^\d{4}-\d{1,2}-\d{1,2}$/,
+};
+
+// rule: { required: false, type, pattern: // }
 export default class FormField {
   constructor(input, rule, label, labelWidth) {
     this.label = '';
@@ -34,6 +39,10 @@ export default class FormField {
     return this.input.val(v);
   }
 
+  hint(hint) {
+    this.input.hint(hint);
+  }
+
   validate() {
     const {
       input, rule, tip, el,
@@ -46,8 +55,9 @@ export default class FormField {
         return false;
       }
     }
-    if (rule.pattern) {
-      if (!rule.pattern.test(v)) {
+    if (rule.type || rule.pattern) {
+      const pattern = rule.pattern || patterns[rule.type];
+      if (!pattern.test(v)) {
         tip.html(t('validation.notMatch'));
         el.addClass('error');
         return false;

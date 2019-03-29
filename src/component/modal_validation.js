@@ -51,7 +51,7 @@ export default class ModalValidation extends Modal {
     ).hide();
     const maxvf = new FormField(
       new FormInput('70px', '100'),
-      { required: true, pattern: /(^\d+$)|(^\d+(\.\d{0,4})?$)/ },
+      { required: true, type: 'number' },
     ).hide();
     // value
     const svf = new FormField(
@@ -60,7 +60,7 @@ export default class ModalValidation extends Modal {
     );
     const vf = new FormField(
       new FormInput('70px', '10'),
-      { required: true, pattern: /(^\d+$)|(^\d+(\.\d{0,4})?$)/ },
+      { required: true, type: 'number' },
     ).hide();
 
     super(t('contextmenu.validation'), [
@@ -93,24 +93,10 @@ export default class ModalValidation extends Modal {
     this.change = () => {};
   }
 
-  showMinvf(it) {
-    const hint = it === 'date' ? '2018-11-12' : '10';
-    const { minvf } = this;
-    minvf.input.hint(hint);
-    minvf.show();
-  }
-
-  showMaxvf(it) {
-    const hint = it === 'date' ? '2019-11-12' : '100';
-    const { maxvf } = this;
-    maxvf.input.hint(hint);
-    maxvf.show();
-  }
-
   showVf(it) {
     const hint = it === 'date' ? '2018-11-12' : '10';
     const { vf } = this;
-    vf.input.attr('placeholder', hint);
+    vf.input.hint(hint);
     vf.show();
   }
 
@@ -120,8 +106,17 @@ export default class ModalValidation extends Modal {
     } = this;
     if (it === 'date' || it === 'number') {
       of.show();
-      this.showMinvf(it);
-      this.showMaxvf(it);
+      minvf.rule.type = it;
+      maxvf.rule.type = it;
+      if (it === 'date') {
+        minvf.hint('2018-11-12');
+        maxvf.hint('2019-11-12');
+      } else {
+        minvf.hint('10');
+        maxvf.hint('100');
+      }
+      minvf.show();
+      maxvf.show();
       vf.hide();
       svf.hide();
     } else {
@@ -138,6 +133,7 @@ export default class ModalValidation extends Modal {
   }
 
   criteriaOperatorSelected(it) {
+    if (!it) return;
     const {
       minvf, maxvf, vf,
     } = this;
@@ -146,6 +142,13 @@ export default class ModalValidation extends Modal {
       maxvf.show();
       vf.hide();
     } else {
+      const type = this.cf.val();
+      vf.rule.type = type;
+      if (type === 'date') {
+        vf.hint('2018-11-12');
+      } else {
+        vf.hint('10');
+      }
       vf.show();
       minvf.hide();
       maxvf.hide();
@@ -217,6 +220,7 @@ export default class ModalValidation extends Modal {
         vf.val(value || '');
       }
       this.criteriaSelected(type);
+      this.criteriaOperatorSelected(operator);
     }
     this.show();
   }

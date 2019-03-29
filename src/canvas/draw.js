@@ -182,6 +182,11 @@ class Draw {
     return this;
   }
 
+  clearRect(x, y, w, h) {
+    this.ctx.clearRect(x, y, w, h);
+    return this;
+  }
+
   fillRect(x, y, w, h) {
     this.ctx.fillRect(npx(x) - 0.5, npx(y) - 0.5, npx(w), npx(h));
     return this;
@@ -340,12 +345,9 @@ class Draw {
     ctx.save();
     ctx.beginPath();
     ctx.fillStyle = bgcolor || '#fff';
-    // ctx.strokeStyle = '#e6e6e6';
-    ctx.rect(npxLine(x + 1), npxLine(y + 1), npx(width) - 2, npx(height) - 2);
+    ctx.rect(npxLine(x + 1), npxLine(y + 1), npx(width - 2), npx(height - 2));
     ctx.clip();
     ctx.fill();
-    // ctx.stroke();
-    // this.strokeBorders(box);
     dtextcb();
     ctx.restore();
   }

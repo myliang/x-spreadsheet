@@ -152,6 +152,7 @@ export default class Editor {
     this.textEl.val('');
     this.textlineEl.html('');
     resetSuggestItems.call(this);
+    this.datepicker.hide();
   }
 
   setOffset(offset, suggestPosition = 'top') {
