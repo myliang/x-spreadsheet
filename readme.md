@@ -110,6 +110,7 @@ new Spreadsheet("#x-spreadsheet-demo")
   - Autofill
   - Insert row, column
   - Delete row, column
+  - Data validations
 
 ## Development
 
