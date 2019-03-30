@@ -98,6 +98,14 @@ function resetSuggestItems() {
   this.suggest.setItems(this.formulas);
 }
 
+function dateFormat(d) {
+  let month = d.getMonth() + 1;
+  let date = d.getDate();
+  if (month < 10) month = `0${month}`;
+  if (date < 10) date = `0${date}`;
+  return `${d.getFullYear()}-${month}-${date}`;
+}
+
 export default class Editor {
   constructor(formulas, viewFn, rowHeight) {
     this.viewFn = viewFn;
@@ -109,7 +117,7 @@ export default class Editor {
     this.datepicker = new Datepicker();
     this.datepicker.change((d) => {
       // console.log('d:', d);
-      this.setText(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`);
+      this.setText(dateFormat(d));
       this.clear();
     });
     this.areaEl = h('div', `${cssPrefix}-editor-area`)
