@@ -793,12 +793,15 @@ export default class DataProxy {
 
   // state: input | finished
   setCellText(ri, ci, text, state) {
+    const { rows, history, validations } = this;
     if (state === 'finished') {
-      this.rows.setCellText(ri, ci, '');
-      this.history.add(this.getData());
-      this.rows.setCellText(ri, ci, text);
+      rows.setCellText(ri, ci, '');
+      history.add(this.getData());
+      rows.setCellText(ri, ci, text);
+      // validator
+      validations.validate(ri, ci, text);
     } else {
-      this.rows.setCellText(ri, ci, text);
+      rows.setCellText(ri, ci, text);
       this.change(this.getData());
     }
   }

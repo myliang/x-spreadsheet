@@ -73,6 +73,12 @@ function renderCell(rindex, cindex) {
       strike: style.strike,
       underline: style.underline,
     }, style.textwrap);
+    // error
+    const error = data.validations.getError(rindex, cindex);
+    if (error) {
+      // console.log('error:', rindex, cindex, error);
+      draw.error(dbox);
+    }
   });
 }
 

@@ -337,6 +337,21 @@ class Draw {
     ctx.restore();
   }
 
+  error(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    const sx = x + width - 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255, 0, 0, .65)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   rect(box, dtextcb) {
     const { ctx } = this;
     const {

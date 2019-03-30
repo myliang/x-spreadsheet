@@ -60,6 +60,7 @@ export default {
     notMatch: '此值不匹配验证规则',
     between: '此值应在 {} 和 {} 之间',
     notBetween: '此值不应在 {} 和 {} 之间',
+    notIn: '此值不在列表中',
     equal: '此值应该等于 {}',
     notEqual: '此值不应该等于 {}',
     lessThan: '此值应该小于 {}',

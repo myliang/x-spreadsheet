@@ -55,6 +55,29 @@ class Validation {
 class Validations {
   constructor() {
     this._ = [];
+    // ri_ci: errMessage
+    this.errors = {};
+  }
+
+  getError(ri, ci) {
+    return this.errors[`${ri}_${ci}`];
+  }
+
+  validate(ri, ci, text) {
+    const v = this.get(ri, ci);
+    const key = `${ri}_${ci}`;
+    const { errors } = this;
+    if (v !== null) {
+      const [flag, message] = v.validator.validate(text);
+      if (!flag) {
+        errors[key] = message;
+      } else {
+        delete errors[key];
+      }
+    } else {
+      delete errors[key];
+    }
+    return true;
   }
 
   // type: date|number|phone|email|list

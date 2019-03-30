@@ -60,6 +60,7 @@ export default {
     notMatch: 'it not match its validation rule',
     between: 'it is between {} and {}',
     notBetween: 'it is not between {} and {}',
+    notIn: 'it is not in list',
     equal: 'it equal to {}',
     notEqual: 'it not equal to {}',
     lessThan: 'it less than {}',

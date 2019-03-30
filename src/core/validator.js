@@ -6,6 +6,14 @@ const rules = {
   email: /w+([-+.]w+)*@w+([-.]w+)*.w+([-.]w+)*/,
 };
 
+function returnMessage(flag, key, ...arg) {
+  let message = '';
+  if (!flag) {
+    message = t(`validation.${key}`, ...arg);
+  }
+  return [flag, message];
+}
+
 export default class Validator {
   // operator: b|nb|eq|neq|lt|lte|gt|gte
   // type: date|number|list|phone|email
@@ -42,13 +50,6 @@ export default class Validator {
     return flag;
   }
 
-  setMessageIfFalse(flag, key, ...arg) {
-    if (!flag) {
-      this.message = t(`validation.${key}`, ...arg);
-    }
-    return flag;
-  }
-
   values() {
     return this.value.split(',');
   }
@@ -58,19 +59,19 @@ export default class Validator {
       required, operator, value, type,
     } = this;
     if (required && /^\s*$/.test(v)) {
-      return this.setMessageIfFalse(false, 'required');
+      return returnMessage(false, 'required');
     }
     if (rules[type] && !rules[type].test(v)) {
-      return this.setMessageIfFalse(false, 'notMatch');
+      return returnMessage(false, 'notMatch');
     }
     if (type === 'list') {
-      return this.values().includes(v);
+      return returnMessage(this.values().includes(v), 'notIn');
     }
     if (operator) {
       const v1 = this.parseValue(v);
       if (operator === 'be') {
         const [min, max] = value;
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 >= this.parseValue(min) && v1 <= this.parseValue(max),
           'between',
           min,
@@ -79,7 +80,7 @@ export default class Validator {
       }
       if (operator === 'nbe') {
         const [min, max] = value;
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 < this.parseValue(min) || v1 > this.parseValue(max),
           'notBetween',
           min,
@@ -87,48 +88,48 @@ export default class Validator {
         );
       }
       if (operator === 'eq') {
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 === this.parseValue(value),
           'equal',
           value,
         );
       }
       if (operator === 'neq') {
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 !== this.parseValue(value),
           'notEqual',
           value,
         );
       }
       if (operator === 'lt') {
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 < this.parseValue(value),
           'lessThan',
           value,
         );
       }
       if (operator === 'lte') {
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 <= this.parseValue(value),
           'lessThanEqual',
           value,
         );
       }
       if (operator === 'gt') {
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 > this.parseValue(value),
           'greaterThan',
           value,
         );
       }
       if (operator === 'gte') {
-        return this.setMessageIfFalse(
+        return returnMessage(
           v1 >= this.parseValue(value),
           'greaterThanEqual',
           value,
         );
       }
     }
-    return true;
+    return [true];
   }
 }
