@@ -352,7 +352,7 @@ function dataSetCellText(text, state = 'finished') {
   const { data, table } = this;
   // const [ri, ci] = selector.indexes;
   data.setSelectedCellText(text, state);
-  table.render();
+  if (state === 'finished') table.render();
 }
 
 function insertDeleteRowColumn(type) {

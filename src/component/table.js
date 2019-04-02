@@ -57,7 +57,7 @@ function renderCell(rindex, cindex) {
   }
   draw.rect(dbox, () => {
     // render text
-    let cellText = _cell.render(rindex, cindex, cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+    let cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
     if (style.format) {
       // console.log(data.formatm, '>>', cell.format);
       cellText = formatm[style.format].render(cellText);
