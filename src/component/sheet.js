@@ -9,6 +9,7 @@ import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar';
 import ModalValidation from './modal_validation';
+// import { xalert } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
 
@@ -233,7 +234,8 @@ function cut() {
 }
 
 function paste(what) {
-  this.data.paste(what);
+  const { data } = this;
+  data.paste(what);
   sheetReset.call(this);
 }
 

@@ -45,7 +45,9 @@ const infixExprToSuffixExpr = (src) => {
                 }
               }
               stack.push([c1, rangelen]);
-            } catch (e) {}
+            } catch (e) {
+              // console.log(e);
+            }
           } else if (fnArgType === 1) {
             // fn argument => A1,A2,B5
             stack.push([c1, fnArgsLen]);
@@ -147,9 +149,12 @@ const cellRender = (src, formulaMap, getCellText, cellList = []) => {
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
     if (stack.length <= 0) return src;
-    return evalSuffixExpr(stack, formulaMap, (x, y) => {
-      return cellRender(getCellText(x, y), formulaMap, getCellText, cellList);
-    }, cellList);
+    return evalSuffixExpr(
+      stack,
+      formulaMap,
+      (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText, cellList),
+      cellList,
+    );
   }
   return src;
 };
