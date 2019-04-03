@@ -18,10 +18,3 @@ script:
 after_script:
   - cp ./dist/* ./docs/ -r
 
-deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: 1cbcb71e3ca7d0b761e02e424073dbffdc2aa63f
-  keep_history: true
-  on:
-    branch: master    
