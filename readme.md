@@ -19,21 +19,19 @@
 
 ## CDN
 ```html
-<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.css">
-<script src="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
 
 <script>
    x.spreadsheet('#xspreadsheet');
 </script>
 ```
 
-## Install
+## NPM
 
 ```shell
 npm install x-data-spreadsheet
 ```
-
-## Quick Start
 
 ```html
 <div id="x-spreadsheet-demo"></div>
@@ -89,7 +87,24 @@ new Spreadsheet("#x-spreadsheet-demo")
 ```
 
 ## Internationalization
-[wiki](https://github.com/myliang/x-spreadsheet/wiki/Internationalization)
+```javascript
+// npm 
+import Spreadsheet from 'x-data-spreadsheet';
+import zhCN from 'x-data-spreadsheet/dist/locale/zh-cn';
+
+Spreadsheet.locale('zh-cn', zhCN);
+new Spreadsheet(document.getElementById('xss-demo'));
+```
+```html
+<!-- Import via CDN -->
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/locale/zh-cn.js"></script>
+
+<script>
+  x.spreadsheet.locale('zh-cn');
+</script>
+```
 
 ## Features
   - Undo & Redo
