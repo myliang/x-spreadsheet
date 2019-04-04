@@ -14,12 +14,22 @@
     "type": "git",
     "url": "https://github.com/myliang/x-spreadsheet.git"
   },
+  "nyc": {
+    "all": true,
+    "include": [
+      "src/core/*.js"
+    ],
+    "exclude": [
+      "**/*.spec.js"
+    ]
+  },
   "scripts": {
     "dev": "webpack-dev-server --open --config build/webpack.dev.js",
-    "test": "./node_modules/mocha/bin/mocha --require @babel/register test/*",
     "build": "webpack --config build/webpack.prod.js",
     "build-locale": "webpack --config build/webpack.locale.js",
-    "lint": "./node_modules/eslint/bin/eslint.js src"
+    "lint": "./node_modules/eslint/bin/eslint.js src",
+    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register test/*",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd"
   },
   "keywords": [
     "javascript",
@@ -39,11 +49,11 @@
     "eslint-plugin-import": "^2.14.0",
     "file-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
-    "karma-coverage": "^1.1.2",
     "less": "^3.8.1",
     "less-loader": "^4.1.0",
     "mini-css-extract-plugin": "^0.4.4",
     "mocha": "^5.2.0",
+    "nyc": "^13.3.0",
     "style-loader": "^0.23.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",
