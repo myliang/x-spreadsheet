@@ -1,6 +1,5 @@
-/* global window */
 import { Element, h } from './element';
-import { bind } from '../event';
+import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 export default class Dropdown extends Element {
@@ -32,10 +31,6 @@ export default class Dropdown extends Element {
       ) : '',
     );
     this.children(this.headerEl, this.contentEl);
-    bind(window, 'click', (evt) => {
-      if (this.el.contains(evt.target)) return;
-      this.hide();
-    });
   }
 
   setTitle(title) {
@@ -44,12 +39,17 @@ export default class Dropdown extends Element {
   }
 
   show() {
-    this.contentEl.show();
+    const { contentEl } = this;
+    contentEl.show();
     this.parent().active();
+    bindClickoutside(this.parent(), () => {
+      this.hide();
+    });
   }
 
   hide() {
     this.parent().active(false);
     this.contentEl.hide();
+    unbindClickoutside(this.parent());
   }
 }

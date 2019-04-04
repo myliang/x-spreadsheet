@@ -4,33 +4,50 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title><%= htmlWebpackPlugin.options.title %></title>
+    
 </head>
 <body onload="load()">
   <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
-      x.spreadsheet('#x-spreadsheet-demo')
+      // x.spreadsheet.locale('zh-cn');
+      x.spreadsheet('#x-spreadsheet-demo', {})
         .loadData({
-          freeze: [2, 2],
+          freeze: 'E3',
           styles: [
-            { bgcolor: '#f4f5f8', wrapText: true, color: '#900b09', bb: ['thin', '#0366d6'], bt: ['thin', '#0366d6'], br: ['thin', '#0366d6'], bl: ['thin', '#0366d6'] },
+            {
+              bgcolor: '#f4f5f8',
+              textwrap: true,
+              color: '#900b09',
+              border: {
+                top: ['thin', '#0366d6'],
+                bottom: ['thin', '#0366d6'],
+                right: ['thin', '#0366d6'],
+                left: ['thin', '#0366d6'],
+              },
+            },
           ],
           merges: [
-            [[2, 2], [3, 3]],
+            'C3:D4',
           ],
-          cellmm: {
+          rows: {
             1: {
-              0: { text: 'testingtesttestetst' },
-              2: { text: 'testing' },
+              cells: {
+                0: { text: 'testingtesttestetst' },
+                2: { text: 'testing' },
+              },
             },
             2: {
-              0: { text: 'render', si: 0 },
-              1: { text: 'Hello' },
-              2: { text: 'haha', merge: [1, 1] },
-              3: { text: 'overlayerll' },
+              cells: {
+                0: { text: 'render', style: 0 },
+                1: { text: 'Hello' },
+                2: { text: 'haha', merge: [1, 1] },
+              }
             },
             8: {
-              8: { text: 'border test', si: 0 },
+              cells: {
+                8: { text: 'border test', style: 0 },
+              }
             }
           },
         }).change((cdata) => console.log(cdata));

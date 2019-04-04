@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bind } from './event';
 import tooltip from './tooltip';
 import DropdownFont from './dropdown_font';
 import DropdownFontSize from './dropdown_fontsize';
@@ -12,6 +12,7 @@ import DropdownBorder from './dropdown_border';
 import Dropdown from './dropdown';
 import Icon from './icon';
 import { cssPrefix } from '../config';
+import { t } from '../locale/locale';
 
 function buildIcon(name) {
   return new Icon(name);
@@ -52,9 +53,9 @@ function toggleChange(type) {
   let elName = type;
   const types = type.split('-');
   if (types.length > 1) {
-    types.forEach((t, i) => {
-      if (i === 0) elName = t;
-      else elName += t[0].toUpperCase() + t.substring(1);
+    types.forEach((it, i) => {
+      if (i === 0) elName = it;
+      else elName += it[0].toUpperCase() + it.substring(1);
     });
   }
   const el = this[`${elName}El`];
@@ -72,28 +73,32 @@ class DropdownMore extends Dropdown {
   }
 }
 
+function initBtns2() {
+  this.btns2 = this.btnChildren.map((it) => {
+    const rect = it.box();
+    const { marginLeft, marginRight } = it.computedStyle();
+    return [it, rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10)];
+  });
+}
+
 function moreResize() {
   const {
-    el, btns, moreEl, ddMore, btnChildren,
+    el, btns, moreEl, ddMore, btns2,
   } = this;
   const { moreBtns, contentEl } = ddMore;
+  el.css('width', `${this.widthFn() - 60}px`);
   const elBox = el.box();
 
   let sumWidth = 160;
   let sumWidth2 = 12;
   const list1 = [];
   const list2 = [];
-  // console.log('elBox:', elBox);
-  btnChildren.forEach((it) => {
-    const rect = it.box();
-    sumWidth += rect.width;
-    // console.log('sumWidth:', sumWidth, elBox.width);
-    if (it.attr('data-tooltip') === 'More' || sumWidth < elBox.width) {
+  btns2.forEach(([it, w], index) => {
+    sumWidth += w;
+    if (index === btns2.length - 1 || sumWidth < elBox.width) {
       list1.push(it);
     } else {
-      // console.log('margin:', it.computedStyle());
-      const { marginLeft, marginRight } = it.computedStyle();
-      sumWidth2 += rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10);
+      sumWidth2 += w;
       list2.push(it);
     }
   });
@@ -108,10 +113,11 @@ function moreResize() {
 }
 
 export default class Toolbar {
-  constructor(data) {
+  constructor(data, widthFn, isHide = false) {
     this.data = data;
     this.change = () => {};
-    const { style } = data.options;
+    this.widthFn = widthFn;
+    const style = data.defaultStyle();
     // console.log('data:', data);
     this.ddFormat = new DropdownFormat();
     this.ddFont = new DropdownFont();
@@ -124,45 +130,47 @@ export default class Toolbar {
     this.ddBorder = new DropdownBorder();
     this.ddMore = new DropdownMore();
     this.btnChildren = [
-      this.undoEl = buildButtonWithIcon('Undo (Ctrl+Z)', 'undo', () => this.change('undo')),
-      this.redoEl = buildButtonWithIcon('Redo (Ctrl+Y)', 'redo', () => this.change('redo')),
+      this.undoEl = buildButtonWithIcon(`${t('toolbar.undo')} (Ctrl+Z)`, 'undo', () => this.change('undo')),
+      this.redoEl = buildButtonWithIcon(`${t('toolbar.undo')} (Ctrl+Y)`, 'redo', () => this.change('redo')),
       // this.printEl = buildButtonWithIcon('Print (Ctrl+P)', 'print', () => this.change('print')),
-      this.paintformatEl = buildButtonWithIcon('Paint format', 'paintformat', () => toggleChange.call(this, 'paintformat')),
-      this.clearformatEl = buildButtonWithIcon('Clear format', 'clearformat', () => this.change('clearformat')),
+      this.paintformatEl = buildButtonWithIcon(`${t('toolbar.paintformat')}`, 'paintformat', () => toggleChange.call(this, 'paintformat')),
+      this.clearformatEl = buildButtonWithIcon(`${t('toolbar.clearformat')}`, 'clearformat', () => this.change('clearformat')),
       buildDivider(),
-      buildButton('Format').child(this.ddFormat.el),
+      buildButton(`${t('toolbar.format')}`).child(this.ddFormat.el),
       buildDivider(),
-      buildButton('Font').child(this.ddFont.el),
-      buildButton('Font size').child(this.ddFontSize.el),
+      buildButton(`${t('toolbar.font')}`).child(this.ddFont.el),
+      buildButton(`${t('toolbar.fontSize')}`).child(this.ddFontSize.el),
       buildDivider(),
-      this.fontBoldEl = buildButtonWithIcon('Bold (Ctrl+B)', 'bold', () => toggleChange.call(this, 'font-bold')),
-      this.fontItalicEl = buildButtonWithIcon('Italic (Ctrl+I)', 'italic', () => toggleChange.call(this, 'font-italic')),
-      this.underlineEl = buildButtonWithIcon('Underline (Ctrl+U)', 'underline', () => toggleChange.call(this, 'underline')),
-      this.strikethroughEl = buildButtonWithIcon('Strikethrough', 'strikethrough', () => toggleChange.call(this, 'strikethrough')),
-      buildButton('Text color').child(this.ddTextColor.el),
+      this.fontBoldEl = buildButtonWithIcon(`${t('toolbar.fontBold')} (Ctrl+B)`, 'bold', () => toggleChange.call(this, 'font-bold')),
+      this.fontItalicEl = buildButtonWithIcon(`${t('toolbar.fontItalic')} (Ctrl+I)`, 'italic', () => toggleChange.call(this, 'font-italic')),
+      this.underlineEl = buildButtonWithIcon(`${t('toolbar.underline')} (Ctrl+U)`, 'underline', () => toggleChange.call(this, 'underline')),
+      this.strikeEl = buildButtonWithIcon(`${t('toolbar.strike')}`, 'strike', () => toggleChange.call(this, 'strike')),
+      buildButton(`${t('toolbar.textColor')}`).child(this.ddTextColor.el),
       buildDivider(),
-      buildButton('Fill color').child(this.ddFillColor.el),
-      buildButton('Borders').child(this.ddBorder.el),
-      this.mergeEl = buildButtonWithIcon('Merge cells', 'merge', () => toggleChange.call(this, 'merge')),
+      buildButton(`${t('toolbar.fillColor')}`).child(this.ddFillColor.el),
+      buildButton(`${t('toolbar.border')}`).child(this.ddBorder.el),
+      this.mergeEl = buildButtonWithIcon(`${t('toolbar.merge')}`, 'merge', () => toggleChange.call(this, 'merge')),
       buildDivider(),
-      buildButton('Horizontal align').child(this.ddAlign.el),
-      buildButton('Vertical align').child(this.ddVAlign.el),
-      this.textwrapEl = buildButtonWithIcon('Text wrapping', 'textwrap', () => toggleChange.call(this, 'textwrap')),
+      buildButton(`${t('toolbar.align')}`).child(this.ddAlign.el),
+      buildButton(`${t('toolbar.valign')}`).child(this.ddVAlign.el),
+      this.textwrapEl = buildButtonWithIcon(`${t('toolbar.textwrap')}`, 'textwrap', () => toggleChange.call(this, 'textwrap')),
       buildDivider(),
       // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
       // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
       // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
-      this.freezeEl = buildButtonWithIcon('Freeze cell', 'freeze', () => toggleChange.call(this, 'freeze')),
-      buildButton('Functions').child(this.ddFormula.el),
+      this.freezeEl = buildButtonWithIcon(`${t('toolbar.freeze')}`, 'freeze', () => toggleChange.call(this, 'freeze')),
+      buildButton(`${t('toolbar.formula')}`).child(this.ddFormula.el),
       // buildDivider(),
-      this.moreEl = buildButton('More').child(this.ddMore.el).hide(),
+      this.moreEl = buildButton(`${t('toolbar.more')}`).child(this.ddMore.el).hide(),
     ];
     this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(...this.btnChildren);
     this.el.child(this.btns);
+    if (isHide) this.el.hide();
     bindDropdownChange.call(this);
     this.reset();
     setTimeout(() => {
+      initBtns2.call(this);
       moreResize.call(this);
     }, 0);
     bind(window, 'resize', () => {
@@ -190,7 +198,7 @@ export default class Toolbar {
     this.undoEl.disabled(!data.canUndo());
     this.redoEl.disabled(!data.canRedo());
     this.mergeEl.active(data.canUnmerge())
-      .disabled(data.selector.seqe());
+      .disabled(!data.selector.multiple());
     // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
     const { font } = style;
@@ -199,7 +207,7 @@ export default class Toolbar {
     this.fontBoldEl.active(font.bold);
     this.fontItalicEl.active(font.italic);
     this.underlineEl.active(style.underline);
-    this.strikethroughEl.active(style.strikethrough);
+    this.strikeEl.active(style.strike);
     this.ddTextColor.setTitle(style.color);
     this.ddFillColor.setTitle(style.bgcolor);
     this.ddAlign.setTitle(style.align);

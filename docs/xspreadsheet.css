@@ -6,22 +6,21 @@ body {
   line-height: normal;
   user-select: none;
   -moz-user-select: none;
-  font-family: 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: content-box;
   background: #fff;
   -webkit-font-smoothing: antialiased;
 }
 .x-spreadsheet textarea {
-  font: 400 13px 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+  font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
 }
 .x-spreadsheet-sheet {
   position: relative;
   overflow: hidden;
-  height: 100%;
   line-height: 0;
 }
 .x-spreadsheet-tooltip {
-  font-family: 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   position: absolute;
   padding: 5px 10px;
   color: #fff;
@@ -259,8 +258,7 @@ body {
   resize: none;
   text-align: start;
   overflow-y: hidden;
-  font-family: inherit;
-  font-size: inherit;
+  font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
   color: inherit;
   white-space: normal;
   word-wrap: break-word;
@@ -331,7 +329,6 @@ body {
   box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
   background: #fff;
   z-index: 100;
-  max-height: 360px;
   width: 260px;
   pointer-events: auto;
   overflow: auto;
@@ -391,6 +388,218 @@ body {
   height: 18px;
   margin: 12px 3px 0;
 }
+.x-spreadsheet-calendar {
+  color: rgba(0, 0, 0, 0.65);
+  background: #ffffff;
+  user-select: none;
+}
+.x-spreadsheet-calendar .calendar-header {
+  font-weight: 700;
+  line-height: 30px;
+  text-align: center;
+  width: 100%;
+  float: left;
+  background: #f9fafb;
+}
+.x-spreadsheet-calendar .calendar-header .calendar-header-left {
+  padding-left: 5px;
+  float: left;
+}
+.x-spreadsheet-calendar .calendar-header .calendar-header-right {
+  float: right;
+}
+.x-spreadsheet-calendar .calendar-header .calendar-header-right a {
+  padding: 3px 0;
+  margin-right: 2px;
+  border-radius: 2px;
+}
+.x-spreadsheet-calendar .calendar-header .calendar-header-right a:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.x-spreadsheet-calendar .calendar-body {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.x-spreadsheet-calendar .calendar-body th,
+.x-spreadsheet-calendar .calendar-body td {
+  width: 14.28571429%;
+  min-width: 32px;
+  text-align: center;
+  font-weight: 700;
+  line-height: 30px;
+  padding: 0;
+}
+.x-spreadsheet-calendar .calendar-body td > .cell:hover {
+  background: #ecf6fd;
+}
+.x-spreadsheet-calendar .calendar-body td > .cell.active,
+.x-spreadsheet-calendar .calendar-body td > .cell.active:hover {
+  background: #ecf6fd;
+  color: #2185D0;
+}
+.x-spreadsheet-calendar .calendar-body td > .cell.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.x-spreadsheet-datepicker {
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  left: 0;
+  top: calc(100% + 5px);
+  z-index: 10;
+  width: auto;
+}
+.x-spreadsheet-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+.x-spreadsheet-buttons .x-spreadsheet-button {
+  margin-left: 8px;
+}
+.x-spreadsheet-button {
+  display: inline-block;
+  border-radius: 3px;
+  line-height: 1em;
+  min-height: 1em;
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 700;
+  padding: 0.75em 1em;
+  color: rgba(0, 0, 0, 0.6);
+  background: #E0E1E2;
+  text-decoration: none;
+  font-family: "Lato", "proxima-nova", "Helvetica Neue", Arial, sans-serif;
+  outline: none;
+  vertical-align: baseline;
+  zoom: 1;
+  user-select: none;
+  transition: all 0.1s linear;
+}
+.x-spreadsheet-button.active,
+.x-spreadsheet-button:hover {
+  background-color: #C0C1C2;
+  color: rgba(0, 0, 0, 0.8);
+}
+.x-spreadsheet-button.primary {
+  color: #fff;
+  background-color: #2185D0;
+}
+.x-spreadsheet-button.primary:hover,
+.x-spreadsheet-button.primary.active {
+  color: #fff;
+  background-color: #1678c2;
+}
+.x-spreadsheet-form-input {
+  font-size: 1em;
+  position: relative;
+  font-weight: 400;
+  display: inline-flex;
+  color: rgba(0, 0, 0, 0.87);
+}
+.x-spreadsheet-form-input input {
+  z-index: 1;
+  margin: 0;
+  max-width: 100%;
+  flex: 1 0 auto;
+  outline: 0;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+  text-align: left;
+  line-height: 30px;
+  height: 30px;
+  padding: 0 8px;
+  background: #fff;
+  border: 1px solid #e9e9e9;
+  border-radius: 3px;
+  transition: box-shadow 0.1s ease, border-color 0.1s ease;
+  box-shadow: inset 0 1px 2px hsla(0, 0%, 4%, 0.06);
+}
+.x-spreadsheet-form-input input:focus {
+  border-color: #4b89ff;
+  box-shadow: inset 0 1px 2px rgba(75, 137, 255, 0.2);
+}
+.x-spreadsheet-form-select {
+  position: relative;
+  display: inline-block;
+  background: #fff;
+  border: 1px solid #e9e9e9;
+  border-radius: 2px;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.87);
+  user-select: none;
+  box-shadow: inset 0 1px 2px hsla(0, 0%, 4%, 0.06);
+}
+.x-spreadsheet-form-select .input-text {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 60px;
+  width: auto;
+  height: 30px;
+  line-height: 30px;
+  padding: 0 8px;
+}
+.x-spreadsheet-form-fields {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.x-spreadsheet-form-fields .x-spreadsheet-form-field {
+  flex: 0 1 auto;
+}
+.x-spreadsheet-form-fields .x-spreadsheet-form-field .label {
+  display: inline-block;
+  margin: 0 10px 0 0;
+}
+.x-spreadsheet-form-field {
+  display: block;
+  vertical-align: middle;
+  margin-left: 10px;
+  margin-bottom: 10px;
+}
+.x-spreadsheet-form-field:first-child {
+  margin-left: 0;
+}
+.x-spreadsheet-form-field.error .x-spreadsheet-form-select,
+.x-spreadsheet-form-field.error input {
+  border-color: #f04134;
+}
+.x-spreadsheet-form-field .tip {
+  color: #f04134;
+  font-size: 0.9em;
+}
+.x-spreadsheet-modal {
+  font-size: 1em;
+  position: fixed;
+  z-index: 1001;
+  text-align: left;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.65);
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 8px;
+  line-height: 1.25em;
+}
+.x-spreadsheet-modal .x-spreadsheet-modal-header {
+  padding: 10px 12px;
+  font-size: 1.1em;
+  border-bottom: 1px solid #e0e2e4;
+  border-radius: 4 4 0 0;
+  background: rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+.x-spreadsheet-modal .x-spreadsheet-modal-header .x-spreadsheet-icon {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  border-radius: 18px;
+}
+.x-spreadsheet-modal .x-spreadsheet-modal-header .x-spreadsheet-icon:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+.x-spreadsheet-modal .x-spreadsheet-modal-content {
+  border-radius: 0 0 4 4;
+  padding: 10px 12px;
+}
 @media screen and (min-width: 320px) and (max-width: 480px) {
   .x-spreadsheet-toolbar {
     display: none;
@@ -408,7 +617,7 @@ body {
   display: inline-block;
 }
 .x-spreadsheet-icon .x-spreadsheet-icon-img {
-  background-image: url(ece3e4fa05d4292823fdef970eaf1233.svg);
+  background-image: url(58eaeb4e52248a5c75936c6f4c33a370.svg);
   position: absolute;
   width: 262px;
   height: 444px;
@@ -446,7 +655,7 @@ body {
   left: -126px;
   top: 0;
 }
-.x-spreadsheet-icon .x-spreadsheet-icon-img.strikethrough {
+.x-spreadsheet-icon .x-spreadsheet-icon-img.strike {
   left: -144px;
   top: 0;
 }
@@ -573,6 +782,26 @@ body {
 .x-spreadsheet-icon .x-spreadsheet-icon-img.line-type {
   left: -198px;
   top: -36px;
+}
+.x-spreadsheet-icon .x-spreadsheet-icon-img.close {
+  left: -234px;
+  top: -36px;
+}
+.x-spreadsheet-icon .x-spreadsheet-icon-img.chevron-down {
+  left: 0;
+  top: -54px;
+}
+.x-spreadsheet-icon .x-spreadsheet-icon-img.chevron-up {
+  left: -18px;
+  top: -54px;
+}
+.x-spreadsheet-icon .x-spreadsheet-icon-img.chevron-left {
+  left: -36px;
+  top: -54px;
+}
+.x-spreadsheet-icon .x-spreadsheet-icon-img.chevron-right {
+  left: -54px;
+  top: -54px;
 }
 
 

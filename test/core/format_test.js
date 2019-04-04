@@ -1,22 +1,8 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import { formats, baseFormats } from '../src/format';
+import { formatm } from '../../src/core/format';
 
-describe('formats()', () => {
-  it('should return baseFormats.length formats when this value is empty', () => {
-    assert.equal(Object.keys(formats()).length, baseFormats.length);
-  });
-  it('should return baseFormats.length + 1 formats when this value is [{key: "tahoma", title: "tahoma", render: () => {}}]', () => {
-    const no = formats([{ key: 'tahoma', title: 'tahoma', render: () => {} }]);
-    assert.equal(Object.keys(no).length, baseFormats.length + 1);
-  });
-  it('should return value include tohoma when this value is [{key: "tahoma", title: "tahoma", render: () => {}}]', () => {
-    const no = formats([{ key: 'tahoma', title: 'tahoma', render: () => {} }]);
-    assert.ok(Object.keys(no).includes('tahoma'));
-  });
-});
-
-const gformats = formats();
+const gformats = formatm;
 describe('format', () => {
   describe('#render()', () => {
     it('text: should return abc when the value is abc', () => {

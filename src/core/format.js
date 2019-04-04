@@ -1,3 +1,5 @@
+import { tf } from '../locale/locale';
+
 const formatStringRender = v => v;
 
 const formatNumberRender = (v) => {
@@ -12,85 +14,89 @@ const formatNumberRender = (v) => {
 const baseFormats = [
   {
     key: 'normal',
-    title: 'Normal',
+    title: tf('format.normal'),
     type: 'string',
     render: formatStringRender,
   },
   {
     key: 'text',
-    title: 'Plain Text',
+    title: tf('format.text'),
     type: 'string',
     render: formatStringRender,
   },
   {
     key: 'number',
-    title: 'Number',
+    title: tf('format.number'),
     type: 'number',
     label: '1,000.12',
     render: formatNumberRender,
   },
   {
     key: 'percent',
-    title: 'Percent',
+    title: tf('format.percent'),
     type: 'number',
     label: '10.12%',
     render: v => `${v}%`,
   },
   {
     key: 'rmb',
-    title: 'RMB',
+    title: tf('format.rmb'),
     type: 'number',
     label: '￥10.00',
     render: v => `￥${formatNumberRender(v)}`,
   },
   {
     key: 'usd',
-    title: 'USD',
+    title: tf('format.usd'),
     type: 'number',
     label: '$10.00',
     render: v => `$${formatNumberRender(v)}`,
   },
   {
     key: 'date',
-    title: 'Date',
+    title: tf('format.date'),
     type: 'date',
     label: '26/09/2008',
     render: formatStringRender,
   },
   {
     key: 'time',
-    title: 'Time',
+    title: tf('format.time'),
     type: 'date',
     label: '15:59:00',
     render: formatStringRender,
   },
   {
     key: 'datetime',
-    title: 'Date time',
+    title: tf('format.datetime'),
     type: 'date',
     label: '26/09/2008 15:59:00',
     render: formatStringRender,
   },
   {
     key: 'duration',
-    title: 'Duration',
+    title: tf('format.duration'),
     type: 'date',
     label: '24:01:00',
     render: formatStringRender,
   },
 ];
 
-const formats = (ary = []) => {
-  const map = {};
-  baseFormats.concat(ary).forEach((f) => {
-    map[f.key] = f;
-  });
-  return map;
-};
+// const formats = (ary = []) => {
+//   const map = {};
+//   baseFormats.concat(ary).forEach((f) => {
+//     map[f.key] = f;
+//   });
+//   return map;
+// };
+const formatm = {};
+baseFormats.forEach((f) => {
+  formatm[f.key] = f;
+});
 
 export default {
 };
 export {
-  formats,
+  formatm,
   baseFormats,
 };

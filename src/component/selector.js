@@ -1,5 +1,6 @@
 import { h } from './element';
 import { cssPrefix } from '../config';
+import { CellRange } from '../core/cell_range';
 
 const selectorHeightBorderWidth = 2 * 2 - 1;
 let startZIndex = 10;
@@ -188,10 +189,8 @@ export default class Selector {
     this.offset = null;
     this.areaOffset = null;
     this.indexes = null;
-    this.sIndexes = null;
-    this.eIndexes = null;
-    this.saIndexes = null;
-    this.eaIndexes = null;
+    this.range = null;
+    this.arange = null;
     this.el = h('div', `${cssPrefix}-selectors`)
       .children(
         this.tl.el,
@@ -257,39 +256,44 @@ export default class Selector {
 
   set(ri, ci, indexesUpdated = true) {
     const { data } = this;
-    const [sIndexes, eIndexes] = data.calRangeIndexes(ri, ci);
+    const cellRange = data.calSelectedRangeByStart(ri, ci);
+    const { sri, sci } = cellRange;
     if (indexesUpdated) {
       let [cri, cci] = [ri, ci];
       if (ri < 0) cri = 0;
       if (ci < 0) cci = 0;
-      data.setSelectedCurrentIndexes([cri, cci]);
+      data.selector.setIndexes(cri, cci);
       this.indexes = [cri, cci];
     }
 
-    this.moveIndexes = sIndexes;
-    this.sIndexes = sIndexes;
-    this.eIndexes = eIndexes;
+    this.moveIndexes = [sri, sci];
+    // this.sIndexes = sIndexes;
+    // this.eIndexes = eIndexes;
+    this.range = cellRange;
     this.resetAreaOffset();
     this.el.show();
   }
 
   setEnd(ri, ci) {
     const { data } = this;
-    const [sIndexes, eIndexes] = data.calRangeIndexes2(ri, ci);
-    this.sIndexes = sIndexes;
-    this.eIndexes = eIndexes;
-    this.reset();
+    this.range = data.calSelectedRangeByEnd(ri, ci);
+    setAllAreaOffset.call(this, this.data.getSelectedRect());
   }
 
   reset() {
-    setAllAreaOffset.call(this, this.data.getSelectedRect());
+    // console.log('::::', this.data);
+    const { eri, eci } = this.data.selector.range;
+    this.setEnd(eri, eci);
   }
 
   showAutofill(ri, ci) {
     if (ri === -1 && ci === -1) return;
     // console.log('ri:', ri, ', ci:', ci);
-    const [sri, sci] = this.sIndexes;
-    const [eri, eci] = this.eIndexes;
+    // const [sri, sci] = this.sIndexes;
+    // const [eri, eci] = this.eIndexes;
+    const {
+      sri, sci, eri, eci,
+    } = this.range;
     const [nri, nci] = [ri, ci];
     // const rn = eri - sri;
     // const cn = eci - sci;
@@ -300,36 +304,41 @@ export default class Selector {
     if (scn > 0) {
       // left
       // console.log('left');
-      this.saIndexes = [sri, nci];
-      this.eaIndexes = [eri, sci - 1];
+      this.arange = new CellRange(sri, nci, eri, sci - 1);
+      // this.saIndexes = [sri, nci];
+      // this.eaIndexes = [eri, sci - 1];
       // data.calRangeIndexes2(
     } else if (srn > 0) {
       // top
       // console.log('top');
       // nri = sri;
-      this.saIndexes = [nri, sci];
-      this.eaIndexes = [sri - 1, eci];
+      this.arange = new CellRange(nri, sci, sri - 1, eci);
+      // this.saIndexes = [nri, sci];
+      // this.eaIndexes = [sri - 1, eci];
     } else if (ecn < 0) {
       // right
       // console.log('right');
       // nci = eci;
-      this.saIndexes = [sri, eci + 1];
-      this.eaIndexes = [eri, nci];
+      this.arange = new CellRange(sri, eci + 1, eri, nci);
+      // this.saIndexes = [sri, eci + 1];
+      // this.eaIndexes = [eri, nci];
     } else if (ern < 0) {
       // bottom
       // console.log('bottom');
       // nri = eri;
-      this.saIndexes = [eri + 1, sci];
-      this.eaIndexes = [nri, eci];
+      this.arange = new CellRange(eri + 1, sci, nri, eci);
+      // this.saIndexes = [eri + 1, sci];
+      // this.eaIndexes = [nri, eci];
     } else {
       // console.log('else:');
-      this.saIndexes = null;
-      this.eaIndexes = null;
+      this.arange = null;
+      // this.saIndexes = null;
+      // this.eaIndexes = null;
       return;
     }
-    if (this.saIndexes !== null) {
+    if (this.arange !== null) {
       // console.log(this.saIndexes, ':', this.eaIndexes);
-      const offset = this.data.getRect(this.saIndexes, this.eaIndexes);
+      const offset = this.data.getRect(this.arange);
       offset.width += 2;
       offset.height += 2;
       const {

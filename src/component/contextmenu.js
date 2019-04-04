@@ -1,21 +1,23 @@
-/* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
+import { tf } from '../locale/locale';
 
 const menuItems = [
-  { key: 'copy', title: 'Copy', label: 'Ctrl+C' },
-  { key: 'cut', title: 'Cut', label: 'Ctrl+X' },
-  { key: 'paste', title: 'Paste', label: 'Ctrl+V' },
-  { key: 'paste-value', title: 'Paste values only', label: 'Ctrl+Shift+V' },
-  { key: 'paste-format', title: 'Paste format only', label: 'Ctrl+Alt+V' },
+  { key: 'copy', title: tf('contextmenu.copy'), label: 'Ctrl+C' },
+  { key: 'cut', title: tf('contextmenu.cut'), label: 'Ctrl+X' },
+  { key: 'paste', title: tf('contextmenu.paste'), label: 'Ctrl+V' },
+  { key: 'paste-value', title: tf('contextmenu.pasteValue'), label: 'Ctrl+Shift+V' },
+  { key: 'paste-format', title: tf('contextmenu.pasteFormat'), label: 'Ctrl+Alt+V' },
   { key: 'divider' },
-  { key: 'insert-row', title: 'Insert row' },
-  { key: 'insert-column', title: 'Insert column' },
+  { key: 'insert-row', title: tf('contextmenu.insertRow') },
+  { key: 'insert-column', title: tf('contextmenu.insertColumn') },
   { key: 'divider' },
-  { key: 'delete-row', title: 'Delete row' },
-  { key: 'delete-column', title: 'Delete column' },
-  { key: 'delete-cell-text', title: 'Delete cell' },
+  { key: 'delete-row', title: tf('contextmenu.deleteRow') },
+  { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
+  { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
+  { key: 'divider' },
+  { key: 'validation', title: tf('contextmenu.validation') },
 ];
 
 function buildMenuItem(item) {
@@ -28,7 +30,7 @@ function buildMenuItem(item) {
       this.hide();
     })
     .children(
-      item.title,
+      item.title(),
       h('div', 'label').child(item.label || ''),
     );
 }
@@ -44,15 +46,12 @@ export default class ContextMenu {
       .hide();
     this.viewFn = viewFn;
     this.itemClick = () => {};
-    bind(window, 'click', (evt) => {
-      // console.log('outside:::', this.el.contains(evt.target));
-      if (this.el.contains(evt.target)) return;
-      this.hide();
-    });
   }
 
   hide() {
-    this.el.hide();
+    const { el } = this;
+    el.hide();
+    unbindClickoutside(el);
   }
 
   setPosition(x, y) {
@@ -62,13 +61,12 @@ export default class ContextMenu {
     let top = y;
     let left = x;
     if (view.height - y <= height) {
-      // -1 : firefox bug, focus contextmenu
-      top -= height - 1;
+      top -= height;
     }
     if (view.width - x <= width) {
-      // -1 : firefox bug, focus contextmenu
-      left -= width - 1;
+      left -= width;
     }
     el.offset({ left, top });
+    bindClickoutside(el);
   }
 }

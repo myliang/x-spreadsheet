@@ -1,6 +1,5 @@
-/* global window */
 import { h } from './element';
-import { bind } from '../event';
+import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 function inputMovePrev(evt) {
@@ -8,7 +7,7 @@ function inputMovePrev(evt) {
   evt.stopPropagation();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
-  filterItems[this.itemIndex].toggle();
+  if (this.itemIndex >= 0) filterItems[this.itemIndex].toggle();
   this.itemIndex -= 1;
   if (this.itemIndex < 0) {
     this.itemIndex = filterItems.length - 1;
@@ -20,7 +19,7 @@ function inputMoveNext(evt) {
   evt.stopPropagation();
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
-  filterItems[this.itemIndex].toggle();
+  if (this.itemIndex >= 0) filterItems[this.itemIndex].toggle();
   this.itemIndex += 1;
   if (this.itemIndex > filterItems.length - 1) {
     this.itemIndex = 0;
@@ -33,6 +32,7 @@ function inputEnter(evt) {
   const { filterItems } = this;
   if (filterItems.length <= 0) return;
   evt.stopPropagation();
+  if (this.itemIndex < 0) this.itemIndex = 0;
   filterItems[this.itemIndex].el.click();
   this.hide();
 }
@@ -68,12 +68,12 @@ function inputKeydownHandler(evt) {
 }
 
 export default class Suggest {
-  constructor(items, itemClick) {
+  constructor(items, itemClick, width = '200px') {
     this.filterItems = [];
     this.items = items;
-    this.el = h('div', `${cssPrefix}-suggest`).hide();
+    this.el = h('div', `${cssPrefix}-suggest`).css('width', width).hide();
     this.itemClick = itemClick;
-    this.itemIndex = 0;
+    this.itemIndex = -1;
   }
 
   setOffset(v) {
@@ -82,39 +82,54 @@ export default class Suggest {
   }
 
   hide() {
+    const { el } = this;
     this.filterItems = [];
-    this.itemIndex = 0;
-    this.el.hide();
+    this.itemIndex = -1;
+    el.hide();
+    unbindClickoutside(this.el.parent());
+  }
+
+  setItems(items) {
+    this.items = items;
+    this.search('');
   }
 
   search(word) {
     let { items } = this;
     if (!/^\s*$/.test(word)) {
-      items = items.filter(it => it.key.startsWith(word.toUpperCase()));
+      items = items.filter(it => (it.key || it).startsWith(word.toUpperCase()));
     }
     items = items.map((it) => {
+      let { title } = it;
+      if (title) {
+        if (typeof title === 'function') {
+          title = title();
+        }
+      } else {
+        title = it;
+      }
       const item = h('div', `${cssPrefix}-item`)
-        .child(it.key)
+        .child(title)
         .on('click.stop', () => {
           this.itemClick(it);
           this.hide();
         });
-      item.child(h('div', 'label').html(it.title || it.label));
+      if (it.label) {
+        item.child(h('div', 'label').html(it.label));
+      }
       return item;
     });
     this.filterItems = items;
     if (items.length <= 0) {
       return;
     }
-    items[0].toggle();
-    this.el.html('').children(...items).show();
+    const { el } = this;
+    // items[0].toggle();
+    el.html('').children(...items).show();
+    bindClickoutside(el.parent(), () => { this.hide(); });
   }
 
   bindInputEvents(input) {
     input.on('keydown', evt => inputKeydownHandler.call(this, evt));
-    bind(window, 'click', (evt) => {
-      if (this.el.contains(evt.target)) return;
-      this.hide();
-    });
   }
 }

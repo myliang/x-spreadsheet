@@ -12,6 +12,16 @@
   </a>
 </p>
 
+## CDN
+```html
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.js"></script>
+
+<script>
+   x.spreadsheet('#xspreadsheet');
+</script>
+```
+
 ## Install
 
 ```shell
@@ -39,13 +49,12 @@ new Spreadsheet("#x-spreadsheet-demo")
 ```javascript
 // default options
 {
+  showToolbar: true,
+  showGrid: true,
   view: {
-    height: () => document.documentElement.clientHeight - 41,
+    height: () => document.documentElement.clientHeight,
     width: () => document.documentElement.clientWidth,
   },
-  formats: [],
-  fonts: [],
-  formula: [],
   row: {
     len: 100,
     height: 25,
@@ -61,8 +70,7 @@ new Spreadsheet("#x-spreadsheet-demo")
     align: 'left',
     valign: 'middle',
     textwrap: false,
-    textDecoration: 'normal',
-    strikethrough: false,
+    strike: false,
     underline: false,
     color: '#0a0a0a',
     font: {
@@ -74,6 +82,35 @@ new Spreadsheet("#x-spreadsheet-demo")
   },
 }
 ```
+
+## Internationalization
+[wiki](https://github.com/myliang/x-spreadsheet/wiki/Internationalization)
+
+## Features
+  - Undo & Redo
+  - Paint format
+  - Clear format
+  - Format
+  - Font
+  - Font size
+  - Font bold
+  - Font italic
+  - Underline
+  - Strike
+  - Text color
+  - Fill color
+  - Borders
+  - Merge cells
+  - Align
+  - Text wrapping
+  - Freeze cell
+  - Functions
+  - Resize row-height, col-width
+  - Copy, Cut, Paste
+  - Autofill
+  - Insert row, column
+  - Delete row, column
+  - Data validations
 
 ## Development
 

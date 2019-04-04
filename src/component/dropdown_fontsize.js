@@ -1,6 +1,6 @@
 import Dropdown from './dropdown';
 import { h } from './element';
-import { fontSizes } from '../font';
+import { fontSizes } from '../core/font';
 import { cssPrefix } from '../config';
 
 export default class DropdownFontSize extends Dropdown {

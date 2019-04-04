@@ -1,8 +1,28 @@
+/* global window */
 export function bind(target, name, fn) {
   target.addEventListener(name, fn);
 }
 export function unbind(target, name, fn) {
   target.removeEventListener(name, fn);
+}
+export function unbindClickoutside(el) {
+  if (el.xclickoutside) {
+    unbind(window.document.body, 'click', el.xclickoutside);
+    delete el.xclickoutside;
+  }
+}
+
+// the left mouse button: mousedown → mouseup → click
+// the right mouse button: mousedown → contenxtmenu → mouseup
+// the right mouse button in firefox(>65.0): mousedown → contenxtmenu → mouseup → click on window
+export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
+  el.xclickoutside = (evt) => {
+    // console.log('clickoutside::');
+    if (el.contains(evt.target)) return;
+    cb(el);
+    unbindClickoutside(el);
+  };
+  bind(window.document.body, 'click', el.xclickoutside);
 }
 export function mouseMoveUp(target, movefunc, upfunc) {
   bind(target, 'mousemove', movefunc);
