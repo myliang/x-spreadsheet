@@ -1,11 +1,13 @@
 import { xy2expr, expr2xy } from './alphabet';
 
 class CellRange {
-  constructor(sri, sci, eri, eci) {
+  constructor(sri, sci, eri, eci, w = 0, h = 0) {
     this.sri = sri;
     this.sci = sci;
     this.eri = eri;
     this.eci = eci;
+    this.w = w;
+    this.h = h;
   }
 
   set(sri, sci, eri, eci) {
@@ -174,9 +176,18 @@ class CellRange {
     return ref;
   }
 
+  clone() {
+    const {
+      sri, sci, eri, eci, w, h,
+    } = this;
+    return new CellRange(sri, sci, eri, eci, w, h);
+  }
+
+  /*
   toJSON() {
     return this.toString();
   }
+  */
 
   equals(other) {
     return this.eri === other.eri

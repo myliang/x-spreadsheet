@@ -704,7 +704,7 @@ export default class DataProxy {
     let x1 = left;
     if (x > 0) x1 += width;
     if (scroll.x !== x1) {
-      scroll.ci = x > 0 ? ci - fci : 0;
+      scroll.ci = x > 0 ? ci : 0;
       scroll.x = x1;
       cb();
     }
@@ -718,8 +718,9 @@ export default class DataProxy {
     ] = helper.rangeReduceIf(fri, rows.len, 0, 0, y, i => rows.getHeight(i));
     let y1 = top;
     if (y > 0) y1 += height;
+    // console.log('ri:', ri, ' ,y:', y1);
     if (scroll.y !== y1) {
-      scroll.ri = y > 0 ? ri - fri : 0;
+      scroll.ri = y > 0 ? ri : 0;
       scroll.y = y1;
       cb();
     }
@@ -852,12 +853,17 @@ export default class DataProxy {
 
   freezeViewRange() {
     const [ri, ci] = this.freeze;
-    return new CellRange(0, 0, ri - 1, ci - 1);
+    return new CellRange(0, 0, ri - 1, ci - 1, this.freezeTotalWidth(), this.freezeTotalHeight());
   }
 
   viewRange() {
-    const { scroll, rows, cols } = this;
-    const { ri, ci } = scroll;
+    const {
+      scroll, rows, cols, freeze,
+    } = this;
+    let { ri, ci } = scroll;
+    if (ri <= 0) [ri] = freeze;
+    if (ci <= 0) [, ci] = freeze;
+
     let [x, y] = [0, 0];
     let [eri, eci] = [rows.len, cols.len];
     for (let i = ri; i < rows.len; i += 1) {
@@ -870,8 +876,8 @@ export default class DataProxy {
       eci = j;
       if (x > this.viewWidth()) break;
     }
-    // console.log(ri, ci, eri, eci);
-    return new CellRange(ri, ci, eri, eci);
+    // console.log(ri, ci, eri, eci, x, y);
+    return new CellRange(ri, ci, eri, eci, x, y);
   }
 
   eachMergesInView(viewRange, cb) {
