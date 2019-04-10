@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import helper from '../src/helper';
+import helper from '../src/core/helper';
 
 describe('helper', () => {
   describe('.cloneDeep()', () => {

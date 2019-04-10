@@ -68,6 +68,9 @@ export default {
     greaterThan: 'it greater than {}',
     greaterThanEqual: 'it greater than or equal to {}',
   },
+  error: {
+    pasteForMergedCell: 'Unable to do this for merged cells',
+  },
   calendar: {
     weeks: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],

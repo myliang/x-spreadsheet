@@ -1,6 +1,6 @@
 {
   "name": "x-data-spreadsheet",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "a javascript xpreadsheet",
   "main": "src/index.js",
   "files": [
@@ -14,12 +14,22 @@
     "type": "git",
     "url": "https://github.com/myliang/x-spreadsheet.git"
   },
+  "nyc": {
+    "all": true,
+    "include": [
+      "src/core/*.js"
+    ],
+    "exclude": [
+      "**/*.spec.js"
+    ]
+  },
   "scripts": {
     "dev": "webpack-dev-server --open --config build/webpack.dev.js",
-    "test": "./node_modules/mocha/bin/mocha --require @babel/register test/*",
     "build": "webpack --config build/webpack.prod.js",
     "build-locale": "webpack --config build/webpack.locale.js",
-    "lint": "./node_modules/eslint/bin/eslint.js src"
+    "lint": "./node_modules/eslint/bin/eslint.js src",
+    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register test/*",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd"
   },
   "keywords": [
     "javascript",
@@ -32,6 +42,7 @@
     "@babel/register": "^7.0.0",
     "babel-loader": "^8.0.5",
     "clean-webpack-plugin": "^0.1.19",
+    "codecov": "^3.3.0",
     "css-loader": "^1.0.0",
     "eslint": "^5.5.0",
     "eslint-config-airbnb-base": "^13.1.0",
@@ -42,6 +53,7 @@
     "less-loader": "^4.1.0",
     "mini-css-extract-plugin": "^0.4.4",
     "mocha": "^5.2.0",
+    "nyc": "^13.3.0",
     "style-loader": "^0.23.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",

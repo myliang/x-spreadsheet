@@ -18,6 +18,9 @@ export default class Modal {
   }
 
   show() {
+    // dimmer
+    this.dimmer = h('div', `${cssPrefix}-dimmer active`);
+    document.body.appendChild(this.dimmer.el);
     const { width, height } = this.el.show().box();
     const { clientHeight, clientWidth } = document.documentElement;
     this.el.offset({
@@ -34,6 +37,7 @@ export default class Modal {
 
   hide() {
     this.el.hide();
+    document.body.removeChild(this.dimmer.el);
     unbind(window, 'keydown', window.xkeydownEsc);
     delete window.xkeydownEsc;
   }

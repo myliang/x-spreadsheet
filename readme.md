@@ -2,6 +2,11 @@
 
 [![npm package](https://img.shields.io/npm/v/x-data-spreadsheet.svg)](https://www.npmjs.org/package/x-data-spreadsheet)
 [![NPM downloads](http://img.shields.io/npm/dm/x-data-spreadsheet.svg)](https://npmjs.org/package/x-data-spreadsheet)
+[![NPM downloads](http://img.shields.io/npm/dt/x-data-spreadsheet.svg)](https://npmjs.org/package/x-data-spreadsheet)
+[![Build passing](https://travis-ci.org/myliang/x-spreadsheet.svg?branch=master)](https://travis-ci.org/myliang/x-spreadsheet)
+[![codecov](https://codecov.io/gh/myliang/x-spreadsheet/branch/master/graph/badge.svg)](https://codecov.io/gh/myliang/x-spreadsheet)
+![GitHub](https://img.shields.io/github/license/myliang/x-spreadsheet.svg)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/myliang/x-spreadsheet.svg)
 [![Join the chat at https://gitter.im/x-datav/spreadsheet](https://badges.gitter.im/x-datav/spreadsheet.svg)](https://gitter.im/x-datav/spreadsheet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 > A web-based JavaScript spreadsheet
@@ -14,21 +19,19 @@
 
 ## CDN
 ```html
-<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.css">
-<script src="https://unpkg.com/x-data-spreadsheet@1.0.11/dist/xspreadsheet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
 
 <script>
    x.spreadsheet('#xspreadsheet');
 </script>
 ```
 
-## Install
+## NPM
 
 ```shell
 npm install x-data-spreadsheet
 ```
-
-## Quick Start
 
 ```html
 <div id="x-spreadsheet-demo"></div>
@@ -84,7 +87,24 @@ new Spreadsheet("#x-spreadsheet-demo")
 ```
 
 ## Internationalization
-[wiki](https://github.com/myliang/x-spreadsheet/wiki/Internationalization)
+```javascript
+// npm 
+import Spreadsheet from 'x-data-spreadsheet';
+import zhCN from 'x-data-spreadsheet/dist/locale/zh-cn';
+
+Spreadsheet.locale('zh-cn', zhCN);
+new Spreadsheet(document.getElementById('xss-demo'));
+```
+```html
+<!-- Import via CDN -->
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
+<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/locale/zh-cn.js"></script>
+
+<script>
+  x.spreadsheet.locale('zh-cn');
+</script>
+```
 
 ## Features
   - Undo & Redo
