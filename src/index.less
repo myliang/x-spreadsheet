@@ -715,7 +715,7 @@ body {
   height: 100%;
   text-align: center;
   vertical-align: middle;
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: rgba(0, 0, 0, 0.6);
   opacity: 0;
   -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
@@ -731,35 +731,37 @@ body {
   }
 }
 
-.x-spreadsheet-modal, .x-spreadsheet-alert {
-  font-size: 1em;
+.x-spreadsheet-modal, .x-spreadsheet-toast {
+  font-size: 13px;
   position: fixed;
   z-index: 1001;
   text-align: left;
-  background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 8px;
   line-height: @line-height;
   min-width: 360px;
-  font-size: 14px;
   color: rgba(0,0,0,.87);
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,.1);
+  overflow: hidden;
+  background-color: #fff;
+  background-clip: padding-box;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 8px;
 }
 
-.x-spreadsheet-alert {
-  padding: 1em;
-  // border: 1px solid #fff3cd;
-  // box-shadow: #fff3cd 0px 2px 8px;
+.x-spreadsheet-toast {
+  background-color: rgba(255,255,255,.85);
 }
 
-.x-spreadsheet-modal-header, .x-spreadsheet-alert-header {
-  font-size: 1.1em;
-  border-radius: 4 4 0 0;
+.x-spreadsheet-modal-header, .x-spreadsheet-toast-header {
   font-weight: 600;
+  background-clip: padding-box;
+  background-color: rgba(255,255,255,.85);
+  border-bottom: 1px solid rgba(0,0,0,.05);
 
   .x-spreadsheet-icon {
     position: absolute;
     right: .8em;
-    top: .7em;
+    top: .65em;
     border-radius: 18px;
     
     &:hover {
@@ -769,23 +771,21 @@ body {
   }
 }
 
-.x-spreadsheet-alert-header {
+.x-spreadsheet-toast-header {
   color: @orange-color;
 }
 
 .x-spreadsheet-modal-header {
-  padding: .8em 1em;
   border-bottom: @border-style;
   background: rgba(0, 0, 0, .08);
+  font-size: 1.0785em;
 }
 
-.x-spreadsheet-modal-content {
-  border-radius: 0 0 4 4;
-  padding: .8em 1em;
-}
-
-.x-spreadsheet-alert-content {
-  margin-top: 10px;
+.x-spreadsheet-modal-header,
+.x-spreadsheet-modal-content,
+.x-spreadsheet-toast-header,
+.x-spreadsheet-toast-content {
+  padding: .75em 1em;
 }
 
 @media screen and (min-width: 320px) and (max-width: 480px) {

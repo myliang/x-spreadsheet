@@ -9,7 +9,7 @@ import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar';
 import ModalValidation from './modal_validation';
-// import { xalert } from './message';
+import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
 
@@ -235,8 +235,9 @@ function cut() {
 
 function paste(what) {
   const { data } = this;
-  data.paste(what);
-  sheetReset.call(this);
+  if (data.paste(what, msg => xtoast('Tip', msg))) {
+    sheetReset.call(this);
+  }
 }
 
 function toolbarChangePaintformatPaste() {
@@ -276,8 +277,9 @@ function overlayerMousedown(evt) {
       }
     }, () => {
       if (isAutofillEl) {
-        data.autofill(selector.arange, 'all');
-        table.render();
+        if (data.autofill(selector.arange, 'all', msg => xtoast('Tip', msg))) {
+          table.render();
+        }
       }
       selector.hideAutofill();
       toolbarChangePaintformatPaste.call(this);
