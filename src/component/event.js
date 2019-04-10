@@ -17,8 +17,8 @@ export function unbindClickoutside(el) {
 // the right mouse button in firefox(>65.0): mousedown → contenxtmenu → mouseup → click on window
 export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
   el.xclickoutside = (evt) => {
-    // console.log('clickoutside::');
-    if (el.contains(evt.target)) return;
+    // ignore double click
+    if (evt.detail === 2 || el.contains(evt.target)) return;
     cb(el);
     unbindClickoutside(el);
   };
