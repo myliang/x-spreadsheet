@@ -156,7 +156,7 @@ function overlayerTouch(direction, distance) {
   const { verticalScrollbar, horizontalScrollbar } = this;
   const { top } = verticalScrollbar.scroll();
   const { left } = horizontalScrollbar.scroll();
-  // console.log('direction:', direction, ', distance:', distance);
+  // console.log('direction:', direction, ', distance:', distance, left);
   if (direction === 'left' || direction === 'right') {
     horizontalScrollbar.move({ left: left - distance });
   } else if (direction === 'up' || direction === 'down') {
