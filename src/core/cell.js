@@ -26,7 +26,8 @@ const infixExprToSuffixExpr = (src) => {
         stack.push(`"${subStrs.join('')}`);
         subStrs = [];
       } else {
-        if (subStrs.length > 0) {
+        // console.log('subStrs:', subStrs.join(''), stack);
+        if (c !== '(' && subStrs.length > 0) {
           stack.push(subStrs.join(''));
         }
         if (c === ')') {
@@ -53,9 +54,10 @@ const infixExprToSuffixExpr = (src) => {
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
           } else {
-            // console.log('c1:', c1, fnArgType, operatorStack);
-            while (c1 !== '(' && operatorStack.length > 0) {
+            // console.log('c1:', c1, fnArgType, stack, operatorStack);
+            while (c1 !== '(') {
               stack.push(c1);
+              if (operatorStack.length <= 0) break;
               c1 = operatorStack.pop();
             }
           }
@@ -67,15 +69,18 @@ const infixExprToSuffixExpr = (src) => {
           fnArgsLen += 1;
         } else if (c === '(' && subStrs.length > 0) {
           // function
-          stack.pop();
           operatorStack.push(subStrs.join(''));
         } else {
           // priority: */ > +-
+          // console.log(operatorStack, c, stack);
           if (operatorStack.length > 0 && (c === '+' || c === '-')) {
-            const last = operatorStack[operatorStack.length - 1];
-            if (last === '*' || last === '/') {
+            let top = operatorStack[operatorStack.length - 1];
+            if (top !== '(') stack.push(operatorStack.pop());
+            if (top === '*' || top === '/') {
               while (operatorStack.length > 0) {
-                stack.push(operatorStack.pop());
+                top = operatorStack[operatorStack.length -1];  
+                if (top !== '(') stack.push(operatorStack.pop());
+                else break;
               }
             }
           }
@@ -116,8 +121,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     // console.log(':::>>>', srcStack[i]);
     if (srcStack[i] === '+') {
       const top = stack.pop();
-      const bottom = stack.pop();
-      stack.push(Number(bottom) + Number(top));
+      stack.push(Number(stack.pop()) + Number(top));
     } else if (srcStack[i] === '-') {
       const top = stack.pop();
       stack.push(Number(stack.pop()) - Number(top));
