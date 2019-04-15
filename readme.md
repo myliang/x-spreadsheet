@@ -54,6 +54,7 @@ new Spreadsheet("#x-spreadsheet-demo")
 {
   showToolbar: true,
   showGrid: true,
+  showContextmenu: true,
   view: {
     height: () => document.documentElement.clientHeight,
     width: () => document.documentElement.clientWidth,
