@@ -149,7 +149,6 @@ export default class Editor {
   clear() {
     // const { cell } = this;
     // const cellText = (cell && cell.text) || '';
-    // console.log(cellText, ':', this.inputText === '');
     if (this.inputText !== '') {
       this.change('finished', this.inputText);
     }
@@ -191,11 +190,12 @@ export default class Editor {
       const sOffset = { left: 0 };
       sOffset[suggestPosition] = height;
       suggest.setOffset(sOffset);
+      suggest.hide();
     }
   }
 
   setCell(cell, validator) {
-    // console.log('::', validator);
+    console.log('::', validator);
     const { el, datepicker, suggest } = this;
     el.show();
     this.cell = cell;
