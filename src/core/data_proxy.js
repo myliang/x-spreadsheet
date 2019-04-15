@@ -11,6 +11,7 @@ import { Cols } from './col';
 import { Validations } from './validation';
 import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
+import { t } from '../locale/locale';
 
 // private methods
 /*
@@ -102,6 +103,26 @@ const defaultSettings = {
 
 const toolbarHeight = 41;
 
+
+// src: cellRange
+// dst: cellRange
+function canPaste(src, dst, error = () => {}) {
+  const { merges } = this;
+  const cellRange = dst.clone();
+  const [srn, scn] = src.size();
+  const [drn, dcn] = dst.size();
+  if (srn > drn) {
+    cellRange.eri = dst.sri + srn - 1;
+  }
+  if (scn > dcn) {
+    cellRange.eci = dst.sci + scn - 1;
+  }
+  if (merges.intersects(cellRange)) {
+    error(t('error.pasteForMergedCell'));
+    return false;
+  }
+  return true;
+}
 function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
   const { rows, merges } = this;
   // delete dest merge
@@ -369,10 +390,11 @@ export default class DataProxy {
   }
 
   // what: all | text | format
-  paste(what = 'all') {
+  paste(what = 'all', error = () => {}) {
     // console.log('sIndexes:', sIndexes);
     const { clipboard, selector } = this;
-    if (clipboard.isClear()) return;
+    if (clipboard.isClear()) return false;
+    if (!canPaste.call(this, clipboard.range, selector.range, error)) return false;
 
     this.changeData(() => {
       if (clipboard.isCopy()) {
@@ -381,12 +403,16 @@ export default class DataProxy {
         cutPaste.call(this, clipboard.range, selector.range);
       }
     });
+    return true;
   }
 
-  autofill(cellRange, what) {
+  autofill(cellRange, what, error = () => {}) {
+    const srcRange = this.selector.range;
+    if (!canPaste.call(this, srcRange, cellRange, error)) return false;
     this.changeData(() => {
-      copyPaste.call(this, this.selector.range, cellRange, what, true);
+      copyPaste.call(this, srcRange, cellRange, what, true);
     });
+    return true;
   }
 
   clearClipboard() {
@@ -704,7 +730,7 @@ export default class DataProxy {
     let x1 = left;
     if (x > 0) x1 += width;
     if (scroll.x !== x1) {
-      scroll.ci = x > 0 ? ci - fci : 0;
+      scroll.ci = x > 0 ? ci : 0;
       scroll.x = x1;
       cb();
     }
@@ -718,8 +744,9 @@ export default class DataProxy {
     ] = helper.rangeReduceIf(fri, rows.len, 0, 0, y, i => rows.getHeight(i));
     let y1 = top;
     if (y > 0) y1 += height;
+    // console.log('ri:', ri, ' ,y:', y1);
     if (scroll.y !== y1) {
-      scroll.ri = y > 0 ? ri - fri : 0;
+      scroll.ri = y > 0 ? ri : 0;
       scroll.y = y1;
       cb();
     }
@@ -852,12 +879,17 @@ export default class DataProxy {
 
   freezeViewRange() {
     const [ri, ci] = this.freeze;
-    return new CellRange(0, 0, ri - 1, ci - 1);
+    return new CellRange(0, 0, ri - 1, ci - 1, this.freezeTotalWidth(), this.freezeTotalHeight());
   }
 
   viewRange() {
-    const { scroll, rows, cols } = this;
-    const { ri, ci } = scroll;
+    const {
+      scroll, rows, cols, freeze,
+    } = this;
+    let { ri, ci } = scroll;
+    if (ri <= 0) [ri] = freeze;
+    if (ci <= 0) [, ci] = freeze;
+
     let [x, y] = [0, 0];
     let [eri, eci] = [rows.len, cols.len];
     for (let i = ri; i < rows.len; i += 1) {
@@ -870,8 +902,8 @@ export default class DataProxy {
       eci = j;
       if (x > this.viewWidth()) break;
     }
-    // console.log(ri, ci, eri, eci);
-    return new CellRange(ri, ci, eri, eci);
+    // console.log(ri, ci, eri, eci, x, y);
+    return new CellRange(ri, ci, eri, eci, x, y);
   }
 
   eachMergesInView(viewRange, cb) {

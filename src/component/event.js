@@ -17,8 +17,8 @@ export function unbindClickoutside(el) {
 // the right mouse button in firefox(>65.0): mousedown → contenxtmenu → mouseup → click on window
 export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
   el.xclickoutside = (evt) => {
-    // console.log('clickoutside::');
-    if (el.contains(evt.target)) return;
+    // ignore double click
+    if (evt.detail === 2 || el.contains(evt.target)) return;
     cb(el);
     unbindClickoutside(el);
   };
@@ -38,14 +38,16 @@ export function mouseMoveUp(target, movefunc, upfunc) {
 
 function calTouchDirection(spanx, spany, evt, cb) {
   let direction = '';
+  // console.log('spanx:', spanx, ', spany:', spany);
   if (Math.abs(spanx) > Math.abs(spany)) {
     // horizontal
     direction = spanx > 0 ? 'right' : 'left';
+    cb(direction, spanx, evt);
   } else {
     // vertical
     direction = spany > 0 ? 'down' : 'up';
+    cb(direction, spany, evt);
   }
-  cb(direction, spany, evt);
 }
 // cb = (direction, distance) => {}
 export function bindTouch(target, { move, end }) {
@@ -61,10 +63,12 @@ export function bindTouch(target, { move, end }) {
     const { pageX, pageY } = evt.changedTouches[0];
     const spanx = pageX - startx;
     const spany = pageY - starty;
-    // console.log('spanx:', spanx, ', spany:', spany);
-    calTouchDirection(spanx, spany, evt, move);
-    startx = pageX;
-    starty = pageY;
+    if (Math.abs(spanx) > 10 || Math.abs(spany) > 10) {
+      // console.log('spanx:', spanx, ', spany:', spany);
+      calTouchDirection(spanx, spany, evt, move);
+      startx = pageX;
+      starty = pageY;
+    }
     evt.preventDefault();
   });
   bind(target, 'touchend', (evt) => {
