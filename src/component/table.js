@@ -180,7 +180,10 @@ function renderContentGrid({
   const sumHeight = rows.sumHeight(sri, eri + 1);
   // console.log('sumWidth:', sumWidth);
   draw.clearRect(0, 0, sumWidth, sumHeight);
-  if (!settings.showGrid) return;
+  if (!settings.showGrid) {
+    draw.restore();
+    return;
+  }
   // console.log('rowStart:', rowStart, ', rowLen:', rowLen);
   data.rowEach(sri, eri, (i, y, h) => {
     // console.log('y:', y);
