@@ -74,6 +74,7 @@ const defaultSettings = {
   },
   showGrid: true,
   showToolbar: true,
+  showContextmenu: true,
   row: {
     len: 100,
     height: 25,

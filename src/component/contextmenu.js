@@ -40,12 +40,13 @@ function buildMenu() {
 }
 
 export default class ContextMenu {
-  constructor(viewFn) {
+  constructor(viewFn, isHide = false) {
     this.el = h('div', `${cssPrefix}-contextmenu`)
       .children(...buildMenu.call(this))
       .hide();
     this.viewFn = viewFn;
     this.itemClick = () => {};
+    this.isHide = isHide;
   }
 
   hide() {
@@ -55,6 +56,7 @@ export default class ContextMenu {
   }
 
   setPosition(x, y) {
+    if (this.isHide) return;
     const { el } = this;
     const { height, width } = el.show().offset();
     const view = this.viewFn();

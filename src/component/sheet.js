@@ -668,9 +668,9 @@ function sheetInitEvents() {
 
 export default class Sheet {
   constructor(targetEl, data) {
-    const { view } = data.settings;
+    const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(data, view.width, !data.settings.showToolbar);
+    this.toolbar = new Toolbar(data, view.width, !showToolbar);
     targetEl.children(this.toolbar.el, this.el);
     this.data = data;
     // table
@@ -690,7 +690,7 @@ export default class Sheet {
     // data validation
     this.modalValidation = new ModalValidation();
     // contextMenu
-    this.contextMenu = new ContextMenu(() => this.getTableOffset());
+    this.contextMenu = new ContextMenu(() => this.getTableOffset(), !showContextmenu);
     // selector
     this.selector = new Selector(data);
     this.overlayerCEl = h('div', `${cssPrefix}-overlayer-content`)

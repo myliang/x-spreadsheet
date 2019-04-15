@@ -78,7 +78,7 @@ const infixExprToSuffixExpr = (src) => {
             if (top !== '(') stack.push(operatorStack.pop());
             if (top === '*' || top === '/') {
               while (operatorStack.length > 0) {
-                top = operatorStack[operatorStack.length -1];  
+                top = operatorStack[operatorStack.length - 1];
                 if (top !== '(') stack.push(operatorStack.pop());
                 else break;
               }
