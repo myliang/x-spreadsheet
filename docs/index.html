@@ -10,10 +10,9 @@
   <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
-      // x.spreadsheet.locale('zh-cn');
-      x.spreadsheet('#x-spreadsheet-demo', {})
+      var xs = x.spreadsheet('#x-spreadsheet-demo', {})
         .loadData({
-          freeze: 'E3',
+          freeze: 'B3',
           styles: [
             {
               bgcolor: '#f4f5f8',
@@ -50,7 +49,10 @@
               }
             }
           },
-        }).change((cdata) => console.log(cdata));
+        }).change((cdata) => {
+          console.log(cdata);
+          console.log(xs.validate());
+        });
     }
   </script>
 <script type="text/javascript" src="xspreadsheet.js"></script></body>
