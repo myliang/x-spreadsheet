@@ -191,8 +191,11 @@ function renderContentGrid({
   // const sumWidth = cols.sumWidth(sci, eci + 1);
   // const sumHeight = rows.sumHeight(sri, eri + 1);
   // console.log('sumWidth:', sumWidth);
-  draw.clearRect(0, 0, w, h);
-  if (!settings.showGrid) return;
+  draw.clearRect(0, 0, sumWidth, sumHeight);
+  if (!settings.showGrid) {
+    draw.restore();
+    return;
+  }
   // console.log('rowStart:', rowStart, ', rowLen:', rowLen);
   data.rowEach(sri, eri, (i, y, ch) => {
     // console.log('y:', y);
