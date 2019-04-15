@@ -56,11 +56,11 @@ class Validations {
   constructor() {
     this._ = [];
     // ri_ci: errMessage
-    this.errors = {};
+    this.errors = new Map();
   }
 
   getError(ri, ci) {
-    return this.errors[`${ri}_${ci}`];
+    return this.errors.get(`${ri}_${ci}`);
   }
 
   validate(ri, ci, text) {
@@ -70,12 +70,12 @@ class Validations {
     if (v !== null) {
       const [flag, message] = v.validator.validate(text);
       if (!flag) {
-        errors[key] = message;
+        errors.set(key, message);
       } else {
-        delete errors[key];
+        errors.delete(key);
       }
     } else {
-      delete errors[key];
+      errors.delete(key);
     }
     return true;
   }

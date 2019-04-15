@@ -10,7 +10,7 @@
   <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
-      x.spreadsheet('#x-spreadsheet-demo', {})
+      var xs = x.spreadsheet('#x-spreadsheet-demo', {})
         .loadData({
           freeze: 'B3',
           styles: [
@@ -49,7 +49,10 @@
               }
             }
           },
-        }).change((cdata) => console.log(cdata));
+        }).change((cdata) => {
+          console.log(cdata);
+          console.log(xs.validate());
+        });
     }
   </script>
 </body>

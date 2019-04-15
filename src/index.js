@@ -30,6 +30,11 @@ class Spreadsheet {
     return this.data.getData();
   }
 
+  validate() {
+    const { validations } = this.data;
+    return validations.errors.size <= 0;
+  }
+
   change(cb) {
     this.data.change = cb;
     return this;
