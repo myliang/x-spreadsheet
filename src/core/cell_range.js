@@ -26,7 +26,7 @@ class CellRange {
   includes(...args) {
     let [ri, ci] = [0, 0];
     if (args.length === 1) {
-      [ri, ci] = expr2xy(args[0]);
+      [ci, ri] = expr2xy(args[0]);
     } else if (args.length === 2) {
       [ri, ci] = args;
     }
@@ -45,6 +45,13 @@ class CellRange {
         cb(i, j);
       }
     }
+  }
+
+  contains(other) {
+    return this.sri <= other.sri
+      && this.sci <= other.sci
+      && this.eri >= other.eri
+      && this.eci >= other.eci;
   }
 
   // within
