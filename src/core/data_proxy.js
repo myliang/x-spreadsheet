@@ -826,12 +826,12 @@ export default class DataProxy {
       rows.setCellText(ri, ci, '');
       history.add(this.getData());
       rows.setCellText(ri, ci, text);
-      // validator
-      validations.validate(ri, ci, text);
     } else {
       rows.setCellText(ri, ci, text);
       this.change(this.getData());
     }
+    // validator
+    validations.validate(ri, ci, text);
   }
 
   freezeIsActive() {
