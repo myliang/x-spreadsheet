@@ -199,6 +199,10 @@ export default class Selector {
         this.br.el,
       ).hide();
 
+    // for performance
+    this.lastri = -1;
+    this.lastci = -1;
+
     startZIndex += 1;
   }
 
@@ -274,8 +278,13 @@ export default class Selector {
     this.el.show();
   }
 
-  setEnd(ri, ci) {
-    const { data } = this;
+  setEnd(ri, ci, moving = true) {
+    const { data, lastri, lastci } = this;
+    if (moving) {
+      if (ri === lastri && ci === lastci) return;
+      this.lastri = ri;
+      this.lastci = ci;
+    }
     this.range = data.calSelectedRangeByEnd(ri, ci);
     setAllAreaOffset.call(this, this.data.getSelectedRect());
   }

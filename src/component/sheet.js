@@ -41,14 +41,14 @@ function scrollbarMove() {
   }
 }
 
-function selectorSet(multiple, ri, ci, indexesUpdated = true) {
+function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   if (ri === -1 && ci === -1) return;
   // console.log(multiple, ', ri:', ri, ', ci:', ci);
   const {
     table, selector, toolbar,
   } = this;
   if (multiple) {
-    selector.setEnd(ri, ci);
+    selector.setEnd(ri, ci, moving);
   } else {
     selector.set(ri, ci, indexesUpdated);
   }
@@ -273,7 +273,7 @@ function overlayerMousedown(evt) {
       if (isAutofillEl) {
         selector.showAutofill(ri, ci);
       } else if (e.buttons === 1 && !e.shiftKey) {
-        selectorSet.call(this, true, ri, ci);
+        selectorSet.call(this, true, ri, ci, true, true);
       }
     }, () => {
       if (isAutofillEl) {
