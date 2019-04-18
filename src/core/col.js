@@ -20,7 +20,8 @@ class Cols {
   }
 
   getData() {
-    return this._;
+    const { len } = this;
+    return Object.assign({ len }, this._);
   }
 
   getWidth(i) {

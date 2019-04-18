@@ -278,7 +278,8 @@ class Rows {
   }
 
   getData() {
-    return this._;
+    const { len } = this;
+    return Object.assign({ len }, this._);
   }
 }
 
