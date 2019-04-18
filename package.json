@@ -1,6 +1,6 @@
 {
   "name": "x-data-spreadsheet",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "a javascript xpreadsheet",
   "main": "src/index.js",
   "files": [
