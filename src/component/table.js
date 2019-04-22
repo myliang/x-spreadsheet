@@ -81,6 +81,21 @@ function renderCell(rindex, cindex) {
   });
 }
 
+function renderAutofilter(viewRange) {
+  const { data, draw } = this;
+  if (viewRange) {
+    const { autoFilter } = data;
+    if (!autoFilter.active()) return;
+    const afRange = autoFilter.hrange();
+    if (viewRange.intersects(afRange)) {
+      afRange.each((ri, ci) => {
+        const dbox = getDrawBox.call(this, ri, ci);
+        draw.dropdown(dbox);
+      });
+    }
+  }
+}
+
 function renderContent(viewRange, fw, fh, tx, ty) {
   const { draw, data } = this;
   draw.save();
@@ -101,6 +116,8 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   });
   // 4 render mergeCell border
   renderCellBorders.call(this);
+  // 4 render autofilter
+  renderAutofilter.call(this, viewRange);
 
   draw.restore();
 }

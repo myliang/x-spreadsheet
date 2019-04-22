@@ -4,6 +4,7 @@ import Selector from './selector';
 import Scroll from './scroll';
 import History from './history';
 import Clipboard from './clipboard';
+import AutoFilter from './auto_filter';
 import { Merges } from './merge';
 import helper from './helper';
 import { Rows } from './row';
@@ -328,6 +329,7 @@ export default class DataProxy {
     this.scroll = new Scroll();
     this.history = new History();
     this.clipboard = new Clipboard();
+    this.autoFilter = new AutoFilter();
     this.change = () => {};
   }
 
@@ -654,6 +656,19 @@ export default class DataProxy {
       this.rows.deleteCell(sri, sci, 'merge');
       this.merges.deleteWithin(selector.range);
     });
+  }
+
+  canAutofilter() {
+    return !this.autoFilter.active();
+  }
+
+  autofilter() {
+    const { autoFilter, selector } = this;
+    if (autoFilter.active()) {
+      autoFilter.clear();
+    } else {
+      autoFilter.ref = selector.range.toString();
+    }
   }
 
   deleteCell(what = 'all') {

@@ -240,6 +240,12 @@ function paste(what) {
   }
 }
 
+function autofilter() {
+  const { data } = this;
+  data.autofilter();
+  sheetReset.call(this);
+}
+
 function toolbarChangePaintformatPaste() {
   const { toolbar } = this;
   if (toolbar.paintformatActive()) {
@@ -397,8 +403,9 @@ function toolbarChange(type, value) {
     // link
   } else if (type === 'chart') {
     // chart
-  } else if (type === 'filter') {
+  } else if (type === 'autofilter') {
     // filter
+    autofilter.call(this);
   } else if (type === 'freeze') {
     if (value) {
       const { ri, ci } = data.selector;

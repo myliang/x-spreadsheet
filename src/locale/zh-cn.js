@@ -19,6 +19,7 @@ export default {
     valign: '垂直对齐',
     textwrap: '自动换行',
     freeze: '冻结',
+    autofilter: '自动筛选',
     formula: '函数',
     more: '更多',
   },

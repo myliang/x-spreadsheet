@@ -1,5 +1,6 @@
+import { CellRange } from './cell_range';
 // operator: eq|neq|gt|gte|lt|lte|in|be
-// value: 
+// value:
 //   in => []
 //   be => [min, max]
 class Filter {
@@ -19,8 +20,28 @@ class Sort {
 
 export default class AutoFilter {
   constructor() {
-    this.ref = '';
+    this.ref = null;
     this.filters = [];
     this.sort = null;
+  }
+
+  range() {
+    return CellRange.valueOf(this.ref);
+  }
+
+  hrange() {
+    const r = this.range();
+    r.eri = r.sri;
+    return r;
+  }
+
+  clear() {
+    this.ref = null;
+    this.filters = [];
+    this.sort = null;
+  }
+
+  active() {
+    return this.ref !== null;
   }
 }

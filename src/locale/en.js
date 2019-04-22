@@ -19,6 +19,7 @@ export default {
     valign: 'Vertical align',
     textwrap: 'Text wrapping',
     freeze: 'Freeze cell',
+    autofilter: 'Filter',
     formula: 'Functions',
     more: 'More',
   },
