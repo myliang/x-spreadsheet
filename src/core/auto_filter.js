@@ -1,7 +1,8 @@
 // operator: eq|neq|gt|gte|lt|lte|in|be
-// value: 
+// value:
 //   in => []
 //   be => [min, max]
+/* eslint-disable */
 class Filter {
   constructor(ci, operator, value) {
     this.ci = ci;

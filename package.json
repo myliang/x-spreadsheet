@@ -29,7 +29,9 @@
     "build-locale": "webpack --config build/webpack.locale.js",
     "lint": "./node_modules/eslint/bin/eslint.js src",
     "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register test/*",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd"
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd",
+    "lint:fix": "eslint --fix --ext .js src test",
+    "lint-staged": "lint-staged"
   },
   "keywords": [
     "javascript",
@@ -49,8 +51,10 @@
     "eslint-plugin-import": "^2.14.0",
     "file-loader": "^2.0.0",
     "html-webpack-plugin": "^3.2.0",
+    "husky": "^1.3.1",
     "less": "^3.8.1",
     "less-loader": "^4.1.0",
+    "lint-staged": "^8.1.5",
     "mini-css-extract-plugin": "^0.4.4",
     "mocha": "^5.2.0",
     "nyc": "^13.3.0",
@@ -60,5 +64,23 @@
     "webpack-dev-server": "^3.1.14",
     "webpack-merge": "^4.1.4"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "lint-staged": {
+    "linters": {
+      "**/*.{js,ts,tsx,jsx}": [
+        "npm run lint:fix",
+        "git add"
+      ]
+    },
+    "ignore": [
+      "**/dist/**/*",
+      "**/build/**/*",
+      "**/docs/**/*"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint-staged"
+    }
+  }
 }
