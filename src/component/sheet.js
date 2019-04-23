@@ -9,6 +9,7 @@ import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar';
 import ModalValidation from './modal_validation';
+import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
@@ -259,10 +260,24 @@ function overlayerMousedown(evt) {
   // console.log(':::::overlayer.mousedown:', evt.detail, evt.button, evt.buttons, evt.shiftKey);
   // console.log('evt.target.className:', evt.target.className);
   const {
-    selector, data, table,
+    selector, data, table, sortFilter,
   } = this;
+  const { offsetX, offsetY } = evt;
   const isAutofillEl = evt.target.className === `${cssPrefix}-selector-corner`;
-  let { ri, ci } = data.getCellRectByXY(evt.offsetX, evt.offsetY);
+  const cellRect = data.getCellRectByXY(offsetX, offsetY);
+  const {
+    left, top, width, height,
+  } = cellRect;
+  let { ri, ci } = cellRect;
+  // sort or filter
+  const { autoFilter } = data;
+  if (autoFilter.contains(ri, ci)) {
+    if (left + width - 20 < offsetX && top + height - 20 < offsetY) {
+      sortFilter.setOffset({ left, top: top + height + 2 });
+      return;
+    }
+  }
+
   // console.log('ri:', ri, ', ci:', ci);
   if (!evt.shiftKey) {
     // console.log('selectorSetStart:::');
@@ -707,6 +722,8 @@ export default class Sheet {
       );
     this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);
+    // sortFilter
+    this.sortFilter = new SortFilter();
     // root element
     this.el.children(
       this.tableEl,
@@ -717,6 +734,7 @@ export default class Sheet {
       this.horizontalScrollbar.el,
       this.contextMenu.el,
       this.modalValidation.el,
+      this.sortFilter.el,
     );
     // table
     this.table = new Table(this.tableEl.el, data);

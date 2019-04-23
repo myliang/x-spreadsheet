@@ -81,6 +81,10 @@ export default {
     remove: '删除',
     save: '保存',
   },
+  sort: {
+    desc: '降序',
+    asc: '升序',
+  },
   dataValidation: {
     mode: '模式',
     range: '单元区间',

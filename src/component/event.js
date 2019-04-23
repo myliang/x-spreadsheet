@@ -15,12 +15,16 @@ export function unbindClickoutside(el) {
 // the left mouse button: mousedown → mouseup → click
 // the right mouse button: mousedown → contenxtmenu → mouseup
 // the right mouse button in firefox(>65.0): mousedown → contenxtmenu → mouseup → click on window
-export function bindClickoutside(el, cb = (t) => { t.hide(); }) {
+export function bindClickoutside(el, cb) {
   el.xclickoutside = (evt) => {
     // ignore double click
+    // console.log('evt:', evt);
     if (evt.detail === 2 || el.contains(evt.target)) return;
-    cb(el);
-    unbindClickoutside(el);
+    if (cb) cb(el);
+    else {
+      el.hide();
+      unbindClickoutside(el);
+    }
   };
   bind(window.document.body, 'click', el.xclickoutside);
 }

@@ -81,6 +81,10 @@ export default {
     remove: 'Remove',
     save: 'Save',
   },
+  sort: {
+    desc: 'Sort Z -> A',
+    asc: 'Sort A -> Z',
+  },
   dataValidation: {
     mode: 'Mode',
     range: 'Cell Range',

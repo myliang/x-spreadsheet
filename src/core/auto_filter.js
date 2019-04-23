@@ -25,6 +25,13 @@ export default class AutoFilter {
     this.sort = null;
   }
 
+  contains(ri, ci) {
+    if (this.active()) {
+      return this.hrange().includes(ri, ci);
+    }
+    return false;
+  }
+
   range() {
     return CellRange.valueOf(this.ref);
   }

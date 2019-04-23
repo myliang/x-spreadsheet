@@ -213,6 +213,7 @@ export default class Editor {
       }
       if (type === 'list') {
         suggest.setItems(validator.values());
+        suggest.search('');
       }
     }
   }
