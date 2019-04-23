@@ -23,7 +23,7 @@ describe('CellRange', () => {
       assert.equal(cr.h, 6);
     });
   });
-  
+
   describe('#set()', () => {
     it('should return { sri: 1, sci: 2, eri: 3, eci: 4 } when set(1, 2, 3, 4)', () => {
       const cr = new CellRange(0, 0, 0, 0);
@@ -232,7 +232,7 @@ describe('CellRange', () => {
     });
   });
 
-  describe('#union()',  () => {
+  describe('#union()', () => {
     it('should return {1,1,5,5} when the value is {3,3,5,5}', () => {
       const cr = new CellRange(1, 1, 3, 3);
       const other = new CellRange(3, 3, 5, 5);
@@ -363,6 +363,4 @@ describe('CellRange', () => {
       assert.equal(ret.eci, 5);
     });
   });
-
 });
-

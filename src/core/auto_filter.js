@@ -3,6 +3,7 @@ import { CellRange } from './cell_range';
 // value:
 //   in => []
 //   be => [min, max]
+/* eslint-disable */
 class Filter {
   constructor(ci, operator, value) {
     this.ci = ci;

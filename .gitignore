@@ -1,1 +1,5 @@
 node_modules
+yarn.lock
+.idea
+.nyc_output
+coverage.lcov
