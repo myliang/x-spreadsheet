@@ -265,8 +265,8 @@ class Table {
     const { x, y } = data.scroll;
     // 1
     renderContentGrid.call(this, viewRange, fw, fh, tx, ty);
-    renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty);
     renderContent.call(this, viewRange, fw, fh, -x, -y);
+    renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty);
     renderFixedLeftTopCell.call(this, fw, fh);
     const [fri, fci] = data.freeze;
     if (fri > 0 || fci > 0) {
@@ -277,8 +277,8 @@ class Table {
         vr.eri = fri - 1;
         vr.h = ty;
         renderContentGrid.call(this, vr, fw, fh, tx, 0);
-        renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0);
         renderContent.call(this, vr, fw, fh, -x, 0);
+        renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0);
       }
       // 3
       if (fci > 0) {
