@@ -1,3 +1,4 @@
+@css-prefix: x-spreadsheet;
 // color
 @red-color: #DB2828;
 @red-hover-color: #d01919;
@@ -56,7 +57,7 @@ body {
   margin: 0;
 }
 
-.x-spreadsheet {
+.@{css-prefix} {
   font-size: 13px;
   line-height: normal;
   user-select: none;
@@ -71,13 +72,17 @@ body {
   }
 }
 
-.x-spreadsheet-sheet {
+.@{css-prefix}-sheet {
   position: relative;
   overflow: hidden;
-  line-height: 0;
 }
 
-.x-spreadsheet-tooltip {
+.@{css-prefix}-table {
+  // html5 bottom margin bug
+  vertical-align: bottom;
+}
+
+.@{css-prefix}-tooltip {
   font-family: inherit;
   position: absolute;
   padding: 5px 10px;
@@ -103,7 +108,7 @@ body {
   }
 }
 
-.x-spreadsheet-color-palette {
+.@{css-prefix}-color-palette {
   padding: 5px;
 
   table {
@@ -122,7 +127,7 @@ body {
         border-color: #ddd;
       }
 
-      .x-spreadsheet-color-palette-cell {
+      .@{css-prefix}-color-palette-cell {
         width: 16px;
         height: 16px;
       }
@@ -130,7 +135,7 @@ body {
   }
 }
 
-.x-spreadsheet-border-palette {
+.@{css-prefix}-border-palette {
   padding: 6px;
 
   table {
@@ -146,17 +151,17 @@ body {
     }
   }
 
-  .x-spreadsheet-border-palette-left {
+  .@{css-prefix}-border-palette-left {
     border-right: 1px solid #eee;
     padding-right: 6px;
 
-    .x-spreadsheet-border-palette-cell {
+    .@{css-prefix}-border-palette-cell {
       width: 30px;
       height: 30px;
       cursor: pointer;
       text-align: center;
 
-      .x-spreadsheet-icon-img {
+      .@{css-prefix}-icon-img {
         opacity: .8;
       }
 
@@ -166,15 +171,15 @@ body {
     }
   }
 
-  .x-spreadsheet-border-palette-right {
+  .@{css-prefix}-border-palette-right {
     padding-left: 6px;
 
-    .x-spreadsheet-toolbar-btn {
+    .@{css-prefix}-toolbar-btn {
       margin-top: 0;
       margin-bottom: 3px;
     }
 
-    .x-spreadsheet-line-type {
+    .@{css-prefix}-line-type {
       position: relative;
       left: 0;
       top: -3px;
@@ -184,10 +189,10 @@ body {
 
 }
 
-.x-spreadsheet-dropdown {
+.@{css-prefix}-dropdown {
   position: relative;
 
-  .x-spreadsheet-dropdown-content {
+  .@{css-prefix}-dropdown-content {
     position: absolute;
     z-index: 200;
     background: #fff;
@@ -195,29 +200,29 @@ body {
   }
 
   &.bottom-left {
-    .x-spreadsheet-dropdown-content {
+    .@{css-prefix}-dropdown-content {
       top: calc(~'100% + 5px');
       left: 0;
     }
   }
 
   &.bottom-right {
-    .x-spreadsheet-dropdown-content {
+    .@{css-prefix}-dropdown-content {
       top: calc(~'100% + 5px');
       right: 0;
     }
   }
 
-  .x-spreadsheet-dropdown-title {
+  .@{css-prefix}-dropdown-title {
     padding: 0 5px;
     display: inline-block;
   }
 
-  .x-spreadsheet-dropdown-header {
-    .x-spreadsheet-icon.arrow-left {
+  .@{css-prefix}-dropdown-header {
+    .@{css-prefix}-icon.arrow-left {
       margin-left: 4px;
     }
-    .x-spreadsheet-icon.arrow-right {
+    .@{css-prefix}-icon.arrow-right {
       width: 10px;
       margin-right: 4px;
       .arrow-down {
@@ -227,20 +232,20 @@ body {
   }
 }
 /* resizer **/
-.x-spreadsheet-resizer {
+.@{css-prefix}-resizer {
   position: absolute;
   z-index: 11;
 
-  .x-spreadsheet-resizer-hover {
+  .@{css-prefix}-resizer-hover {
     background-color: rgba(75, 137, 255, .25);
   }
-  .x-spreadsheet-resizer-line {
+  .@{css-prefix}-resizer-line {
     position: absolute;
   }
 
   &.horizontal {
     cursor: row-resize;
-    .x-spreadsheet-resizer-line {
+    .@{css-prefix}-resizer-line {
       border-bottom: 2px dashed rgb(75, 137, 255);
       left: 0;
       bottom: 0;
@@ -248,7 +253,7 @@ body {
   }
   &.vertical {
     cursor: col-resize;
-    .x-spreadsheet-resizer-line {
+    .@{css-prefix}-resizer-line {
       border-right: 2px dashed rgb(75, 137, 255);
       top: 0;
       right: 0;
@@ -256,7 +261,7 @@ body {
   }
 }
 /* scrollbar */
-.x-spreadsheet-scrollbar {
+.@{css-prefix}-scrollbar {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -278,13 +283,13 @@ body {
   }
 }
 
-/* x-spreadsheet-overlayer */
-.x-spreadsheet-overlayer {
+/* @{css-prefix}-overlayer */
+.@{css-prefix}-overlayer {
   position: absolute;
   left: 0;
   top: 0;
   z-index: 10;
-  .x-spreadsheet-overlayer-content {
+  .@{css-prefix}-overlayer-content {
     position: absolute;
     overflow: hidden;
     pointer-events: none;
@@ -293,7 +298,7 @@ body {
   }
 }
 
-.x-spreadsheet-editor, .x-spreadsheet-selector {
+.@{css-prefix}-editor, .@{css-prefix}-selector {
   position: absolute;
   overflow: hidden;
   pointer-events: none;
@@ -303,25 +308,25 @@ body {
   height: 100%;
 }
 
-/* x-spreadsheet-selector */
-.x-spreadsheet-selector {
-  .x-spreadsheet-selector-area {
+/* @{css-prefix}-selector */
+.@{css-prefix}-selector {
+  .@{css-prefix}-selector-area {
     position: absolute;
     border: 2px solid rgb(75, 137, 255);
     background: rgba(75, 137, 255, .1);
   }
-  .x-spreadsheet-selector-clipboard, .x-spreadsheet-selector-autofill {
+  .@{css-prefix}-selector-clipboard, .@{css-prefix}-selector-autofill {
     position: absolute;
     background: transparent;
     z-index: 100;
   }
-  .x-spreadsheet-selector-clipboard {
+  .@{css-prefix}-selector-clipboard {
     border: 2px dashed rgb(75, 137, 255);
   }
-  .x-spreadsheet-selector-autofill {
+  .@{css-prefix}-selector-autofill {
     border: 1px dashed rgba(0, 0, 0, .45); // #606060; // rgba(0, 0, 0, .2);
   }
-  .x-spreadsheet-selector-corner {
+  .@{css-prefix}-selector-corner {
     pointer-events: auto;
     position: absolute;
     cursor: crosshair;
@@ -334,9 +339,9 @@ body {
     background: rgb(75, 137, 255);
   }
 }
-.x-spreadsheet-editor {
+.@{css-prefix}-editor {
   z-index: 20;
-  .x-spreadsheet-editor-area {
+  .@{css-prefix}-editor-area {
     position: absolute;
     text-align: left;
     border: 2px solid rgb(75, 137, 255);
@@ -370,7 +375,7 @@ body {
   }
 }
 
-.x-spreadsheet-item {
+.@{css-prefix}-item {
   user-select: none;
   background: 0;
   border: 1px solid transparent;
@@ -383,32 +388,13 @@ body {
   cursor: default;
   text-align: left;
 
-  &.state {
-    padding-left: 35px;
-    position: relative;
-  }
-  &.state.checked:before {
-    content: '';
-    position: absolute;
-    width: 5px;
-    height: 12px;
-    color: #4b89ff; // #353A41;
-    border-bottom: 2px solid;
-    border-right: 2px solid;
-    left: 15px;
-    top: 6px;
-    transform-origin: center;
-    transform: rotate(45deg);
-    -webkit-transform: rotate(45deg);
-  }
-
   &.disabled {
     pointer-events: none;
     opacity: 0.5;
   }
 
   &:hover, &.active {
-    background: rgba(0, 0, 0, .08);
+    background: rgba(0, 0, 0, .05);
   }
 
   // &.active {
@@ -430,9 +416,69 @@ body {
   }
 }
 
-.x-spreadsheet-suggest,
-.x-spreadsheet-contextmenu,
-.x-spreadsheet-sort-filter {
+.x-spreadsheet-item,
+.x-spreadsheet-header,
+{
+
+  &.state {
+    padding-left: 35px!important;
+    position: relative;
+
+    &:before {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      left: 12px;
+      top: calc(50% - 5px);
+      background: rgba(0, 0, 0, 0.08);
+      // border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+    }
+  }
+  &.state.checked:before {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 12px;
+    color: #4b89ff; // #353A41;
+    border-left: none;
+    border-top: none;
+    border-bottom: 2px solid;
+    border-right: 2px solid;
+    left: 15px;
+    top: 6px;
+    background: none;
+    border-radius: 0;
+    transform-origin: center;
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+  }
+
+}
+
+.@{css-prefix}-checkbox {
+    position: relative;
+    display: inline-block;
+    backface-visibility: hidden;
+    outline: 0;
+    vertical-align: baseline;
+    font-style: normal;
+    font-size: 1rem;
+    line-height: 1em;
+    > input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0!important;
+      outline: 0;
+      z-index: -1;
+    }
+}
+
+.@{css-prefix}-suggest,
+.@{css-prefix}-contextmenu,
+.@{css-prefix}-sort-filter {
   position: absolute;
   box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
   background: #fff;
@@ -442,11 +488,33 @@ body {
   overflow: auto;
 }
 
-.x-spreadsheet-suggest {
+.@{css-prefix}-suggest {
   width: 200px;
 }
 
-.x-spreadsheet-toolbar, .x-spreadsheet-bottombar {
+.@{css-prefix}-filter {
+  border: 1px solid #e9e9e9;
+  font-size: 12px;
+  margin: 10px;
+
+  .@{css-prefix}-header {
+    padding: .5em .75em;
+    background: #f8f8f9;
+    border-bottom: 1px solid #e9e9e9;
+    border-left: 1px solid transparent;
+  }
+  .@{css-prefix}-body {
+    height: 200px;
+    overflow-y: auto;
+
+    .@{css-prefix}-item {
+      height: 20px;
+      line-height: 20px;
+    }
+  }
+}
+
+.@{css-prefix}-toolbar, .@{css-prefix}-bottombar {
   height: 40px;
   padding: 0 30px;
   text-align: left;
@@ -454,26 +522,26 @@ body {
   display: flex;
 }
 
-.x-spreadsheet-bottombar {
+.@{css-prefix}-bottombar {
   border-top: 1px solid #e0e2e4;
 }
 
-.x-spreadsheet-toolbar {
+.@{css-prefix}-toolbar {
   border-bottom: 1px solid #e0e2e4;
 
-  .x-spreadsheet-toolbar-btns {
+  .@{css-prefix}-toolbar-btns {
     display: inline-flex;
   }
 
-  .x-spreadsheet-toolbar-more {
+  .@{css-prefix}-toolbar-more {
     padding: 0 6px 6px;
     text-align: left;
-    .x-spreadsheet-toolbar-divider {
+    .@{css-prefix}-toolbar-divider {
       margin-top: 0;
     }
   }
 
-  .x-spreadsheet-toolbar-btn {
+  .@{css-prefix}-toolbar-btn {
     flex: 0 0 auto;
     display: inline-block;
     border: 1px solid transparent;
@@ -496,7 +564,7 @@ body {
   }
 }
 
-.x-spreadsheet-toolbar-divider {
+.@{css-prefix}-toolbar-divider {
   display: inline-block;
   border-right: 1px solid #e0e2e4;
   width: 0;
@@ -505,7 +573,7 @@ body {
   margin: 12px 3px 0;
 }
 
-.x-spreadsheet-calendar {
+.@{css-prefix}-calendar {
   color: rgba(0,0,0,.65);
   background: #ffffff;
   user-select: none;
@@ -570,7 +638,7 @@ body {
   }
 }
 
-.x-spreadsheet-datepicker {
+.@{css-prefix}-datepicker {
     box-shadow: 2px 2px 5px rgba(0,0,0,.2);
     position: absolute;
     left: 0;
@@ -579,15 +647,15 @@ body {
     width: auto;
 }
 
-.x-spreadsheet-buttons {
+.@{css-prefix}-buttons {
   display: flex;
   justify-content: flex-end;
 
-  .x-spreadsheet-button {
+  .@{css-prefix}-button {
     margin-left: 8px;
   }
 }
-.x-spreadsheet-button {
+.@{css-prefix}-button {
   display: inline-block;
   border-radius: 3px;
   line-height: 1em;
@@ -621,7 +689,7 @@ body {
 }
 
 // form begin
-.x-spreadsheet-form-input {
+.@{css-prefix}-form-input {
   font-size: 1em;
   position: relative;
   font-weight: 400;
@@ -652,7 +720,7 @@ body {
   }
 }
 
-.x-spreadsheet-form-select {
+.@{css-prefix}-form-select {
   position: relative;
   display: inline-block;
   background: #fff;
@@ -673,12 +741,12 @@ body {
     padding: 0 8px;
   }
 }
-.x-spreadsheet-form-fields {
+.@{css-prefix}-form-fields {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
 
-  .x-spreadsheet-form-field {
+  .@{css-prefix}-form-field {
     flex: 0 1 auto;
     .label {
       display: inline-block;
@@ -686,7 +754,7 @@ body {
     }
   }
 }
-.x-spreadsheet-form-field {
+.@{css-prefix}-form-field {
   display: block;
   vertical-align: middle;
   margin-left: 10px;
@@ -697,7 +765,7 @@ body {
   }
 
   &.error {
-    .x-spreadsheet-form-select, input {
+    .@{css-prefix}-form-select, input {
       border-color: #f04134;
     }
   }
@@ -708,7 +776,7 @@ body {
   }
 }
 // form end
-.x-spreadsheet-dimmer {
+.@{css-prefix}-dimmer {
   display: none;
   position: absolute;
   top: 0 !important;
@@ -733,7 +801,7 @@ body {
   }
 }
 
-.x-spreadsheet-modal, .x-spreadsheet-toast {
+.@{css-prefix}-modal, .@{css-prefix}-toast {
   font-size: 13px;
   position: fixed;
   z-index: 1001;
@@ -749,18 +817,18 @@ body {
   box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 8px;
 }
 
-.x-spreadsheet-toast {
+.@{css-prefix}-toast {
   background-color: rgba(255,255,255,.85);
 }
 
-.x-spreadsheet-modal-header, .x-spreadsheet-toast-header {
+.@{css-prefix}-modal-header, .@{css-prefix}-toast-header {
   font-weight: 600;
   background-clip: padding-box;
   background-color: rgba(255,255,255,.85);
   border-bottom: 1px solid rgba(0,0,0,.05);
   border-radius: 4px 4px 0 0;
 
-  .x-spreadsheet-icon {
+  .@{css-prefix}-icon {
     position: absolute;
     right: .8em;
     top: .65em;
@@ -773,30 +841,30 @@ body {
   }
 }
 
-.x-spreadsheet-toast-header {
+.@{css-prefix}-toast-header {
   color: @orange-color;
 }
 
-.x-spreadsheet-modal-header {
+.@{css-prefix}-modal-header {
   border-bottom: @border-style;
   background: rgba(0, 0, 0, .08);
   font-size: 1.0785em;
 }
 
-.x-spreadsheet-modal-header,
-.x-spreadsheet-modal-content,
-.x-spreadsheet-toast-header,
-.x-spreadsheet-toast-content {
+.@{css-prefix}-modal-header,
+.@{css-prefix}-modal-content,
+.@{css-prefix}-toast-header,
+.@{css-prefix}-toast-content {
   padding: .75em 1em;
 }
 
 @media screen and (min-width: 320px) and (max-width: 480px) {
-  .x-spreadsheet-toolbar {
+  .@{css-prefix}-toolbar {
     display: none;
   }
 }
 
-.x-spreadsheet-icon {
+.@{css-prefix}-icon {
   width: 18px;
   height: 18px;
   margin: 1px 1px 2px 1px;
@@ -807,7 +875,7 @@ body {
   position: relative;
   display: inline-block;
 
-  .x-spreadsheet-icon-img {
+  .@{css-prefix}-icon-img {
     background-image: url('../assets/sprite.svg');
     position: absolute;
     width: 262px;

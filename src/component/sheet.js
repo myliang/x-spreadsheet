@@ -273,6 +273,8 @@ function overlayerMousedown(evt) {
   const { autoFilter } = data;
   if (autoFilter.contains(ri, ci)) {
     if (left + width - 20 < offsetX && top + height - 20 < offsetY) {
+      const items = autoFilter.items(ci, (ri, ci) => data.rows.getCell(ri, ci));
+      sortFilter.set(items, autoFilter.getFilter(ci), autoFilter.getSort(ci));
       sortFilter.setOffset({ left, top: top + height + 2 });
       return;
     }
