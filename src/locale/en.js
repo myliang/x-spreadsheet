@@ -86,6 +86,9 @@ export default {
     desc: 'Sort Z -> A',
     asc: 'Sort A -> Z',
   },
+  filter: {
+    empty: 'empty',
+  },
   dataValidation: {
     mode: 'Mode',
     range: 'Cell Range',

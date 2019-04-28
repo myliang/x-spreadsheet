@@ -86,6 +86,9 @@ export default {
     desc: '降序',
     asc: '升序',
   },
+  filter: {
+    empty: '空白',
+  },
   dataValidation: {
     mode: '模式',
     range: '单元区间',
