@@ -9,13 +9,19 @@ class Filter {
     this.operator = operator;
     this.value = value;
   }
-  
-  contains(v) {
+
+  set(operator, value) {
+    this.operator = operator;
+    this.value = value;
+  }
+
+  includes(v) {
     const { operator, value } = this;
     if (operator === 'all') {
       return true;
-    } else if (operator === 'in') {
-      return value.contains(v);
+    }
+    if (operator === 'in') {
+      return value.includes(v);
     }
     return false;
   }
@@ -30,9 +36,17 @@ class Filter {
 }
 
 class Sort {
-  constructor(ci, desc) {
+  constructor(ci, order) {
     this.ci = ci;
-    this.desc = desc;
+    this.order = order;
+  }
+
+  asc() {
+    return this.order === 'asc';
+  }
+
+  desc() {
+    return this.order === 'desc';
   }
 }
 
@@ -43,7 +57,20 @@ export default class AutoFilter {
     this.sort = null;
   }
 
-  contains(ri, ci) {
+  addFilter(ci, operator, value) {
+    const filter = this.getFilter(ci);
+    if (filter == null) {
+      this.filters.push(new Filter(ci, operator, value));
+    } else {
+      filter.set(operator, value);
+    }
+  }
+
+  setSort(ci, order) {
+    this.sort = order ? new Sort(ci, order) : null;
+  }
+
+  includes(ri, ci) {
     if (this.active()) {
       return this.hrange().includes(ri, ci);
     }
@@ -76,7 +103,7 @@ export default class AutoFilter {
         const cell = getCell(ri, ci);
         if (cell !== null) {
           const key = cell.text;
-          const cnt = m[key] || 1;
+          const cnt = (m[key] || 0) + 1;
           m[key] = cnt;
         }
       }

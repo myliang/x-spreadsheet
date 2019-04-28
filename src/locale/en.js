@@ -80,6 +80,7 @@ export default {
     cancel: 'Cancel',
     remove: 'Remove',
     save: 'Save',
+    ok: 'OK',
   },
   sort: {
     desc: 'Sort Z -> A',

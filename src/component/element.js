@@ -165,9 +165,14 @@ class Element {
     return this.el.classList.toggle(name);
   }
 
-  active(flag = true) {
-    if (flag) this.addClass('active');
-    else this.removeClass('active');
+  active(flag = true, cls = 'active') {
+    if (flag) this.addClass(cls);
+    else this.removeClass(cls);
+    return this;
+  }
+
+  checked(flag = true) {
+    this.active(flag, 'checked');
     return this;
   }
 

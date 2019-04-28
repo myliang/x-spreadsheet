@@ -662,7 +662,7 @@ export default class DataProxy {
     return !this.autoFilter.active();
   }
 
-  autofilter(error) {
+  autofilter() {
     const { autoFilter, selector } = this;
     if (autoFilter.active()) {
       autoFilter.clear();

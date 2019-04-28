@@ -80,6 +80,7 @@ export default {
     cancel: '取消',
     remove: '删除',
     save: '保存',
+    ok: '确认',
   },
   sort: {
     desc: '降序',

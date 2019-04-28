@@ -271,10 +271,10 @@ function overlayerMousedown(evt) {
   let { ri, ci } = cellRect;
   // sort or filter
   const { autoFilter } = data;
-  if (autoFilter.contains(ri, ci)) {
+  if (autoFilter.includes(ri, ci)) {
     if (left + width - 20 < offsetX && top + height - 20 < offsetY) {
-      const items = autoFilter.items(ci, (ri, ci) => data.rows.getCell(ri, ci));
-      sortFilter.set(items, autoFilter.getFilter(ci), autoFilter.getSort(ci));
+      const items = autoFilter.items(ci, (r, c) => data.rows.getCell(r, c));
+      sortFilter.set(ci, items, autoFilter.getFilter(ci), autoFilter.getSort(ci));
       sortFilter.setOffset({ left, top: top + height + 2 });
       return;
     }
@@ -439,6 +439,13 @@ function toolbarChange(type, value) {
   }
 }
 
+function sortFilterChange(ci, order, operator, value) {
+  // console.log('sort:', sortDesc, operator, value);
+  const { autoFilter } = this.data;
+  autoFilter.addFilter(ci, operator, value);
+  autoFilter.setSort(ci, order);
+}
+
 function sheetInitEvents() {
   const {
     overlayerEl,
@@ -451,6 +458,7 @@ function sheetInitEvents() {
     data,
     toolbar,
     modalValidation,
+    sortFilter,
   } = this;
   // overlayer
   overlayerEl
@@ -486,6 +494,9 @@ function sheetInitEvents() {
 
   // toolbar change
   toolbar.change = (type, value) => toolbarChange.call(this, type, value);
+
+  // sort filter ok
+  sortFilter.ok = (ci, order, o, v) => sortFilterChange.call(this, ci, order, o, v);
 
   // resizer finished callback
   rowResizer.finishedFn = (cRect, distance) => {

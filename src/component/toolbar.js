@@ -199,7 +199,7 @@ export default class Toolbar {
     this.redoEl.disabled(!data.canRedo());
     this.mergeEl.active(data.canUnmerge())
       .disabled(!data.selector.multiple());
-    this.autofilterEl.disabled(!data.canAutofilter());
+    this.autofilterEl.active(!data.canAutofilter());
     // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
     const { font } = style;
