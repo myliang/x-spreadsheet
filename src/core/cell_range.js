@@ -36,13 +36,15 @@ class CellRange {
     return sri <= ri && ri <= eri && sci <= ci && ci <= eci;
   }
 
-  each(cb) {
+  each(cb, rowFilter = () => true) {
     const {
       sri, sci, eri, eci,
     } = this;
     for (let i = sri; i <= eri; i += 1) {
-      for (let j = sci; j <= eci; j += 1) {
-        cb(i, j);
+      if (rowFilter(i)) {
+        for (let j = sci; j <= eci; j += 1) {
+          cb(i, j);
+        }
       }
     }
   }

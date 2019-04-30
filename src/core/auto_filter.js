@@ -33,6 +33,11 @@ class Filter {
     }
     return 0;
   }
+
+  getData() {
+    const { ci, operator, value } = this;
+    return { ci, operator, value };
+  }
 }
 
 class Sort {
@@ -55,6 +60,24 @@ export default class AutoFilter {
     this.ref = null;
     this.filters = [];
     this.sort = null;
+  }
+
+  setData({ ref, filters, sort }) {
+    if (ref != null) {
+      this.ref = ref;
+      this.fitlers = filters.map(it => new Filter(it.ci, it.operator, it.value));
+      if (sort) {
+        this.sort = new Sort(sort.ci, sort.order);
+      }
+    }
+  }
+
+  getData() {
+    if (this.active()) {
+      const { ref, filters, sort } = this;
+      return { ref, filters: filters.map(it => it.getData()), sort };
+    }
+    return {};
   }
 
   addFilter(ci, operator, value) {
@@ -93,6 +116,28 @@ export default class AutoFilter {
       }
     }
     return null;
+  }
+
+  filteredRows(getCell) {
+    // const ary = [];
+    // let lastri = 0;
+    const rset = new Set();
+    if (this.active()) {
+      const { sri, eri } = this.range();
+      const { filters } = this;
+      for (let ri = sri + 1; ri <= eri; ri += 1) {
+        for (let i = 0; i < filters.length; i += 1) {
+          const filter = filters[i];
+          const cell = getCell(ri, filter.ci);
+          const ctext = cell ? cell.text : '';
+          if (!filter.includes(ctext)) {
+            rset.add(ri);
+            break;
+          }
+        }
+      }
+    }
+    return rset;
   }
 
   items(ci, getCell) {

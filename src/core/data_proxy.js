@@ -276,17 +276,27 @@ function getCellRowByY(y, scrollOffsety) {
   // console.log('y:', y, ', fsh:', fsh);
   let inits = rows.height;
   if (fsh + rows.height < y) inits -= scrollOffsety;
-  const [ri, top, height] = helper.rangeReduceIf(
-    0,
-    rows.len,
-    inits,
-    rows.height,
-    y,
-    i => rows.getHeight(i),
-  );
+
+  // handle ri in autofilter
+  const frset = this.exceptRowSet;
+
+  let ri = 0;
+  let top = inits;
+  let { height } = rows;
+  for (; ri < rows.len; ri += 1) {
+    if (top > y) break;
+    if (!frset.has(ri)) {
+      height = rows.getHeight(ri);
+      top += height;
+    }
+  }
+  top -= height;
+  // console.log('ri:', ri, ', top:', top, ', height:', height);
+
   if (top <= 0) {
     return { ri: -1, top: 0, height };
   }
+
   return { ri: ri - 1, top, height };
 }
 
@@ -331,6 +341,7 @@ export default class DataProxy {
     this.clipboard = new Clipboard();
     this.autoFilter = new AutoFilter();
     this.change = () => {};
+    this.exceptRowSet = new Set();
   }
 
   addValidation(mode, ref, validator) {
@@ -542,7 +553,9 @@ export default class DataProxy {
   }
 
   getRect(cellRange) {
-    const { scroll, rows, cols } = this;
+    const {
+      scroll, rows, cols, exceptRowSet,
+    } = this;
     const {
       sri, sci, eri, eci,
     } = cellRange;
@@ -553,8 +566,9 @@ export default class DataProxy {
         left: 0, l: 0, top: 0, t: 0, scroll,
       };
     }
-    const { left, top } = this.cellPosition(sri, sci);
-    const height = rows.sumHeight(sri, eri + 1);
+    const left = cols.sumWidth(0, sci);
+    const top = rows.sumHeight(0, sri, exceptRowSet);
+    const height = rows.sumHeight(sri, eri + 1, exceptRowSet);
     const width = cols.sumWidth(sci, eci + 1);
     // console.log('sri:', sri, ', sci:', sci, ', eri:', eri, ', eci:', eci);
     let left0 = left - scroll.x;
@@ -664,11 +678,22 @@ export default class DataProxy {
 
   autofilter() {
     const { autoFilter, selector } = this;
-    if (autoFilter.active()) {
-      autoFilter.clear();
-    } else {
-      autoFilter.ref = selector.range.toString();
-    }
+    this.changeData(() => {
+      if (autoFilter.active()) {
+        autoFilter.clear();
+        this.exceptRowSet = new Set();
+      } else {
+        autoFilter.ref = selector.range.toString();
+      }
+    });
+  }
+
+  setAutoFilter(ci, order, operator, value) {
+    const { autoFilter, rows } = this;
+    autoFilter.addFilter(ci, operator, value);
+    autoFilter.setSort(ci, order);
+    this.exceptRowSet = autoFilter.filteredRows((r, c) => rows.getCell(r, c));
+    // console.log('exceptRowSet:', this.exceptRowSet);
   }
 
   deleteCell(what = 'all') {
@@ -770,7 +795,8 @@ export default class DataProxy {
 
   cellRect(ri, ci) {
     const { rows, cols } = this;
-    const { left, top } = this.cellPosition(ri, ci);
+    const left = cols.sumWidth(0, ci);
+    const top = rows.sumHeight(0, ri);
     const cell = rows.getCell(ri, ci);
     let width = cols.getWidth(ci);
     let height = rows.getHeight(ri);
@@ -793,15 +819,6 @@ export default class DataProxy {
     // console.log('data:', this.d);
     return {
       left, top, width, height, cell,
-    };
-  }
-
-  cellPosition(ri, ci) {
-    const { cols, rows } = this;
-    const left = cols.sumWidth(0, ci);
-    const top = rows.sumHeight(0, ri);
-    return {
-      left, top,
     };
   }
 
@@ -930,12 +947,22 @@ export default class DataProxy {
   rowEach(min, max, cb) {
     let y = 0;
     const { rows } = this;
+    const frset = this.exceptRowSet;
+    const frary = [...frset];
+    let offset = 0;
+    for (let i = 0; i < frary.length; i += 1) {
+      if (frary[i] < min) offset += 1;
+    }
     // console.log('min:', min, ', max:', max, ', scroll:', scroll);
-    for (let i = min; i <= max; i += 1) {
-      const rowHeight = rows.getHeight(i);
-      cb(i, y, rowHeight);
-      y += rowHeight;
-      if (y > this.viewHeight()) break;
+    for (let i = min + offset; i <= max + offset; i += 1) {
+      if (frset.has(i)) {
+        offset += 1;
+      } else {
+        const rowHeight = rows.getHeight(i);
+        cb(i, y, rowHeight);
+        y += rowHeight;
+        if (y > this.viewHeight()) break;
+      }
     }
   }
 
@@ -988,7 +1015,7 @@ export default class DataProxy {
 
   getData() {
     const {
-      name, freeze, styles, merges, rows, cols, validations,
+      name, freeze, styles, merges, rows, cols, validations, autoFilter,
     } = this;
     return {
       name,
@@ -998,6 +1025,7 @@ export default class DataProxy {
       rows: rows.getData(),
       cols: cols.getData(),
       validations: validations.getData(),
+      autofilter: autoFilter.getData(),
     };
   }
 }

@@ -33,13 +33,22 @@ function getDrawBox(rindex, cindex) {
   } = data.cellRect(rindex, cindex);
   return new DrawBox(left, top, width, height, cellPaddingWidth);
 }
-
-function renderCellBorders() {
-  const { draw, bboxes } = this;
+/*
+function renderCellBorders(bboxes, translateFunc) {
+  const { draw } = this;
   if (bboxes) {
-    bboxes.forEach(box => draw.strokeBorders(box));
+    const rset = new Set();
+    // console.log('bboxes:', bboxes);
+    bboxes.forEach(({ ri, ci, box }) => {
+      if (!rset.has(ri)) {
+        rset.add(ri);
+        translateFunc(ri);
+      }
+      draw.strokeBorders(box);
+    });
   }
 }
+*/
 
 function renderCell(rindex, cindex) {
   const { draw, data } = this;
@@ -52,7 +61,8 @@ function renderCell(rindex, cindex) {
   dbox.bgcolor = style.bgcolor;
   if (style.border !== undefined) {
     dbox.setBorders(style.border);
-    this.bboxes.push(dbox);
+    // bboxes.push({ ri: rindex, ci: cindex, box: dbox });
+    draw.strokeBorders(dbox);
   }
   draw.rect(dbox, () => {
     // render text
@@ -102,21 +112,50 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.translate(fw, fh)
     .translate(tx, ty);
 
+  const filteredRowSet = data.exceptRowSet;
+  // console.log('filteredRowSet:', filteredRowSet);
+  const filteredTranslateFunc = (ri) => {
+    const ret = filteredRowSet.has(ri);
+    if (ret) {
+      const height = data.rows.getHeight(ri);
+      draw.translate(0, -height);
+    }
+    return !ret;
+  };
   // 1 render cell
-  this.bboxes = [];
+  // let bboxes = [];
+  draw.save();
   viewRange.each((ri, ci) => {
     renderCell.call(this, ri, ci);
-  });
+  }, ri => filteredTranslateFunc(ri));
+  draw.restore();
+
   // 2 render cell border
-  renderCellBorders.call(this);
-  this.bboxes = [];
+  // draw.save();
+  // renderCellBorders.call(this, bboxes, (ri) => filteredTranslateFunc(ri));
+  // draw.restore();
+
+  // / bboxes = [];
   // 3 render mergeCell
-  data.eachMergesInView(viewRange, (r) => {
-    renderCell.call(this, r.sri, r.sci);
+  const rset = new Set();
+  draw.save();
+  data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
+    if (!filteredRowSet.has(sri)) {
+      renderCell.call(this, sri, sci);
+    } else if (!rset.has(sri)) {
+      rset.add(sri);
+      const height = data.rows.sumHeight(sri, eri + 1);
+      draw.translate(0, -height);
+    }
   });
+  draw.restore();
+
   // 4 render mergeCell border
-  renderCellBorders.call(this);
-  // 4 render autofilter
+  // draw.save();
+  // renderCellBorders.call(this, bboxes, (ri) => filteredTranslateFunc(ri));
+  // draw.restore();
+
+  // 5 render autofilter
   renderAutofilter.call(this, viewRange);
 
   draw.restore();

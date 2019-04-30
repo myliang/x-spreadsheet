@@ -27,8 +27,11 @@ class Rows {
     row.style = style;
   }
 
-  sumHeight(min, max) {
-    return helper.rangeSum(min, max, i => this.getHeight(i));
+  sumHeight(min, max, exceptSet) {
+    return helper.rangeSum(min, max, (i) => {
+      if (exceptSet && exceptSet.has(i)) return 0;
+      return this.getHeight(i);
+    });
   }
 
   totalHeight() {
