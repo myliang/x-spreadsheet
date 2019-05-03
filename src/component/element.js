@@ -31,9 +31,9 @@ class Element {
         const k = oen[i];
         if (k === 'left' && evt.button !== 0) {
           return;
-        } if (k === 'right' && evt.button !== 2) {
+        } else if (k === 'right' && evt.button !== 2) {
           return;
-        } if (k === 'stop') {
+        } else if (k === 'stop') {
           evt.stopPropagation();
         }
       }

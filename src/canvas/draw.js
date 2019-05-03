@@ -254,7 +254,7 @@ class Draw {
         }
         textLine.len += ctx.measureText(txt[i]).width;
       }
-      if (textWrap && textLine.len > 0) {
+      if (textLine.len > 0) {
         this.fillText(txt.substring(textLine.start), tx, ty);
         if (strike) {
           drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
