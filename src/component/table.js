@@ -52,10 +52,16 @@ function renderCellBorders(bboxes, translateFunc) {
 
 function renderCell(rindex, cindex) {
   const { draw, data } = this;
-  const cell = data.getCell(rindex, cindex);
+  const { sortedRowMap } = data;
+  let nrindex = rindex;
+  if (sortedRowMap.has(rindex)) {
+    nrindex = sortedRowMap.get(rindex);
+  }
+
+  const cell = data.getCell(nrindex, cindex);
   if (cell === null) return;
 
-  const style = data.getCellStyleOrDefault(rindex, cindex);
+  const style = data.getCellStyleOrDefault(nrindex, cindex);
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
   dbox.bgcolor = style.bgcolor;
@@ -112,10 +118,9 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.translate(fw, fh)
     .translate(tx, ty);
 
-  const filteredRowSet = data.exceptRowSet;
-  // console.log('filteredRowSet:', filteredRowSet);
+  const { exceptRowSet } = data;
   const filteredTranslateFunc = (ri) => {
-    const ret = filteredRowSet.has(ri);
+    const ret = exceptRowSet.has(ri);
     if (ret) {
       const height = data.rows.getHeight(ri);
       draw.translate(0, -height);
@@ -140,7 +145,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   const rset = new Set();
   draw.save();
   data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
-    if (!filteredRowSet.has(sri)) {
+    if (!exceptRowSet.has(sri)) {
       renderCell.call(this, sri, sci);
     } else if (!rset.has(sri)) {
       rset.add(sri);

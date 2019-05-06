@@ -31,9 +31,11 @@ class Element {
         const k = oen[i];
         if (k === 'left' && evt.button !== 0) {
           return;
-        } else if (k === 'right' && evt.button !== 2) {
+        }
+        if (k === 'right' && evt.button !== 2) {
           return;
-        } else if (k === 'stop') {
+        }
+        if (k === 'stop') {
           evt.stopPropagation();
         }
       }

@@ -122,6 +122,7 @@ export default class AutoFilter {
     // const ary = [];
     // let lastri = 0;
     const rset = new Set();
+    const fset = new Set();
     if (this.active()) {
       const { sri, eri } = this.range();
       const { filters } = this;
@@ -133,11 +134,13 @@ export default class AutoFilter {
           if (!filter.includes(ctext)) {
             rset.add(ri);
             break;
+          } else {
+            fset.add(ri);
           }
         }
       }
     }
-    return rset;
+    return { rset, fset };
   }
 
   items(ci, getCell) {

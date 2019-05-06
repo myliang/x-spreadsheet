@@ -342,6 +342,8 @@ export default class DataProxy {
     this.autoFilter = new AutoFilter();
     this.change = () => {};
     this.exceptRowSet = new Set();
+    this.sortedRowMap = new Map();
+    this.unsortedRowMap = new Map();
   }
 
   addValidation(mode, ref, validator) {
@@ -521,12 +523,21 @@ export default class DataProxy {
   // state: input | finished
   setSelectedCellText(text, state = 'input') {
     const { ri, ci } = this.selector;
-    this.setCellText(ri, ci, text, state);
+    let nri = ri;
+    if (this.unsortedRowMap.has(ri)) {
+      nri = this.unsortedRowMap.get(ri);
+    }
+    this.setCellText(nri, ci, text, state);
+    this.resetAutoFilter();
   }
 
   getSelectedCell() {
     const { ri, ci } = this.selector;
-    return this.rows.getCell(ri, ci);
+    let nri = ri;
+    if (this.unsortedRowMap.has(ri)) {
+      nri = this.unsortedRowMap.get(ri);
+    }
+    return this.rows.getCell(nri, ci);
   }
 
   xyInSelectedRect(x, y) {
@@ -682,6 +693,8 @@ export default class DataProxy {
       if (autoFilter.active()) {
         autoFilter.clear();
         this.exceptRowSet = new Set();
+        this.sortedRowMap = new Map();
+        this.unsortedRowMap = new Map();
       } else {
         autoFilter.ref = selector.range.toString();
       }
@@ -689,11 +702,33 @@ export default class DataProxy {
   }
 
   setAutoFilter(ci, order, operator, value) {
-    const { autoFilter, rows } = this;
+    const { autoFilter } = this;
     autoFilter.addFilter(ci, operator, value);
     autoFilter.setSort(ci, order);
-    this.exceptRowSet = autoFilter.filteredRows((r, c) => rows.getCell(r, c));
-    // console.log('exceptRowSet:', this.exceptRowSet);
+    this.resetAutoFilter();
+  }
+
+  resetAutoFilter() {
+    const { autoFilter, rows } = this;
+    if (!autoFilter.active()) return;
+    const { sort } = autoFilter;
+    const { rset, fset } = autoFilter.filteredRows((r, c) => rows.getCell(r, c));
+    const fary = Array.from(fset);
+    const oldAry = Array.from(fset);
+    if (sort) {
+      fary.sort((a, b) => {
+        if (sort.order === 'asc') return a - b;
+        if (sort.order === 'desc') return b - a;
+        return 0;
+      });
+    }
+    this.exceptRowSet = rset;
+    this.sortedRowMap = new Map();
+    this.unsortedRowMap = new Map();
+    fary.forEach((it, index) => {
+      this.sortedRowMap.set(oldAry[index], it);
+      this.unsortedRowMap.set(it, oldAry[index]);
+    });
   }
 
   deleteCell(what = 'all') {
