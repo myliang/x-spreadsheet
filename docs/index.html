@@ -10,6 +10,7 @@
   <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
+      // x.spreadsheet.locale('zh-cn');
       var xs = x.spreadsheet('#x-spreadsheet-demo', {})
         .loadData({
           freeze: 'B3',
@@ -55,5 +56,6 @@
         });
     }
   </script>
+  <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->
 <script type="text/javascript" src="xspreadsheet.js"></script></body>
 </html>
