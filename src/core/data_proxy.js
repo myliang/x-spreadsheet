@@ -447,15 +447,14 @@ export default class DataProxy {
     let [nri, nci] = [ri, ci];
     if (ri < 0) nri = rows.len - 1;
     if (ci < 0) nci = cols.len - 1;
-    // row index
-    if (nri <= cri) [sri, eri] = [nri, cri];
-    else eri = nri;
-    // col index
-    if (nci <= cci) [sci, eci] = [nci, cci];
-    else eci = nci;
+    if (nri > cri) [sri, eri] = [cri, nri];
+    else [sri, eri] = [nri, cri];
+    if (nci > cci) [sci, eci] = [cci, nci];
+    else [sci, eci] = [nci, cci];
     selector.range = merges.union(new CellRange(
       sri, sci, eri, eci,
     ));
+    selector.range = merges.union(selector.range);
     // console.log('selector.range:', selector.range);
     return selector.range;
   }
