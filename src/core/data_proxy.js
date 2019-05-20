@@ -963,9 +963,22 @@ export default class DataProxy {
     return new CellRange(0, 0, ri - 1, ci - 1, this.freezeTotalWidth(), this.freezeTotalHeight());
   }
 
+  exceptRowTotalHeight(sri, eri) {
+    const { exceptRowSet, rows } = this;
+    const exceptRows = Array.from(exceptRowSet);
+    let exceptRowTH = 0;
+    exceptRows.forEach((ri) => {
+      if (ri < sri || ri > eri) {
+        const height = rows.getHeight(ri);
+        exceptRowTH += height;
+      }
+    });
+    return exceptRowTH;
+  }
+
   viewRange() {
     const {
-      scroll, rows, cols, freeze,
+      scroll, rows, cols, freeze, exceptRowSet,
     } = this;
     let { ri, ci } = scroll;
     if (ri <= 0) [ri] = freeze;
@@ -974,8 +987,10 @@ export default class DataProxy {
     let [x, y] = [0, 0];
     let [eri, eci] = [rows.len, cols.len];
     for (let i = ri; i < rows.len; i += 1) {
-      y += rows.getHeight(i);
-      eri = i;
+      if (!exceptRowSet.has(i)) {
+        y += rows.getHeight(i);
+        eri = i;
+      }
       if (y > this.viewHeight()) break;
     }
     for (let j = ci; j < cols.len; j += 1) {
@@ -984,7 +999,7 @@ export default class DataProxy {
       if (x > this.viewWidth()) break;
     }
     // console.log(ri, ci, eri, eci, x, y);
-    return new CellRange(ri, ci, eri, eci, x, y);
+    return new CellRange(ri, ci, eri, eci, x, y - this.exceptRowTotalHeight(ri, eri));
   }
 
   eachMergesInView(viewRange, cb) {
