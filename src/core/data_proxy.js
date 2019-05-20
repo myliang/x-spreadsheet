@@ -521,13 +521,27 @@ export default class DataProxy {
 
   // state: input | finished
   setSelectedCellText(text, state = 'input') {
-    const { ri, ci } = this.selector;
+    const { autoFilter, selector, rows } = this;
+    const { ri, ci } = selector;
     let nri = ri;
     if (this.unsortedRowMap.has(ri)) {
       nri = this.unsortedRowMap.get(ri);
     }
+    const oldCell = rows.getCell(nri, ci);
+    const oldText = oldCell ? oldCell.text : '';
     this.setCellText(nri, ci, text, state);
-    this.resetAutoFilter();
+    // replace filter.value
+    if (autoFilter.active()) {
+      const filter = autoFilter.getFilter(ci);
+      if (filter) {
+        const vIndex = filter.value.findIndex(v => v === oldText);
+        if (vIndex >= 0) {
+          filter.value.splice(vIndex, 1, text);
+        }
+        // console.log('filter:', filter, oldCell);
+      }
+    }
+    // this.resetAutoFilter();
   }
 
   getSelectedCell() {
