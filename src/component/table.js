@@ -119,6 +119,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
     .translate(tx, ty);
 
   const { exceptRowSet } = data;
+  const exceptRows = Array.from(exceptRowSet);
   const filteredTranslateFunc = (ri) => {
     const ret = exceptRowSet.has(ri);
     if (ret) {
@@ -127,9 +128,19 @@ function renderContent(viewRange, fw, fh, tx, ty) {
     }
     return !ret;
   };
+
+  let exceptRowTotalHeight = 0;
   // 1 render cell
   // let bboxes = [];
   draw.save();
+  exceptRows.forEach((ri) => {
+    if (ri < viewRange.sri || ri > viewRange.eri) {
+      const height = data.rows.getHeight(ri);
+      exceptRowTotalHeight += height;
+      // draw.translate(0, -height);
+    }
+  });
+  draw.translate(0, -exceptRowTotalHeight);
   viewRange.each((ri, ci) => {
     renderCell.call(this, ri, ci);
   }, ri => filteredTranslateFunc(ri));
@@ -144,6 +155,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   // 3 render mergeCell
   const rset = new Set();
   draw.save();
+  draw.translate(0, -exceptRowTotalHeight);
   data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
     if (!exceptRowSet.has(sri)) {
       renderCell.call(this, sri, sci);

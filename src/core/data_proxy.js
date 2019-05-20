@@ -988,7 +988,7 @@ export default class DataProxy {
       if (frary[i] < min) offset += 1;
     }
     // console.log('min:', min, ', max:', max, ', scroll:', scroll);
-    for (let i = min + offset; i <= max + offset; i += 1) {
+    for (let i = min + offset; i <= max; i += 1) {
       if (frset.has(i)) {
         offset += 1;
       } else {
