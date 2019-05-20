@@ -131,28 +131,15 @@ function renderContent(viewRange, fw, fh, tx, ty) {
 
   const exceptRowTotalHeight = data.exceptRowTotalHeight(viewRange.sri, viewRange.eri);
   // 1 render cell
-  // let bboxes = [];
-  // draw.save();
-  // exceptRows.forEach((ri) => {
-  //   if (ri < viewRange.sri || ri > viewRange.eri) {
-  //     const height = data.rows.getHeight(ri);
-  //     exceptRowTotalHeight += height;
-  //     // draw.translate(0, -height);
-  //   }
-  // });
+  draw.save();
   draw.translate(0, -exceptRowTotalHeight);
   viewRange.each((ri, ci) => {
     renderCell.call(this, ri, ci);
   }, ri => filteredTranslateFunc(ri));
   draw.restore();
 
-  // 2 render cell border
-  // draw.save();
-  // renderCellBorders.call(this, bboxes, (ri) => filteredTranslateFunc(ri));
-  // draw.restore();
 
-  // / bboxes = [];
-  // 3 render mergeCell
+  // 2 render mergeCell
   const rset = new Set();
   draw.save();
   draw.translate(0, -exceptRowTotalHeight);
@@ -167,12 +154,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   });
   draw.restore();
 
-  // 4 render mergeCell border
-  // draw.save();
-  // renderCellBorders.call(this, bboxes, (ri) => filteredTranslateFunc(ri));
-  // draw.restore();
-
-  // 5 render autofilter
+  // 3 render autofilter
   renderAutofilter.call(this, viewRange);
 
   draw.restore();

@@ -999,7 +999,7 @@ export default class DataProxy {
       if (x > this.viewWidth()) break;
     }
     // console.log(ri, ci, eri, eci, x, y);
-    return new CellRange(ri, ci, eri, eci, x, y - this.exceptRowTotalHeight(ri, eri));
+    return new CellRange(ri, ci, eri, eci, x, y);
   }
 
   eachMergesInView(viewRange, cb) {
@@ -1014,10 +1014,12 @@ export default class DataProxy {
     const frary = [...frset];
     let offset = 0;
     for (let i = 0; i < frary.length; i += 1) {
-      if (frary[i] < min) offset += 1;
+      if (frary[i] < min) {
+        offset += 1;
+      }
     }
     // console.log('min:', min, ', max:', max, ', scroll:', scroll);
-    for (let i = min + offset; i <= max; i += 1) {
+    for (let i = min + offset; i <= max + offset; i += 1) {
       if (frset.has(i)) {
         offset += 1;
       } else {
