@@ -7,7 +7,7 @@ import Selector from './selector';
 import Editor from './editor';
 import ContextMenu from './contextmenu';
 import Table from './table';
-import Toolbar from './toolbar';
+import Toolbar from './toolbar/index';
 import ModalValidation from './modal_validation';
 import SortFilter from './sort_filter';
 import { xtoast } from './message';
@@ -624,11 +624,11 @@ function sheetInitEvents() {
           break;
         case 66:
           // ctrl + B
-          toolbar.trigger('font-bold');
+          toolbar.trigger('bold');
           break;
         case 73:
           // ctrl + I
-          toolbar.trigger('font-italic');
+          toolbar.trigger('italic');
           break;
         default:
           break;
