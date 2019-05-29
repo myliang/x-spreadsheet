@@ -6,7 +6,11 @@ export default class ToggleItem extends Item {
     const { tag } = this;
     return super.element()
       .child(new Icon(tag))
-      .on('click', () => this.change(tag, this.toggle()));
+      .on('click', () => this.click());
+  }
+
+  click() {
+    this.change(this.tag, this.toggle());
   }
 
   setState(active) {

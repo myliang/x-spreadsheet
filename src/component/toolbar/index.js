@@ -1,7 +1,7 @@
 /* global window */
 
 import Align from './align';
-import VAlign from './valign';
+import Valign from './valign';
 import Autofilter from './autofilter';
 import Bold from './bold';
 import Italic from './italic';
@@ -32,10 +32,19 @@ function buildDivider() {
 }
 
 function initBtns2() {
-  this.btns2 = this.items.map(({ el }) => {
-    const rect = el.box();
-    const { marginLeft, marginRight } = el.computedStyle();
-    return [el, rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10)];
+  this.btns2 = [];
+  this.items.forEach((it) => {
+    if (Array.isArray(it)) {
+      it.forEach(({ el }) => {
+        const rect = el.box();
+        const { marginLeft, marginRight } = el.computedStyle();
+        this.btns2.push([el, rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10)]);
+      });
+    } else {
+      const rect = it.box();
+      const { marginLeft, marginRight } = it.computedStyle();
+      this.btns2.push([it, rect.width + parseInt(marginLeft, 10) + parseInt(marginRight, 10)]);
+    }
   });
 }
 
@@ -64,9 +73,9 @@ function moreResize() {
   moreBtns.html('').children(...list2);
   contentEl.css('width', `${sumWidth2}px`);
   if (list2.length > 0) {
-    moreEl.dd.show();
+    moreEl.show();
   } else {
-    moreEl.dd.hide();
+    moreEl.hide();
   }
 }
 
@@ -79,66 +88,66 @@ export default class Toolbar {
     if (isHide) return;
     const style = data.defaultStyle();
     this.items = [
-      this.undoEl = new Undo(),
-      this.redoEl = new Redo(),
-      this.paintformatEl = new Paintformat(),
-      this.clearformatEl = new Clearformat(),
-      this.formatEl = new Format(),
-      this.fontEl = new Font(),
-      this.fontSizeEl = new FontSize(),
-      this.boldEl = new Bold(),
-      this.italicEl = new Italic(),
-      this.underlineEl = new Underline(),
-      this.strikeEl = new Strike(),
-      this.textColorEl = new TextColor(style.color),
-      this.fillColorEl = new FillColor(style.bgcolor),
-      this.borderEl = new Border(),
-      this.mergeEl = new Merge(),
-      this.alignEl = new Align(style.align),
-      this.valignEl = new VAlign(style.valign),
-      this.textwrapEl = new Textwrap(),
-      this.freezeEl = new Freeze(),
-      this.autofilterEl = new Autofilter(),
-      this.formulaEl = new Formula(),
-      this.moreEl = new More(),
+      [
+        this.undoEl = new Undo(),
+        this.redoEl = new Redo(),
+        this.paintformatEl = new Paintformat(),
+        this.clearformatEl = new Clearformat(),
+      ],
+      buildDivider(),
+      [
+        this.formatEl = new Format(),
+      ],
+      buildDivider(),
+      [
+        this.fontEl = new Font(),
+        this.fontSizeEl = new FontSize(),
+      ],
+      buildDivider(),
+      [
+        this.boldEl = new Bold(),
+        this.italicEl = new Italic(),
+        this.underlineEl = new Underline(),
+        this.strikeEl = new Strike(),
+        this.textColorEl = new TextColor(style.color),
+      ],
+      buildDivider(),
+      [
+        this.fillColorEl = new FillColor(style.bgcolor),
+        this.borderEl = new Border(),
+        this.mergeEl = new Merge(),
+      ],
+      buildDivider(),
+      [
+        this.alignEl = new Align(style.align),
+        this.valignEl = new Valign(style.valign),
+        this.textwrapEl = new Textwrap(),
+      ],
+      buildDivider(),
+      [
+        this.freezeEl = new Freeze(),
+        this.autofilterEl = new Autofilter(),
+        this.formulaEl = new Formula(),
+        this.moreEl = new More(),
+      ],
     ];
-    this.items.forEach((it) => {
-      it.change = (...args) => {
-        this.change(...args);
-      };
-    });
 
     this.el = h('div', `${cssPrefix}-toolbar`);
-    this.btns = h('div', `${cssPrefix}-toolbar-btns`).children(
-      this.undoEl.el,
-      this.redoEl.el,
-      this.paintformatEl.el,
-      this.clearformatEl.el,
-      buildDivider(),
-      this.formatEl.el,
-      buildDivider(),
-      this.fontEl.el,
-      this.fontSizeEl.el,
-      buildDivider(),
-      this.boldEl.el,
-      this.italicEl.el,
-      this.underlineEl.el,
-      this.strikeEl.el,
-      this.textColorEl.el,
-      buildDivider(),
-      this.fillColorEl.el,
-      this.borderEl.el,
-      this.mergeEl.el,
-      buildDivider(),
-      this.alignEl.el,
-      this.valignEl.el,
-      this.textwrapEl.el,
-      buildDivider(),
-      this.freezeEl.el,
-      this.autofilterEl.el,
-      this.formulaEl.el,
-      this.moreEl.el,
-    );
+    this.btns = h('div', `${cssPrefix}-toolbar-btns`);
+
+    this.items.forEach((it) => {
+      if (Array.isArray(it)) {
+        it.forEach((i) => {
+          this.btns.child(i.el);
+          i.change = (...args) => {
+            this.change(...args);
+          };
+        });
+      } else {
+        this.btns.child(it.el);
+      }
+    });
+
     this.el.child(this.btns);
     this.reset();
     setTimeout(() => {

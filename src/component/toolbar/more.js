@@ -24,4 +24,12 @@ export default class More extends DropdownItem {
   dropdown() {
     return new DropdownMore();
   }
+
+  show() {
+    this.el.show();
+  }
+
+  hide() {
+    this.el.hide();
+  }
 }
