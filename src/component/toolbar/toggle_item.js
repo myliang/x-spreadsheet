@@ -18,6 +18,6 @@ export default class ToggleItem extends Item {
   }
 
   active() {
-    this.el.hasClass('active');
+    return this.el.hasClass('active');
   }
 }

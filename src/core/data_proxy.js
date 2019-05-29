@@ -37,7 +37,7 @@ import { t } from '../locale/locale';
  *        bottom: [style, color],
  *      },
  *      font: {
- *        family: 'Helvetica',
+ *        name: 'Helvetica',
  *        size: 10,
  *        bold: false,
  *        italic: false,
