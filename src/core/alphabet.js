@@ -38,14 +38,14 @@ export function expr2xy(src) {
   return [indexAt(x), parseInt(y, 10) - 1];
 }
 
-export function expr2expr(src, xn, yn) {
-  const [x, y] = expr2xy(src);
-  return stringAt(x + xn) + (y + yn);
-}
-
 // x,y => B10
 export function xy2expr(x, y) {
   return `${stringAt(x)}${y + 1}`;
+}
+
+export function expr2expr(src, xn, yn) {
+  const [x, y] = expr2xy(src);
+  return xy2expr(x + xn, y + yn);
 }
 
 export default {

@@ -32,7 +32,7 @@ export default class Scrollbar {
     // console.log('distance:', distance, ', contentDistance:', contentDistance);
     if (contentDistance > d) {
       const cssKey = this.vertical ? 'height' : 'width';
-      console.log('d:', d);
+      // console.log('d:', d);
       this.el.css(cssKey, `${d - 15}px`).show();
       this.contentEl
         .css(this.vertical ? 'width' : 'height', '1px')

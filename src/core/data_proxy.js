@@ -489,8 +489,26 @@ export default class DataProxy {
       } else if (property === 'border') {
         setStyleBorders.call(this, value);
       } else if (property === 'formula') {
-        const cell = rows.getCellOrNew(selector.ri, selector.ci);
-        cell.text = `=${value}()`;
+        // console.log('>>>', selector.multiple());
+        const { ri, ci, range } = selector;
+        if (selector.multiple()) {
+          const [rn, cn] = selector.size();
+          const {
+            sri, sci, eri, eci,
+          } = range;
+          if (rn > 1) {
+            for (let i = sci; i <= eci; i += 1) {
+              const cell = rows.getCellOrNew(eri + 1, i);
+              cell.text = `=${value}(${xy2expr(i, sri)}:${xy2expr(i, eri)})`;
+            }
+          } else if (cn > 1) {
+            const cell = rows.getCellOrNew(ri, eci + 1);
+            cell.text = `=${value}(${xy2expr(sci, ri)}:${xy2expr(eci, ri)})`;
+          }
+        } else {
+          const cell = rows.getCellOrNew(ri, ci);
+          cell.text = `=${value}()`;
+        }
       } else {
         selector.range.each((ri, ci) => {
           const cell = rows.getCellOrNew(ri, ci);

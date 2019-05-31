@@ -434,7 +434,7 @@ function toolbarChange(type, value) {
     }
   } else {
     data.setSelectedCellAttr(type, value);
-    if (type === 'formula') {
+    if (type === 'formula' && !data.selector.multiple()) {
       editorSet.call(this);
     }
     sheetReset.call(this);
