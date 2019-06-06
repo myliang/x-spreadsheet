@@ -272,11 +272,19 @@ body {
     right: 15px;
     overflow-x: scroll;
     overflow-y: hidden;
+    > div {
+      height: 1px;
+      background: #ddd;
+    }
   }
   &.vertical {
     bottom: 15px;
     overflow-x: hidden;
     overflow-y: scroll;
+    > div {
+      width: 1px;
+      background: #ddd;
+    }
   }
   &:hover {
     // opacity: .85;

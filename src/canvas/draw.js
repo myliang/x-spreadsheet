@@ -266,7 +266,7 @@ class Draw {
     } else {
       this.fillText(txt, tx, ty);
       if (strike) {
-        drawFontLine.call(this, 'striket', tx, ty, align, valign, font.size, txtWidth);
+        drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, txtWidth);
       }
       if (underline) {
         drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, txtWidth);
