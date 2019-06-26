@@ -38,8 +38,8 @@ const baseFormulas = [
     render: ary => ary.reduce((a, b) => Number(a) / Number(b)),
   },
   {
-    key: 'MULTIPLY',
-    title: tf('formula.multiply'),
+    key: 'PRODUCT',
+    title: tf('formula.product'),
     render: ary => ary.reduce((a, b) => Number(a) * Number(b),1),
   },
   {
