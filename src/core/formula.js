@@ -32,6 +32,21 @@ const baseFormulas = [
     title: tf('formula.concat'),
     render: ary => ary.join(''),
   },
+  {
+    key: 'DIVIDE',
+    title: tf('formula.divide'),
+    render: ary => ary.reduce((a, b) => Number(a) / Number(b)),
+  },
+  {
+    key: 'PRODUCT',
+    title: tf('formula.product'),
+    render: ary => ary.reduce((a, b) => Number(a) * Number(b),1),
+  },
+  {
+    key: 'SUBTRACT',
+    title: tf('formula.subtract'),
+    render: ary => ary.reduce((a, b) => Number(a) - Number(b)),
+  },
 ];
 
 const formulas = baseFormulas;
