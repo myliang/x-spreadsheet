@@ -44,6 +44,7 @@ export default {
     percent: 'Percent',
     rmb: 'RMB',
     usd: 'USD',
+    eur:'EUR',
     date: 'Date',
     time: 'Time',
     datetime: 'Date time',

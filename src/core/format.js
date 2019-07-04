@@ -53,6 +53,13 @@ const baseFormats = [
     render: v => `$${formatNumberRender(v)}`,
   },
   {
+    key: 'eur',
+    title: tf('format.eur'),
+    type: 'number',
+    label: '€10.00',
+    render: v => `€${formatNumberRender(v)}`,
+  },
+  {
     key: 'date',
     title: tf('format.date'),
     type: 'date',
