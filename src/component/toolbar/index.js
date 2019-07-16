@@ -85,7 +85,6 @@ export default class Toolbar {
     this.change = () => {};
     this.widthFn = widthFn;
     this.isHide = isHide;
-    if (isHide) return;
     const style = data.defaultStyle();
     this.items = [
       [
@@ -149,14 +148,18 @@ export default class Toolbar {
     });
 
     this.el.child(this.btns);
-    this.reset();
-    setTimeout(() => {
-      initBtns2.call(this);
-      moreResize.call(this);
-    }, 0);
-    bind(window, 'resize', () => {
-      moreResize.call(this);
-    });
+    if (isHide) {
+      this.el.hide();
+    } else {
+      this.reset();
+      setTimeout(() => {
+        initBtns2.call(this);
+        moreResize.call(this);
+      }, 0);
+      bind(window, 'resize', () => {
+        moreResize.call(this);
+      });
+    }
   }
 
   paintformatActive() {
