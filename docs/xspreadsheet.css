@@ -173,19 +173,26 @@ body {
   bottom: 0;
   right: 0;
   background-color: #f4f5f8;
-  opacity: 0;
+  opacity: 0.9;
   z-index: 12;
 }
 .x-spreadsheet-scrollbar.horizontal {
+  right: 15px;
   overflow-x: scroll;
   overflow-y: hidden;
 }
+.x-spreadsheet-scrollbar.horizontal > div {
+  height: 1px;
+  background: #ddd;
+}
 .x-spreadsheet-scrollbar.vertical {
+  bottom: 15px;
   overflow-x: hidden;
   overflow-y: scroll;
 }
-.x-spreadsheet-scrollbar:hover {
-  opacity: 0.85;
+.x-spreadsheet-scrollbar.vertical > div {
+  width: 1px;
+  background: #ddd;
 }
 /* @{css-prefix}-overlayer */
 .x-spreadsheet-overlayer {
@@ -732,11 +739,11 @@ body {
   left: -72px;
   top: 0;
 }
-.x-spreadsheet-icon .x-spreadsheet-icon-img.bold {
+.x-spreadsheet-icon .x-spreadsheet-icon-img.font-bold {
   left: -90px;
   top: 0;
 }
-.x-spreadsheet-icon .x-spreadsheet-icon-img.italic {
+.x-spreadsheet-icon .x-spreadsheet-icon-img.font-italic {
   left: -108px;
   top: 0;
 }
@@ -748,11 +755,11 @@ body {
   left: -144px;
   top: 0;
 }
-.x-spreadsheet-icon .x-spreadsheet-icon-img.text-color {
+.x-spreadsheet-icon .x-spreadsheet-icon-img.color {
   left: -162px;
   top: 0;
 }
-.x-spreadsheet-icon .x-spreadsheet-icon-img.fill-color {
+.x-spreadsheet-icon .x-spreadsheet-icon-img.bgcolor {
   left: -180px;
   top: 0;
 }

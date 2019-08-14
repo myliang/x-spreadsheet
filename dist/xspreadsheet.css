@@ -181,10 +181,18 @@ body {
   overflow-x: scroll;
   overflow-y: hidden;
 }
+.x-spreadsheet-scrollbar.horizontal > div {
+  height: 1px;
+  background: #ddd;
+}
 .x-spreadsheet-scrollbar.vertical {
   bottom: 15px;
   overflow-x: hidden;
   overflow-y: scroll;
+}
+.x-spreadsheet-scrollbar.vertical > div {
+  width: 1px;
+  background: #ddd;
 }
 /* @{css-prefix}-overlayer */
 .x-spreadsheet-overlayer {
