@@ -50,7 +50,8 @@ const infixExprToSuffixExpr = (src) => {
             } catch (e) {
               // console.log(e);
             }
-          } else if (fnArgType === 1) {
+          } else if (fnArgType === 1 || fnArgType === 3) {
+            if (fnArgType === 3) stack.push(fnArgOperator);
             // fn argument => A1,A2,B5
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
@@ -147,14 +148,14 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     } else if (fc === '=' || fc === '>' || fc === '<') {
       const top = stack.pop();
       const Fn = Function;
-      stack.push(new Fn(`return ${stack.pop()} ${expr} ${top}`)());
+      stack.push(new Fn(`return ${stack.pop()} ${expr === '=' ? '==' : expr} ${top}`)());
     } else if (Array.isArray(expr)) {
       const [formula, len] = expr;
       const params = [];
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      // console.log('::::params:', params);
+      // console.log('::::params:', formulaMap, expr,  formula, params);
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
       // console.log('cellList:', cellList, expr);

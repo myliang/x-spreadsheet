@@ -56,6 +56,8 @@ export default {
     min: '求最小值',
     concat: '字符拼接',
     _if: '条件判断',
+    and: '和',
+    or: '或',
   },
   validation: {
     required: '此值必填',

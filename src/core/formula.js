@@ -33,6 +33,16 @@ const baseFormulas = [
     render: ([b, t, f]) => (b ? t : f),
   },
   {
+    key: 'AND',
+    title: tf('formula.and'),
+    render: ary => ary.every(it => it),
+  },
+  {
+    key: 'OR',
+    title: tf('formula.or'),
+    render: ary => ary.some(it => it),
+  },
+  {
     key: 'CONCAT',
     title: tf('formula.concat'),
     render: ary => ary.join(''),

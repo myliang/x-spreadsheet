@@ -56,6 +56,8 @@ export default {
     max: 'Max',
     min: 'Min',
     _if: 'IF',
+    and: 'AND',
+    or: 'OR',
     concat: 'Concat',
   },
   validation: {
