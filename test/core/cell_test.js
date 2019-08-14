@@ -13,6 +13,15 @@ describe('infixExprToSuffixExpr', () => {
   it('should return A1B2B3SUM,3C1C5AVERAGE,350+B20+ when the value is ((AVERAGE(SUM(A1,B2, B3), C1, C5) + 50) + B20)', () => {
     assert.equal(infixExprToSuffixExpr('((AVERAGE(SUM(A1,B2, B3), C1, C5) + 50) + B20)').join(''), 'A1B2B3SUM,3C1C5AVERAGE,350+B20+');
   });
+  it('should return 11==tfIF,3 when the value is IF(1==1, "t", "f")', () => {
+    assert.equal(infixExprToSuffixExpr('IF(1==1, "t", "f")').join(''), '11=="t"fIF,3');
+  });
+  it('should return 11=tfIF,3 when the value is IF(1=1, "t", "f")', () => {
+    assert.equal(infixExprToSuffixExpr('IF(1=1, "t", "f")').join(''), '11="t"fIF,3');
+  });
+  it('should return 21>21IF,3 when the value is IF(2>1, 2, 1)', () => {
+    assert.equal(infixExprToSuffixExpr('IF(2>1, 2, 1)').join(''), '21>21IF,3');
+  });
   it('should return 105-20- when the value is 10-5-20', () => {
     assert.equal(infixExprToSuffixExpr('10-5-20').join(''), '105-20-');
   });
@@ -52,6 +61,9 @@ describe('cell', () => {
     });
     it('should return 50 + 20 when the value is =50 + B20', () => {
       assert.equal(cell.render('=50 + B20', formulam, (x, y) => x + y), 50 + 20);
+    });
+    it('should return 2 when the value is =IF(2>1, 2, 1)', () => {
+      assert.equal(cell.render('=IF(2>1, 2, 1)', formulam, (x, y) => x + y), 2);
     });
     it('should return 1 + 500 - 20 when the value is =AVERAGE(A1:A3) + 50 * 10 - B20', () => {
       assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', formulam, (x, y) => {
