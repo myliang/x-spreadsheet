@@ -55,6 +55,7 @@ export default {
     max: '求最大值',
     min: '求最小值',
     concat: '字符拼接',
+    _if: '条件判断',
   },
   validation: {
     required: '此值必填',

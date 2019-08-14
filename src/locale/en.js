@@ -44,7 +44,7 @@ export default {
     percent: 'Percent',
     rmb: 'RMB',
     usd: 'USD',
-    eur:'EUR',
+    eur: 'EUR',
     date: 'Date',
     time: 'Time',
     datetime: 'Date time',
@@ -55,6 +55,7 @@ export default {
     average: 'Average',
     max: 'Max',
     min: 'Min',
+    _if: 'IF',
     concat: 'Concat',
   },
   validation: {
