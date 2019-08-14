@@ -22,6 +22,12 @@ describe('infixExprToSuffixExpr', () => {
   it('should return 21>21IF,3 when the value is IF(2>1, 2, 1)', () => {
     assert.equal(infixExprToSuffixExpr('IF(2>1, 2, 1)').join(''), '21>21IF,3');
   });
+  it('should return 11=AND,121IF,3 when the value is IF(AND(1=1), 2, 1)', () => {
+    assert.equal(infixExprToSuffixExpr('IF(AND(1=1), 2, 1)').join(''), '11=AND,121IF,3');
+  });
+  it('should return 11=21>AND,221IF,3 when the value is IF(AND(1=1, 2>1), 2, 1)', () => {
+    assert.equal(infixExprToSuffixExpr('IF(AND(1=1, 2>1), 2, 1)').join(''), '11=21>AND,221IF,3');
+  });
   it('should return 105-20- when the value is 10-5-20', () => {
     assert.equal(infixExprToSuffixExpr('10-5-20').join(''), '105-20-');
   });
