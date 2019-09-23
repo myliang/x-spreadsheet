@@ -67,7 +67,7 @@ const infixExprToSuffixExpr = (src) => {
         } else if (c === '=' || c === '>' || c === '<') {
           const nc = src.charAt(i + 1);
           fnArgOperator = c;
-          if (nc === '=') {
+          if (nc === '=' || nc === '-') {
             fnArgOperator += nc;
             i += 1;
           }
