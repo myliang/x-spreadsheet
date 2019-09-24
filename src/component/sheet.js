@@ -401,7 +401,6 @@ function insertDeleteRowColumn(type) {
   } else if (type === 'delete-cell-text') {
     data.deleteCell('text');
   } else if (type === 'cell-printable') {
-    console.log(this)
     const range = this.selector.range
     this.data.changeData(() => {
       range.each((i,j) => {
@@ -427,6 +426,34 @@ function insertDeleteRowColumn(type) {
             cell['printable']=false;
           }
           // cell.css('background-color','black')
+        }
+      })
+    })
+  } else if (type === 'cell-editable') {
+    const range = this.selector.range
+    this.data.changeData(() => {
+      range.each((i,j) => {
+        const row = this.data.rows.get(i);
+        if(row !== null){
+          const cell = this.data.rows.getCell(i,j)
+          console.log("CELL",cell)
+          if(cell !== null){
+            cell['editable']=true;
+          }
+        }
+      })
+    })
+  } else if (type === 'cell-non-editable') {
+    const range = this.selector.range
+    this.data.changeData(() => {
+      range.each((i,j) => {
+        const row = this.data.rows.get(i);
+        if(row !== null){
+          const cell = this.data.rows.getCell(i,j)
+          console.log("CELL",cell)
+          if(cell !== null){
+            cell['editable']=false;
+          }
         }
       })
     })

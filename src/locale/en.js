@@ -38,6 +38,8 @@ export default {
     validation: 'Data validations',
     cellprintable : 'Enable export',
     cellnonprintable :'Disable export',
+    celleditable : 'Enable editing',
+    cellnoneditable :'Disable editing',
   },
   format: {
     normal: 'Normal',
