@@ -36,6 +36,8 @@ export default {
     deleteCell: 'Delete cell',
     deleteCellText: 'Delete cell text',
     validation: 'Data validations',
+    cellprintable : 'Enable export',
+    cellnonprintable :'Disable export',
   },
   format: {
     normal: 'Normal',
