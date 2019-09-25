@@ -60,7 +60,12 @@ function renderCell(rindex, cindex) {
 
   const cell = data.getCell(nrindex, cindex);
   if (cell === null) return;
-
+  
+  let frozen = false;
+  if("editable" in cell && cell.editable == false){
+    frozen = true
+  }
+  
   const style = data.getCellStyleOrDefault(nrindex, cindex);
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
@@ -93,6 +98,9 @@ function renderCell(rindex, cindex) {
     if (error) {
       // console.log('error:', rindex, cindex, error);
       draw.error(dbox);
+    }
+    if(frozen) {
+      draw.frozen(dbox);
     }
   });
 }
