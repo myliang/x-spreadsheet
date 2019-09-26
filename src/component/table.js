@@ -53,6 +53,7 @@ function renderCellBorders(bboxes, translateFunc) {
 function renderCell(rindex, cindex) {
   const { draw, data } = this;
   const { sortedRowMap } = data;
+
   let nrindex = rindex;
   if (sortedRowMap.has(rindex)) {
     nrindex = sortedRowMap.get(rindex);
@@ -85,7 +86,7 @@ function renderCell(rindex, cindex) {
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
     // console.log('style:', style);
-    draw.text(cellText, dbox, {
+    const break_interval = draw.text(cellText, dbox, {
       align: style.align,
       valign: style.valign,
       font,
@@ -94,6 +95,10 @@ function renderCell(rindex, cindex) {
       underline: style.underline,
     }, style.textwrap);
     // error
+    if(style.textwrap){
+      cell['break_interval'] = break_interval
+    }
+
     const error = data.validations.getError(rindex, cindex);
     if (error) {
       // console.log('error:', rindex, cindex, error);

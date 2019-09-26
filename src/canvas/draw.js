@@ -216,6 +216,7 @@ class Draw {
   */
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
+    let break_interval=0;
     const {
       align, valign, font, color, strike, underline,
     } = attr;
@@ -241,6 +242,9 @@ class Draw {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
         if (textLine.len >= box.innerWidth()) {
+          if(break_interval == 0){
+            break_interval = i;
+          }
           this.fillText(txt.substring(textLine.start, i), tx, ty);
           if (strike) {
             drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
@@ -273,7 +277,7 @@ class Draw {
       }
     }
     ctx.restore();
-    return this;
+    return this,break_interval;
   }
 
   border(style, color) {
