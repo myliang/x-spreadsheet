@@ -132,13 +132,18 @@ function overlayerMousemove(evt) {
 }
 
 function overlayerMousescroll(evt) {
-  const { verticalScrollbar, data } = this;
+  const { verticalScrollbar, horizontalScrollbar, data } = this;
   const { top } = verticalScrollbar.scroll();
+  const { left } = horizontalScrollbar.scroll();
   // console.log('evt:::', evt.wheelDelta, evt.detail * 40);
-  let delta = evt.deltaY;
-  const { rows } = data;
-  if (evt.detail) delta = evt.detail * 40;
-  if (delta > 0) {
+
+  const { rows, cols } = data;
+
+  // deltaY for vertical delta
+  let { deltaY } = evt;
+  // console.log('deltaX', deltaX, 'evt.detail', evt.detail);
+  if (evt.detail) deltaY = evt.detail * 40;
+  if (deltaY > 0) {
     // up
     const ri = data.scroll.ri + 1;
     if (ri < rows.len) {
@@ -151,13 +156,31 @@ function overlayerMousescroll(evt) {
       verticalScrollbar.move({ top: ri === 0 ? 0 : top - rows.getHeight(ri) });
     }
   }
+
+  // deltaX for Mac horizontal scroll
+  const { deltaX } = evt;
+  if (deltaX > 0) {
+    // left
+    const ci = data.scroll.ci + 1;
+    if (ci < cols.len) {
+      horizontalScrollbar.move({ left: left + cols.getWidth(ci) - 1 });
+    }
+  } else {
+    // right
+    const ci = data.scroll.ci - 1;
+    if (ci >= 0) {
+      horizontalScrollbar.move({
+        left: ci === 0 ? 0 : left - cols.getWidth(ci),
+      });
+    }
+  }
 }
 
 function overlayerTouch(direction, distance) {
   const { verticalScrollbar, horizontalScrollbar } = this;
   const { top } = verticalScrollbar.scroll();
   const { left } = horizontalScrollbar.scroll();
-  // console.log('direction:', direction, ', distance:', distance, left);
+
   if (direction === 'left' || direction === 'right') {
     horizontalScrollbar.move({ left: left - distance });
   } else if (direction === 'up' || direction === 'down') {
