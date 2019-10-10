@@ -5,6 +5,7 @@ import {
   indexAt,
   stringAt,
   expr2xy,
+  expr2expr,
 } from '../../src/core/alphabet';
 
 describe('alphabet', () => {
@@ -64,6 +65,14 @@ describe('alphabet', () => {
     it('should return 0 when the value is A1', () => {
       assert.equal(expr2xy('A1')[0], 0);
       assert.equal(expr2xy('A1')[1], 0);
+    });
+  });
+  describe('.expr2expr()', () => {
+    it('should return B2 when the value is A1, 1, 1', () => {
+      assert.equal(expr2expr('A1', 1, 1), 'B2');
+    });
+    it('should return C4 when the value is A1, 2, 3', () => {
+      assert.equal(expr2expr('A1', 2, 3), 'C4');
     });
   });
 });
