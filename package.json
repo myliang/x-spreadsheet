@@ -23,9 +23,7 @@
       "**/*.spec.js"
     ]
   },
-  "pre-commit": [
-    "lint"
-  ],
+  "pre-commit": [],
   "scripts": {
     "dev": "webpack-dev-server --open --config build/webpack.dev.js",
     "build": "webpack --config build/webpack.prod.js",
