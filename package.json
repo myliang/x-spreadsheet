@@ -23,6 +23,9 @@
       "**/*.spec.js"
     ]
   },
+  "pre-commit": [
+    "lint"
+  ],
   "scripts": {
     "dev": "webpack-dev-server --open --config build/webpack.dev.js",
     "build": "webpack --config build/webpack.prod.js",
@@ -56,6 +59,7 @@
     "mini-css-extract-plugin": "^0.4.4",
     "mocha": "^5.2.0",
     "nyc": "^13.3.0",
+    "pre-commit": "^1.2.2",
     "style-loader": "^0.23.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",
@@ -63,8 +67,8 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
-    "opencollective-postinstall": "^2.0.2",
-    "opencollective": "^1.0.3"
+    "opencollective": "^1.0.3",
+    "opencollective-postinstall": "^2.0.2"
   },
   "collective": {
     "type": "opencollective",
