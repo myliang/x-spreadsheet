@@ -159,12 +159,21 @@ function overlayerMousescroll(evt) {
 
   // deltaX for Mac horizontal scroll
   const { deltaX } = evt;
+  // console.log('evt', evt);
+  // console.log('deltaX', deltaX);
+
+  // horizontal scroll
+  // Mac touch pad: deltaX is 1 on slowest scroll
+  // windows: deltaX is 1 on slowest scroll
+  const mouseHScrollBaseX = 40;
+  const touchpadScrollWidthRatio = 1 / 6;
+  const scrollXRatio = Math.abs(deltaX) >= mouseHScrollBaseX ? 1 : touchpadScrollWidthRatio;
   if (deltaX > 0) {
     // left
     const ci = data.scroll.ci + 1;
     if (ci < cols.len) {
       horizontalScrollbar.move({
-        left: left + cols.getWidth(ci) - 1,
+        left: left + cols.getWidth(ci) * scrollXRatio - 1,
       });
     }
   } else {
@@ -172,10 +181,14 @@ function overlayerMousescroll(evt) {
     const ci = data.scroll.ci - 1;
     if (ci >= 0) {
       horizontalScrollbar.move({
-        left: ci === 0 ? 0 : left - cols.getWidth(ci),
+        left: ci === 0 ? 0 : left - cols.getWidth(ci) * scrollXRatio,
       });
     }
   }
+
+  // prevent Chrome auto nav-back, nav-next effect
+  evt.stopPropagation();
+  evt.preventDefault();
 }
 
 function overlayerTouch(direction, distance) {
