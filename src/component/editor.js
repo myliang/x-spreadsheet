@@ -33,9 +33,9 @@ function inputEventHandler(evt) {
   const v = evt.target.value;
   // console.log(evt, 'v:', v);
   const { suggest, textlineEl, validator } = this;
-  const cell = this.cell;
-  if(cell !== null){
-    if(("editable" in cell && cell.editable == true) || (cell['editable'] === undefined)) {
+  const { cell } = this;
+  if (cell !== null) {
+    if (('editable' in cell && cell.editable === true) || (cell.editable === undefined)) {
       this.inputText = v;
       if (validator) {
         if (validator.type === 'list') {
@@ -54,12 +54,10 @@ function inputEventHandler(evt) {
       textlineEl.html(v);
       resetTextareaSize.call(this);
       this.change('input', v);
-      }
-      else {
-        evt.target.value = "";
-      }
-  }
-  else {
+    } else {
+      evt.target.value = '';
+    }
+  } else {
     this.inputText = v;
     if (validator) {
       if (validator.type === 'list') {
@@ -78,7 +76,7 @@ function inputEventHandler(evt) {
     textlineEl.html(v);
     resetTextareaSize.call(this);
     this.change('input', v);
-    }
+  }
 }
 
 function setTextareaRange(position) {

@@ -163,7 +163,9 @@ function overlayerMousescroll(evt) {
     // left
     const ci = data.scroll.ci + 1;
     if (ci < cols.len) {
-      horizontalScrollbar.move({ left: left + cols.getWidth(ci) - 1 });
+      horizontalScrollbar.move({
+        left: left + cols.getWidth(ci) - 1,
+      });
     }
   } else {
     // right
@@ -424,62 +426,62 @@ function insertDeleteRowColumn(type) {
   } else if (type === 'delete-cell-text') {
     data.deleteCell('text');
   } else if (type === 'cell-printable') {
-    const range = this.selector.range
+    const { range } = this.selector;
     this.data.changeData(() => {
-      range.each((i,j) => {
+      range.each((i, j) => {
         const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['printable']=true;
+        if (row !== null) {
+          const cell = this.data.rows.getCell(i, j);
+          console.log('CELL', cell);
+          if (cell !== null) {
+            cell.printable = true;
           }
         }
-      })
-    })
+      });
+    });
   } else if (type === 'cell-non-printable') {
-    const range = this.selector.range
+    const { range } = this.selector;
     this.data.changeData(() => {
-      range.each((i,j) => {
+      range.each((i, j) => {
         const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['printable']=false;
+        if (row !== null) {
+          const cell = this.data.rows.getCell(i, j);
+          console.log('CELL', cell);
+          if (cell !== null) {
+            cell.printable = false;
           }
           // cell.css('background-color','black')
         }
-      })
-    })
+      });
+    });
   } else if (type === 'cell-editable') {
-    const range = this.selector.range
+    const { range } = this.selector;
     this.data.changeData(() => {
-      range.each((i,j) => {
+      range.each((i, j) => {
         const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['editable']=true;
+        if (row !== null) {
+          const cell = this.data.rows.getCell(i, j);
+          console.log('CELL', cell);
+          if (cell !== null) {
+            cell.editable = true;
           }
         }
-      })
-    })
+      });
+    });
   } else if (type === 'cell-non-editable') {
-    const range = this.selector.range
+    const { range } = this.selector;
     this.data.changeData(() => {
-      range.each((i,j) => {
+      range.each((i, j) => {
         const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['editable']=false;
+        if (row !== null) {
+          const cell = this.data.rows.getCell(i, j);
+          console.log('CELL', cell);
+          if (cell !== null) {
+            cell.editable = false;
           }
         }
-      })
-    })
+      });
+    });
   }
   clearClipboard.call(this);
   sheetReset.call(this);

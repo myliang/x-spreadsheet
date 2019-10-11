@@ -13,6 +13,7 @@ class Spreadsheet {
     if (typeof selectors === 'string') {
       targetEl = document.querySelector(selectors);
     }
+
     this.data = new DataProxy('sheet1', options);
     const rootEl = h('div', `${cssPrefix}`)
       .on('contextmenu', evt => evt.preventDefault());

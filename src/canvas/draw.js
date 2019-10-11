@@ -384,7 +384,7 @@ class Draw {
     ctx.fill();
     ctx.restore();
   }
-  
+
   rect(box, dtextcb) {
     const { ctx } = this;
     const {
