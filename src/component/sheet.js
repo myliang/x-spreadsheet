@@ -166,8 +166,11 @@ function overlayerMousescroll(evt) {
   // Mac touch pad: deltaX is 1 on slowest scroll
   // windows: deltaX is 1 on slowest scroll
   const mouseHScrollBaseX = 40;
-  const touchpadScrollWidthRatio = 1 / 6;
-  const scrollXRatio = Math.abs(deltaX) >= mouseHScrollBaseX ? 1 : touchpadScrollWidthRatio;
+  const touchpadScrollWidthRatio = 1 / 20;
+  const absDeltaX = Math.abs(deltaX);
+  const scrollXRatio = absDeltaX >= mouseHScrollBaseX ? 1 : touchpadScrollWidthRatio * absDeltaX;
+
+  // console.log('scrollXRatio', scrollXRatio);
   if (deltaX > 0) {
     // left
     const ci = data.scroll.ci + 1;
