@@ -4,8 +4,15 @@
     title
     render
 */
+/**
+ * @typedef {object} Formula
+ * @property {string} key
+ * @property {function} title
+ * @property {function} render
+ */
 import { tf } from '../locale/locale';
 
+/** @type {Formula[]} */
 const baseFormulas = [
   {
     key: 'SUM',

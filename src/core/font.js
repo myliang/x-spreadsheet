@@ -1,3 +1,9 @@
+// docs
+import './_.prototypes';
+
+/** default font list
+ * @type {BaseFont[]}
+ */
 const baseFonts = [
   { key: 'Arial', title: 'Arial' },
   { key: 'Helvetica', title: 'Helvetica' },
@@ -8,6 +14,9 @@ const baseFonts = [
   { key: 'Lato', title: 'Lato' },
 ];
 
+/** default fontSize list
+ * @type {FontSize[]}
+ */
 const fontSizes = [
   { pt: 7.5, px: 10 },
   { pt: 8, px: 11 },
@@ -30,6 +39,11 @@ const fontSizes = [
   // { pt: 72, px: 95.6 },
 ];
 
+/** map pt to px
+ * @date 2019-10-10
+ * @param {fontsizePT} pt
+ * @returns {fontsizePX}
+ */
 function getFontSizePxByPt(pt) {
   for (let i = 0; i < fontSizes.length; i += 1) {
     const fontSize = fontSizes[i];
@@ -40,13 +54,18 @@ function getFontSizePxByPt(pt) {
   return pt;
 }
 
-const fonts = (ary = []) => {
+/** transform baseFonts to map
+ * @date 2019-10-10
+ * @param {BaseFont[]} [ary=[]]
+ * @returns {object}
+ */
+function fonts(ary = []) {
   const map = {};
   baseFonts.concat(ary).forEach((f) => {
     map[f.key] = f;
   });
   return map;
-};
+}
 
 export default {};
 export {

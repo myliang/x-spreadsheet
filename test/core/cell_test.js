@@ -73,7 +73,7 @@ describe('cell', () => {
     });
     it('should return 1 + 500 - 20 when the value is =AVERAGE(A1:A3) + 50 * 10 - B20', () => {
       assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', formulam, (x, y) => {
-        console.log('x:', x, ', y:', y);
+        // console.log('x:', x, ', y:', y);
         return x + y;
       }), 1 + 500 - 20);
     });
