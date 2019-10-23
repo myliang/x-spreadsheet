@@ -67,6 +67,11 @@ function renderCell(rindex, cindex) {
     frozen = true
   }
   
+  let export_disabled = false;
+  if("printable" in cell && cell.printable == false){
+    export_disabled = true
+  }
+
   const style = data.getCellStyleOrDefault(nrindex, cindex);
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
@@ -107,6 +112,15 @@ function renderCell(rindex, cindex) {
     if(frozen) {
       draw.frozen(dbox);
     }
+
+    if(export_disabled){
+      draw.export_disabled(dbox);
+    }
+
+    if(frozen && export_disabled){
+      draw.frozen_export_disabled(dbox);
+    }
+    
   });
 }
 

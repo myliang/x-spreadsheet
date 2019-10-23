@@ -388,6 +388,50 @@ class Draw {
     ctx.fill();
     ctx.restore();
   }
+
+  export_disabled(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    const sx = x + width - 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0, 255,1)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  frozen_export_disabled(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    console.log(ctx,box)
+    const sx = x + width - 1;
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 12), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 12));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0,255,1)';
+    ctx.fill();
+    ctx.restore();
+    
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,255,0,1)';
+    ctx.fill();
+    ctx.restore();
+
+  }
   
   rect(box, dtextcb) {
     const { ctx } = this;
