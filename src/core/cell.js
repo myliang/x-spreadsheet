@@ -156,8 +156,13 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       stack.push(Number(stack.pop()) / Number(top));
     } else if (fc === '=' || fc === '>' || fc === '<') {
       const top = stack.pop();
+      const top2 = stack.pop();
       const Fn = Function;
-      stack.push(new Fn(`return ${stack.pop()} ${expr === '=' ? '==' : expr} ${top}`)());
+      if(top.length == 0  || top2.length == 0){
+        stack.push(false)
+      }else{
+        stack.push(new Fn(`return ${top2} ${expr === '=' ? '==' : expr} ${top}`)());
+      }
     } else if (Array.isArray(expr)) {
       const [formula, len] = expr;
       const params = [];
