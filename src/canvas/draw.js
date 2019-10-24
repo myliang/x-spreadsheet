@@ -407,7 +407,6 @@ class Draw {
   frozen_export_disabled(box) {
     const { ctx } = this;
     const { x, y, width } = box;
-    console.log(ctx,box)
     const sx = x + width - 1;
     
     ctx.save();

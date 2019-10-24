@@ -12,7 +12,6 @@ const infixExprToSuffixExpr = (src) => {
   let fnArgsLen = 1; // A1,A2,A3...
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
-    // console.log('c:', c);
     if (c !== ' ') {
       if (c >= 'a' && c <= 'z') {
         subStrs.push(c.toUpperCase());
@@ -130,6 +129,7 @@ const evalSubExpr = (subExpr, cellRender) => {
 const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   const stack = [];
   // console.log(':::::formulaMap:', formulaMap);
+  // console.log("srcstack",srcStack)
   for (let i = 0; i < srcStack.length; i += 1) {
     // console.log(':::>>>', srcStack[i]);
     const expr = srcStack[i];
@@ -157,16 +157,17 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     } else if (Array.isArray(expr)) {
       const [formula, len] = expr;
       const params = [];
+      // console.log("Stack at this point",stack)
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      // console.log('::::params:', formulaMap, expr,  formula, params);
+      // console.log('::::params:', formulaMap, expr, formula, params);
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
       // console.log('cellList:', cellList, expr);
-      if (cellList.includes(expr)) {
-        return 0;
-      }
+      // if (cellList.includes(expr)) {
+      //   return 0;
+      // }
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
@@ -179,7 +180,41 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
 
 const cellRender = (src, formulaMap, getCellText, cellList = []) => {
   if (src[0] === '=') {
-    const stack = infixExprToSuffixExpr(src.substring(1));
+    let stack=[] ;
+    if(src.substring(1).startsWith("IF(")){
+      let expr = src.substring(4,src.length-1)
+      let split_parts = expr.split(",")
+      let org_stack = infixExprToSuffixExpr(src.substring(1))
+      // let postfix_part1 = infixExprToSuffixExpr(split_parts[0])
+      let postfix_part2 = infixExprToSuffixExpr(split_parts[1])
+      let postfix_part3 = infixExprToSuffixExpr(split_parts[2])
+      stack.push(org_stack[0])
+      stack.push(org_stack[1])
+      stack.push(org_stack[2])
+      Array.prototype.push.apply(stack,postfix_part2);
+      Array.prototype.push.apply(stack,postfix_part3);
+      stack.push(["IF",3])
+    }
+    else if(src.substring(1).startsWith("MAX(")){
+      let expr = src.substring(5,src.length-1)
+      let split_parts = expr.split(",")
+      let postfix_part1 = infixExprToSuffixExpr(split_parts[0])
+      let postfix_part2 = infixExprToSuffixExpr(split_parts[1])
+      Array.prototype.push.apply(stack,postfix_part1);
+      Array.prototype.push.apply(stack,postfix_part2);
+      stack.push(["MAX",2])
+    }
+    else if(src.substring(1).startsWith("MIN(")){
+      let expr = src.substring(5,src.length-1)
+      let split_parts = expr.split(",")
+      let postfix_part1 = infixExprToSuffixExpr(split_parts[0])
+      let postfix_part2 = infixExprToSuffixExpr(split_parts[1])
+      Array.prototype.push.apply(stack,postfix_part1);
+      Array.prototype.push.apply(stack,postfix_part2);
+      stack.push(["MIN",2])
+    }else{
+      stack = infixExprToSuffixExpr(src.substring(1))
+    }
     if (stack.length <= 0) return src;
     return evalSuffixExpr(
       stack,
