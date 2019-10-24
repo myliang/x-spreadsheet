@@ -2,10 +2,15 @@ import { tf } from '../locale/locale';
 
 const formatStringRender = v => v;
 
-const formatNumberRender = (v) => {
+const formatNumberRender = (v,digits=2) => {
   // match "-12.1" or "12" or "12.1"
   if (/^(-?\d*.?\d*)$/.test(v)) {
-    const v1 = Number(v).toFixed(2).toString();
+    let v1;
+    if(digits==2){
+      v1 = Number(v).toFixed(2).toString();
+    }else{
+      v1 = Number(v).toFixed(digits).toString();
+    }
     const [first, ...parts] = v1.split('\\.');
     return [first.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'), ...parts];
   }
@@ -31,6 +36,13 @@ const baseFormats = [
     type: 'number',
     label: '1,000.12',
     render: formatNumberRender,
+  },
+  {
+    key: 'number2',
+    title: tf('format.number2'),
+    type: 'number',
+    label: '1,000.121',
+    render: v => formatNumberRender(v,3),
   },
   {
     key: 'percent',
@@ -59,6 +71,13 @@ const baseFormats = [
     type: 'number',
     label: '€10.00',
     render: v => `€${formatNumberRender(v)}`,
+  },
+  {
+    key: 'eur2',
+    title: tf('format.eur2'),
+    type: 'number',
+    label: '€10.000',
+    render: v => `€${formatNumberRender(v,3)}`,
   },
   {
     key: 'date',
