@@ -212,6 +212,16 @@ const cellRender = (src, formulaMap, getCellText, cellList = []) => {
       Array.prototype.push.apply(stack,postfix_part1);
       Array.prototype.push.apply(stack,postfix_part2);
       stack.push(["MIN",2])
+    }
+    else if(src.substring(1).startsWith("ROUND(")){
+      let expr = src.substring(7,src.length-1)
+      let split_parts = expr.split(",")
+      let postfix_part1 = infixExprToSuffixExpr(split_parts[0])
+      let postfix_part2 = infixExprToSuffixExpr(split_parts[1])
+      Array.prototype.push.apply(stack,postfix_part1);
+      Array.prototype.push.apply(stack,postfix_part2);
+      stack.push(["ROUND",2])
+      // console.log(stack)
     }else{
       stack = infixExprToSuffixExpr(src.substring(1))
     }
