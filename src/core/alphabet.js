@@ -60,7 +60,7 @@ export function expr2xy(src) {
 }
 
 /** translate XY-tag to A1-tag
- * @example x,y => B10
+ * @example (1, 9) => 'B10'
  * @date 2019-10-10
  * @export
  * @param {number} x

@@ -1,9 +1,17 @@
 import { CellRange } from './cell_range';
-// operator: all|eq|neq|gt|gte|lt|lte|in|be
+
 // value:
 //   in => []
 //   be => [min, max]
 class Filter {
+  /**
+   *Creates an instance of Filter.
+   * @date 2019-10-26
+   * @param {number} ci column index
+   * @param {string} operator `all|eq|neq|gt|gte|lt|lte|in|be`
+   * @param {*} value
+   * @memberof Filter
+   */
   constructor(ci, operator, value) {
     this.ci = ci;
     this.operator = operator;
@@ -15,6 +23,12 @@ class Filter {
     this.value = value;
   }
 
+  /**
+   * @date 2019-10-26
+   * @param {string} v
+   * @returns {boolean}
+   * @memberof Filter
+   */
   includes(v) {
     const { operator, value } = this;
     if (operator === 'all') {
@@ -65,7 +79,7 @@ export default class AutoFilter {
   setData({ ref, filters, sort }) {
     if (ref != null) {
       this.ref = ref;
-      this.fitlers = filters.map(it => new Filter(it.ci, it.operator, it.value));
+      this.filters = filters.map(it => new Filter(it.ci, it.operator, it.value));
       if (sort) {
         this.sort = new Sort(sort.ci, sort.order);
       }
