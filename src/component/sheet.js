@@ -709,6 +709,12 @@ function sheetInitEvents() {
         case 73:
           // ctrl + I
           toolbar.trigger('italic');
+              break;
+        case 13:
+          // ctrl + Enter, in textarea, wrap
+          // todo: is in editmode?
+          this.editor.el.el.querySelector('textarea').value += '\n'; 
+          evt.preventDefault();
           break;
         default:
           break;
