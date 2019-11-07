@@ -775,8 +775,20 @@ function sheetInitEvents() {
         || (keyCode >= 96 && keyCode <= 105)
         || evt.key === '='
       ) {
-        dataSetCellText.call(this, evt.key, 'input');
-        editorSet.call(this);
+        //Pass the input event handle if only the cell is editable
+        const range = this.selector.range;
+        const cell = this.data.getCell(range['sri'],range['sci']);
+        if(cell !== null){
+          if(("editable" in cell && cell.editable == true) || (cell['editable'] === undefined)) {
+            dataSetCellText.call(this, evt.key, 'input');
+            editorSet.call(this);
+          }
+        }
+        //Pass the input event handle when the cell is empty
+        else{
+          dataSetCellText.call(this, evt.key, 'input');
+          editorSet.call(this);
+        }
       } else if (keyCode === 113) {
         // F2
         editorSet.call(this);
