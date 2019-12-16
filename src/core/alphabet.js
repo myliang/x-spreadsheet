@@ -10,16 +10,7 @@ const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', '
  * @returns {string}
  */
 export function stringAt(index) {
-  let str = '';
-  let cindex = index;
-  while (cindex >= alphabets.length) {
-    cindex /= alphabets.length;
-    cindex -= 1;
-    str += alphabets[parseInt(cindex, 10) % alphabets.length];
-  }
-  const last = index % alphabets.length;
-  str += alphabets[last];
-  return str;
+  return index !== -1 ? stringAt(Math.floor(index / 26) - 1) + String.fromCharCode(65 + (index % 26)) : '';
 }
 
 /** translate letter in A1-tag to number
