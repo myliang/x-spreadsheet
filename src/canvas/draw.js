@@ -216,6 +216,7 @@ class Draw {
   */
   text(txt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
+    let break_interval=0;
     const {
       align, valign, font, color, strike, underline,
     } = attr;
@@ -241,6 +242,9 @@ class Draw {
       const textLine = { len: 0, start: 0 };
       for (let i = 0; i < txt.length; i += 1) {
         if (textLine.len >= box.innerWidth()) {
+          if(break_interval == 0){
+            break_interval = i;
+          }
           this.fillText(txt.substring(textLine.start, i), tx, ty);
           if (strike) {
             drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
@@ -273,7 +277,7 @@ class Draw {
       }
     }
     ctx.restore();
-    return this;
+    return this,break_interval;
   }
 
   border(style, color) {
@@ -383,6 +387,49 @@ class Draw {
     ctx.fillStyle = 'rgba(0, 255, 0, .85)';
     ctx.fill();
     ctx.restore();
+  }
+
+  export_disabled(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    const sx = x + width - 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0, 255,1)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  frozen_export_disabled(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    const sx = x + width - 1;
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 12), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 12));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0,255,1)';
+    ctx.fill();
+    ctx.restore();
+    
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,255,0,1)';
+    ctx.fill();
+    ctx.restore();
+
   }
   
   rect(box, dtextcb) {

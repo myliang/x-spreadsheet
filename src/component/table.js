@@ -53,6 +53,7 @@ function renderCellBorders(bboxes, translateFunc) {
 function renderCell(rindex, cindex) {
   const { draw, data } = this;
   const { sortedRowMap } = data;
+
   let nrindex = rindex;
   if (sortedRowMap.has(rindex)) {
     nrindex = sortedRowMap.get(rindex);
@@ -66,6 +67,11 @@ function renderCell(rindex, cindex) {
     frozen = true
   }
   
+  let export_disabled = false;
+  if("printable" in cell && cell.printable == false){
+    export_disabled = true
+  }
+
   const style = data.getCellStyleOrDefault(nrindex, cindex);
   // console.log('style:', style);
   const dbox = getDrawBox.call(this, rindex, cindex);
@@ -85,7 +91,7 @@ function renderCell(rindex, cindex) {
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
     // console.log('style:', style);
-    draw.text(cellText, dbox, {
+    const break_interval = draw.text(cellText, dbox, {
       align: style.align,
       valign: style.valign,
       font,
@@ -94,6 +100,10 @@ function renderCell(rindex, cindex) {
       underline: style.underline,
     }, style.textwrap);
     // error
+    if(style.textwrap){
+      cell['break_interval'] = break_interval
+    }
+
     const error = data.validations.getError(rindex, cindex);
     if (error) {
       // console.log('error:', rindex, cindex, error);
@@ -102,6 +112,15 @@ function renderCell(rindex, cindex) {
     if(frozen) {
       draw.frozen(dbox);
     }
+
+    if(export_disabled){
+      draw.export_disabled(dbox);
+    }
+
+    if(frozen && export_disabled){
+      draw.frozen_export_disabled(dbox);
+    }
+    
   });
 }
 
