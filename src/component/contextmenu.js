@@ -42,7 +42,6 @@ function buildMenuItem(item) {
 }
 
 function buildMenu() {
-  
   return menuItems.map(it => buildMenuItem.call(this, it));
 }
 

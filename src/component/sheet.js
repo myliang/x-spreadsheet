@@ -701,6 +701,13 @@ function sheetInitEvents() {
           evt.preventDefault();
           break;
         case 13: // enter
+          if (altKey) {
+            const c = data.getSelectedCell();
+            const ntxt = c.text || '';
+            dataSetCellText.call(this, `${ntxt}\n`, 'input');
+            editorSet.call(this);
+            break;
+          }
           editor.clear();
           // shift + enter => move up
           // enter => move down

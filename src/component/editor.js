@@ -6,25 +6,30 @@ import { cssPrefix } from '../config';
 // import { mouseMoveUp } from '../event';
 
 function resetTextareaSize() {
-  if (!/^\s*$/.test(this.inputText)) {
+  const { inputText } = this;
+  if (!/^\s*$/.test(inputText)) {
     const {
       textlineEl, textEl, areaOffset,
     } = this;
-    const tlineWidth = textlineEl.offset().width + 9;
-    const maxWidth = this.viewFn().width - areaOffset.left - 9;
-    // console.log('tlineWidth:', tlineWidth, ':', maxWidth);
+    const txts = inputText.split('\n');
+    const maxTxtSize = Math.max(...txts.map(it => it.length));
+    const tlOffset = textlineEl.offset();
+    const fontWidth = tlOffset.width / inputText.length;
+    const tlineWidth = (maxTxtSize + 1) * fontWidth + 5;
+    const maxWidth = this.viewFn().width - areaOffset.left - fontWidth;
+    let h1 = txts.length;
     if (tlineWidth > areaOffset.width) {
       let twidth = tlineWidth;
       if (tlineWidth > maxWidth) {
         twidth = maxWidth;
-        let h1 = parseInt(tlineWidth / maxWidth, 10);
+        h1 += parseInt(tlineWidth / maxWidth, 10);
         h1 += (tlineWidth % maxWidth) > 0 ? 1 : 0;
-        h1 *= this.rowHeight;
-        if (h1 > areaOffset.height) {
-          textEl.css('height', `${h1}px`);
-        }
       }
       textEl.css('width', `${twidth}px`);
+    }
+    h1 *= this.rowHeight;
+    if (h1 > areaOffset.height) {
+      textEl.css('height', `${h1}px`);
     }
   }
 }
@@ -33,9 +38,9 @@ function inputEventHandler(evt) {
   const v = evt.target.value;
   // console.log(evt, 'v:', v);
   const { suggest, textlineEl, validator } = this;
-  const cell = this.cell;
-  if(cell !== null){
-    if(("editable" in cell && cell.editable == true) || (cell['editable'] === undefined)) {
+  const { cell } = this;
+  if (cell !== null) {
+    if (('editable' in cell && cell.editable === true) || (cell.editable === undefined)) {
       this.inputText = v;
       if (validator) {
         if (validator.type === 'list') {
@@ -54,12 +59,10 @@ function inputEventHandler(evt) {
       textlineEl.html(v);
       resetTextareaSize.call(this);
       this.change('input', v);
-      }
-      else {
-        evt.target.value = "";
-      }
-  }
-  else {
+    } else {
+      evt.target.value = '';
+    }
+  } else {
     this.inputText = v;
     if (validator) {
       if (validator.type === 'list') {
@@ -78,7 +81,7 @@ function inputEventHandler(evt) {
     textlineEl.html(v);
     resetTextareaSize.call(this);
     this.change('input', v);
-    }
+  }
 }
 
 function setTextareaRange(position) {
