@@ -61,15 +61,15 @@ class DrawBox {
     return x;
   }
 
-  texty(align) {
+  texty(align, h) {
     const { height, padding } = this;
     let { y } = this;
     if (align === 'top') {
       y += padding;
     } else if (align === 'middle') {
-      y += height / 2;
+      y += height / 2 - h / 2;
     } else if (align === 'bottom') {
-      y += height - padding;
+      y += height - padding - h;
     }
     return y;
   }
@@ -247,7 +247,8 @@ class Draw {
         ntxts.push(it);
       }
     });
-    let ty = box.texty(valign) - ((ntxts.length - 1) * (font.size + 2)) / 2;
+    const txtHeight = (ntxts.length - 1) * (font.size + 2);
+    let ty = box.texty(valign, txtHeight);
     ntxts.forEach((txt) => {
       const txtWidth = ctx.measureText(txt).width;
       this.fillText(txt, tx, ty);
