@@ -424,62 +424,13 @@ function insertDeleteRowColumn(type) {
   } else if (type === 'delete-cell-text') {
     data.deleteCell('text');
   } else if (type === 'cell-printable') {
-    const range = this.selector.range
-    this.data.changeData(() => {
-      range.each((i,j) => {
-        const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['printable']=true;
-          }
-        }
-      })
-    })
+    data.setSelectedCellAttr('printable', true);
   } else if (type === 'cell-non-printable') {
-    const range = this.selector.range
-    this.data.changeData(() => {
-      range.each((i,j) => {
-        const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['printable']=false;
-          }
-          // cell.css('background-color','black')
-        }
-      })
-    })
+    data.setSelectedCellAttr('printable', false);
   } else if (type === 'cell-editable') {
-    const range = this.selector.range
-    this.data.changeData(() => {
-      range.each((i,j) => {
-        const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['editable']=true;
-          }
-        }
-      })
-    })
+    data.setSelectedCellAttr('editable', true);
   } else if (type === 'cell-non-editable') {
-    const range = this.selector.range
-    this.data.changeData(() => {
-      range.each((i,j) => {
-        const row = this.data.rows.get(i);
-        if(row !== null){
-          const cell = this.data.rows.getCell(i,j)
-          console.log("CELL",cell)
-          if(cell !== null){
-            cell['editable']=false;
-          }
-        }
-      })
-    })
+    data.setSelectedCellAttr('editable', false);
   }
   clearClipboard.call(this);
   sheetReset.call(this);

@@ -531,6 +531,8 @@ export default class DataProxy {
             || property === 'color' || property === 'bgcolor') {
             cstyle[property] = value;
             cell.style = this.addStyle(cstyle);
+          } else {
+            cell[property] = value;
           }
         });
       }
