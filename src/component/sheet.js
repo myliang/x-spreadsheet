@@ -584,6 +584,12 @@ function sheetInitEvents() {
     this.focusing = overlayerEl.contains(evt.target);
   });
 
+  bind(window, 'paste', (evt) => {
+    const cdata = evt.clipboardData.getData('text/plain');
+    this.data.pasteFromText(cdata);
+    sheetReset.call(this);
+  });
+
   // for selector
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
@@ -626,7 +632,7 @@ function sheetInitEvents() {
         case 86:
           // ctrl + v
           paste.call(this, what);
-          evt.preventDefault();
+          // evt.preventDefault();
           break;
         case 37:
           // ctrl + left

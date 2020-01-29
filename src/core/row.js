@@ -172,6 +172,19 @@ class Rows {
     this._ = ncellmm;
   }
 
+  // src: Array<Array<String>>
+  paste(src, dstCellRange) {
+    if (src.length <= 0) return 0;
+    const { sri, sci } = dstCellRange;
+    src.forEach((row, i) => {
+      const ri = sri + i;
+      row.forEach((cell, j) => {
+        const ci = sci + j;
+        this.setCellText(ri, ci, cell);
+      });
+    });
+  }
+
   insert(sri, n = 1) {
     const ndata = {};
     this.each((ri, row) => {

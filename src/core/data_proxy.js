@@ -422,6 +422,15 @@ export default class DataProxy {
     return true;
   }
 
+  pasteFromText(txt) {
+    const lines = txt.split('\r\n').map(it => it.replace(/\"/g, '').split('\t'));
+    if (lines.length > 0) lines.length = lines.length - 1;
+    const { rows, selector } = this;
+    this.changeData(() => {
+      rows.paste(lines, selector.range);
+    });
+  }
+
   autofill(cellRange, what, error = () => {}) {
     const srcRange = this.selector.range;
     if (!canPaste.call(this, srcRange, cellRange, error)) return false;
