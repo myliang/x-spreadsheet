@@ -46,7 +46,7 @@
     "clean-webpack-plugin": "^0.1.19",
     "codecov": "^3.3.0",
     "css-loader": "^1.0.0",
-    "eslint": "^5.5.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.14.0",
     "file-loader": "^2.0.0",
@@ -59,7 +59,7 @@
     "style-loader": "^0.23.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",
-    "webpack-dev-server": "^3.1.14",
+    "webpack-dev-server": "^3.10.2",
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
