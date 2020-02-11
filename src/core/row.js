@@ -271,6 +271,19 @@ class Rows {
     }
   }
 
+  maxCell() {
+    const keys = Object.keys(this._);
+    const ri = keys[keys.length - 1];
+    const col = this._[ri];
+    if (col) {
+      const { cells } = col;
+      const ks = Object.keys(cells);
+      const ci = ks[ks.length - 1];
+      return [parseInt(ri), parseInt(ci)];
+    }
+    return [0, 0];
+  }
+
   each(cb) {
     Object.entries(this._).forEach(([ri, row]) => {
       cb(ri, row);

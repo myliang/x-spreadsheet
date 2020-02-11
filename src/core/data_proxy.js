@@ -992,6 +992,14 @@ export default class DataProxy {
     return new CellRange(0, 0, ri - 1, ci - 1, this.freezeTotalWidth(), this.freezeTotalHeight());
   }
 
+  contentRange() {
+    const { rows, cols } = this;
+    const [ri, ci] = rows.maxCell();
+    const h = rows.sumHeight(0, ri + 1);
+    const w = cols.sumWidth(0, ci + 1);
+    return new CellRange(0, 0, ri, ci, w, h);
+  }
+
   exceptRowTotalHeight(sri, eri) {
     const { exceptRowSet, rows } = this;
     const exceptRows = Array.from(exceptRowSet);

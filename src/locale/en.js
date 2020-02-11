@@ -2,6 +2,7 @@ export default {
   toolbar: {
     undo: 'Undo',
     redo: 'Redo',
+    print: 'Print',
     paintformat: 'Paint format',
     clearformat: 'Clear format',
     format: 'Format',
@@ -85,6 +86,7 @@ export default {
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   },
   button: {
+    next: 'Next',
     cancel: 'Cancel',
     remove: 'Remove',
     save: 'Save',
