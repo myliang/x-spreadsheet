@@ -1,20 +1,54 @@
 import { h } from './element';
 import { cssPrefix } from '../config';
 import Button from './button';
+import { Draw } from '../canvas/draw';
+import { renderCell } from './table';
 
 // resolution: 72 => 595 x 842
 // 150 => 1240 x 1754
 // 200 => 1654 x 2339
 // 300 => 2479 x 3508
-// 72 * cm / 2.54 , 72 * cm / 2.54
-const A4_WIDTH = 595;
-const A4_HEIGHT = 842;
+// 96 * cm / 2.54 , 96 * cm / 2.54
+const A4_WIDTH = 794;
+const A4_HEIGHT = 1123;
+
+const PAGER_SIZES = [
+  ['A3', 11.69, 16.54],
+  ['A4', 8.27, 11.69],
+  ['A5', 5.83, 8.27],
+  ['B4', 9.84, 13.90],
+  ['B5', 6.93, 9.84],
+];
+
+function inches2px(inc) {
+  return 96 * inc;
+}
 
 function btnClick(type) {
+  if (type === 'cancel') {
+    this.el.hide();
+  } else {
+    this.toPrint();
+  }
+}
+
+function pagerSizeChange(evt) {
+  const { paper } = this;
+  const { value } = evt.target;
+  const ps = PAGER_SIZES[value];
+  paper.width = inches2px(ps[1]);
+  paper.height = inches2px(ps[2]);
+  // console.log('paper:', ps, paper);
+  this.preview();
 }
 
 export default class Print {
   constructor(data) {
+    this.paper = {
+      width: inches2px(PAGER_SIZES[0][1]),
+      height: inches2px(PAGER_SIZES[0][2]),
+      padding: 50,
+    };
     this.data = data;
     this.el = h('div', `${cssPrefix}-print`)
       .children(
@@ -31,15 +65,85 @@ export default class Print {
         h('div', `${cssPrefix}-print-content`)
           .children(
             this.contentEl = h('div', '-content'),
-            h('div', '-sider'),
+            h('div', '-sider').child(
+              h('form', '').children(
+                h('fieldset', '').children(
+                  h('label', '').child('Pager size'),
+                  h('select', '').children(
+                    ...PAGER_SIZES.map((it, index) => h('option', '').attr('value', index).child(`${it[0]} ( ${it[1]}''x${it[2]}'' )`))
+                  ).on('change', pagerSizeChange.bind(this)),
+                ),
+              ),
+            ),
           ),
       ).hide();
-    this.preview();
   }
 
   preview() {
-    const { data } = this;
-    const { eri, eci, w, h } = data.contentRange();
-    console.log('eri:', eri, eci, w, h);
+    const { data, paper } = this;
+    const { width, height, padding } = paper;
+    const iwidth = width - padding * 2;
+    const iheight = height - padding * 2;
+    const cr = data.contentRange();
+    const pages = parseInt(cr.h / iheight) + 1;
+    let scale = cr.w / iwidth;
+    let [left, top] = [padding, padding];
+    if (scale < 1) {
+      left += (iwidth - cr.w) / 2;
+    }
+    let ri = 0;
+    let yoffset = 0;
+    this.contentEl.html('');
+    this.canvases = [];
+    for (let i = 0; i < pages; i += 1) {
+      let th = 0;
+      const wrap = h('div', `${cssPrefix}-canvas-card`).css('height', `${height}px`).css('width', `${width}px`);
+      const canvas = h('canvas', `${cssPrefix}-canvas`);
+      this.canvases.push(canvas.el);
+      const draw = new Draw(canvas.el, width, height);
+      draw.save();
+      draw.translate(padding, padding);
+      // console.log('ri:', ri, cr.eri, yoffset);
+      for (; ri <= cr.eri; ri += 1) {
+        const rh = data.rows.getHeight(ri);
+        th += rh;
+        if (th < iheight) {
+          for (let ci = 0; ci <= cr.eci; ci += 1) {
+            renderCell(draw, data, ri, ci, yoffset);
+          }
+        } else {
+          yoffset = -(th - rh);
+          break;
+        }
+      }
+      draw.restore();
+      this.contentEl.child(h('div', `${cssPrefix}-canvas-card-wraper`).child(wrap.child(canvas)));
+    }
+    this.el.show();
+  }
+
+  toPrint() {
+    this.el.hide();
+    const { paper } = this;
+    const iframe = h('iframe', '').hide();
+    const { el } = iframe;
+    window.document.body.appendChild(el);
+    const { contentWindow } = el;
+    const idoc = contentWindow.document;
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @page { size: ${paper.width}px ${paper.height}px; };
+      canvas {
+        page-break-before: auto;        
+        page-break-after: always;
+      };
+    `;
+    idoc.head.appendChild(style);
+    this.canvases.forEach(it => {
+      const cn = it.cloneNode();
+      cn.getContext('2d').drawImage(it, 0, 0);
+      idoc.body.appendChild(cn);
+    });
+    contentWindow.print()
   }
 }
