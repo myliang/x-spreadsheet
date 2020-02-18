@@ -210,6 +210,7 @@ body {
 }
 .x-spreadsheet-editor,
 .x-spreadsheet-selector {
+  box-sizing: content-box;
   position: absolute;
   overflow: hidden;
   pointer-events: none;
@@ -440,6 +441,61 @@ body {
   height: 18px;
   margin: 12px 3px 0;
 }
+.x-spreadsheet-print {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.x-spreadsheet-print-bar {
+  background: #424242;
+  height: 60px;
+  line-height: 60px;
+  padding: 0 30px;
+}
+.x-spreadsheet-print-bar .-title {
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.2em;
+  float: left;
+}
+.x-spreadsheet-print-bar .-right {
+  float: right;
+  margin-top: 12px;
+}
+.x-spreadsheet-print-content {
+  display: flex;
+  flex: auto;
+  flex-direction: row;
+  background: #d0d0d0;
+  height: calc(100% - 60px);
+}
+.x-spreadsheet-print-content .-sider {
+  flex: 0 0 300px;
+  width: 300px;
+  border-left: 2px solid #ccc;
+  background: #fff;
+}
+.x-spreadsheet-print-content .-content {
+  flex: auto;
+  overflow-x: auto;
+  overflow-y: scroll;
+  height: 100%;
+}
+.x-spreadsheet-canvas-card-wraper {
+  margin: 40px 20px;
+}
+.x-spreadsheet-canvas-card {
+  background: #fff;
+  margin: auto;
+  page-break-before: auto;
+  page-break-after: always;
+  box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 3px rgba(0, 0, 0, 0.12), 0 4px 5px 0 rgba(0, 0, 0, 0.2);
+}
 .x-spreadsheet-calendar {
   color: rgba(0, 0, 0, 0.65);
   background: #ffffff;
@@ -642,6 +698,24 @@ body {
 .x-spreadsheet-dimmer.active {
   display: block;
   opacity: 1;
+}
+form fieldset {
+  border: none;
+}
+form fieldset label {
+  display: block;
+  margin-bottom: 0.5em;
+  font-size: 1em;
+  color: #666;
+}
+form fieldset select {
+  font-size: 1.1em;
+  width: 100%;
+  background-color: #fff;
+  border: none;
+  border-bottom: 2px solid #ddd;
+  padding: 0.5em 0.85em;
+  border-radius: 2px;
 }
 .x-spreadsheet-modal,
 .x-spreadsheet-toast {

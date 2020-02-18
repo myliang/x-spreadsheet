@@ -423,8 +423,8 @@ export default class DataProxy {
   }
 
   pasteFromText(txt) {
-    const lines = txt.split('\r\n').map(it => it.replace(/\"/g, '').split('\t'));
-    if (lines.length > 0) lines.length = lines.length - 1;
+    const lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
+    if (lines.length > 0) lines.length -= 1;
     const { rows, selector } = this;
     this.changeData(() => {
       rows.paste(lines, selector.range);
@@ -990,6 +990,14 @@ export default class DataProxy {
   freezeViewRange() {
     const [ri, ci] = this.freeze;
     return new CellRange(0, 0, ri - 1, ci - 1, this.freezeTotalWidth(), this.freezeTotalHeight());
+  }
+
+  contentRange() {
+    const { rows, cols } = this;
+    const [ri, ci] = rows.maxCell();
+    const h = rows.sumHeight(0, ri + 1);
+    const w = cols.sumWidth(0, ci + 1);
+    return new CellRange(0, 0, ri, ci, w, h);
   }
 
   exceptRowTotalHeight(sri, eri) {

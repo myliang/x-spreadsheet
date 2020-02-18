@@ -5,6 +5,7 @@ import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
 import Editor from './editor';
+import Print from './print';
 import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar/index';
@@ -443,7 +444,7 @@ function toolbarChange(type, value) {
   } else if (type === 'redo') {
     this.redo();
   } else if (type === 'print') {
-    // print
+    this.print.preview();
   } else if (type === 'paintformat') {
     if (value === true) copy.call(this);
     else clearClipboard.call(this);
@@ -751,7 +752,8 @@ export default class Sheet {
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
     this.toolbar = new Toolbar(data, view.width, !showToolbar);
-    targetEl.children(this.toolbar.el, this.el);
+    this.print = new Print(data);
+    targetEl.children(this.toolbar.el, this.el, this.print.el);
     this.data = data;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);

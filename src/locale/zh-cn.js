@@ -2,6 +2,7 @@ export default {
   toolbar: {
     undo: '撤销',
     redo: '恢复',
+    print: '打印',
     paintformat: '格式刷',
     clearformat: '清除格式',
     format: '数据格式',
@@ -80,6 +81,7 @@ export default {
     months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
   },
   button: {
+    next: '下一步',
     cancel: '取消',
     remove: '删除',
     save: '保存',
