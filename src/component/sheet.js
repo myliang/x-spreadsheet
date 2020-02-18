@@ -514,8 +514,14 @@ function sheetInitEvents() {
         editor.clear();
         overlayerMousedown.call(this, evt);
       }
-    }).on('mousewheel.stop', (evt) => {
+    })
+    .on('mousewheel.stop', (evt) => {
       overlayerMousescroll.call(this, evt);
+    })
+    .on('mouseout', (evt) => {
+      const { offsetX, offsetY } = evt;
+      if (offsetY <= 0) colResizer.hide();
+      if (offsetX <= 0) rowResizer.hide();
     });
 
   // slide on mobile
