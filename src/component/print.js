@@ -1,3 +1,4 @@
+/* global window document */
 import { h } from './element';
 import { cssPrefix } from '../config';
 import Button from './button';
@@ -9,8 +10,6 @@ import { renderCell } from './table';
 // 200 => 1654 x 2339
 // 300 => 2479 x 3508
 // 96 * cm / 2.54 , 96 * cm / 2.54
-const A4_WIDTH = 794;
-const A4_HEIGHT = 1123;
 
 const PAGER_SIZES = [
   ['A3', 11.69, 16.54],
@@ -70,7 +69,7 @@ export default class Print {
                 h('fieldset', '').children(
                   h('label', '').child('Pager size'),
                   h('select', '').children(
-                    ...PAGER_SIZES.map((it, index) => h('option', '').attr('value', index).child(`${it[0]} ( ${it[1]}''x${it[2]}'' )`))
+                    ...PAGER_SIZES.map((it, index) => h('option', '').attr('value', index).child(`${it[0]} ( ${it[1]}''x${it[2]}'' )`)),
                   ).on('change', pagerSizeChange.bind(this)),
                 ),
               ),
@@ -85,9 +84,10 @@ export default class Print {
     const iwidth = width - padding * 2;
     const iheight = height - padding * 2;
     const cr = data.contentRange();
-    const pages = parseInt(cr.h / iheight) + 1;
-    let scale = cr.w / iwidth;
-    let [left, top] = [padding, padding];
+    const pages = parseInt(cr.h / iheight, 10) + 1;
+    const scale = cr.w / iwidth;
+    let left = padding;
+    const top = padding;
     if (scale < 1) {
       left += (iwidth - cr.w) / 2;
     }
@@ -95,14 +95,22 @@ export default class Print {
     let yoffset = 0;
     this.contentEl.html('');
     this.canvases = [];
+    const mViewRange = {
+      sri: 0,
+      sci: 0,
+      eri: 0,
+      eci: 0,
+    };
     for (let i = 0; i < pages; i += 1) {
       let th = 0;
+      let yo = 0;
       const wrap = h('div', `${cssPrefix}-canvas-card`).css('height', `${height}px`).css('width', `${width}px`);
       const canvas = h('canvas', `${cssPrefix}-canvas`);
       this.canvases.push(canvas.el);
       const draw = new Draw(canvas.el, width, height);
+      // cell-content
       draw.save();
-      draw.translate(padding, padding);
+      draw.translate(left, top);
       // console.log('ri:', ri, cr.eri, yoffset);
       for (; ri <= cr.eri; ri += 1) {
         const rh = data.rows.getHeight(ri);
@@ -110,13 +118,27 @@ export default class Print {
         if (th < iheight) {
           for (let ci = 0; ci <= cr.eci; ci += 1) {
             renderCell(draw, data, ri, ci, yoffset);
+            mViewRange.eci = ci;
           }
         } else {
-          yoffset = -(th - rh);
+          yo = -(th - rh);
           break;
         }
       }
+      mViewRange.eri = ri;
       draw.restore();
+      // merge-cell
+      draw.save();
+      draw.translate(left, top);
+      const yof = yoffset;
+      data.eachMergesInView(mViewRange, ({ sri, sci }) => {
+        renderCell(draw, data, sri, sci, yof);
+      });
+      draw.restore();
+
+      mViewRange.sri = mViewRange.eri;
+      mViewRange.sci = mViewRange.eci;
+      yoffset += yo;
       this.contentEl.child(h('div', `${cssPrefix}-canvas-card-wraper`).child(wrap.child(canvas)));
     }
     this.el.show();
@@ -139,11 +161,11 @@ export default class Print {
       };
     `;
     idoc.head.appendChild(style);
-    this.canvases.forEach(it => {
+    this.canvases.forEach((it) => {
       const cn = it.cloneNode();
       cn.getContext('2d').drawImage(it, 0, 0);
       idoc.body.appendChild(cn);
     });
-    contentWindow.print()
+    contentWindow.print();
   }
 }

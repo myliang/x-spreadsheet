@@ -174,7 +174,7 @@ class Rows {
 
   // src: Array<Array<String>>
   paste(src, dstCellRange) {
-    if (src.length <= 0) return 0;
+    if (src.length <= 0) return;
     const { sri, sci } = dstCellRange;
     src.forEach((row, i) => {
       const ri = sri + i;
@@ -279,7 +279,7 @@ class Rows {
       const { cells } = col;
       const ks = Object.keys(cells);
       const ci = ks[ks.length - 1];
-      return [parseInt(ri), parseInt(ci)];
+      return [parseInt(ri, 10), parseInt(ci, 10)];
     }
     return [0, 0];
   }

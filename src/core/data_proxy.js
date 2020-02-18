@@ -423,8 +423,8 @@ export default class DataProxy {
   }
 
   pasteFromText(txt) {
-    const lines = txt.split('\r\n').map(it => it.replace(/\"/g, '').split('\t'));
-    if (lines.length > 0) lines.length = lines.length - 1;
+    const lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
+    if (lines.length > 0) lines.length -= 1;
     const { rows, selector } = this;
     this.changeData(() => {
       rows.paste(lines, selector.range);
