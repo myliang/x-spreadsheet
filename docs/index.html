@@ -15,7 +15,7 @@
     function load(){
       // x.spreadsheet.locale('zh-cn');
       var xs = x.spreadsheet('#x-spreadsheet-demo', {showToolbar: true, showGrid: true})
-        .loadData({
+        .loadData([{
           freeze: 'B3',
           styles: [
             {
@@ -53,9 +53,9 @@
               }
             }
           },
-        }).change((cdata) => {
+        }]).change((cdata) => {
           // console.log(cdata);
-          // console.log(xs.validate());
+          console.log(xs.getData());
         });
     }
   </script>

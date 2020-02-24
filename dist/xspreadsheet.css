@@ -126,6 +126,14 @@ body {
   top: calc(100% + 5px);
   right: 0;
 }
+.x-spreadsheet-dropdown.top-left .x-spreadsheet-dropdown-content {
+  bottom: calc(100% + 5px);
+  left: 0;
+}
+.x-spreadsheet-dropdown.top-right .x-spreadsheet-dropdown-content {
+  bottom: calc(100% + 5px);
+  right: 0;
+}
 .x-spreadsheet-dropdown .x-spreadsheet-dropdown-title {
   padding: 0 5px;
   display: inline-block;
@@ -264,7 +272,7 @@ body {
   box-sizing: content-box;
   border: none;
   padding: 0 3px;
-  outline-width: 0;
+  outline: none;
   resize: none;
   text-align: start;
   overflow-y: hidden;
@@ -398,7 +406,49 @@ body {
   display: flex;
 }
 .x-spreadsheet-bottombar {
+  position: relative;
   border-top: 1px solid #e0e2e4;
+}
+.x-spreadsheet-bottombar .x-spreadsheet-menu > li {
+  line-height: 40px;
+  height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+  border-right: 1px solid #e8eaed;
+}
+.x-spreadsheet-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+.x-spreadsheet-menu > li {
+  float: left;
+  line-height: 1.25em;
+  padding: 0.785em 1em;
+  margin: 0;
+  vertical-align: middle;
+  text-align: left;
+  font-weight: 400;
+  color: #80868b;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: bold;
+}
+.x-spreadsheet-menu > li.active {
+  background-color: #fff;
+  color: rgba(0, 0, 0, 0.65);
+}
+.x-spreadsheet-menu > li .x-spreadsheet-icon {
+  margin: 0 6px;
+}
+.x-spreadsheet-menu > li .x-spreadsheet-icon .x-spreadsheet-icon-img:hover {
+  opacity: 0.85;
+}
+.x-spreadsheet-menu > li .x-spreadsheet-dropdown {
+  display: inline-block;
 }
 .x-spreadsheet-toolbar {
   border-bottom: 1px solid #e0e2e4;
