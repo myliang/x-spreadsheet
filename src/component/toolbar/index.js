@@ -176,6 +176,11 @@ export default class Toolbar {
     this[`${type}El`].click();
   }
 
+  resetData(data) {
+    this.data = data;
+    this.reset();
+  }
+
   reset() {
     if (this.isHide) return;
     const { data } = this;

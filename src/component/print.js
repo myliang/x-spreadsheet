@@ -78,6 +78,10 @@ export default class Print {
       ).hide();
   }
 
+  resetData(data) {
+    this.data = data;
+  }
+
   preview() {
     const { data, paper } = this;
     const { width, height, padding } = paper;

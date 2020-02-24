@@ -90,6 +90,10 @@ class Element {
     return this;
   }
 
+  removeChild(el) {
+    this.el.removeChild(el);
+  }
+
   /*
   first() {
     return this.el.firstChild;

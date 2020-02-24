@@ -104,6 +104,7 @@ const defaultSettings = {
 };
 
 const toolbarHeight = 41;
+const bottombarHeight = 41;
 
 
 // src: cellRange
@@ -977,6 +978,7 @@ export default class DataProxy {
   viewHeight() {
     const { view, showToolbar } = this.settings;
     let h = view.height();
+    h -= bottombarHeight;
     if (showToolbar) {
       h -= toolbarHeight;
     }

@@ -206,6 +206,12 @@ export default class Selector {
     startZIndex += 1;
   }
 
+  resetData(data) {
+    this.data = data;
+    this.range = data.selector.range;
+    this.resetAreaOffset();
+  }
+
   hide() {
     this.el.hide();
   }

@@ -288,6 +288,11 @@ class Table {
     this.data = data;
   }
 
+  resetData(data) {
+    this.data = data;
+    this.render();
+  }
+
   render() {
     // resize canvas
     const { data } = this;

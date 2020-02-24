@@ -810,6 +810,14 @@ export default class Sheet {
     selectorSet.call(this, false, 0, 0);
   }
 
+  resetData(data) {
+    this.data = data;
+    this.toolbar.resetData(data);
+    this.print.resetData(data);
+    this.selector.resetData(data);
+    this.table.resetData(data);
+  }
+
   loadData(data) {
     this.data.setData(data);
     sheetReset.call(this);

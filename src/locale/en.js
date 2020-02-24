@@ -32,6 +32,7 @@ export default {
     pasteFormat: 'Paste format only',
     insertRow: 'Insert row',
     insertColumn: 'Insert column',
+    deleteSheet: 'Delete',
     deleteRow: 'Delete row',
     deleteColumn: 'Delete column',
     deleteCell: 'Delete cell',
