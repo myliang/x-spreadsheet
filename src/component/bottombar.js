@@ -146,10 +146,11 @@ export default class Bottombar {
         const [f] = this.items;
         this.activeEl = f;
         this.activeEl.toggle();
+        return [index, 0];
       }
-      return index;
+      return [index, -1];
     }
-    return -1;
+    return [-1];
   }
 
   clickSwap2(item) {

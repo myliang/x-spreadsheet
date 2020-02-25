@@ -24,8 +24,7 @@ class Spreadsheet {
       const d = this.datas[index];
       this.sheet.resetData(d);
     }, () => {
-      const newd = this.deleteSheet();
-      if (newd !== null) this.sheet.resetData(newd);
+      this.deleteSheet();
     }, (index, value) => {
       this.datas[index].name = value;
     });
@@ -49,13 +48,11 @@ class Spreadsheet {
   }
 
   deleteSheet() {
-    const oldIndex = this.bottombar.deleteItem();
+    const [oldIndex, nindex] = this.bottombar.deleteItem();
     if (oldIndex >= 0) {
-      const [oldd] = this.datas.splice(oldIndex, 1);
-      this.sheetIndex -= 1;
-      return oldd;
+      this.datas.splice(oldIndex, 1);
+      if (nindex >= 0) this.sheet.resetData(this.datas[nindex]);
     }
-    return null;
   }
 
   loadData(data) {
