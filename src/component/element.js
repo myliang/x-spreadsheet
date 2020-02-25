@@ -226,6 +226,10 @@ class Element {
     return this.el.value;
   }
 
+  focus() {
+    this.el.focus();
+  }
+
   cssRemoveKeys(...keys) {
     keys.forEach(k => this.el.style.removeProperty(k));
     return this;

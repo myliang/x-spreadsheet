@@ -6,7 +6,9 @@ const selectorHeightBorderWidth = 2 * 2 - 1;
 let startZIndex = 10;
 
 class SelectorElement {
-  constructor() {
+  constructor(useHideInput = false) {
+    this.useHideInput = useHideInput;
+    this.inputChange = () => {};
     this.cornerEl = h('div', `${cssPrefix}-selector-corner`);
     this.areaEl = h('div', `${cssPrefix}-selector-area`)
       .child(this.cornerEl).hide();
@@ -16,6 +18,13 @@ class SelectorElement {
       .css('z-index', `${startZIndex}`)
       .children(this.areaEl, this.clipboardEl, this.autofillEl)
       .hide();
+    if (useHideInput) {
+      this.hideInput = h('input', '')
+        .on('input', (evt) => {
+          this.inputChange(evt.target.value);
+        });
+      this.el.child(this.hideInputDiv = h('div', 'hide-input').child(this.hideInput));
+    }
     startZIndex += 1;
   }
 
@@ -33,12 +42,17 @@ class SelectorElement {
     const {
       left, top, width, height,
     } = v;
-    this.areaEl.offset({
+    const of = {
       width: width - selectorHeightBorderWidth + 0.8,
       height: height - selectorHeightBorderWidth + 0.8,
       left: left - 0.8,
       top: top - 0.8,
-    }).show();
+    };
+    this.areaEl.offset(of).show();
+    if (this.useHideInput) {
+      this.hideInputDiv.offset(of);
+      this.hideInput.val('').focus();
+    }
   }
 
   setClipboardOffset(v) {
@@ -180,11 +194,15 @@ function setAllClipboardOffset(offset) {
 
 export default class Selector {
   constructor(data) {
+    this.inputChange = () => {};
     this.data = data;
-    this.br = new SelectorElement();
+    this.br = new SelectorElement(true);
     this.t = new SelectorElement();
     this.l = new SelectorElement();
     this.tl = new SelectorElement();
+    this.br.inputChange = (v) => {
+      this.inputChange(v);
+    };
     this.br.el.show();
     this.offset = null;
     this.areaOffset = null;

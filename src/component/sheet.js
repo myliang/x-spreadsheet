@@ -481,6 +481,7 @@ function sortFilterChange(ci, order, operator, value) {
 
 function sheetInitEvents() {
   const {
+    selector,
     overlayerEl,
     rowResizer,
     colResizer,
@@ -523,6 +524,11 @@ function sheetInitEvents() {
       if (offsetY <= 0) colResizer.hide();
       if (offsetX <= 0) rowResizer.hide();
     });
+
+  selector.inputChange = (v) => {
+    dataSetCellText.call(this, v, 'input');
+    editorSet.call(this);
+  };
 
   // slide on mobile
   bindTouch(overlayerEl.el, {

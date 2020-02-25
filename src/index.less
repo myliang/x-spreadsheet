@@ -334,10 +334,19 @@ body {
 
 /* @{css-prefix}-selector */
 .@{css-prefix}-selector {
+  .hide-input {
+    position: absolute;
+    z-index: 0;
+    input {
+      width: 0;
+      border: none;
+    }
+  }
   .@{css-prefix}-selector-area {
     position: absolute;
     border: 2px solid rgb(75, 137, 255);
     background: rgba(75, 137, 255, .1);
+    z-index: 5;
   }
   .@{css-prefix}-selector-clipboard, .@{css-prefix}-selector-autofill {
     position: absolute;
