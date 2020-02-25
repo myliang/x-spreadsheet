@@ -26,6 +26,8 @@ class Spreadsheet {
     }, () => {
       const newd = this.deleteSheet();
       if (newd !== null) this.sheet.resetData(newd);
+    }, (index, value) => {
+      this.datas[index].name = value;
     });
     this.data = this.addSheet();
     const rootEl = h('div', `${cssPrefix}`)
@@ -41,7 +43,7 @@ class Spreadsheet {
     const d = new DataProxy(n, this.options);
     this.datas.push(d);
     // console.log('d:', n, d, this.datas);
-    this.bottombar.addItem(d, true);
+    this.bottombar.addItem(n, true);
     this.sheetIndex += 1;
     return d;
   }

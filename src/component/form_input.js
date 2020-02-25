@@ -11,6 +11,12 @@ export default class FormInput {
     this.el.child(this.input);
   }
 
+  focus() {
+    setTimeout(() => {
+      this.input.el.focus();
+    }, 10);
+  }
+
   hint(v) {
     this.input.attr('placeholder', v);
   }

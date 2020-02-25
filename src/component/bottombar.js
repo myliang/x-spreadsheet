@@ -2,6 +2,7 @@ import { h } from './element';
 import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 import Icon from './icon';
+import FormInput from './form_input';
 import Dropdown from './dropdown';
 import { xtoast } from './message';
 import { tf } from '../locale/locale';
@@ -69,8 +70,12 @@ class ContextMenu {
 }
 
 export default class Bottombar {
-  constructor(addFunc = () => {}, swapFunc = () => {}, deleteFunc = () => {}) {
+  constructor(addFunc = () => {},
+    swapFunc = () => {},
+    deleteFunc = () => {},
+    updateFunc = () => {}) {
     this.swapFunc = swapFunc;
+    this.updateFunc = updateFunc;
     this.dataNames = [];
     this.activeEl = null;
     this.deleteEl = null;
@@ -97,8 +102,7 @@ export default class Bottombar {
     );
   }
 
-  addItem(data, active) {
-    const { name } = data;
+  addItem(name, active) {
     this.dataNames.push(name);
     const item = h('li', active ? 'active' : '').child(name);
     item.on('click', () => {
@@ -107,6 +111,20 @@ export default class Bottombar {
       const { offsetLeft, offsetHeight } = evt.target;
       this.contextMenu.setOffset({ left: offsetLeft, bottom: offsetHeight + 1 });
       this.deleteEl = item;
+    }).on('dblclick', () => {
+      const v = item.html();
+      const input = new FormInput('auto', '');
+      input.val(v);
+      input.input.on('blur', ({ target }) => {
+        const { value } = target;
+        const nindex = this.dataNames.findIndex(it => it === v);
+        this.dataNames.splice(nindex, 1, value);
+        this.moreEl.reset(this.dataNames);
+        item.html('').child(value);
+        this.updateFunc(nindex, value);
+      });
+      item.html('').child(input.el);
+      input.focus();
     });
     if (active) {
       this.clickSwap(item);
@@ -123,6 +141,7 @@ export default class Bottombar {
       this.items.splice(index, 1);
       this.dataNames.splice(index, 1);
       this.menuEl.removeChild(deleteEl.el);
+      this.moreEl.reset(this.dataNames);
       if (activeEl === deleteEl) {
         const [f] = this.items;
         this.activeEl = f;
