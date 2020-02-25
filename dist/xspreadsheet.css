@@ -228,10 +228,19 @@ body {
   height: 100%;
 }
 /* @{css-prefix}-selector */
+.x-spreadsheet-selector .hide-input {
+  position: absolute;
+  z-index: 0;
+}
+.x-spreadsheet-selector .hide-input input {
+  width: 0;
+  border: none;
+}
 .x-spreadsheet-selector .x-spreadsheet-selector-area {
   position: absolute;
   border: 2px solid #4b89ff;
   background: rgba(75, 137, 255, 0.1);
+  z-index: 5;
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-clipboard,
 .x-spreadsheet-selector .x-spreadsheet-selector-autofill {
@@ -302,6 +311,7 @@ body {
   padding: 2px 10px;
   cursor: default;
   text-align: left;
+  overflow: hidden;
 }
 .x-spreadsheet-item.disabled {
   pointer-events: none;
