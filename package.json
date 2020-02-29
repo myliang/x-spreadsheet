@@ -63,8 +63,12 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
+    "csvtojson": "^2.0.10",
+    "fecha": "^4.1.0",
+    "jsonexport": "^2.4.1",
+    "opencollective": "^1.0.3",
     "opencollective-postinstall": "^2.0.2",
-    "opencollective": "^1.0.3"
+    "read-excel-file": "^4.0.5"
   },
   "collective": {
     "type": "opencollective",
