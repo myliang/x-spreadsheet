@@ -38,6 +38,10 @@ export default {
     deleteCell: '删除',
     deleteCellText: '删除数据',
     validation: '数据验证',
+    cellprintable: '可打印',
+    cellnonprintable: '不可打印',
+    celleditable: '可编辑',
+    cellnoneditable: '不可编辑',
   },
   format: {
     normal: '正常',
@@ -46,6 +50,7 @@ export default {
     percent: '百分比',
     rmb: '人民币',
     usd: '美元',
+    eur: '欧元',
     date: '短日期',
     time: '时间',
     datetime: '长日期',
