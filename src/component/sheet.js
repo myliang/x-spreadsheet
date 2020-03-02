@@ -19,36 +19,19 @@ import { formulas } from '../core/formula';
  * @desc throttle fn
  * @param func function
  * @param wait Delay in milliseconds
- * @param type 1 Timestamp，2 Timer
  */
-export function throttle(func, wait, type) {
-  if (type === 1) {
-    let previous = 0;
-  } else if (type === 2) {
-    let timeout;
-  }
-  return function () {
-    let context = this;
-    let args = arguments;
-    const types = {
-      1: function() {
-        let now = Date.now();
-        if (now - previous > wait) {
-          func.apply(context, args);
-          previous = now;
-        }
-      },
-      2: function() {
-        if (!timeout) {
-          timeout = setTimeout(() => {
-            timeout = null;
-            func.apply(context, args)
-          }, wait)
-        }
-      }
+function throttle(func, wait) {
+  let timeout;
+  return (...arg) => {
+    const that = this;
+    const args = arg;
+    if (!timeout) {
+      timeout = setTimeout(() => {
+        timeout = null;
+        func.apply(that, args);
+      }, wait);
     }
-    types[type]()
-  }
+  };
 }
 
 function scrollbarMove() {
@@ -177,7 +160,7 @@ function overlayerMousescroll(evt) {
   const { rows, cols } = data;
 
   // deltaY for vertical delta
-  let { deltaY, deltaX } = evt;
+  const { deltaY, deltaX } = evt;
 
   // console.log('deltaX', deltaX, 'evt.detail', evt.detail);
   // if (evt.detail) deltaY = evt.detail * 40;
@@ -195,7 +178,7 @@ function overlayerMousescroll(evt) {
         verticalScrollbar.move({ top: ri === 0 ? 0 : top - rows.getHeight(ri) });
       }
     }
-  }
+  };
   // deltaX for Mac horizontal scroll
   const moveX = (horizontal) => {
     if (horizontal > 0) {
@@ -213,15 +196,14 @@ function overlayerMousescroll(evt) {
         });
       }
     }
-  }
+  };
 
-  let tempY, tempX, temp
-  tempY = Math.abs(deltaY)
-  tempX = Math.abs(deltaX)
-  temp = Math.max(tempY, tempX)
+  const tempY = Math.abs(deltaY);
+  const tempX = Math.abs(deltaX);
+  const temp = Math.max(tempY, tempX);
 
-  if(temp === tempX) throttle(moveX(deltaX), 50, 1)
-  if(temp === tempY) throttle(moveY(deltaY), 50, 1)
+  if (temp === tempX) throttle(moveX(deltaX), 50, 1);
+  if (temp === tempY) throttle(moveY(deltaY), 50, 1);
 }
 
 function overlayerTouch(direction, distance) {
