@@ -15,6 +15,42 @@ import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
 
+/**
+ * @desc throttle fn
+ * @param func function
+ * @param wait Delay in milliseconds
+ * @param type 1 Timestamp，2 Timer
+ */
+export function throttle(func, wait, type) {
+  if (type === 1) {
+    let previous = 0;
+  } else if (type === 2) {
+    let timeout;
+  }
+  return function () {
+    let context = this;
+    let args = arguments;
+    const types = {
+      1: function() {
+        let now = Date.now();
+        if (now - previous > wait) {
+          func.apply(context, args);
+          previous = now;
+        }
+      },
+      2: function() {
+        if (!timeout) {
+          timeout = setTimeout(() => {
+            timeout = null;
+            func.apply(context, args)
+          }, wait)
+        }
+      }
+    }
+    types[type]()
+  }
+}
+
 function scrollbarMove() {
   const {
     data, verticalScrollbar, horizontalScrollbar,
@@ -141,40 +177,51 @@ function overlayerMousescroll(evt) {
   const { rows, cols } = data;
 
   // deltaY for vertical delta
-  let { deltaY } = evt;
+  let { deltaY, deltaX } = evt;
+
   // console.log('deltaX', deltaX, 'evt.detail', evt.detail);
-  if (evt.detail) deltaY = evt.detail * 40;
-  if (deltaY > 0) {
-    // up
-    const ri = data.scroll.ri + 1;
-    if (ri < rows.len) {
-      verticalScrollbar.move({ top: top + rows.getHeight(ri) - 1 });
+  // if (evt.detail) deltaY = evt.detail * 40;
+  const moveY = (vertical) => {
+    if (vertical > 0) {
+      // up
+      const ri = data.scroll.ri + 1;
+      if (ri < rows.len) {
+        verticalScrollbar.move({ top: top + rows.getHeight(ri) - 1 });
+      }
+    } else {
+      // down
+      const ri = data.scroll.ri - 1;
+      if (ri >= 0) {
+        verticalScrollbar.move({ top: ri === 0 ? 0 : top - rows.getHeight(ri) });
+      }
     }
-  } else {
-    // down
-    const ri = data.scroll.ri - 1;
-    if (ri >= 0) {
-      verticalScrollbar.move({ top: ri === 0 ? 0 : top - rows.getHeight(ri) });
+  }
+  // deltaX for Mac horizontal scroll
+  const moveX = (horizontal) => {
+    if (horizontal > 0) {
+      // left
+      const ci = data.scroll.ci + 1;
+      if (ci < cols.len) {
+        horizontalScrollbar.move({ left: left + cols.getWidth(ci) - 1 });
+      }
+    } else {
+      // right
+      const ci = data.scroll.ci - 1;
+      if (ci >= 0) {
+        horizontalScrollbar.move({
+          left: ci === 0 ? 0 : left - cols.getWidth(ci),
+        });
+      }
     }
   }
 
-  // deltaX for Mac horizontal scroll
-  const { deltaX } = evt;
-  if (deltaX > 0) {
-    // left
-    const ci = data.scroll.ci + 1;
-    if (ci < cols.len) {
-      horizontalScrollbar.move({ left: left + cols.getWidth(ci) - 1 });
-    }
-  } else {
-    // right
-    const ci = data.scroll.ci - 1;
-    if (ci >= 0) {
-      horizontalScrollbar.move({
-        left: ci === 0 ? 0 : left - cols.getWidth(ci),
-      });
-    }
-  }
+  let tempY, tempX, temp
+  tempY = Math.abs(deltaY)
+  tempX = Math.abs(deltaX)
+  temp = Math.max(tempY, tempX)
+
+  if(temp === tempX) throttle(moveX(deltaX), 50, 1)
+  if(temp === tempY) throttle(moveY(deltaY), 50, 1)
 }
 
 function overlayerTouch(direction, distance) {
