@@ -5,6 +5,7 @@ import Sheet from './component/sheet';
 import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
+import BackupHandler from './core/backupHandler';
 import './index.less';
 
 
@@ -86,6 +87,7 @@ if (window) {
   window.x = window.x || {};
   window.x.spreadsheet = spreadsheet;
   window.x.spreadsheet.locale = (lang, message) => locale(lang, message);
+  window.BackupHandler = new BackupHandler();
 }
 
 export default Spreadsheet;
