@@ -288,9 +288,13 @@ function cut() {
   selector.showClipboard();
 }
 
-function paste(what) {
+function paste(what, evt) {
   const { data } = this;
   if (data.paste(what, msg => xtoast('Tip', msg))) {
+    sheetReset.call(this);
+  } else if (evt) {
+    const cdata = evt.clipboardData.getData('text/plain');
+    this.data.pasteFromText(cdata);
     sheetReset.call(this);
   }
 }
@@ -626,9 +630,8 @@ function sheetInitEvents() {
   });
 
   bind(window, 'paste', (evt) => {
-    const cdata = evt.clipboardData.getData('text/plain');
-    this.data.pasteFromText(cdata);
-    sheetReset.call(this);
+    paste.call(this, 'all', evt);
+    evt.preventDefault();
   });
 
   // for selector
@@ -641,9 +644,9 @@ function sheetInitEvents() {
     // console.log('keydown.evt: ', keyCode);
     if (ctrlKey || metaKey) {
       // const { sIndexes, eIndexes } = selector;
-      let what = 'all';
-      if (shiftKey) what = 'text';
-      if (altKey) what = 'format';
+      // let what = 'all';
+      // if (shiftKey) what = 'text';
+      // if (altKey) what = 'format';
       switch (keyCode) {
         case 90:
           // undo: ctrl + z
@@ -672,7 +675,7 @@ function sheetInitEvents() {
           break;
         case 86:
           // ctrl + v
-          paste.call(this, what);
+          // => paste
           // evt.preventDefault();
           break;
         case 37:

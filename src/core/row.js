@@ -144,7 +144,6 @@ class Rows {
                     }
                   }
                 }
-                // console.log('ncell:', nri, nci, ncell);
                 this.setCell(nri, nci, ncell, what);
                 cb(nri, nci, ncell);
               }
