@@ -65,6 +65,11 @@ class Spreadsheet {
     return this.datas.map(it => it.getData());
   }
 
+  on(eventName, func) {
+    this.sheet.on(eventName, func);
+    return this;
+  }
+
   validate() {
     const { validations } = this.data;
     return validations.errors.size <= 0;

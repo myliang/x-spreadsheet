@@ -66,12 +66,16 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   if (ri === -1 && ci === -1) return;
   // console.log(multiple, ', ri:', ri, ', ci:', ci);
   const {
-    table, selector, toolbar,
+    table, selector, toolbar, data,
   } = this;
+  const cell = data.getCell(ri, ci);
   if (multiple) {
     selector.setEnd(ri, ci, moving);
+    this.trigger('cells-selected', cell, selector.range);
   } else {
+    // trigger click event
     selector.set(ri, ci, indexesUpdated);
+    this.trigger('cell-selected', cell, ri, ci);
   }
   toolbar.reset();
   table.render();
@@ -437,7 +441,11 @@ function dataSetCellText(text, state = 'finished') {
   const { data, table } = this;
   // const [ri, ci] = selector.indexes;
   data.setSelectedCellText(text, state);
-  if (state === 'finished') table.render();
+  if (state === 'finished') {
+    const { ri, ci } = data.selector;
+    this.trigger('cell-edited', text, ri, ci);
+    table.render();
+  }
 }
 
 function insertDeleteRowColumn(type) {
@@ -792,6 +800,7 @@ function sheetInitEvents() {
 
 export default class Sheet {
   constructor(targetEl, data) {
+    this.eventMap = new Map();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
     this.toolbar = new Toolbar(data, view.width, !showToolbar);
@@ -845,6 +854,18 @@ export default class Sheet {
     sheetReset.call(this);
     // init selector [0, 0]
     selectorSet.call(this, false, 0, 0);
+  }
+
+  on(eventName, func) {
+    this.eventMap.set(eventName, func);
+    return this;
+  }
+
+  trigger(eventName, ...args) {
+    const { eventMap } = this;
+    if (eventMap.has(eventName)) {
+      eventMap.get(eventName).call(this, ...args);
+    }
   }
 
   resetData(data) {
