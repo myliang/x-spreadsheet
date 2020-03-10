@@ -57,6 +57,12 @@
           // console.log(cdata);
           console.log(xs.getData());
         });
+
+      xs.on('cell-selected', (cell, ri, ci) => {
+          console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
+        }).on('cell-edited', (text, ri, ci) => {
+          console.log('text:', text, ', ri: ', ri, ', ci:', ci);
+        });
     }
   </script>
   <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->
