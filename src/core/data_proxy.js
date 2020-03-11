@@ -1046,6 +1046,29 @@ export default class DataProxy {
       .forEach(it => cb(it));
   }
 
+  hideRowsOrCols() {
+    const { rows, cols, selector } = this;
+    const [rlen, clen] = selector.size();
+    const {
+      sri, sci, eri, eci,
+    } = selector.range;
+    if (rlen === rows.len) {
+      for (let ci = sci; ci <= eci; ci += 1) {
+        cols.setHide(ci, true);
+      }
+    } else if (clen === cols.len) {
+      for (let ri = sri; ri <= eri; ri += 1) {
+        rows.setHide(ri, true);
+      }
+    }
+  }
+
+  // type: row | col
+  // index row-index | col-index
+  unhideRowsOrCols(type, index) {
+    this[`${type}s`].unhide(index);
+  }
+
   rowEach(min, max, cb) {
     let y = 0;
     const { rows } = this;
@@ -1063,9 +1086,11 @@ export default class DataProxy {
         offset += 1;
       } else {
         const rowHeight = rows.getHeight(i);
-        cb(i, y, rowHeight);
-        y += rowHeight;
-        if (y > this.viewHeight()) break;
+        if (rowHeight > 0) {
+          cb(i, y, rowHeight);
+          y += rowHeight;
+          if (y > this.viewHeight()) break;
+        }
       }
     }
   }
@@ -1075,9 +1100,11 @@ export default class DataProxy {
     const { cols } = this;
     for (let i = min; i <= max; i += 1) {
       const colWidth = cols.getWidth(i);
-      cb(i, x, colWidth);
-      x += colWidth;
-      if (x > this.viewWidth()) break;
+      if (colWidth > 0) {
+        cb(i, x, colWidth);
+        x += colWidth;
+        if (x > this.viewWidth()) break;
+      }
     }
   }
 

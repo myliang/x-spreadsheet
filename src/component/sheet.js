@@ -64,10 +64,11 @@ function scrollbarMove() {
 
 function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   if (ri === -1 && ci === -1) return;
-  // console.log(multiple, ', ri:', ri, ', ci:', ci);
   const {
     table, selector, toolbar, data,
+    contextMenu,
   } = this;
+  contextMenu.setMode((ri === -1 || ci === -1) ? 'row-col' : 'range');
   const cell = data.getCell(ri, ci);
   if (multiple) {
     selector.setEnd(ri, ci, moving);
@@ -142,6 +143,11 @@ function overlayerMousemove(evt) {
     rowResizer.show(cRect, {
       width: tRect.width,
     });
+    if (rows.isHide(cRect.ri - 1)) {
+      rowResizer.showUnhide(cRect.ri);
+    } else {
+      rowResizer.hideUnhide();
+    }
   } else {
     rowResizer.hide();
   }
@@ -150,6 +156,11 @@ function overlayerMousemove(evt) {
     colResizer.show(cRect, {
       height: tRect.height,
     });
+    if (cols.isHide(cRect.ci - 1)) {
+      colResizer.showUnhide(cRect.ci);
+    } else {
+      colResizer.hideUnhide();
+    }
   } else {
     colResizer.hide();
   }
@@ -165,6 +176,15 @@ function overlayerMousescroll(evt) {
 
   // deltaY for vertical delta
   const { deltaY, deltaX } = evt;
+  const loopValue = (ii, vFunc) => {
+    let i = ii;
+    let v = 0;
+    do {
+      v = vFunc(i);
+      i += 1;
+    } while (v <= 0);
+    return v;
+  };
   // console.log('deltaX', deltaX, 'evt.detail', evt.detail);
   // if (evt.detail) deltaY = evt.detail * 40;
   const moveY = (vertical) => {
@@ -172,13 +192,15 @@ function overlayerMousescroll(evt) {
       // up
       const ri = data.scroll.ri + 1;
       if (ri < rows.len) {
-        verticalScrollbar.move({ top: top + rows.getHeight(ri) - 1 });
+        const rh = loopValue(ri, i => rows.getHeight(i));
+        verticalScrollbar.move({ top: top + rh - 1 });
       }
     } else {
       // down
       const ri = data.scroll.ri - 1;
       if (ri >= 0) {
-        verticalScrollbar.move({ top: ri === 0 ? 0 : top - rows.getHeight(ri) });
+        const rh = loopValue(ri, i => rows.getHeight(i));
+        verticalScrollbar.move({ top: ri === 0 ? 0 : top - rh });
       }
     }
   };
@@ -189,15 +211,15 @@ function overlayerMousescroll(evt) {
       // left
       const ci = data.scroll.ci + 1;
       if (ci < cols.len) {
-        horizontalScrollbar.move({ left: left + cols.getWidth(ci) - 1 });
+        const cw = loopValue(ci, i => cols.getWidth(i));
+        horizontalScrollbar.move({ left: left + cw - 1 });
       }
     } else {
       // right
       const ci = data.scroll.ci - 1;
       if (ci >= 0) {
-        horizontalScrollbar.move({
-          left: ci === 0 ? 0 : left - cols.getWidth(ci),
-        });
+        const cw = loopValue(ci, i => cols.getWidth(i));
+        horizontalScrollbar.move({ left: ci === 0 ? 0 : left - cw });
       }
     }
   };
@@ -301,6 +323,16 @@ function paste(what, evt) {
     this.data.pasteFromText(cdata);
     sheetReset.call(this);
   }
+}
+
+function hideRowsOrCols() {
+  this.data.hideRowsOrCols();
+  sheetReset.call(this);
+}
+
+function unhideRowsOrCols(type, index) {
+  this.data.unhideRowsOrCols(type, index);
+  sheetReset.call(this);
 }
 
 function autofilter() {
@@ -590,6 +622,13 @@ function sheetInitEvents() {
   colResizer.finishedFn = (cRect, distance) => {
     colResizerFinished.call(this, cRect, distance);
   };
+  // resizer unhide callback
+  rowResizer.unhideFn = (index) => {
+    unhideRowsOrCols.call(this, 'row', index);
+  };
+  colResizer.unhideFn = (index) => {
+    unhideRowsOrCols.call(this, 'col', index);
+  };
   // scrollbar move callback
   verticalScrollbar.moveFn = (distance, evt) => {
     verticalScrollbarMove.call(this, distance, evt);
@@ -624,6 +663,8 @@ function sheetInitEvents() {
       paste.call(this, 'text');
     } else if (type === 'paste-format') {
       paste.call(this, 'format');
+    } else if (type === 'hide') {
+      hideRowsOrCols.call(this);
     } else {
       insertDeleteRowColumn.call(this, type);
     }

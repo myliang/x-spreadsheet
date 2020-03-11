@@ -16,6 +16,7 @@ const menuItems = [
   { key: 'delete-row', title: tf('contextmenu.deleteRow') },
   { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
   { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
+  { key: 'hide', title: tf('contextmenu.hide') },
   { key: 'divider' },
   { key: 'validation', title: tf('contextmenu.validation') },
   { key: 'divider' },
@@ -47,12 +48,25 @@ function buildMenu() {
 
 export default class ContextMenu {
   constructor(viewFn, isHide = false) {
+    this.menuItems = buildMenu.call(this);
     this.el = h('div', `${cssPrefix}-contextmenu`)
-      .children(...buildMenu.call(this))
+      .children(...this.menuItems)
       .hide();
     this.viewFn = viewFn;
     this.itemClick = () => {};
     this.isHide = isHide;
+    this.setMode('range');
+  }
+
+  // row-col: the whole rows or the whole cols
+  // range: select range
+  setMode(mode) {
+    const hideEl = this.menuItems[12];
+    if (mode === 'row-col') {
+      hideEl.show();
+    } else {
+      hideEl.hide();
+    }
   }
 
   hide() {

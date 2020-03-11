@@ -30,6 +30,7 @@ export default {
     paste: 'Paste',
     pasteValue: 'Paste values only',
     pasteFormat: 'Paste format only',
+    hide: 'Hide',
     insertRow: 'Insert row',
     insertColumn: 'Insert column',
     deleteSheet: 'Delete',

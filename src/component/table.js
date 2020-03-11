@@ -50,7 +50,8 @@ function renderCellBorders(bboxes, translateFunc) {
 */
 
 export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
-  const { sortedRowMap } = data;
+  const { sortedRowMap, rows, cols } = data;
+  if (rows.isHide(rindex) || cols.isHide(cindex)) return;
   let nrindex = rindex;
   if (sortedRowMap.has(rindex)) {
     nrindex = sortedRowMap.get(rindex);
@@ -208,6 +209,12 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
         renderSelectedHeaderCell.call(this, 0, y, w, rowHeight);
       }
       draw.fillText(ii + 1, w / 2, y + (rowHeight / 2));
+      if (i > 0 && data.rows.isHide(i - 1)) {
+        draw.save();
+        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.line([5, y + 5], [w - 5, y + 5]);
+        draw.restore();
+      }
     });
     draw.line([0, sumHeight + nty], [w, sumHeight + nty]);
     draw.line([w, nty], [w, sumHeight + nty]);
@@ -222,6 +229,12 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
         renderSelectedHeaderCell.call(this, x, 0, colWidth, h);
       }
       draw.fillText(stringAt(ii), x + (colWidth / 2), h / 2);
+      if (i > 0 && data.cols.isHide(i - 1)) {
+        draw.save();
+        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.line([x + 5, 5], [x + 5, h - 5]);
+        draw.restore();
+      }
     });
     draw.line([sumWidth + ntx, 0], [sumWidth + ntx, h]);
     draw.line([0, h], [sumWidth + ntx, h]);

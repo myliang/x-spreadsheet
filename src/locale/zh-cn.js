@@ -30,6 +30,7 @@ export default {
     paste: '粘贴',
     pasteValue: '粘贴数据',
     pasteFormat: '粘贴格式',
+    hide: '隐藏',
     insertRow: '插入行',
     insertColumn: '插入列',
     deleteSheet: '删除',
