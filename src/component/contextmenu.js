@@ -78,17 +78,23 @@ export default class ContextMenu {
   setPosition(x, y) {
     if (this.isHide) return;
     const { el } = this;
-    const { height, width } = el.show().offset();
+    const { width } = el.show().offset();
     const view = this.viewFn();
-    let top = y;
+    const vhf = view.height / 2;
     let left = x;
-    if (view.height - y <= height) {
-      top -= height;
-    }
     if (view.width - x <= width) {
       left -= width;
     }
-    el.offset({ left, top });
+    el.css('left', `${left}px`);
+    if (y > vhf) {
+      el.css('bottom', `${view.height - y}px`)
+        .css('max-height', `${y}px`)
+        .css('top', 'auto');
+    } else {
+      el.css('top', `${y}px`)
+        .css('max-height', `${view.height - y}px`)
+        .css('bottom', 'auto');
+    }
     bindClickoutside(el);
   }
 }
