@@ -910,6 +910,9 @@ export default class Sheet {
   }
 
   resetData(data) {
+    // before
+    this.editor.clear();
+    // after
     this.data = data;
     this.toolbar.resetData(data);
     this.print.resetData(data);
