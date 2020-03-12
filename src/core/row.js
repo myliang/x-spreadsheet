@@ -10,6 +10,7 @@ class Rows {
   }
 
   getHeight(ri) {
+    if (this.isHide(ri)) return 0;
     const row = this.get(ri);
     if (row && row.height) {
       return row.height;
@@ -20,6 +21,27 @@ class Rows {
   setHeight(ri, v) {
     const row = this.getOrNew(ri);
     row.height = v;
+  }
+
+  unhide(idx) {
+    let index = idx;
+    while (index > 0) {
+      index -= 1;
+      if (this.isHide(index)) {
+        this.setHide(index, false);
+      } else break;
+    }
+  }
+
+  isHide(ri) {
+    const row = this.get(ri);
+    return row && row.hide;
+  }
+
+  setHide(ri, v) {
+    const row = this.getOrNew(ri);
+    if (v === true) row.hide = true;
+    else delete row.hide;
   }
 
   setStyle(ri, style) {
@@ -144,7 +166,6 @@ class Rows {
                     }
                   }
                 }
-                // console.log('ncell:', nri, nci, ncell);
                 this.setCell(nri, nci, ncell, what);
                 cb(nri, nci, ncell);
               }

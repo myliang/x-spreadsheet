@@ -90,6 +90,16 @@ s.validate()
 }
 ```
 
+## Bind events
+```javascript
+const s = new Spreadsheet("#x-spreadsheet-demo")
+// event of click on cell
+s.on('cell-selected', (cell, ri, ci) => {});
+s.on('cells-selected', (cell, { sri, sci, eri, eci }) => {});
+// edited on cell
+s.on('cell-edited', (text, ri, ci) => {});
+```
+
 ## Internationalization
 ```javascript
 // npm 

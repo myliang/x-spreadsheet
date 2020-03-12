@@ -25,6 +25,7 @@ class Cols {
   }
 
   getWidth(i) {
+    if (this.isHide(i)) return 0;
     const col = this._[i];
     if (col && col.width) {
       return col.width;
@@ -40,6 +41,27 @@ class Cols {
   setWidth(ci, width) {
     const col = this.getOrNew(ci);
     col.width = width;
+  }
+
+  unhide(idx) {
+    let index = idx;
+    while (index > 0) {
+      index -= 1;
+      if (this.isHide(index)) {
+        this.setHide(index, false);
+      } else break;
+    }
+  }
+
+  isHide(ci) {
+    const col = this._[ci];
+    return col && col.hide;
+  }
+
+  setHide(ci, v) {
+    const col = this.getOrNew(ci);
+    if (v === true) col.hide = true;
+    else delete col.hide;
   }
 
   setStyle(ci, style) {

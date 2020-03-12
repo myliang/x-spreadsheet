@@ -225,7 +225,7 @@ class Draw {
       fillStyle: color,
       strokeStyle: color,
     });
-    const txts = mtxt.split('\n');
+    const txts = `${mtxt}`.split('\n');
     const biw = box.innerWidth();
     const ntxts = [];
     txts.forEach((it) => {

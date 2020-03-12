@@ -16,6 +16,7 @@ const menuItems = [
   { key: 'delete-row', title: tf('contextmenu.deleteRow') },
   { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
   { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
+  { key: 'hide', title: tf('contextmenu.hide') },
   { key: 'divider' },
   { key: 'validation', title: tf('contextmenu.validation') },
   { key: 'divider' },
@@ -47,12 +48,25 @@ function buildMenu() {
 
 export default class ContextMenu {
   constructor(viewFn, isHide = false) {
+    this.menuItems = buildMenu.call(this);
     this.el = h('div', `${cssPrefix}-contextmenu`)
-      .children(...buildMenu.call(this))
+      .children(...this.menuItems)
       .hide();
     this.viewFn = viewFn;
     this.itemClick = () => {};
     this.isHide = isHide;
+    this.setMode('range');
+  }
+
+  // row-col: the whole rows or the whole cols
+  // range: select range
+  setMode(mode) {
+    const hideEl = this.menuItems[12];
+    if (mode === 'row-col') {
+      hideEl.show();
+    } else {
+      hideEl.hide();
+    }
   }
 
   hide() {
@@ -64,17 +78,23 @@ export default class ContextMenu {
   setPosition(x, y) {
     if (this.isHide) return;
     const { el } = this;
-    const { height, width } = el.show().offset();
+    const { width } = el.show().offset();
     const view = this.viewFn();
-    let top = y;
+    const vhf = view.height / 2;
     let left = x;
-    if (view.height - y <= height) {
-      top -= height;
-    }
     if (view.width - x <= width) {
       left -= width;
     }
-    el.offset({ left, top });
+    el.css('left', `${left}px`);
+    if (y > vhf) {
+      el.css('bottom', `${view.height - y}px`)
+        .css('max-height', `${y}px`)
+        .css('top', 'auto');
+    } else {
+      el.css('top', `${y}px`)
+        .css('max-height', `${view.height - y}px`)
+        .css('bottom', 'auto');
+    }
     bindClickoutside(el);
   }
 }
