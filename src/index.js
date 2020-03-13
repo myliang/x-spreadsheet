@@ -40,6 +40,9 @@ class Spreadsheet {
   addSheet(name) {
     const n = name || `sheet${this.sheetIndex}`;
     const d = new DataProxy(n, this.options);
+    d.change = (...args) => {
+      this.sheet.trigger('change', ...args);
+    };
     this.datas.push(d);
     // console.log('d:', n, d, this.datas);
     this.bottombar.addItem(n, true);
@@ -76,7 +79,7 @@ class Spreadsheet {
   }
 
   change(cb) {
-    this.data.change = cb;
+    this.sheet.on('change', cb);
     return this;
   }
 
