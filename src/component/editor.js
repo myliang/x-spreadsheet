@@ -34,20 +34,22 @@ function resetTextareaSize() {
   }
 }
 
+function insertText({ target }, itxt) {
+  const { value, selectionEnd } = target;
+  const ntxt = `${value.slice(0, selectionEnd)}${itxt}${value.slice(selectionEnd)}`;
+  target.value = ntxt;
+  target.setSelectionRange(selectionEnd + 1, selectionEnd + 1);
+
+  this.inputText = ntxt;
+  this.textlineEl.html(ntxt);
+  resetTextareaSize.call(this);
+}
+
 function keydownEventHandler(evt) {
-  const { keyCode, altKey, target } = evt;
+  const { keyCode, altKey } = evt;
   if (keyCode !== 13 && keyCode !== 9) evt.stopPropagation();
   if (keyCode === 13 && altKey) {
-    const { value, selectionEnd } = target;
-    const ntxt = `${value.slice(0, selectionEnd)}\n${value.slice(selectionEnd)}`;
-    target.value = ntxt;
-    target.setSelectionRange(selectionEnd + 1, selectionEnd + 1);
-
-    this.inputText = ntxt;
-    this.textlineEl.html(ntxt);
-    resetTextareaSize.call(this);
-    this.change('finished', ntxt);
-
+    insertText.call(this, evt, '\n');
     evt.stopPropagation();
   }
   if (keyCode === 13 && !altKey) evt.preventDefault();
@@ -174,6 +176,7 @@ export default class Editor {
       .children(
         this.textEl = h('textarea', '')
           .on('input', evt => inputEventHandler.call(this, evt))
+          .on('paste.stop', () => {})
           .on('keydown', evt => keydownEventHandler.call(this, evt)),
         this.textlineEl = h('div', 'textline'),
         this.suggest.el,
