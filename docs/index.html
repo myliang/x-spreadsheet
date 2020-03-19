@@ -16,6 +16,7 @@
       // x.spreadsheet.locale('zh-cn');
       var xs = x.spreadsheet('#x-spreadsheet-demo', {showToolbar: true, showGrid: true})
         .loadData([{
+          name: 'sheet-test-1',
           freeze: 'B3',
           styles: [
             {
@@ -53,9 +54,9 @@
               }
             }
           },
-        }]).change((cdata) => {
+        }, { name: 'sheet-test' }]).change((cdata) => {
           // console.log(cdata);
-          console.log(xs.getData());
+          console.log('>>>', xs.getData());
         });
 
       xs.on('cell-selected', (cell, ri, ci) => {
