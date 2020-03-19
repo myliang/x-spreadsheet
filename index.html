@@ -16,6 +16,7 @@
       // x.spreadsheet.locale('zh-cn');
       var xs = x.spreadsheet('#x-spreadsheet-demo', {showToolbar: true, showGrid: true})
         .loadData([{
+          name: 'sheet1',
           freeze: 'B3',
           styles: [
             {
@@ -53,7 +54,7 @@
               }
             }
           },
-        }]).change((cdata) => {
+        }, { name: 'sheet2' }]).change((cdata) => {
           // console.log(cdata);
           console.log('>>>', xs.getData());
         });
