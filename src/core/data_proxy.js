@@ -69,6 +69,7 @@ import { t } from '../locale/locale';
  * }
  */
 const defaultSettings = {
+  mode: 'edit', // edit | read
   view: {
     height: () => document.documentElement.clientHeight,
     width: () => document.documentElement.clientWidth,

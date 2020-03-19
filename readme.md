@@ -55,6 +55,7 @@ s.validate()
 ```javascript
 // default options
 {
+  mode: 'edit', // edit | read
   showToolbar: true,
   showGrid: true,
   showContextmenu: true,

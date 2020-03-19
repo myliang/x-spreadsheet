@@ -316,6 +316,7 @@ function cut() {
 
 function paste(what, evt) {
   const { data } = this;
+  if (data.settings.mode === 'read') return;
   if (data.paste(what, msg => xtoast('Tip', msg))) {
     sheetReset.call(this);
   } else if (evt) {
@@ -393,7 +394,7 @@ function overlayerMousedown(evt) {
         selectorSet.call(this, true, ri, ci, true, true);
       }
     }, () => {
-      if (isAutofillEl) {
+      if (isAutofillEl && data.settings.mode !== 'read') {
         if (data.autofill(selector.arange, 'all', msg => xtoast('Tip', msg))) {
           table.render();
         }
@@ -425,6 +426,7 @@ function editorSetOffset() {
 
 function editorSet() {
   const { editor, data } = this;
+  if (data.settings.mode === 'read') return;
   editorSetOffset.call(this);
   editor.setCell(data.getSelectedCell(), data.getSelectedValidator());
   clearClipboard.call(this);
