@@ -66,6 +66,7 @@ class Spreadsheet {
       const nd = this.addSheet(it.name, false);
       nd.setData(it);
     }
+    this.bottombar.renameItem(0, ds[0].name);
     this.sheet.loadData(ds[0]);
     return this;
   }
