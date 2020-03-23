@@ -23,7 +23,7 @@
 <script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
 
 <script>
-   x.spreadsheet('#xspreadsheet');
+   x_spreadsheet('#xspreadsheet');
 </script>
 ```
 
@@ -117,7 +117,7 @@ new Spreadsheet(document.getElementById('xss-demo'));
 <script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/locale/zh-cn.js"></script>
 
 <script>
-  x.spreadsheet.locale('zh-cn');
+  x_spreadsheet.locale('zh-cn');
 </script>
 ```
 
@@ -145,6 +145,9 @@ new Spreadsheet(document.getElementById('xss-demo'));
   - Autofill
   - Insert row, column
   - Delete row, column
+  - hide row, column
+  - multiple sheets
+  - print
   - Data validations
 
 ## Development
