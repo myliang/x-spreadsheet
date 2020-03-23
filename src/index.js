@@ -98,9 +98,8 @@ class Spreadsheet {
 const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 
 if (window) {
-  window.x = window.x || {};
-  window.x.spreadsheet = spreadsheet;
-  window.x.spreadsheet.locale = (lang, message) => locale(lang, message);
+  window.x_spreadsheet = spreadsheet;
+  window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
 }
 
 export default Spreadsheet;
