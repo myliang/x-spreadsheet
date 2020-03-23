@@ -394,7 +394,7 @@ function overlayerMousedown(evt) {
         selectorSet.call(this, true, ri, ci, true, true);
       }
     }, () => {
-      if (isAutofillEl && data.settings.mode !== 'read') {
+      if (isAutofillEl && selector.arange && data.settings.mode !== 'read') {
         if (data.autofill(selector.arange, 'all', msg => xtoast('Tip', msg))) {
           table.render();
         }
