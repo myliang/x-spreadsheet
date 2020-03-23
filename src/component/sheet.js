@@ -474,6 +474,7 @@ function colResizerFinished(cRect, distance) {
 function dataSetCellText(text, state = 'finished') {
   const { data, table } = this;
   // const [ri, ci] = selector.indexes;
+  if (data.settings.mode === 'read') return;
   data.setSelectedCellText(text, state);
   if (state === 'finished') {
     const { ri, ci } = data.selector;
