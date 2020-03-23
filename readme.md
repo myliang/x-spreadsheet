@@ -91,6 +91,12 @@ s.validate()
 }
 ```
 
+## import | export xlsx
+
+https://github.com/SheetJS/sheetjs/tree/master/demos/xspreadsheet#saving-data
+
+thanks https://github.com/SheetJS/sheetjs
+
 ## Bind events
 ```javascript
 const s = new Spreadsheet("#x-spreadsheet-demo")
