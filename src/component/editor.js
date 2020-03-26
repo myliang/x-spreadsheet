@@ -34,6 +34,27 @@ function resetTextareaSize() {
   }
 }
 
+function insertText({ target }, itxt) {
+  const { value, selectionEnd } = target;
+  const ntxt = `${value.slice(0, selectionEnd)}${itxt}${value.slice(selectionEnd)}`;
+  target.value = ntxt;
+  target.setSelectionRange(selectionEnd + 1, selectionEnd + 1);
+
+  this.inputText = ntxt;
+  this.textlineEl.html(ntxt);
+  resetTextareaSize.call(this);
+}
+
+function keydownEventHandler(evt) {
+  const { keyCode, altKey } = evt;
+  if (keyCode !== 13 && keyCode !== 9) evt.stopPropagation();
+  if (keyCode === 13 && altKey) {
+    insertText.call(this, evt, '\n');
+    evt.stopPropagation();
+  }
+  if (keyCode === 13 && !altKey) evt.preventDefault();
+}
+
 function inputEventHandler(evt) {
   const v = evt.target.value;
   // console.log(evt, 'v:', v);
@@ -154,7 +175,9 @@ export default class Editor {
     this.areaEl = h('div', `${cssPrefix}-editor-area`)
       .children(
         this.textEl = h('textarea', '')
-          .on('input', evt => inputEventHandler.call(this, evt)),
+          .on('input', evt => inputEventHandler.call(this, evt))
+          .on('paste.stop', () => {})
+          .on('keydown', evt => keydownEventHandler.call(this, evt)),
         this.textlineEl = h('div', 'textline'),
         this.suggest.el,
         this.datepicker.el,

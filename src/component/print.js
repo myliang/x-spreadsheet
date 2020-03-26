@@ -89,10 +89,10 @@ export default class Print {
     const iheight = height - padding * 2;
     const cr = data.contentRange();
     const pages = parseInt(cr.h / iheight, 10) + 1;
-    const scale = cr.w / iwidth;
+    const scale = iwidth / cr.w;
     let left = padding;
     const top = padding;
-    if (scale < 1) {
+    if (scale > 1) {
       left += (iwidth - cr.w) / 2;
     }
     let ri = 0;
@@ -115,6 +115,7 @@ export default class Print {
       // cell-content
       draw.save();
       draw.translate(left, top);
+      if (scale < 1) draw.scale(scale, scale);
       // console.log('ri:', ri, cr.eri, yoffset);
       for (; ri <= cr.eri; ri += 1) {
         const rh = data.rows.getHeight(ri);
@@ -134,6 +135,7 @@ export default class Print {
       // merge-cell
       draw.save();
       draw.translate(left, top);
+      if (scale < 1) draw.scale(scale, scale);
       const yof = yoffset;
       data.eachMergesInView(mViewRange, ({ sri, sci }) => {
         renderCell(draw, data, sri, sci, yof);

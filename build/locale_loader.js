@@ -2,9 +2,9 @@ const path = require('path');
 
 function getLocaleCode(name, code) {
   return `${code.replace('export default', 'const message =')}
-if (window && window.x && window.x.spreadsheet) {
-  window.x.spreadsheet.$messages = window.x.spreadsheet.$messages || {};
-  window.x.spreadsheet.$messages['${name}'] = message;
+if (window && window.x_spreadsheet) {
+  window.x_spreadsheet.$messages = window.x_spreadsheet.$messages || {};
+  window.x_spreadsheet.$messages['${name}'] = message;
 }
 export default message;
 `;

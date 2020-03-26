@@ -23,7 +23,7 @@
 <script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
 
 <script>
-   x.spreadsheet('#xspreadsheet');
+   x_spreadsheet('#xspreadsheet');
 </script>
 ```
 
@@ -55,6 +55,7 @@ s.validate()
 ```javascript
 // default options
 {
+  mode: 'edit', // edit | read
   showToolbar: true,
   showGrid: true,
   showContextmenu: true,
@@ -90,6 +91,12 @@ s.validate()
 }
 ```
 
+## import | export xlsx
+
+https://github.com/SheetJS/sheetjs/tree/master/demos/xspreadsheet#saving-data
+
+thanks https://github.com/SheetJS/sheetjs
+
 ## Bind events
 ```javascript
 const s = new Spreadsheet("#x-spreadsheet-demo")
@@ -116,7 +123,7 @@ new Spreadsheet(document.getElementById('xss-demo'));
 <script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/locale/zh-cn.js"></script>
 
 <script>
-  x.spreadsheet.locale('zh-cn');
+  x_spreadsheet.locale('zh-cn');
 </script>
 ```
 
@@ -144,6 +151,9 @@ new Spreadsheet(document.getElementById('xss-demo'));
   - Autofill
   - Insert row, column
   - Delete row, column
+  - hide row, column
+  - multiple sheets
+  - print
   - Data validations
 
 ## Development

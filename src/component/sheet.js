@@ -316,6 +316,7 @@ function cut() {
 
 function paste(what, evt) {
   const { data } = this;
+  if (data.settings.mode === 'read') return;
   if (data.paste(what, msg => xtoast('Tip', msg))) {
     sheetReset.call(this);
   } else if (evt) {
@@ -393,7 +394,7 @@ function overlayerMousedown(evt) {
         selectorSet.call(this, true, ri, ci, true, true);
       }
     }, () => {
-      if (isAutofillEl) {
+      if (isAutofillEl && selector.arange && data.settings.mode !== 'read') {
         if (data.autofill(selector.arange, 'all', msg => xtoast('Tip', msg))) {
           table.render();
         }
@@ -425,6 +426,7 @@ function editorSetOffset() {
 
 function editorSet() {
   const { editor, data } = this;
+  if (data.settings.mode === 'read') return;
   editorSetOffset.call(this);
   editor.setCell(data.getSelectedCell(), data.getSelectedValidator());
   clearClipboard.call(this);
@@ -472,6 +474,7 @@ function colResizerFinished(cRect, distance) {
 function dataSetCellText(text, state = 'finished') {
   const { data, table } = this;
   // const [ri, ci] = selector.indexes;
+  if (data.settings.mode === 'read') return;
   data.setSelectedCellText(text, state);
   if (state === 'finished') {
     const { ri, ci } = data.selector;
@@ -688,7 +691,7 @@ function sheetInitEvents() {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
     const {
-      key, ctrlKey, shiftKey, altKey, metaKey,
+      key, ctrlKey, shiftKey, metaKey,
     } = evt;
     // console.log('keydown.evt: ', keyCode);
     if (ctrlKey || metaKey) {
@@ -800,13 +803,6 @@ function sheetInitEvents() {
           evt.preventDefault();
           break;
         case 13: // enter
-          if (altKey) {
-            const c = data.getSelectedCell();
-            const ntxt = c.text || '';
-            dataSetCellText.call(this, `${ntxt}\n`, 'input');
-            editorSet.call(this);
-            break;
-          }
           editor.clear();
           // shift + enter => move up
           // enter => move down
@@ -910,6 +906,9 @@ export default class Sheet {
   }
 
   resetData(data) {
+    // before
+    this.editor.clear();
+    // after
     this.data = data;
     this.toolbar.resetData(data);
     this.print.resetData(data);

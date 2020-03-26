@@ -118,10 +118,13 @@ export default class Bottombar {
       input.input.on('blur', ({ target }) => {
         const { value } = target;
         const nindex = this.dataNames.findIndex(it => it === v);
+        this.renameItem(nindex, value);
+        /*
         this.dataNames.splice(nindex, 1, value);
         this.moreEl.reset(this.dataNames);
         item.html('').child(value);
         this.updateFunc(nindex, value);
+        */
       });
       item.html('').child(input.el);
       input.focus();
@@ -132,6 +135,13 @@ export default class Bottombar {
     this.items.push(item);
     this.menuEl.child(item);
     this.moreEl.reset(this.dataNames);
+  }
+
+  renameItem(index, value) {
+    this.dataNames.splice(index, 1, value);
+    this.moreEl.reset(this.dataNames);
+    this.items[index].html('').child(value);
+    this.updateFunc(index, value);
   }
 
   deleteItem() {
