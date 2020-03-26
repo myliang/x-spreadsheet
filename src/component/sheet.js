@@ -227,6 +227,8 @@ function overlayerMousescroll(evt) {
   const tempX = Math.abs(deltaX);
   const temp = Math.max(tempY, tempX);
 
+  //detail for windows/mac firefox vertical scroll  
+  if(/Firefox/i.test(window.navigator.userAgent)) throttle(moveY(evt.detail), 50);
   if (temp === tempX) throttle(moveX(deltaX), 50);
   if (temp === tempY) throttle(moveY(deltaY), 50);
 }
