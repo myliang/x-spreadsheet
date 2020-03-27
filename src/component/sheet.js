@@ -226,9 +226,8 @@ function overlayerMousescroll(evt) {
   const tempY = Math.abs(deltaY);
   const tempX = Math.abs(deltaX);
   const temp = Math.max(tempY, tempX);
-
-  //detail for windows/mac firefox vertical scroll  
-  if(/Firefox/i.test(window.navigator.userAgent)) throttle(moveY(evt.detail), 50);
+  // detail for windows/mac firefox vertical scroll
+  if (/Firefox/i.test(window.navigator.userAgent)) throttle(moveY(evt.detail), 50);
   if (temp === tempX) throttle(moveX(deltaX), 50);
   if (temp === tempY) throttle(moveY(deltaY), 50);
 }
@@ -566,7 +565,6 @@ function sheetInitEvents() {
     horizontalScrollbar,
     editor,
     contextMenu,
-    data,
     toolbar,
     modalValidation,
     sortFilter,
@@ -577,19 +575,21 @@ function sheetInitEvents() {
       overlayerMousemove.call(this, evt);
     })
     .on('mousedown', (evt) => {
+      editor.clear();
+      contextMenu.hide();
       // the left mouse button: mousedown → mouseup → click
       // the right mouse button: mousedown → contenxtmenu → mouseup
       if (evt.buttons === 2) {
-        if (data.xyInSelectedRect(evt.offsetX, evt.offsetY)) {
+        if (this.data.xyInSelectedRect(evt.offsetX, evt.offsetY)) {
           contextMenu.setPosition(evt.offsetX, evt.offsetY);
-          evt.stopPropagation();
         } else {
-          contextMenu.hide();
+          overlayerMousedown.call(this, evt);
+          contextMenu.setPosition(evt.offsetX, evt.offsetY);
         }
+        evt.stopPropagation();
       } else if (evt.detail === 2) {
         editorSet.call(this);
       } else {
-        editor.clear();
         overlayerMousedown.call(this, evt);
       }
     })
@@ -648,16 +648,16 @@ function sheetInitEvents() {
   // modal validation
   modalValidation.change = (action, ...args) => {
     if (action === 'save') {
-      data.addValidation(...args);
+      this.data.addValidation(...args);
     } else {
-      data.removeValidation();
+      this.data.removeValidation();
     }
   };
   // contextmenu
   contextMenu.itemClick = (type) => {
     // console.log('type:', type);
     if (type === 'validation') {
-      modalValidation.setValue(data.getSelectedValidation());
+      modalValidation.setValue(this.data.getSelectedValidation());
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -754,7 +754,7 @@ function sheetInitEvents() {
           break;
         case 32:
           // ctrl + space, all cells in col
-          selectorSet.call(this, false, -1, data.selector.ci, false);
+          selectorSet.call(this, false, -1, this.data.selector.ci, false);
           evt.preventDefault();
           break;
         case 66:
@@ -774,7 +774,7 @@ function sheetInitEvents() {
         case 32:
           if (shiftKey) {
             // shift + space, all cells in row
-            selectorSet.call(this, false, data.selector.ri, -1, false);
+            selectorSet.call(this, false, this.data.selector.ri, -1, false);
           }
           break;
         case 27: // esc
