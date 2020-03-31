@@ -161,7 +161,7 @@ function setStyleBorder(ri, ci, bss) {
   if (cell.style !== undefined) {
     cstyle = helper.cloneDeep(styles[cell.style]);
   }
-  Object.assign(cstyle, { border: bss });
+  cstyle = helper.merge(cstyle, { border: bss });
   cell.style = this.addStyle(cstyle);
 }
 
