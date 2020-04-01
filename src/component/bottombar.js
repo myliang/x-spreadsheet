@@ -145,7 +145,12 @@ export default class Bottombar {
   }
 
   deleteItem() {
-    const { activeEl, deleteEl } = this;
+    const { activeEl } = this;
+    let { deleteEl } = this;
+    this.deleteEl = null;
+    if (typeof deleteEl === 'undefined' || deleteEl === null) {
+      deleteEl = activeEl;
+    }
     if (this.items.length > 1) {
       const index = this.items.findIndex(it => it === deleteEl);
       this.items.splice(index, 1);

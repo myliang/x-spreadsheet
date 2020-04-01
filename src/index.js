@@ -59,15 +59,16 @@ class Spreadsheet {
   }
 
   loadData(data) {
-    // const d = Array.isArray(data) ? data[0] : data;
     const ds = Array.isArray(data) ? data : [data];
-    for (let i = 1; i < ds.length; i += 1) {
+    for (let i = 0; i < ds.length; i += 1) {
       const it = ds[i];
       const nd = this.addSheet(it.name, false);
       nd.setData(it);
     }
-    this.bottombar.renameItem(0, ds[0].name);
-    this.sheet.loadData(ds[0]);
+    const oldCount = this.datas.length - ds.length;
+    for (let i = 1; i <= oldCount; i += 1) {
+      this.deleteSheet();
+    }
     return this;
   }
 
