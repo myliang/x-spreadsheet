@@ -1020,6 +1020,7 @@ export default class DataProxy {
     const {
       scroll, rows, cols, freeze, exceptRowSet,
     } = this;
+    // console.log('scroll:', scroll, ', freeze:', freeze)
     let { ri, ci } = scroll;
     if (ri <= 0) [ri] = freeze;
     if (ci <= 0) [, ci] = freeze;

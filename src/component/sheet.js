@@ -912,6 +912,8 @@ export default class Sheet {
     this.editor.clear();
     // after
     this.data = data;
+    verticalScrollbarSet.call(this);
+    horizontalScrollbarSet.call(this);
     this.toolbar.resetData(data);
     this.print.resetData(data);
     this.selector.resetData(data);
