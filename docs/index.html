@@ -13,6 +13,40 @@
   <div id="x-spreadsheet-demo"></div>
   <script>
     function load(){
+      const rows10 = { len: 100000 };
+      for (let i = 0; i < 100000; i += 1) {
+        rows10[i] = {
+          cells: {
+            0: { text: 'A-' + i },
+            1: { text: 'B-' + i },
+            2: { text: 'C-' + i },
+            3: { text: 'D-' + i },
+            4: { text: 'E-' + i },
+            5: { text: 'F-' + i },
+          }
+        };
+      }
+      const rows = {
+        len: 80,
+        1: {
+          cells: {
+            0: { text: 'testingtesttestetst' },
+            2: { text: 'testing' },
+          },
+        },
+        2: {
+          cells: {
+            0: { text: 'render', style: 0 },
+            1: { text: 'Hello' },
+            2: { text: 'haha', merge: [1, 1] },
+          }
+        },
+        8: {
+          cells: {
+            8: { text: 'border test', style: 0 },
+          }
+        }
+      };
       // x_spreadsheet.locale('zh-cn');
       var xs = x_spreadsheet('#x-spreadsheet-demo', {showToolbar: true, showGrid: true})
         .loadData([{
@@ -33,27 +67,12 @@
           merges: [
             'C3:D4',
           ],
-          rows: {
-            1: {
-              cells: {
-                0: { text: 'testingtesttestetst' },
-                2: { text: 'testing' },
-              },
-            },
-            2: {
-              cells: {
-                0: { text: 'render', style: 0 },
-                1: { text: 'Hello' },
-                2: { text: 'haha', merge: [1, 1] },
-              }
-            },
-            8: {
-              cells: {
-                8: { text: 'border test', style: 0 },
-              }
-            }
+          cols: {
+            len: 10,
+            2: { width: 200 },
           },
-        }, { name: 'sheet-test' }]).change((cdata) => {
+          rows,
+        }, { name: 'sheet-test', rows: rows10 }]).change((cdata) => {
           // console.log(cdata);
           console.log('>>>', xs.getData());
         });
@@ -63,6 +82,10 @@
         }).on('cell-edited', (text, ri, ci) => {
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
         });
+
+      // setTimeout(() => {
+      //   xs.loadData([{ rows }]);
+      // }, 2000);
     }
   </script>
   <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->

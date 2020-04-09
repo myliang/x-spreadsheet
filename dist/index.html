@@ -27,6 +27,7 @@
         };
       }
       const rows = {
+        len: 80,
         1: {
           cells: {
             0: { text: 'testingtesttestetst' },
@@ -66,6 +67,10 @@
           merges: [
             'C3:D4',
           ],
+          cols: {
+            len: 10,
+            2: { width: 200 },
+          },
           rows,
         }, { name: 'sheet-test', rows: rows10 }]).change((cdata) => {
           // console.log(cdata);
@@ -77,6 +82,10 @@
         }).on('cell-edited', (text, ri, ci) => {
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
         });
+
+      // setTimeout(() => {
+      //   xs.loadData([{ rows }]);
+      // }, 2000);
     }
   </script>
   <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->
