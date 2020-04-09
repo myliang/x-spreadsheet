@@ -144,6 +144,15 @@ export default class Bottombar {
     this.updateFunc(index, value);
   }
 
+  clear() {
+    this.items.forEach((it) => {
+      this.menuEl.removeChild(it.el);
+    });
+    this.items = [];
+    this.dataNames = [];
+    this.moreEl.reset(this.dataNames);
+  }
+
   deleteItem() {
     const { activeEl, deleteEl } = this;
     if (this.items.length > 1) {

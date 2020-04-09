@@ -61,14 +61,16 @@ class Spreadsheet {
   loadData(data) {
     // const d = Array.isArray(data) ? data[0] : data;
     const ds = Array.isArray(data) ? data : [data];
+    this.bottombar.clear();
+    this.datas = [];
     if (ds.length > 0) {
-      ds[0].name = ds[0].name || this.data.name;
-      for (let i = 1; i < ds.length; i += 1) {
+      // ds[0].name = ds[0].name || this.data.name;
+      for (let i = 0; i < ds.length; i += 1) {
         const it = ds[i];
-        const nd = this.addSheet(it.name, false);
+        const nd = this.addSheet(it.name, i === 0);
         nd.setData(it);
       }
-      this.bottombar.renameItem(0, ds[0].name);
+      // this.bottombar.renameItem(0, ds[0].name);
       this.sheet.loadData(ds[0]);
     }
     return this;
