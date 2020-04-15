@@ -17,6 +17,10 @@
   </a>
 </p>
 
+## Document
+* en
+* [zh-cn 中文](https://hondrytravis.github.io/x-spreadsheet-doc/)
+
 ## CDN
 ```html
 <link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
