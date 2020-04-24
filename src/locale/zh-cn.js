@@ -44,6 +44,11 @@ export default {
     celleditable: '可编辑',
     cellnoneditable: '不可编辑',
   },
+  print: {
+    size: '纸张大小',
+    orientation: '方向',
+    orientations: ['横向', '纵向'],
+  },
   format: {
     normal: '正常',
     text: '文本',

@@ -4,6 +4,7 @@ import { cssPrefix } from '../config';
 import Button from './button';
 import { Draw } from '../canvas/draw';
 import { renderCell } from './table';
+import { t } from '../locale/locale';
 
 // resolution: 72 => 595 x 842
 // 150 => 1240 x 1754
@@ -18,6 +19,8 @@ const PAGER_SIZES = [
   ['B4', 9.84, 13.90],
   ['B5', 6.93, 9.84],
 ];
+
+const PAGER_ORIENTATIONS = ['landscape', 'portrait'];
 
 function inches2px(inc) {
   return 96 * inc;
@@ -35,18 +38,32 @@ function pagerSizeChange(evt) {
   const { paper } = this;
   const { value } = evt.target;
   const ps = PAGER_SIZES[value];
-  paper.width = inches2px(ps[1]);
-  paper.height = inches2px(ps[2]);
+  paper.w = inches2px(ps[1]);
+  paper.h = inches2px(ps[2]);
   // console.log('paper:', ps, paper);
+  this.preview();
+}
+function pagerOrientationChange(evt) {
+  const { paper } = this;
+  const { value } = evt.target;
+  const v = PAGER_ORIENTATIONS[value];
+  paper.orientation = v;
   this.preview();
 }
 
 export default class Print {
   constructor(data) {
     this.paper = {
-      width: inches2px(PAGER_SIZES[0][1]),
-      height: inches2px(PAGER_SIZES[0][2]),
+      w: inches2px(PAGER_SIZES[0][1]),
+      h: inches2px(PAGER_SIZES[0][2]),
       padding: 50,
+      orientation: PAGER_ORIENTATIONS[0],
+      get width() {
+        return this.orientation === 'landscape' ? this.h : this.w;
+      },
+      get height() {
+        return this.orientation === 'landscape' ? this.w : this.h;
+      },
     };
     this.data = data;
     this.el = h('div', `${cssPrefix}-print`)
@@ -67,10 +84,16 @@ export default class Print {
             h('div', '-sider').child(
               h('form', '').children(
                 h('fieldset', '').children(
-                  h('label', '').child('Pager size'),
+                  h('label', '').child(`${t('print.size')}`),
                   h('select', '').children(
                     ...PAGER_SIZES.map((it, index) => h('option', '').attr('value', index).child(`${it[0]} ( ${it[1]}''x${it[2]}'' )`)),
                   ).on('change', pagerSizeChange.bind(this)),
+                ),
+                h('fieldset', '').children(
+                  h('label', '').child(`${t('print.orientation')}`),
+                  h('select', '').children(
+                    ...PAGER_ORIENTATIONS.map((it, index) => h('option', '').attr('value', index).child(`${t('print.orientations')[index]}`)),
+                  ).on('change', pagerOrientationChange.bind(this)),
                 ),
               ),
             ),
