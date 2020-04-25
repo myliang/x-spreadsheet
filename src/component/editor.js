@@ -108,7 +108,6 @@ function inputEventHandler(evt) {
 function setTextareaRange(position) {
   const { el } = this.textEl;
   setTimeout(() => {
-    el.focus();
     el.setSelectionRange(position, position);
   }, 0);
 }
@@ -198,6 +197,11 @@ export default class Editor {
   setFreezeLengths(width, height) {
     this.freeze.w = width;
     this.freeze.h = height;
+  }
+
+  focus(){
+    const { textEl } = this;
+    textEl.focus();
   }
 
   clear() {

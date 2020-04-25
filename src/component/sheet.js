@@ -66,6 +66,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   if (ri === -1 && ci === -1) return;
   const {
     table, selector, toolbar, data,
+    editor,
     contextMenu,
   } = this;
   contextMenu.setMode((ri === -1 || ci === -1) ? 'row-col' : 'range');
@@ -80,6 +81,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   }
   toolbar.reset();
   table.render();
+  editor.focus();
 }
 
 // multiple: boolean
