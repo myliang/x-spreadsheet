@@ -20,9 +20,10 @@ class SelectorElement {
       .hide();
     if (useHideInput) {
       this.hideInput = h('input', '')
-        .on('input', (evt) => {
+        .on('compositionend', (evt) => {
           this.inputChange(evt.target.value);
         });
+      this.el.child(this.hideInputDiv = h('div', 'hide-input').child(this.hideInput));
       this.el.child(this.hideInputDiv = h('div', 'hide-input').child(this.hideInput));
     }
     startZIndex += 1;
