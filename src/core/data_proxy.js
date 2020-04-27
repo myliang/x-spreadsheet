@@ -101,6 +101,7 @@ const defaultSettings = {
       bold: false,
       italic: false,
     },
+    format: 'normal',
   },
 };
 
