@@ -151,9 +151,19 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       const top = stack.pop();
       stack.push(Number(stack.pop()) / Number(top));
     } else if (fc === '=' || fc === '>' || fc === '<') {
-      const top = stack.pop();
-      const Fn = Function;
-      stack.push(new Fn(`return ${stack.pop()} ${expr === '=' ? '==' : expr} ${top}`)());
+      let top = stack.pop();
+      if (!Number.isNaN(top)) top = Number(top);
+      let left = stack.pop();
+      if (!Number.isNaN(left)) left = Number(left);
+      let ret = false;
+      if (fc === '=') {
+        ret = (left === top);
+      } else if (fc === '>') {
+        ret = (left > top);
+      } else if (fc === '<') {
+        ret = (left < top);
+      }
+      stack.push(ret);
     } else if (Array.isArray(expr)) {
       const [formula, len] = expr;
       const params = [];
