@@ -1,5 +1,12 @@
 import { expr2xy, xy2expr } from './alphabet';
 
+const OPERATORS = {
+  '+': ((a, b) => a + b),
+  '-': ((a, b) => a - b),
+  '*': ((a, b) => a * b),
+  '/': ((a, b) => b === 0 ? '#DIV/0!' : a / b),
+};
+
 // Converting infix expression to a suffix expression
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
 // return: [A1, A2], SUM[, B1],AVERAGE,50,+,B20,+
@@ -134,22 +141,11 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     // console.log(':::>>>', srcStack[i]);
     const expr = srcStack[i];
     const fc = expr[0];
-    if (expr === '+') {
-      const top = stack.pop();
-      stack.push(Number(stack.pop()) + Number(top));
-    } else if (expr === '-') {
-      if (stack.length === 1) {
-        const top = stack.pop();
-        stack.push(Number(top) * -1);
-      } else {
-        const top = stack.pop();
-        stack.push(Number(stack.pop()) - Number(top));
-      }
-    } else if (expr === '*') {
-      stack.push(Number(stack.pop()) * Number(stack.pop()));
-    } else if (expr === '/') {
-      const top = stack.pop();
-      stack.push(Number(stack.pop()) / Number(top));
+
+    if (expr in OPERATORS) {
+      const b = Number(stack.pop());
+      const a = Number(stack.pop() || 0);
+      stack.push(OPERATORS[expr](a, b));
     } else if (fc === '=' || fc === '>' || fc === '<') {
       let top = stack.pop();
       if (!Number.isNaN(top)) top = Number(top);
