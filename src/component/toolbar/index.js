@@ -185,7 +185,6 @@ export default class Toolbar {
     if (this.isHide) return;
     const { data } = this;
     const style = data.getSelectedCellStyle();
-    const cell = data.getSelectedCell();
     // console.log('canUndo:', data.canUndo());
     this.undoEl.setState(!data.canUndo());
     this.redoEl.setState(!data.canRedo());
@@ -193,7 +192,8 @@ export default class Toolbar {
     this.autofilterEl.setState(!data.canAutofilter());
     // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
-    const { font } = style;
+    const { font, format } = style;
+    this.formatEl.setState(format);
     this.fontEl.setState(font.name);
     this.fontSizeEl.setState(font.size);
     this.boldEl.setState(font.bold);
@@ -207,10 +207,5 @@ export default class Toolbar {
     this.textwrapEl.setState(style.textwrap);
     // console.log('freeze is Active:', data.freezeIsActive());
     this.freezeEl.setState(data.freezeIsActive());
-    if (cell) {
-      if (cell.format) {
-        this.formatEl.setState(cell.format);
-      }
-    }
   }
 }
