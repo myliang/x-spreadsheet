@@ -1,4 +1,5 @@
 import { expr2xy, xy2expr } from './alphabet';
+import { numberCalc } from './helper';
 
 // Converting infix expression to a suffix expression
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
@@ -136,20 +137,20 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     const fc = expr[0];
     if (expr === '+') {
       const top = stack.pop();
-      stack.push(Number(stack.pop()) + Number(top));
+      stack.push(numberCalc('+', stack.pop(), top));
     } else if (expr === '-') {
       if (stack.length === 1) {
         const top = stack.pop();
-        stack.push(Number(top) * -1);
+        stack.push(numberCalc('*', top, -1));
       } else {
         const top = stack.pop();
-        stack.push(Number(stack.pop()) - Number(top));
+        stack.push(numberCalc('-', stack.pop(), top));
       }
     } else if (expr === '*') {
-      stack.push(Number(stack.pop()) * Number(stack.pop()));
+      stack.push(numberCalc('*', stack.pop(), stack.pop()));
     } else if (expr === '/') {
       const top = stack.pop();
-      stack.push(Number(stack.pop()) / Number(top));
+      stack.push(numberCalc('/', stack.pop(), top));
     } else if (fc === '=' || fc === '>' || fc === '<') {
       let top = stack.pop();
       if (!Number.isNaN(top)) top = Number(top);
@@ -158,10 +159,14 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       let ret = false;
       if (fc === '=') {
         ret = (left === top);
-      } else if (fc === '>') {
+      } else if (expr === '>') {
         ret = (left > top);
-      } else if (fc === '<') {
+      } else if (expr === '>=') {
+        ret = (left >= top);
+      } else if (expr === '<') {
         ret = (left < top);
+      } else if (expr === '<=') {
+        ret = (left <= top);
       }
       stack.push(ret);
     } else if (Array.isArray(expr)) {

@@ -11,13 +11,14 @@
  * @property {function} render
  */
 import { tf } from '../locale/locale';
+import { numberCalc } from './helper';
 
 /** @type {Formula[]} */
 const baseFormulas = [
   {
     key: 'SUM',
     title: tf('formula.sum'),
-    render: ary => ary.reduce((a, b) => Number(a) + Number(b), 0),
+    render: ary => ary.reduce((a, b) => numberCalc('+', a, b), 0),
   },
   {
     key: 'AVERAGE',
