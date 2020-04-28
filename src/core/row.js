@@ -154,7 +154,7 @@ class Rows {
                       } else {
                         yn = n - 1;
                       }
-                      // console.log('xn:', xn, ', yn:', yn, word, expr2expr(word, xn, yn));
+                      if (/^\d+$/.test(word)) return word;
                       return expr2expr(word, xn, yn);
                     });
                   } else {
