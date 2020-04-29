@@ -83,9 +83,10 @@
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
         });
 
-      // setTimeout(() => {
-      //   xs.loadData([{ rows }]);
-      // }, 2000);
+      setTimeout(() => {
+        // xs.loadData([{ rows }]);
+        xs.cellText(14, 3, 'cell-text').reRender();
+      }, 5000);
     }
   </script>
   <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->
