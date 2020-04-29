@@ -79,6 +79,16 @@ class Spreadsheet {
     return this.datas.map(it => it.getData());
   }
 
+  cellText(ri, ci, text, sheetIndex = 0) {
+    this.datas[sheetIndex].setCellText(ri, ci, text, 'finished');
+    return this;
+  }
+
+  reRender() {
+    this.sheet.table.render();
+    return this;
+  }
+
   on(eventName, func) {
     this.sheet.on(eventName, func);
     return this;

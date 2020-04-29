@@ -111,6 +111,12 @@ s.on('cells-selected', (cell, { sri, sci, eri, eci }) => {});
 s.on('cell-edited', (text, ri, ci) => {});
 ```
 
+## update cell-text
+```javascript
+const s = new Spreadsheet("#x-spreadsheet-demo")
+s.cellText(5, 5, 'xxxx').cellText(6, 5, 'yyy').reRender();
+```
+
 ## Internationalization
 ```javascript
 // npm 
