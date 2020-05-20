@@ -84,6 +84,14 @@ class Spreadsheet {
     return this;
   }
 
+  cell(ri, ci, sheetIndex = 0) {
+    return this.datas[sheetIndex].getCell(ri, ci);
+  }
+
+  cellStyle(ri, ci, sheetIndex = 0) {
+    return this.datas[sheetIndex].getCellStyle(ri, ci);
+  }
+
   reRender() {
     this.sheet.table.render();
     return this;

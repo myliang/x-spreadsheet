@@ -114,7 +114,17 @@ s.on('cell-edited', (text, ri, ci) => {});
 ## update cell-text
 ```javascript
 const s = new Spreadsheet("#x-spreadsheet-demo")
+// cellText(ri, ci, text, sheetIndex = 0)
 s.cellText(5, 5, 'xxxx').cellText(6, 5, 'yyy').reRender();
+```
+
+## get cell and cell-style
+```javascript
+const s = new Spreadsheet("#x-spreadsheet-demo")
+// cell(ri, ci, sheetIndex = 0)
+s.cell(ri, ci);
+// cellStyle(ri, ci, sheetIndex = 0)
+s.cellStyle(ri, ci);
 ```
 
 ## Internationalization
