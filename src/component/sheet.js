@@ -392,6 +392,24 @@ function overlayerMousedown(evt) {
       if (isAutofillEl) {
         selector.showAutofill(ri, ci);
       } else if (e.buttons === 1 && !e.shiftKey) {
+        const { height } = this.tableEl.el;
+        const { width } = this.tableEl.el;
+        const TOLERANCE = 60;
+        const { verticalScrollbar, horizontalScrollbar } = this;
+        const { top } = verticalScrollbar.scroll();
+        const { left } = horizontalScrollbar.scroll();
+        if (height - e.offsetY < TOLERANCE) {
+          this.verticalScrollbar.move({ top: top + TOLERANCE });
+        }
+        if (e.offsetY < TOLERANCE) {
+          this.verticalScrollbar.move({ top: top - TOLERANCE });
+        }
+        if (width - e.offsetX < TOLERANCE) {
+          this.horizontalScrollbar.move({ left: left + TOLERANCE });
+        }
+        if (e.offsetX < TOLERANCE) {
+          this.horizontalScrollbar.move({ left: left - TOLERANCE });
+        }
         selectorSet.call(this, true, ri, ci, true, true);
       }
     }, () => {
