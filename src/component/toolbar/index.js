@@ -23,6 +23,8 @@ import Undo from './undo';
 import Print from './print';
 import Textwrap from './textwrap';
 import More from './more';
+import MoreDecimal from './more_decimal';
+import LessDecimal from './less_decimal';
 
 import { h } from '../element';
 import { cssPrefix } from '../../config';
@@ -130,6 +132,8 @@ export default class Toolbar {
         this.autofilterEl = new Autofilter(),
         this.formulaEl = new Formula(),
         this.moreEl = new More(),
+        this.moreDecimalEl = new MoreDecimal(),
+        this.lessDecimalEl = new LessDecimal(),
       ],
     ];
 

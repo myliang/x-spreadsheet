@@ -500,6 +500,7 @@ function insertDeleteRowColumn(type) {
     data.deleteCell('format');
   } else if (type === 'delete-cell-text') {
     data.deleteCell('text');
+    data.deleteCell('printText');
   } else if (type === 'cell-printable') {
     data.setSelectedCellAttr('printable', true);
   } else if (type === 'cell-non-printable') {
@@ -540,6 +541,10 @@ function toolbarChange(type, value) {
     } else {
       this.freeze(0, 0);
     }
+  } else if (type === 'more-decimal') {
+    this.moreDecimal();
+  } else if (type === 'less-decimal') {
+    this.lessDecimal();
   } else {
     data.setSelectedCellAttr(type, value);
     if (type === 'formula' && !data.selector.multiple()) {
@@ -941,6 +946,16 @@ export default class Sheet {
 
   redo() {
     this.data.redo();
+    sheetReset.call(this);
+  }
+
+  moreDecimal() {
+    this.data.moreDecimal();
+    sheetReset.call(this);
+  }
+
+  lessDecimal() {
+    this.data.lessDecimal();
     sheetReset.call(this);
   }
 

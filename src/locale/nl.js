@@ -21,6 +21,8 @@ export default {
     freeze: 'Cel bevriezen',
     formula: 'Functies',
     more: 'Meer',
+    moreDecimal: 'Verhoging decimaal',
+    lessDecimal: 'Vermindering decimaal',
   },
   contextmenu: {
     copy: 'Kopiëren',

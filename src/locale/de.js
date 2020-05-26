@@ -21,6 +21,8 @@ export default {
     freeze: 'Zelle sperren',
     formula: 'Funktionen',
     more: 'Mehr',
+    moreDecimal: 'Dezimal erhöhen',
+    lessDecimal: 'Verringern dezimal',
   },
   contextmenu: {
     copy: 'Kopieren',

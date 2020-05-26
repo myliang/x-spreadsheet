@@ -23,6 +23,8 @@ export default {
     autofilter: '自动筛选',
     formula: '函数',
     more: '更多',
+    moreDecimal: '增加小数位数',
+    lessDecimal: '减少小数位数',
   },
   contextmenu: {
     copy: '复制',

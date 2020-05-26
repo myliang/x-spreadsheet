@@ -5,6 +5,7 @@ import Scroll from './scroll';
 import History from './history';
 import Clipboard from './clipboard';
 import AutoFilter from './auto_filter';
+import Decimal from './decimal';
 import { Merges } from './merge';
 import helper from './helper';
 import { Rows } from './row';
@@ -343,6 +344,7 @@ export default class DataProxy {
     this.history = new History();
     this.clipboard = new Clipboard();
     this.autoFilter = new AutoFilter();
+    this.decimal = new Decimal();
     this.change = () => {};
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
@@ -398,6 +400,28 @@ export default class DataProxy {
     this.history.redo(this.getData(), (d) => {
       this.setData(d);
     });
+  }
+
+  moreDecimal() {
+    const { ri, ci } = this.selector;
+    this.decimal.moreDecimal(
+        this.getCellPrintTextOrDefault(ri, ci),
+        this.getCellTextOrDefault(ri, ci),
+        (printText) => {
+          // this.setSelectedCellText(text);
+          this.setSelectedCellAttr('more-decimal', printText);
+        });
+  }
+
+  lessDecimal() {
+    const { ri, ci } = this.selector;
+    this.decimal.lessDecimal(
+        this.getCellPrintTextOrDefault(ri, ci),
+        this.getCellTextOrDefault(ri, ci),
+        (printText) => {
+          // this.setSelectedCellText(text);
+          this.setSelectedCellAttr('less-decimal', printText);
+        });
   }
 
   copy() {
@@ -521,6 +545,14 @@ export default class DataProxy {
           const cell = rows.getCellOrNew(ri, ci);
           cell.text = `=${value}()`;
         }
+      } else if (property === 'more-decimal') {
+        const { ri, ci } = this.selector;
+        const cell = rows.getCellOrNew(ri, ci);
+        cell.printText = value;
+      } else if (property === 'less-decimal') {
+        const { ri, ci } = this.selector;
+        const cell = rows.getCellOrNew(ri, ci);
+        cell.printText = value;
       } else {
         selector.range.each((ri, ci) => {
           const cell = rows.getCellOrNew(ri, ci);
@@ -562,6 +594,9 @@ export default class DataProxy {
     const oldCell = rows.getCell(nri, ci);
     const oldText = oldCell ? oldCell.text : '';
     this.setCellText(nri, ci, text, state);
+    if (oldText !== text) {
+      this.setCellPrintText(nri, ci, text);
+    }
     // replace filter.value
     if (autoFilter.active()) {
       const filter = autoFilter.getFilter(ci);
@@ -911,6 +946,11 @@ export default class DataProxy {
     return (cell && cell.text) ? cell.text : '';
   }
 
+  getCellPrintTextOrDefault(ri, ci) {
+    const cell = this.getCell(ri, ci);
+    return (cell && cell.printText) ? cell.printText : (cell && cell.text) ? cell.text : '';
+  }
+
   getCellStyle(ri, ci) {
     const cell = this.getCell(ri, ci);
     if (cell && cell.style !== undefined) {
@@ -944,6 +984,11 @@ export default class DataProxy {
     }
     // validator
     validations.validate(ri, ci, text);
+  }
+
+  setCellPrintText(ri, ci, text) {
+    const { rows } = this;
+    rows.setPrintCellText(ri, ci, text);
   }
 
   freezeIsActive() {

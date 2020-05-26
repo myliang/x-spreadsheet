@@ -109,6 +109,11 @@ class Rows {
     cell.text = text;
   }
 
+  setPrintCellText(ri, ci, text) {
+    const cell = this.getCellOrNew(ri, ci);
+    cell.printText = text;
+  }
+
   // what: all | format | text
   copyPaste(srcCellRange, dstCellRange, what, autofill = false, cb = () => {}) {
     const {
@@ -282,6 +287,8 @@ class Rows {
         } else if (what === 'text') {
           if (cell.text) delete cell.text;
           if (cell.value) delete cell.value;
+        } else if (what === 'printText') {
+          if (cell.printText) { delete cell.printText; }
         } else if (what === 'format') {
           if (cell.style !== undefined) delete cell.style;
           if (cell.merge) delete cell.merge;
