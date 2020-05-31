@@ -178,7 +178,6 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       // console.log('::::params:', formulaMap, expr,  formula, params);
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
-      // console.log('cellList:', cellList, expr);
       if (cellList.includes(expr)) {
         return 0;
       }
@@ -186,6 +185,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
         cellList.push(expr);
       }
       stack.push(evalSubExpr(expr, cellRender));
+      cellList.pop();
     }
     // console.log('stack:', stack);
   }
