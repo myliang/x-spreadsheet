@@ -12,13 +12,14 @@ const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', '
 export function stringAt(index) {
   let str = '';
   let cindex = index;
-  while (cindex >= alphabets.length) {
+  // Each loop iteration converts a base-26 (alphabet length) digit to a
+  // character [A-Z]. Because it works from least to most significant digit,
+  // each new character must be added to the FRONT of the string being built.
+  do {
+    str = alphabets[parseInt(cindex, 10) % alphabets.length] + str;
     cindex /= alphabets.length;
     cindex -= 1;
-    str += alphabets[parseInt(cindex, 10) % alphabets.length];
-  }
-  const last = index % alphabets.length;
-  str += alphabets[last];
+  } while (cindex >= 0);
   return str;
 }
 
@@ -30,12 +31,23 @@ export function stringAt(index) {
  */
 export function indexAt(str) {
   let ret = 0;
-  for (let i = 0; i < str.length - 1; i += 1) {
+  // Each loop iteration converts a digit from a base-26 [A-Z] string to a
+  // base 10 integer, working from most to least significant base-26 digit.
+  for (let i = 0; i < str.length; i += 1) {
+    // Calculate offset from 'A', which has character code 65
     const cindex = str.charCodeAt(i) - 65;
     const exponet = str.length - 1 - i;
-    ret += (alphabets.length ** exponet) + (alphabets.length * cindex);
+    // 'A' is interpreted as 0 when in the 0th digit, but as 1 when in any
+    // other digit. Therefore, we will increment cindex so that [0-25] is
+    // remapped to [1-26] for all digits, then decrement the result after the
+    // loop completes by 1 to remap the 0th digit back to [0-25].
+    // For example:
+    // 'AA' will be converted to (base-26) 11 by the loop,
+    // then decremented to (base-26) 10 before being returned,
+    // which expressed in base-10 is 26.
+    ret += (cindex + 1) * (alphabets.length ** exponet);
   }
-  ret += str.charCodeAt(str.length - 1) - 65;
+  ret -= 1;
   return ret;
 }
 
