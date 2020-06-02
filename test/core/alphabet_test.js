@@ -11,54 +11,30 @@ import {
 describe('alphabet', () => {
   describe('.indexAt()', () => {
     it('should return 0 when the value is A', () => {
-      assert.equal(indexAt('A'), 0);
+      assert.equal(indexAt('A'), 1 * 26 ** 0 - 1);
     });
-    it('should return 25 when the value is Z', () => {
-      assert.equal(indexAt('Z'), 25);
+    it('should return 27 when the value is AB', () => {
+      assert.equal(indexAt('AB'), 1 * 26 ** 1 + 2 * 26 ** 0 - 1);
     });
-    it('should return 26 when the value is AA', () => {
-      assert.equal(indexAt('AA'), 26);
+    it('should return 730 when the value is ABC', () => {
+      assert.equal(indexAt('ABC'), 1 * 26 ** 2 + 2 * 26 ** 1 + 3 * 26 ** 0 - 1);
     });
-    it('should return 52 when the value is BA', () => {
-      assert.equal(indexAt('BA'), 52);
-    });
-    it('should return 54 when the value is BC', () => {
-      assert.equal(indexAt('BC'), 54);
-    });
-    it('should return 78 when the value is CA', () => {
-      assert.equal(indexAt('CA'), 78);
-    });
-    it('should return 26 * 26 when the value is ZA', () => {
-      assert.equal(indexAt('ZA'), 26 * 26);
-    });
-    it('should return 26 * 26 + 26 when the value is AAA', () => {
-      assert.equal(indexAt('AAA'), (26 * 26) + 26);
+    it('should return 19009 when the value is ABCD', () => {
+      assert.equal(indexAt('ABCD'), 1 * 26 ** 3 + 2 * 26 ** 2 + 3 * 26 ** 1 + 4 * 26 ** 0 - 1);
     });
   });
   describe('.stringAt()', () => {
     it('should return A when the value is 0', () => {
-      assert.equal(stringAt(0), 'A');
+      assert.equal(stringAt(1 * 26 ** 0 - 1), 'A');
     });
-    it('should return Z when the value is 25', () => {
-      assert.equal(stringAt(25), 'Z');
+    it('should return AB when the value is 27', () => {
+      assert.equal(stringAt(1 * 26 ** 1 + 2 * 26 ** 0 - 1), 'AB');
     });
-    it('should return AA when the value is 26', () => {
-      assert.equal(stringAt(26), 'AA');
+    it('should return ABC when the value is 730', () => {
+      assert.equal(stringAt(1 * 26 ** 2 + 2 * 26 ** 1 + 3 * 26 ** 0 - 1), 'ABC');
     });
-    it('should return BC when the value is 54', () => {
-      assert.equal(stringAt(54), 'BC');
-    });
-    it('should return CB when the value is 78', () => {
-      assert.equal(stringAt(78), 'CA');
-    });
-    it('should return ZA when the value is 26 * 26', () => {
-      assert.equal(stringAt(26 * 26), 'ZA');
-    });
-    it('should return Z when the value is 26 * 26 + 1', () => {
-      assert.equal(stringAt((26 * 26) + 1), 'ZB');
-    });
-    it('should return AAA when the value is 26 * 26 + 26', () => {
-      assert.equal(stringAt((26 * 26) + 26), 'AAA');
+    it('should return ABCD when the value is 19009', () => {
+      assert.equal(stringAt(1 * 26 ** 3 + 2 * 26 ** 2 + 3 * 26 ** 1 + 4 * 26 ** 0 - 1), 'ABCD');
     });
   });
   describe('.expr2xy()', () => {
