@@ -611,11 +611,6 @@ function sheetInitEvents() {
       if (offsetX <= 0) rowResizer.hide();
     });
 
-  selector.inputChange = (v) => {
-    dataSetCellText.call(this, v, 'input');
-    editorSet.call(this);
-  };
-
   // slide on mobile
   bindTouch(overlayerEl.el, {
     move: (direction, d) => {
