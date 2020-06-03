@@ -143,14 +143,21 @@ const infixExprToSuffixExpr = (src) => {
 };
 
 const evalSubExpr = (subExpr, cellRender) => {
-  if (subExpr[0] >= '0' && subExpr[0] <= '9') {
-    return Number(subExpr);
-  }
-  if (subExpr[0] === '"') {
+  const [fl] = subExpr;
+  let expr = subExpr;
+  if (fl === '"') {
     return subExpr.substring(1);
   }
-  const [x, y] = expr2xy(subExpr);
-  return cellRender(x, y);
+  let ret = 1;
+  if (fl === '-') {
+    expr = subExpr.substring(1);
+    ret = -1;
+  }
+  if (expr[0] >= '0' && expr[0] <= '9') {
+    return ret * Number(expr);
+  }
+  const [x, y] = expr2xy(expr);
+  return ret * cellRender(x, y);
 };
 
 // evaluate the suffix expression
