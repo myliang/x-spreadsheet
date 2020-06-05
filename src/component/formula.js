@@ -25,11 +25,11 @@ export default class Formula {
     this.cell = null;
     document.addEventListener("selectionchange", () => {
       if (document.activeElement !== this.el) return;
+
+      this.cell = null;
       if (this.editor.inputText[0] != '=') return;
 
       const index = getCaretPosition(this.el);
-
-      this.cell = null;
       for (let cell of this.cells) {
         const { from, to } = cell;
         if (from <= index && index <= to) {
