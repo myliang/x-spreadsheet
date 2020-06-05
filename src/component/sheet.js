@@ -872,6 +872,7 @@ export default class Sheet {
       .children(
         this.editor.el,
         this.selector.el,
+        this.editor.cellEl,
       );
     this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);

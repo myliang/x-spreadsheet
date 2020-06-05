@@ -127,10 +127,8 @@ export default class Editor {
       .on('mousemove.stop', () => { })
       .on('mousedown.stop', () => { });
     this.el = h('div', `${cssPrefix}-editor`)
-      .children(
-        this.areaEl,
-        this.cellEl = h('div', `${cssPrefix}-formula-cell`)
-      ).hide();
+      .children(this.areaEl).hide();
+    this.cellEl = h('div', `${cssPrefix}-formula-cell`)
     this.suggest.bindInputEvents(this.textEl);
 
     this.areaOffset = null;
@@ -156,11 +154,10 @@ export default class Editor {
     this.cell = null;
     this.areaOffset = null;
     this.inputText = '';
-    this.formula.cell = null;
     this.el.hide();
     this.textEl.val('');
     this.textlineEl.html('');
-    this.cellEl.html('');
+    this.formula.clear();
     resetSuggestItems.call(this);
     this.datepicker.hide();
   }

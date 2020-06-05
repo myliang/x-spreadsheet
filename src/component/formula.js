@@ -89,6 +89,12 @@ export default class Formula {
     });
   }
 
+  clear() {
+    this.cell = null;
+    this.cells = [];
+    this.cellEl.innerHTML = '';
+  }
+
   selectCell(ri, ci) {
     if (this.cell) {
       const row = String(ri + 1);
