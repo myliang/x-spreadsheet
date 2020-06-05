@@ -72,6 +72,11 @@ const baseFormulas = [
     render: ary => ary.reduce((a, b) => Number(a) - Number(b)),
   },
   */
+  {
+    key: 'ROUND',
+    title: tf('formula.round'),
+    render: ([num, precise]) => Number(num).toFixed(precise),
+  },
 ];
 
 const formulas = baseFormulas;
