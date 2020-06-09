@@ -11,7 +11,7 @@ declare module 'x-data-spreadsheet' {
     row?: {
       len: number;
       height: number;
-    }?;
+    };
     col?: {
       len: number;
       width: number;
@@ -114,7 +114,10 @@ declare module 'x-data-spreadsheet' {
     textwrap?: boolean;
     color?: string;
     border?: {
-      [key: 'top' | 'right' | 'bottom' | 'left']: string[];
+      top?: string[];
+      right?: string[];
+      bottom?: string[];
+      left?: string[];
     };
   }
   export interface Editor {}
@@ -125,7 +128,7 @@ declare module 'x-data-spreadsheet' {
   export interface Cell {}
   export interface Sheet {}
 
-  export class Spreadsheet {
+  export default class Spreadsheet {
     constructor(container: string | HTMLElement, opts?: Options);
     on: SpreadsheetEventHandler;
     /**
@@ -184,7 +187,7 @@ declare module 'x-data-spreadsheet' {
      */
     locale(lang: string, message: string);
   }
-  declare global {
+  global {
     interface Window {
       x_spreadsheet(container: string | HTMLElement, opts?: Options): Spreadsheet; 
     }
