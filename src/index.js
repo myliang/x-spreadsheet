@@ -28,7 +28,7 @@ class Spreadsheet {
     }, (index, value) => {
       this.datas[index].name = value;
     });
-    this.data = this.addSheet();
+    this.data = this.addSheet(options.defaultSheet);
     const rootEl = h('div', `${cssPrefix}`)
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
