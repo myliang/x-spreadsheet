@@ -68,45 +68,7 @@ import { t } from '../locale/locale';
  *  }
  * }
  */
-const defaultSettings = {
-    mode: 'edit', // edit | read
-    defaultSheet: undefined,
-    view: {
-        height: () => document.documentElement.clientHeight,
-        width: () => document.documentElement.clientWidth,
-    },
-    showGrid: true,
-    showToolbar: true,
-    showContextmenu: true,
-    row: {
-        len: 100,
-        height: 25,
-        label: undefined | Function | Array
-    },
-    col: {
-        len: 26,
-        width: 100,
-        indexWidth: 60,
-        minWidth: 60,
-        label: undefined | Function | Array
-    },
-    style: {
-        bgcolor: '#ffffff',
-        align: 'left',
-        valign: 'middle',
-        textwrap: false,
-        strike: false,
-        underline: false,
-        color: '#0a0a0a',
-        font: {
-            name: 'Arial',
-            size: 10,
-            bold: false,
-            italic: false,
-        },
-        format: 'normal',
-    },
-};
+
 
 const toolbarHeight = 41;
 const bottombarHeight = 41;
@@ -327,7 +289,7 @@ function getCellColByX(x, scrollOffsetx) {
 
 export default class DataProxy {
     constructor(name, settings) {
-        this.settings = helper.merge(defaultSettings, settings || {});
+        this.settings = settings;
         // save data begin
         this.name = name || 'sheet';
         this.freeze = [0, 0];
@@ -981,9 +943,11 @@ export default class DataProxy {
     }
 
     viewHeight() {
-        const { view, showToolbar } = this.settings;
+        const { view, showToolbar, bottombar } = this.settings;
         let h = view.height();
-        h -= bottombarHeight;
+        if(bottombar && bottombar.show){
+            h -= bottombarHeight;
+        }
         if (showToolbar) {
             h -= toolbarHeight;
         }

@@ -19,6 +19,11 @@
             // x_spreadsheet.locale('zh-cn');
             var xs = x_spreadsheet('#x-spreadsheet-demo', {
                 showToolbar: false,
+                bottombar:{
+                    show: false,
+                    canAdd: false,
+                    canDel: false
+                },
                 showGrid: true,
                 defaultSheet:'0.00 ~ 6.00',
                 leftTopText: ['球镜','柱镜'],

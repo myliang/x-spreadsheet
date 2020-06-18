@@ -8,11 +8,54 @@ import { locale } from './locale/locale';
 import './index.less';
 import helper from './core/helper';
 
+const defaultSettings = {
+    mode: 'edit', // edit | read
+    defaultSheet: undefined,
+    view: {
+        height: () => document.documentElement.clientHeight,
+        width: () => document.documentElement.clientWidth,
+    },
+    showGrid: true,
+    showToolbar: true,
+    bottombar: {
+        show: true,
+        add: true,
+    },
+    showContextmenu: true,
+    row: {
+        len: 100,
+        height: 25,
+        label: undefined | Function | Array
+    },
+    col: {
+        len: 26,
+        width: 100,
+        indexWidth: 60,
+        minWidth: 60,
+        label: undefined | Function | Array
+    },
+    style: {
+        bgcolor: '#ffffff',
+        align: 'left',
+        valign: 'middle',
+        textwrap: false,
+        strike: false,
+        underline: false,
+        color: '#0a0a0a',
+        font: {
+            name: 'Arial',
+            size: 10,
+            bold: false,
+            italic: false,
+        },
+        format: 'normal',
+    },
+};
 
 class Spreadsheet {
     constructor(selectors, options = {}) {
         let targetEl = selectors;
-        this.options = options;
+        this.options =  helper.merge({}, defaultSettings, options || {});
         this.sheetIndex = 1;
         this.datas = [];
         if (typeof selectors === 'string') {
@@ -28,7 +71,7 @@ class Spreadsheet {
             this.deleteSheet();
         }, (index, value) => {
             this.datas[index].name = value;
-        });
+        }, this.options);
         this.data = this.addSheet(options.defaultSheet);
         const rootEl = h('div', `${cssPrefix}`)
             .on('contextmenu', evt => evt.preventDefault());
@@ -40,13 +83,13 @@ class Spreadsheet {
 
     addSheet(name, options = {}, active = true) {
         const n = name || `sheet${this.sheetIndex}`;
-        const d = new DataProxy(n, Object.assign({}, this.options, options));
+        const d = new DataProxy(n, helper.merge({}, this.options, options));
         d.change = (...args) => {
             this.sheet.trigger('change', ...args);
         };
         this.datas.push(d);
         // console.log('d:', n, d, this.datas);
-        this.bottombar.addItem(n, active);
+        this.bottombar.addItem(n, helper.merge({}, this.options, options), active);
         this.sheetIndex += 1;
         return d;
     }
