@@ -180,12 +180,12 @@ class Rows {
                                             return expr2expr(word, xn, yn);
                                         });
                                     } else {
-                                        const result = /[\\.\d]+$/.exec(text);
-                                        // console.log('result:', result);
-                                        if (result !== null) {
-                                            const index = Number(result[0]) + n - 1;
-                                            ncell.text = text.substring(0, result.index) + index;
-                                        }
+                                        // const result = /[\\.\d]+$/.exec(text);
+                                        // // console.log('result:', result);
+                                        // if (result !== null) {
+                                        //     const index = Number(result[0]) + n - 1;
+                                        //     ncell.text = text.substring(0, result.index) + index;
+                                        // }
                                     }
                                 }
                                 this.setCell(nri, nci, ncell, what);
