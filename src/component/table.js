@@ -243,12 +243,33 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
 }
 
 function renderFixedLeftTopCell(fw, fh) {
-    const { draw } = this;
+    const { draw, data } = this;
     draw.save();
     // left-top-cell
     draw.attr({ fillStyle: '#f4f5f8' })
         .fillRect(0, 0, fw, fh);
     draw.restore();
+    if (data.settings.leftTopText) {
+        if (typeof (data.settings.leftTopText) === 'string') {
+            draw.attr({ textAlign: 'center', textBaseline: 'middle' }).fillText(data.settings.leftTopText || '', fw / 2, (fh / 2));
+            draw.restore();
+        } else if (Array.isArray(data.settings.leftTopText)) {
+            switch (data.settings.leftTopText.length) {
+                case 1:
+                    draw.attr({ textAlign: 'center', textBaseline: 'middle' }).fillText(data.settings.leftTopText[0], fw / 2, (fh / 2));
+                    break;
+                case 2:
+                    draw.save();
+                    draw.attr(tableGridStyle).line([0, 0], [fw, fh]);
+                    draw.restore();
+                    draw.fillText(data.settings.leftTopText[0], 5 , fh - 4)
+                        .fillText(data.settings.leftTopText[1], fw - fw / 2, 10);
+
+                    break;
+            }
+            draw.restore();
+        }
+    }
 }
 
 function renderContentGrid({
