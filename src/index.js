@@ -19,7 +19,8 @@ const defaultSettings = {
     showToolbar: true,
     bottombar: {
         show: true,
-        add: true,
+        canAdd: true,
+        canDel: true
     },
     showContextmenu: true,
     row: {
