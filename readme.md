@@ -9,16 +9,19 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/myliang/x-spreadsheet.svg)
 [![Join the chat at https://gitter.im/x-datav/spreadsheet](https://badges.gitter.im/x-datav/spreadsheet.svg)](https://gitter.im/x-datav/spreadsheet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-> A web-based JavaScript spreadsheet
-
+> Una hoja de cálculo JavaScript basada en la web
 <p align="center">
   <a href="https://github.com/myliang/x-spreadsheet">
     <img width="100%" src="https://raw.githubusercontent.com/myliang/x-spreadsheet/master/docs/demo.png">
   </a>
 </p>
 
-## Document
+## Idiomas disponibles
+
+* de
 * en
+* es
+* nl
 * [zh-cn 中文](https://hondrytravis.github.io/x-spreadsheet-doc/)
 
 ## CDN
@@ -43,7 +46,7 @@ npm install x-data-spreadsheet
 
 ```javascript
 import Spreadsheet from "x-data-spreadsheet";
-// If you need to override the default options, you can set the override
+// Si necesita sobreescribir las opciones predeterminadas, puede establecer la sobreescritura (override)
 // const options = {};
 // new Spreadsheet('#x-spreadsheet-demo', options);
 const s = new Spreadsheet("#x-spreadsheet-demo")
@@ -127,9 +130,17 @@ s.cell(ri, ci);
 s.cellStyle(ri, ci);
 ```
 
-## Internationalization
+## Internacionalización
 ```javascript
 // npm 
+es
+import Spreadsheet from 'x-data-spreadsheet';
+import es from 'x-data-spreadsheet/dist/locale/es';
+
+Spreadsheet.locale('es', es);
+new Spreadsheet(document.getElementById('xss-demo'));
+
+zh-cn
 import Spreadsheet from 'x-data-spreadsheet';
 import zhCN from 'x-data-spreadsheet/dist/locale/zh-cn';
 
@@ -137,7 +148,7 @@ Spreadsheet.locale('zh-cn', zhCN);
 new Spreadsheet(document.getElementById('xss-demo'));
 ```
 ```html
-<!-- Import via CDN -->
+<!-- Importar via CDN -->
 <link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.1.4/dist/xspreadsheet.css">
 <script src="https://unpkg.com/x-data-spreadsheet@1.1.4/dist/xspreadsheet.js"></script>
 <script src="https://unpkg.com/x-data-spreadsheet@1.1.4/dist/locale/zh-cn.js"></script>
@@ -145,38 +156,45 @@ new Spreadsheet(document.getElementById('xss-demo'));
 <script>
   x_spreadsheet.locale('zh-cn');
 </script>
+______
+es
+<script src="https://unpkg.com/x-data-spreadsheet@1.1.4/dist/locale/es.js"></script>
+<script>
+  x_spreadsheet.locale('es');
+</script>
+
 ```
 
-## Features
-  - Undo & Redo
-  - Paint format
-  - Clear format
-  - Format
-  - Font
-  - Font size
-  - Font bold
-  - Font italic
-  - Underline
-  - Strike
-  - Text color
-  - Fill color
-  - Borders
-  - Merge cells
-  - Align
-  - Text wrapping
-  - Freeze cell
-  - Functions
-  - Resize row-height, col-width
-  - Copy, Cut, Paste
-  - Autofill
-  - Insert row, column
-  - Delete row, column
-  - hide row, column
-  - multiple sheets
-  - print
-  - Data validations
+## Características
+- Deshacer rehacer
+  - Formato de pintura
+  - Formato claro
+  - Formato
+  - fuente
+  - Tamaño de fuente
+  - Negrita
+  - Fuente cursiva
+  - Subrayado
+  - Huelga
+  - Color de texto
+  - Color de relleno
+  - Fronteras
+  - Combinar células
+  - Alinear
+  - Ajuste de texto
+  - Congelar celda
+  - Funciones o Fórmulas
+  - Cambiar el tamaño de la fila de altura, ancho de columna
+  - Copiar, cortar, pegar
+  - Autocompletar
+  - Insertar fila, columna
+  - Eliminar fila, columna
+  - ocultar fila, columna
+  - múltiples hojas
+  - impresión
+  - Validaciones de datos
 
-## Development
+## Desarrollo
 
 ```sheel
 git clone https://github.com/myliang/x-spreadsheet.git
@@ -185,12 +203,12 @@ npm install
 npm run dev
 ```
 
-Open your browser and visit http://127.0.0.1:8080.
+Abre tu navegador y visita http://127.0.0.1:8080.
 
-## Browser Support
+## Soporte de navegador
 
-Modern browsers(chrome, firefox, Safari).
+Navegadores modernos(chrome, firefox, Safari).
 
-## LICENSE
+## LICENCIA
 
 MIT
