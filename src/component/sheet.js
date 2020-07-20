@@ -477,10 +477,11 @@ function dataSetCellText(text, state = 'finished') {
   // const [ri, ci] = selector.indexes;
   if (data.settings.mode === 'read') return;
   data.setSelectedCellText(text, state);
+  const { ri, ci } = data.selector;
   if (state === 'finished') {
-    const { ri, ci } = data.selector;
-    this.trigger('cell-edited', text, ri, ci);
     table.render();
+  } else {
+    this.trigger('cell-edited', text, ri, ci);
   }
 }
 
