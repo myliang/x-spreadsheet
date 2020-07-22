@@ -187,12 +187,15 @@ export default class Print {
       canvas {
         page-break-before: auto;        
         page-break-after: always;
+        image-rendering: pixelated;
       };
     `;
     idoc.head.appendChild(style);
     this.canvases.forEach((it) => {
-      const cn = it.cloneNode();
-      cn.getContext('2d').drawImage(it, 0, 0);
+      const cn = it.cloneNode(false);
+      const ctx = cn.getContext('2d');
+      // ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(it, 0, 0);
       idoc.body.appendChild(cn);
     });
     contentWindow.print();
