@@ -153,13 +153,14 @@ declare module 'x-data-spreadsheet' {
      * get/set cell text
      * @param rowIndex
      * @param colIndex
+     * @param text
      * @param sheetIndex
      */
     cellText(
       rowIndex: number,
       colIndex: number,
-      sheetIndex?: number,
-      text?: string
+      text: string,
+      sheetIndex?: number
     ): string;
     /**
      * remove current sheet
