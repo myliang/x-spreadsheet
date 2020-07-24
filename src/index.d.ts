@@ -161,11 +161,17 @@ declare module 'x-data-spreadsheet' {
       colIndex: number,
       text: string,
       sheetIndex?: number
-    ): string;
+    ): Spreadsheet;
+    
     /**
      * remove current sheet
      */
     deleteSheet(): void;
+
+    /**
+     * render sheet
+     */
+    reRender(): Spreadsheet;
 
     /**
      * load data
