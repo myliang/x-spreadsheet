@@ -27,7 +27,7 @@ declare module 'x-data-spreadsheet' {
       underline: boolean;
       color: string;
       font: {
-        name: 'Helvetica';
+        name: string;
         size: number;
         bold: boolean;
         italic: false;
