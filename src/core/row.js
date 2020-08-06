@@ -145,7 +145,7 @@ class Rows {
                     n -= dn + 1;
                   }
                   if (text[0] === '=') {
-                    ncell.text = text.replace(/\w{1,3}\d/g, (word) => {
+                    ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
                       if (sri === dsri) {
                         xn = n - 1;
@@ -215,7 +215,7 @@ class Rows {
         nri += n;
         this.eachCells(ri, (ci, cell) => {
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/\w{1,3}\d/g, word => expr2expr(word, 0, n, (x, y) => y >= sri));
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, n, (x, y) => y >= sri));
           }
         });
       }
@@ -236,7 +236,7 @@ class Rows {
         ndata[nri - n] = row;
         this.eachCells(ri, (ci, cell) => {
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/\w{1,3}\d/g, word => expr2expr(word, 0, -n, (x, y) => y > eri));
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, -n, (x, y) => y > eri));
           }
         });
       }
@@ -253,7 +253,7 @@ class Rows {
         if (nci >= sci) {
           nci += n;
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/\w{1,3}\d/g, word => expr2expr(word, n, 0, x => x >= sci));
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, n, 0, x => x >= sci));
           }
         }
         rndata[nci] = cell;
@@ -273,7 +273,7 @@ class Rows {
         } else if (nci > eci) {
           rndata[nci - n] = cell;
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/\w{1,3}\d/g, word => expr2expr(word, -n, 0, x => x > eci));
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, -n, 0, x => x > eci));
           }
         }
       });
