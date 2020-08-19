@@ -852,7 +852,7 @@ export default class Sheet {
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
-    this.rowResizer = new Resizer(false, data.rows.height);
+    this.rowResizer = new Resizer(false, data.rows.minHeight);
     this.colResizer = new Resizer(true, data.cols.minWidth);
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
