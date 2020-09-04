@@ -1,81 +1,105 @@
 import assert from 'assert';
 import { describe, it } from 'mocha';
-import cell, { infixExprToSuffixExpr } from '../../src/core/cell';
-import { formulam } from '../../src/core/formula';
+import { expr2xy } from '../../src/core/alphabet';
+import cell from '../../src/core/cell';
+import Table from '../../src/component/table';
 
-describe('infixExprToSuffixExpr', () => {
-  it('should return myname:A1 score:50 when the value is CONCAT("my name:", A1, " score:", 50)', () => {
-    assert.equal(infixExprToSuffixExpr('CONCAT("my name:", A1, " score:", 50)').join(''), '"my name:A1" score:50CONCAT,4');
-  });
-  it('should return A1B2SUM,2C1C5AVERAGE,350B20++ when the value is AVERAGE(SUM(A1,B2), C1, C5) + 50 + B20', () => {
-    assert.equal(infixExprToSuffixExpr('AVERAGE(SUM(A1,B2), C1, C5) + 50 + B20').join(''), 'A1B2SUM,2C1C5AVERAGE,350+B20+');
-  });
-  it('should return A1B2B3SUM,3C1C5AVERAGE,350+B20+ when the value is ((AVERAGE(SUM(A1,B2, B3), C1, C5) + 50) + B20)', () => {
-    assert.equal(infixExprToSuffixExpr('((AVERAGE(SUM(A1,B2, B3), C1, C5) + 50) + B20)').join(''), 'A1B2B3SUM,3C1C5AVERAGE,350+B20+');
-  });
-  it('should return 11==tfIF,3 when the value is IF(1==1, "t", "f")', () => {
-    assert.equal(infixExprToSuffixExpr('IF(1==1, "t", "f")').join(''), '11=="t"fIF,3');
-  });
-  it('should return 11=tfIF,3 when the value is IF(1=1, "t", "f")', () => {
-    assert.equal(infixExprToSuffixExpr('IF(1=1, "t", "f")').join(''), '11="t"fIF,3');
-  });
-  it('should return 21>21IF,3 when the value is IF(2>1, 2, 1)', () => {
-    assert.equal(infixExprToSuffixExpr('IF(2>1, 2, 1)').join(''), '21>21IF,3');
-  });
-  it('should return 11=AND,121IF,3 when the value is IF(AND(1=1), 2, 1)', () => {
-    assert.equal(infixExprToSuffixExpr('IF(AND(1=1), 2, 1)').join(''), '11=AND,121IF,3');
-  });
-  it('should return 11=21>AND,221IF,3 when the value is IF(AND(1=1, 2>1), 2, 1)', () => {
-    assert.equal(infixExprToSuffixExpr('IF(AND(1=1, 2>1), 2, 1)').join(''), '11=21>AND,221IF,3');
-  });
-  it('should return 105-20- when the value is 10-5-20', () => {
-    assert.equal(infixExprToSuffixExpr('10-5-20').join(''), '105-20-');
-  });
-  it('should return 105-2010*- when the value is 10-5-20*10', () => {
-    assert.equal(infixExprToSuffixExpr('10-5-20*10').join(''), '105-2010*-');
-  });
-  it('should return 10520*- when the value is 10-5*20', () => {
-    assert.equal(infixExprToSuffixExpr('10-5*20').join(''), '10520*-');
-  });
-  it('should return 105-20+ when the value is 10-5+20', () => {
-    assert.equal(infixExprToSuffixExpr('10-5+20').join(''), '105-20+');
-  });
-  it('should return 123*+45*6+7*+ when the value is 1 + 2*3 + (4 * 5 + 6) * 7', () => {
-    assert.equal(infixExprToSuffixExpr('1+2*3+(4*5+6)*7').join(''), '123*+45*6+7*+');
-  });
-  it('should return 9312*-3*+42/+ when the value is 9+(3-1*2)*3+4/2', () => {
-    assert.equal(infixExprToSuffixExpr('9+(3-1*2)*3+4/2').join(''), '9312*-3*+42/+');
-  });
-  it('should return 931-+23+*42/+ when the value is (9+(3-1))*(2+3)+4/2', () => {
-    assert.equal(infixExprToSuffixExpr('(9+(3-1))*(2+3)+4/2').join(''), '931-+23+*42/+');
-  });
-  it('should return SUM(1) when the value is 1SUM,1', () => {
-    assert.equal(infixExprToSuffixExpr('SUM(1)').join(''), '1SUM');
-  });
-  it('should return SUM() when the value is ""', () => {
-    assert.equal(infixExprToSuffixExpr('SUM()').join(''), 'SUM');
-  });
-  it('should return SUM( when the value is SUM', () => {
-    assert.equal(infixExprToSuffixExpr('SUM(').join(''), 'SUM');
-  });
-});
+// ----------------------------------------------------------------------------
+// MOCKS
+// ----------------------------------------------------------------------------
+
+// The cell module's render function uses the hot-formula-parser library's
+// Parser.parse method. Parser.parse relies on its callCellValue and
+// callRangeValue event handlers being defined by the calling application to
+// provide the values contains by cells referenced in the formula being parsed.
+// The Table object instantiates the Parser.parse object in the application and
+// defines the callCellValue and callRangeValue event handlers. Therefore,
+// calling the cell module's render function also requires instantiating a
+// Table object so that said event handlers are defined. And instantiating a
+// Table object requires mocking some of its dependencies.
+
+// Mock storage for the values in each cell in the table
+let __cellData = {};
+
+// Example: setCellData('A3', 3) stores the value 3 in __cellData[2][0]
+function setCellData(expr, value) {
+  const [x, y] = expr2xy(expr);
+  __cellData[y] = __cellData[y] || {};
+  __cellData[y][x] = value.toString();
+}
+
+// Add window global if it doesn't exist
+if (typeof window === 'undefined') {
+  global.window = {};
+}
+window.devicePixelRatio = 0;
+
+const mockEl = {
+  getContext: (_) => {
+    return {
+      scale: (x, y) => {}
+    };
+  },
+  width: 0,
+  height: 0,
+  style: {
+    width: 0,
+    height: 0
+  }
+};
+
+const mockData = {
+  viewWidth: () => 0,
+  viewHeight: () => 0,
+  getCellTextOrDefault: (rowIndex, colIndex) => {
+    if (__cellData[rowIndex] && __cellData[rowIndex][colIndex])
+      return __cellData[rowIndex][colIndex];
+
+    return null;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// TEST CASES
+// ----------------------------------------------------------------------------
+
+// The table objects sets up the following dependencies of cell.render:
+// - the hot-formula-parser module's Parser object needed as an argument
+// - the above Parser object's callCellValue and callRangeValue event handlers
+const table = new Table(mockEl, mockData);
 
 describe('cell', () => {
   describe('.render()', () => {
+    it('should return 2 when the value is IF(AND(1=1, 2>1), 2, 1)', () => {
+      assert.equal(cell.render('=IF(AND(1=1, 2>1), 2, 1)', table.formulaParser), 2);
+    });
+    it('should return 57 when the value is =(9+(3-1))*(2+3)+4/2', () => {
+      assert.equal(cell.render('=(9+(3-1))*(2+3)+4/2', table.formulaParser), 57);
+    });
     it('should return 0 + 2 + 2 + 6 + 49 + 20 when the value is =SUM(A1,B2, C1, C5) + 50 + B20', () => {
-      assert.equal(cell.render('=SUM(A1,B2, C1, C5) + 50 + B20', formulam, (x, y) => x + y), 0 + 2 + 2 + 6 + 50 + 20);
+      setCellData('A1', 0);
+      setCellData('B2', 2);
+      setCellData('C1', 2);
+      setCellData('C5', 6);
+      setCellData('B20', 20);
+
+      assert.equal(cell.render('=SUM(A1,B2, C1, C5) + 50 + B20', table.formulaParser), 0 + 2 + 2 + 6 + 50 + 20);
     });
     it('should return 50 + 20 when the value is =50 + B20', () => {
-      assert.equal(cell.render('=50 + B20', formulam, (x, y) => x + y), 50 + 20);
+      setCellData('B20', 20);
+
+      assert.equal(cell.render('=50 + B20', table.formulaParser), 50 + 20);
     });
     it('should return 2 when the value is =IF(2>1, 2, 1)', () => {
-      assert.equal(cell.render('=IF(2>1, 2, 1)', formulam, (x, y) => x + y), 2);
+      assert.equal(cell.render('=IF(2>1, 2, 1)', table.formulaParser), 2);
     });
     it('should return 1 + 500 - 20 when the value is =AVERAGE(A1:A3) + 50 * 10 - B20', () => {
-      assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', formulam, (x, y) => {
-        // console.log('x:', x, ', y:', y);
-        return x + y;
-      }), 1 + 500 - 20);
+      setCellData('A1', -1);
+      setCellData('A2', 1);
+      setCellData('A3', 3);
+      setCellData('B20', 20);
+
+      assert.equal(cell.render('=AVERAGE(A1:A3) + 50 * 10 - B20', table.formulaParser), 1 + 500 - 20);
     });
   });
 });
