@@ -1,6 +1,7 @@
 /* global window */
 import { h } from './element';
 import { bind, mouseMoveUp, bindTouch, createEventEmitter } from './event';
+import { t } from '../locale/locale';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -13,7 +14,8 @@ import ModalValidation from './modal_validation';
 import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
-import { formulas } from '../core/formula';
+
+import { SUPPORTED_FORMULAS } from 'hot-formula-parser';
 
 /**
  * @desc throttle fn
@@ -585,10 +587,32 @@ function sheetInitEvents() {
       overlayerMousemove.call(this, evt);
     })
     .on('mousedown', (evt) => {
+      // If a formula cell is being edited and a left click is made,
+      // set that formula cell to start at the selected sheet cell and set a
+      // temporary mousemove event handler that updates said formula cell to
+      // end at the sheet cell currently being hovered over.
       if (evt.buttons === 1 && evt.detail <= 1 && editor.formulaCellSelecting()) {
         const { offsetX, offsetY } = evt;
         const { ri, ci } = this.data.getCellRectByXY(offsetX, offsetY);
         editor.formulaSelectCell(ri, ci);
+
+        const that = this;
+
+        let lastCellRect = { ri: null, ci: null };
+        mouseMoveUp(window, (e) => {
+          const cellRect = that.data.getCellRectByXY(e.offsetX, e.offsetY);
+
+          const hasRangeChanged = (cellRect.ri != lastCellRect.ri) || (cellRect.ci != lastCellRect.ci);
+          const isRangeValid = (cellRect.ri >= 0) && (cellRect.ci >= 0);
+
+          if (hasRangeChanged && isRangeValid) {
+            editor.formulaSelectCellRange(cellRect.ri, cellRect.ci);
+
+            lastCellRect.ri = cellRect.ri;
+            lastCellRect.ci = cellRect.ci;
+          }
+        }, () => {});
+
         return;
       }
 
@@ -873,8 +897,17 @@ export default class Sheet {
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
     // editor
+    const formulaSuggestions = SUPPORTED_FORMULAS.map((formulaName) => {
+      const escapedFormulaName = formulaName.replace('.', '\\.');
+      return {
+        key: escapedFormulaName,
+        // Function that returns translation of the formula name if one exists,
+        // otherwise the formula name
+        title: () => t(`formula.${escapedFormulaName}`) || formulaName
+      };
+    });
     this.editor = new Editor(
-      formulas,
+      formulaSuggestions,
       () => this.getTableOffset(),
       data,
     );

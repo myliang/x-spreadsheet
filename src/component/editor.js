@@ -74,7 +74,7 @@ function suggestItemClick(it) {
     } else {
       eit = '';
     }
-    this.inputText = `${sit + it.key}(`;
+    this.inputText = `${sit + it}(`;
     // console.log('inputText:', this.inputText);
     position = this.inputText.length;
     this.inputText += `)${eit}`;
@@ -101,9 +101,11 @@ export default class Editor {
     this.viewFn = viewFn;
     this.rowHeight = data.rows.height;
     this.formulas = formulas;
-    this.suggest = new Suggest(formulas, (it) => {
-      suggestItemClick.call(this, it);
+    this.suggest = new Suggest(this.formulas, (it) => {
+      const unescapedKey = it.key.replace('\\.', '.');
+      suggestItemClick.call(this, unescapedKey);
     });
+
     this.datepicker = new Datepicker();
     this.datepicker.change((d) => {
       // console.log('d:', d);
