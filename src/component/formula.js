@@ -1,4 +1,4 @@
-import { stringAt, expr2xy } from '../core/alphabet';
+import { stringAt, expr2xy, REGEX_EXPR_NONGLOBAL_AT_START } from '../core/alphabet';
 import { setCaretPosition, getCaretPosition } from '../core/caret';
 import CellRange from '../core/cell_range';
 
@@ -132,7 +132,7 @@ export default class Formula {
     let pre = 0;
     while (i < text.length) {
       const sub = text.slice(i);
-      if ((m = sub.match(/^[A-Za-z]+[1-9][0-9]*/))) {
+      if ((m = sub.match(REGEX_EXPR_NONGLOBAL_AT_START))) {
         // cell
         const color = pickColor();
         html += `<span class="formula-token" style="color:${color}">${m[0]}</span>`;
