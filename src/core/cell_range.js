@@ -1,4 +1,4 @@
-import { xy2expr, expr2xy } from './alphabet';
+import { xy2expr, expr2xy, expr2cellRangeArgs } from './alphabet';
 
 class CellRange {
   constructor(sri, sci, eri, eci, w = 0, h = 0) {
@@ -205,15 +205,22 @@ class CellRange {
       && this.sci === other.sci;
   }
 
+  // Translates the cell range by the given values, unless such a translation
+  // would be invalid (e.g., index less than 1)
+  translate(rowShift, colShift) {
+    // Ensure row/col values remain valid (>= 0)
+    // NOTE: this assumes a cellRange isn't used with a row or column index of
+    // -1, which is sometimes used in the application to denote an entire row
+    // or column is being referenced (not just a single index)
+    this.sri = Math.max(0, this.sri + rowShift);
+    this.eri = Math.max(0, this.eri + rowShift);
+    this.sci = Math.max(0, this.sci + colShift);
+    this.eci = Math.max(0, this.eci + colShift);
+  }
+
   static valueOf(ref) {
-    // B1:B8, B1 => 1 x 1 cell range
-    const refs = ref.split(':');
-    const [sci, sri] = expr2xy(refs[0]);
-    let [eri, eci] = [sri, sci];
-    if (refs.length > 1) {
-      [eci, eri] = expr2xy(refs[1]);
-    }
-    return new CellRange(sri, sci, eri, eci);
+    const cellRangeArgs = expr2cellRangeArgs(ref);
+    return new CellRange(...cellRangeArgs);
   }
 }
 

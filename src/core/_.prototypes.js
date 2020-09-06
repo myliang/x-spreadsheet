@@ -23,6 +23,10 @@
  * @example "A1"
  */
 /**
+ * @typedef {string} tagA1B2 Cell reference range tag for XY-tags (0, 0) and (1, 1)
+ * @example "A1:B2"
+ */
+/**
  * @typedef {[number, number]} tagXY
  * @example [0, 0]
  */

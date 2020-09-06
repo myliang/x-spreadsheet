@@ -1,4 +1,11 @@
-import { stringAt, expr2xy, REGEX_EXPR_NONGLOBAL_AT_START } from '../core/alphabet';
+import {
+  stringAt,
+  expr2xy,
+  expr2cellRangeArgs,
+  cellRangeArgs2expr,
+  REGEX_EXPR_NONGLOBAL_AT_START,
+  REGEX_EXPR_RANGE_NONGLOBAL_AT_START
+} from '../core/alphabet';
 import { setCaretPosition, getCaretPosition } from '../core/caret';
 import CellRange from '../core/cell_range';
 
@@ -15,7 +22,30 @@ function renderCell(left, top, width, height, color, selected = false) {
   return `<div style="${style}"></div>`;
 }
 
+function generalSelectCell(sri, sci, eri, eci) {
+  if (this.cell) {
+    const expr = cellRangeArgs2expr(sri, sci, eri, eci);
+    const text = this.editor.inputText;
+    const { from, to } = this.cell;
+
+    this.editor.inputText = text.slice(0, from) + expr + text.slice(to);
+    this.editor.render();
+    setTimeout(() => {
+      setCaretPosition(this.el, from + expr.length);
+    });
+
+    this.cell = null;
+  }
+}
+
 export default class Formula {
+  getCellPositionRange(cell) {
+    const cellExpr = this.editor.inputText.slice(cell.from, cell.to);
+    const cellRangeArgs = expr2cellRangeArgs(cellExpr);
+
+    return new CellRange(...cellRangeArgs);
+  }
+
   constructor(editor) {
     this.editor = editor;
     this.el = this.editor.textEl.el;
@@ -23,6 +53,10 @@ export default class Formula {
 
     this.cells = [];
     this.cell = null;
+    this.cellSelectStartRowCol = null;
+    this.cellSelectEndRowCol = null;
+
+    let cellLastSelectionColor = null;
     document.addEventListener("selectionchange", () => {
       if (document.activeElement !== this.el) return;
 
@@ -38,6 +72,27 @@ export default class Formula {
         }
       }
 
+      // If there's an active range/single formula cell (as determined by
+      // whether it has the color property), see if either:
+      // - there is no start value saved, suggesting that the formula cell was
+      //   clicked (bypassing the selectCell call) rather than a sheet cell was
+      //   selected via click
+      // - there is a start value saved, but it is for a different formula
+      //   cell than the current one (as determined by a color change),
+      //   suggesting the user clicked on a different formula cell since
+      //   last call
+      // In either case, update the start/end select accordingly.
+      // TODO: find a more reliable way to check a change of cell than by using
+      //       the color property
+      if (this.cell && this.cell.color &&
+         (this.cell.color !== cellLastSelectionColor || !this.cellSelectStartRowCol)) {
+          const cellRange = this.getCellPositionRange(this.cell);
+          this.cellSelectStartRowCol = [cellRange.sri, cellRange.sci];
+          this.cellSelectEndRowCol = [cellRange.eri, cellRange.eci];
+
+          cellLastSelectionColor = this.cell.color;
+      }
+
       this.renderCells();
     });
 
@@ -50,66 +105,89 @@ export default class Formula {
       e.preventDefault();
       e.stopPropagation();
 
-      const text = this.editor.inputText;
-      let expr = text.slice(this.cell.from, this.cell.to);
-      let [ci, ri] = expr2xy(expr);
+      // Get values before merge cells applied
+      const cellRangeArgs = this.getCellRangeArgsFromSelectStartEnd();
 
-      const { merges } = this.editor.data;
-      let mergeCell = merges.getFirstIncludes(ri, ci);
-      if (mergeCell) {
-        ri = mergeCell.sri;
-        ci = mergeCell.sci;
-      }
+      // Account for merge cells
+      let cellRange = new CellRange(...cellRangeArgs);
 
-      if (keyCode == 37 && ci >= 1) {
-        ci -= 1;
-      } else if (keyCode == 38 && ri >= 1) {
-        ri -= 1;
+      // Left
+      if (keyCode == 37) {
+        cellRange.translate(0, -1);
+        this.cellSelectStartRowCol[1] = Math.max(0, this.cellSelectStartRowCol[1] - 1);
+        this.cellSelectEndRowCol[1] = Math.max(0, this.cellSelectEndRowCol[1] - 1);
       }
+      // Up
+      else if (keyCode == 38) {
+        cellRange.translate(-1, 0);
+        this.cellSelectStartRowCol[0] = Math.max(0, this.cellSelectStartRowCol[0] - 1);
+        this.cellSelectEndRowCol[0] = Math.max(0, this.cellSelectEndRowCol[0] - 1);
+      }
+      // Right
       else if (keyCode == 39) {
-        if (mergeCell) {
-          ci = mergeCell.eci;
-        }
-        ci += 1;
+        cellRange.translate(0, 1);
+        this.cellSelectStartRowCol[1] = this.cellSelectStartRowCol[1] + 1;
+        this.cellSelectEndRowCol[1] = this.cellSelectEndRowCol[1] + 1;
       }
+      // Down
       else if (keyCode == 40) {
-        if (mergeCell) {
-          ri = mergeCell.eri;
-        }
-        ri += 1;
+        cellRange.translate(1, 0);
+        this.cellSelectStartRowCol[0] = this.cellSelectStartRowCol[0] + 1;
+        this.cellSelectEndRowCol[0] = this.cellSelectEndRowCol[0] + 1;
       }
 
-      mergeCell = merges.getFirstIncludes(ri, ci);
-      if (mergeCell) {
-        ri = mergeCell.sri;
-        ci = mergeCell.sci;
-      }
+      // Reapply merge cells after translation
+      cellRange = this.editor.data.merges.union(cellRange)
 
-      this.selectCell(ri, ci);
+      generalSelectCell.call(this, cellRange.sri, cellRange.sci, cellRange.eri, cellRange.eci);
     });
   }
 
   clear() {
     this.cell = null;
+    this.cellSelectStartRowCol = null;
+    this.cellSelectEndRowCol = null;
     this.cells = [];
     this.cellEl.innerHTML = '';
   }
 
   selectCell(ri, ci) {
+    // To represent a single cell (no range), pass start and end row/col as
+    // equal
+    generalSelectCell.call(this, ri, ci, ri, ci);
+    this.cellSelectStartRowCol = [ri, ci];
+    this.cellSelectEndRowCol = [ri, ci];
+  }
+
+  selectCellRange(eri, eci) {
     if (this.cell) {
-      const row = String(ri + 1);
-      const col = stringAt(ci);
-      const text = this.editor.inputText;
-      const { from, to } = this.cell;
+      // Selected end before union with merge cells
+      this.cellSelectEndRowCol = [eri, eci];
 
-      this.editor.inputText = text.slice(0, from) + col + row + text.slice(to);
-      this.editor.render();
-      setTimeout(() => {
-        setCaretPosition(this.el, from + col.length + row.length);
-      });
+      const cellRangeArgs = this.getCellRangeArgsFromSelectStartEnd();
 
-      this.cell = null;
+      // Account for merge cells
+      let cr = new CellRange(...cellRangeArgs);
+      cr = this.editor.data.merges.union(cr);
+
+      // Keep current cell range start, but use new range end values
+      generalSelectCell.call(this, cr.sri, cr.sci, cr.eri, cr.eci);
     }
+  }
+
+  getCellRangeArgsFromSelectStartEnd() {
+      // Normalize so that start index is not larger than the end index
+      let [sri, sci] = this.cellSelectStartRowCol;
+      let [eri, eci] = this.cellSelectEndRowCol;
+
+      if (sri > eri) {
+        [sri, eri] = [eri, sri];
+      }
+      if (sci > eci) {
+        [sci, eci] = [eci, sci];
+      }
+
+      return [sri, sci, eri, eci];
   }
 
   render() {
@@ -132,7 +210,19 @@ export default class Formula {
     let pre = 0;
     while (i < text.length) {
       const sub = text.slice(i);
-      if ((m = sub.match(REGEX_EXPR_NONGLOBAL_AT_START))) {
+      if ((m = sub.match(REGEX_EXPR_RANGE_NONGLOBAL_AT_START))) {
+        // cell range
+        const color = pickColor();
+        html += `<span class="formula-token" style="color:${color}">${m[0]}</span>`;
+
+        this.cells.push({
+          from: i,
+          to: i + m[0].length,
+          color,
+        });
+        pre = 1;
+        i = i + m[0].length;
+      } else if ((m = sub.match(REGEX_EXPR_NONGLOBAL_AT_START))) {
         // cell
         const color = pickColor();
         html += `<span class="formula-token" style="color:${color}">${m[0]}</span>`;
@@ -200,7 +290,8 @@ export default class Formula {
       }
     }
 
-    if (pre == 4) {
+    const afterOpenParen = (pre == 5) && (text[i - 1] == '(');
+    if (pre == 4 || afterOpenParen) {
       // between operator and the end of text
       this.cells.push({
         from: text.length,
@@ -208,28 +299,21 @@ export default class Formula {
       });
     }
 
-    // console.log('formula cells', this.cells);
-
     this.el.innerHTML = html;
   }
 
   renderCells() {
-    const text = this.editor.inputText;
     const cells = this.cells;
     const data = this.editor.data;
     let cellHtml = "";
 
     for (let cell of cells) {
-      const { from, to, color } = cell;
+      const { color } = cell;
       if (color) {
-        const [ci, ri] = expr2xy(text.slice(from, to));
-        const mergeCell = data.merges.getFirstIncludes(ri, ci);
-        let box = null;
-        if (mergeCell) {
-          box = data.getRect(mergeCell);
-        } else {
-          box = data.getRect(new CellRange(ri, ci, ri, ci));
-        }
+        const cellRange = this.getCellPositionRange(cell);
+
+        const cellRangeIncludingMerges = data.merges.union(cellRange);
+        const box = data.getRect(cellRangeIncludingMerges);
         const { left, top, width, height } = box;
         cellHtml += renderCell(left, top, width, height, color, this.cell === cell);
       }

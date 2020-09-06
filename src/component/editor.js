@@ -261,4 +261,8 @@ export default class Editor {
   formulaSelectCell(ri, ci) {
     this.formula.selectCell(ri, ci);
   }
+
+  formulaSelectCellRange(ri, ci) {
+    this.formula.selectCellRange(ri, ci);
+  }
 }
