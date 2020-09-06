@@ -44,11 +44,12 @@ export function indexAt(str) {
 // [2] 1-3 letters representing the column (X)
 // [3] Optional $ (absolute Y symbol)
 // [4] Sequence of digits representing the row (Y), first digit cannot be 0
-export const REGEX_EXPR_GLOBAL             = /[$]?[a-zA-Z]{1,3}[$]?[1-9][0-9]*/g;
-export const REGEX_EXPR_NONGLOBAL_AT_START = /^[$]?[a-zA-Z]{1,3}[$]?[1-9][0-9]*/;
-       const REGEX_EXPR_NONGLOBAL_CAPTURE  = /([$])?([a-zA-Z]{1,3})([$])?([1-9][0-9]*)/;
+export const REGEX_EXPR_GLOBAL                   = /[$]?[a-zA-Z]{1,3}[$]?[1-9][0-9]*/g;
+export const REGEX_EXPR_NONGLOBAL_AT_START       = /^[$]?[a-zA-Z]{1,3}[$]?[1-9][0-9]*/;
+export const REGEX_EXPR_RANGE_NONGLOBAL_AT_START = /^[$]?[a-zA-Z]{1,3}[$]?[1-9][0-9]*:[$]?[a-zA-Z]{1,3}[$]?[1-9][0-9]*/;
+       const REGEX_EXPR_NONGLOBAL_CAPTURE        = /([$])?([a-zA-Z]{1,3})([$])?([1-9][0-9]*)/;
 
-// B10 => x,y,xIsAbsolute,yIsAbsolute
+// B10 => x,y,xIsAbsolute,yIsAbsolute,length of expr
 /** translate A1-tag to XY-tag
  * @date 2019-10-10
  * @export
@@ -72,7 +73,44 @@ export function expr2xy(src) {
   const yIsAbsolute = found[3] !== undefined;
   const y = found[4];
 
-  return [indexAt(x), parseInt(y, 10) - 1, xIsAbsolute, yIsAbsolute];
+  return [indexAt(x), parseInt(y, 10) - 1, xIsAbsolute, yIsAbsolute, found[0].length];
+}
+
+/** translate tagA1B2 to cell range arguments (sri, sci, eri, eci)
+ * @date 2020-09-09
+ * @export
+ * @param {tagA1B2} src
+ * @returns {number[4]}
+ */
+export function expr2cellRangeArgs(src) {
+  const startRef = expr2xy(src);
+
+  if (!startRef) {
+    return null;
+  }
+
+  const sci = startRef[0];
+  const sri = startRef[1];
+
+  const srcIndexEndOfStartRef = startRef[4];
+
+  // If we've reached the end of the string OR
+  // if the next character after start reference is not a colon,
+  // then we just have a start reference (no end)
+  if (srcIndexEndOfStartRef >= src.length || src[srcIndexEndOfStartRef] != ':') {
+    return [sri, sci, sri, sci];
+  }
+
+  let endRef = expr2xy(src.slice(srcIndexEndOfStartRef + 1));
+
+  if (!endRef) {
+    return null;
+  }
+
+  const eci = endRef[0];
+  const eri = endRef[1];
+
+  return [sri, sci, eri, eci];
 }
 
 /** translate XY-tag to A1-tag
@@ -86,6 +124,26 @@ export function expr2xy(src) {
 export function xy2expr(x, y, xIsAbsolute = false, yIsAbsolute = false) {
   const insertAbs = function(isAbsolute) { return (isAbsolute) ? '$' : '' };
   return `${insertAbs(xIsAbsolute)}${stringAt(x)}${insertAbs(yIsAbsolute)}${y + 1}`;
+}
+
+/** translate cell range arguments to cell range string expression
+ * @example 1, 1, 2, 4 => A2:D3
+ * @date 2020-09-09
+ * @export
+ * @param {number} sri
+ * @param {number} sri
+ * @param {number} eri
+ * @param {number} eci
+ * @returns {tagA1B2}
+ */
+export function cellRangeArgs2expr(sri, sci, eri, eci) {
+  let expr = xy2expr(sci, sri);
+
+  if (sci != eci || sri != eri) {
+    expr += `:${xy2expr(eci, eri)}`;
+  }
+
+  return expr;
 }
 
 /** translate A1-tag src by (xn, yn)
@@ -115,8 +173,11 @@ export default {
   stringAt,
   indexAt,
   expr2xy,
+  expr2cellRangeArgs,
   xy2expr,
+  cellRangeArgs2expr,
   expr2expr,
   REGEX_EXPR_GLOBAL,
   REGEX_EXPR_NONGLOBAL_AT_START,
+  REGEX_EXPR_RANGE_NONGLOBAL_AT_START,
 };
