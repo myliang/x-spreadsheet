@@ -98,6 +98,7 @@ export default class Formula {
 
     this.el.addEventListener("keydown", (e) => {
       const keyCode = e.keyCode || e.which;
+
       if ([37, 38, 39, 40].indexOf(keyCode) == -1) return;
 
       if (!this.cell || this.cell.from == this.cell.to) return;
@@ -105,36 +106,39 @@ export default class Formula {
       e.preventDefault();
       e.stopPropagation();
 
+      let rowShift = 0;
+      let colShift = 0;
+
+      // Left
+      if (keyCode == 37) {
+        colShift = -1;
+      }
+      // Up
+      else if (keyCode == 38) {
+        rowShift = -1;
+      }
+      // Right
+      else if (keyCode == 39) {
+        colShift = 1;
+      }
+      // Down
+      else if (keyCode == 40) {
+        rowShift = 1;
+      }
+
+      // If the shift key is applied, hold the start position fixed
+      if (!e.shiftKey) {
+        this.cellSelectStartRowCol[0] = Math.max(0, this.cellSelectStartRowCol[0] + rowShift);
+        this.cellSelectStartRowCol[1] = Math.max(0, this.cellSelectStartRowCol[1] + colShift);
+      }
+      this.cellSelectEndRowCol[0]   = Math.max(0, this.cellSelectEndRowCol[0]   + rowShift);
+      this.cellSelectEndRowCol[1]   = Math.max(0, this.cellSelectEndRowCol[1]   + colShift);
+
       // Get values before merge cells applied
       const cellRangeArgs = this.getCellRangeArgsFromSelectStartEnd();
 
       // Account for merge cells
       let cellRange = new CellRange(...cellRangeArgs);
-
-      // Left
-      if (keyCode == 37) {
-        cellRange.translate(0, -1);
-        this.cellSelectStartRowCol[1] = Math.max(0, this.cellSelectStartRowCol[1] - 1);
-        this.cellSelectEndRowCol[1] = Math.max(0, this.cellSelectEndRowCol[1] - 1);
-      }
-      // Up
-      else if (keyCode == 38) {
-        cellRange.translate(-1, 0);
-        this.cellSelectStartRowCol[0] = Math.max(0, this.cellSelectStartRowCol[0] - 1);
-        this.cellSelectEndRowCol[0] = Math.max(0, this.cellSelectEndRowCol[0] - 1);
-      }
-      // Right
-      else if (keyCode == 39) {
-        cellRange.translate(0, 1);
-        this.cellSelectStartRowCol[1] = this.cellSelectStartRowCol[1] + 1;
-        this.cellSelectEndRowCol[1] = this.cellSelectEndRowCol[1] + 1;
-      }
-      // Down
-      else if (keyCode == 40) {
-        cellRange.translate(1, 0);
-        this.cellSelectStartRowCol[0] = this.cellSelectStartRowCol[0] + 1;
-        this.cellSelectEndRowCol[0] = this.cellSelectEndRowCol[0] + 1;
-      }
 
       // Reapply merge cells after translation
       cellRange = this.editor.data.merges.union(cellRange)
