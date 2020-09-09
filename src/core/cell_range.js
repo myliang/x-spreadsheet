@@ -208,14 +208,24 @@ class CellRange {
   // Translates the cell range by the given values, unless such a translation
   // would be invalid (e.g., index less than 1)
   translate(rowShift, colShift) {
+    // Morph the same amount in each direction, resulting in a translation
+    this.morph(colShift, rowShift, colShift, rowShift);
+  }
+
+  // Move the left, top, right, and bottom boundaries of the cell range by the
+  // specified amounts
+  morph(leftShift, topShift, rightShift, bottomShift) {
+    // Start is left/top.
+    // End is bottom/right.
+
     // Ensure row/col values remain valid (>= 0)
     // NOTE: this assumes a cellRange isn't used with a row or column index of
     // -1, which is sometimes used in the application to denote an entire row
     // or column is being referenced (not just a single index)
-    this.sri = Math.max(0, this.sri + rowShift);
-    this.eri = Math.max(0, this.eri + rowShift);
-    this.sci = Math.max(0, this.sci + colShift);
-    this.eci = Math.max(0, this.eci + colShift);
+    this.sri = Math.max(0, this.sri + topShift);
+    this.eri = Math.max(0, this.eri + bottomShift);
+    this.sci = Math.max(0, this.sci + leftShift);
+    this.eci = Math.max(0, this.eci + rightShift);
   }
 
   static valueOf(ref) {
