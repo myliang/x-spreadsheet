@@ -15,7 +15,10 @@ function translate(key, messages) {
       if (!messages[lang]) break;
 
       let message = messages[lang];
-      const keys = key.split('.');
+
+      // Splits the key at '.' except where escaped as '\.'
+      const keys = key.match(/(?:\\.|[^.])+/g);
+
       for (let i = 0; i < keys.length; i += 1) {
         const property = keys[i];
         const value = message[property];
