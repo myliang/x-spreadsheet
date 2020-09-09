@@ -63,14 +63,8 @@ export default {
     duration: 'Duration',
   },
   formula: {
-    sum: 'Sum',
-    average: 'Average',
-    max: 'Max',
-    min: 'Min',
-    _if: 'IF',
-    and: 'AND',
-    or: 'OR',
-    concat: 'Concat',
+    // Not required
+    // Will use FormulaJS function names, which are already in English
   },
   validation: {
     required: 'it must be required',
