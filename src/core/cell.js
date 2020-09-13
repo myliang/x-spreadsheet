@@ -88,7 +88,7 @@ const infixExprToSuffixExpr = (src) => {
           operatorStack.push(subStrs.join(''));
         } else {
           // priority: */ > +-
-          // console.log(operatorStack, c, stack);
+          // console.log('xxxx:', operatorStack, c, stack);
           if (operatorStack.length > 0 && (c === '+' || c === '-')) {
             let top = operatorStack[operatorStack.length - 1];
             if (top !== '(') stack.push(operatorStack.pop());
@@ -99,6 +99,9 @@ const infixExprToSuffixExpr = (src) => {
                 else break;
               }
             }
+          } else if (operatorStack.length > 0) {
+            const top = operatorStack[operatorStack.length - 1];
+            if (top === '*' || top === '/') stack.push(operatorStack.pop());
           }
           operatorStack.push(c);
         }
