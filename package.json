@@ -18,7 +18,8 @@
   "nyc": {
     "all": true,
     "include": [
-      "src/core/*.js"
+      "src/core/*.js",
+      "src/locale/locale.js"
     ],
     "exclude": [
       "**/*.spec.js"
