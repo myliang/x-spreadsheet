@@ -65,7 +65,7 @@ export default class AutoFilter {
   setData({ ref, filters, sort }) {
     if (ref != null) {
       this.ref = ref;
-      this.fitlers = filters.map(it => new Filter(it.ci, it.operator, it.value));
+      this.filters = filters.map(it => new Filter(it.ci, it.operator, it.value));
       if (sort) {
         this.sort = new Sort(sort.ci, sort.order);
       }
