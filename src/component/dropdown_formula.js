@@ -13,6 +13,6 @@ export default class DropdownFormula extends Dropdown {
         this.change(it);
       })
       .child(it));
-    super(new Icon('formula'), '180px', true, 'bottom-left', ...nformulas);
+    super(new Icon('formula'), '180px', true, 'bottom-left limit-height', ...nformulas);
   }
 }
