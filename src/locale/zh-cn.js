@@ -111,6 +111,7 @@ export default {
     range: '单元区间',
     criteria: '条件',
     modeType: {
+      sheet: '工作表',
       cell: '单元格',
       column: '列模式',
       row: '行模式',
@@ -118,6 +119,7 @@ export default {
     type: {
       list: '列表',
       number: '数字',
+      integer: '整形',
       date: '日期',
       phone: '手机号',
       email: '电子邮件',

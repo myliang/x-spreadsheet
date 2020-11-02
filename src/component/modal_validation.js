@@ -13,7 +13,7 @@ export default class ModalValidation extends Modal {
   constructor() {
     const mf = new FormField(
       new FormSelect('cell',
-        ['cell'], // cell|row|column
+        ['cell'], // sheet,cell|row|column
         '100%',
         it => t(`dataValidation.modeType.${it}`)),
       { required: true },
@@ -26,7 +26,7 @@ export default class ModalValidation extends Modal {
     );
     const cf = new FormField(
       new FormSelect('list',
-        ['list', 'number', 'date', 'phone', 'email'],
+        ['list', 'number', 'integer', 'date', 'phone', 'email'],
         '100%',
         it => t(`dataValidation.type.${it}`),
         it => this.criteriaSelected(it)),
@@ -104,7 +104,7 @@ export default class ModalValidation extends Modal {
     const {
       of, minvf, maxvf, vf, svf,
     } = this;
-    if (it === 'date' || it === 'number') {
+    if (it === 'date' || it === 'number'|| it === 'integer') {
       of.show();
       minvf.rule.type = it;
       maxvf.rule.type = it;
@@ -178,7 +178,7 @@ export default class ModalValidation extends Modal {
       const type = this.cf.val();
       const operator = this.of.val();
       let value = this.svf.val();
-      if (type === 'number' || type === 'date') {
+      if (type === 'number' || type === 'integer' || type === 'date') {
         if (operator === 'be' || operator === 'nbe') {
           value = [this.minvf.val(), this.maxvf.val()];
         } else {

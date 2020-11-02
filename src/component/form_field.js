@@ -3,6 +3,7 @@ import { cssPrefix } from '../config';
 import { t } from '../locale/locale';
 
 const patterns = {
+  integer: /^\d+$/,
   number: /(^\d+$)|(^\d+(\.\d{0,4})?$)/,
   date: /^\d{4}-\d{1,2}-\d{1,2}$/,
 };

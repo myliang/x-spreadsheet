@@ -136,6 +136,7 @@ class Rows {
         const {
             sri, sci, eri, eci,
         } = srcCellRange;
+
         const dsri = dstCellRange.sri;
         const dsci = dstCellRange.sci;
         const deri = dstCellRange.eri;
@@ -216,14 +217,14 @@ class Rows {
     }
 
     // src: Array<Array<String>>
-    paste(src, dstCellRange) {
+    paste(src, dstCellRange, cols) {
         if (src.length <= 0) return;
         const { sri, sci } = dstCellRange;
         src.forEach((row, i) => {
             const ri = sri + i;
             row.forEach((cell, j) => {
                 const ci = sci + j;
-                this.setCellText(ri, ci, cell);
+                this.setCellText(ri, ci, cell, cols? cols.getHeaderText(ci):"");
             });
         });
     }

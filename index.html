@@ -34,8 +34,10 @@
                     }
                 },
                 col: {
+                    width:60,
+                    len: 10,
                     label: {
-                        start: -10,
+                        start: 0,
                         step: 0.25,
                         format: function (val) {
                             return (val > 0 ? '+' : '') + val.toFixed(2);
@@ -64,10 +66,16 @@
                         }
                     }
                 }
+            }, false);
+
+            xs.datas.forEach(data => {
+                console.log(data.validations);
+                data.validations.add('cell','A1:F100', {type:'integer', required:false, value:'0', operator:'gt',});
             });
-            setTimeout(function(){
+            setTimeout(() => {                
+                console.log(xs);
                 console.log(xs.getData());
-            },10000);
+            }, 5000);
         }
     </script>
     <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->

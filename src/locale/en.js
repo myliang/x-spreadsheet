@@ -111,6 +111,7 @@ export default {
     range: 'Cell Range',
     criteria: 'Criteria',
     modeType: {
+      sheet: 'Sheet',
       cell: 'Cell',
       column: 'Colun',
       row: 'Row',
@@ -118,6 +119,7 @@ export default {
     type: {
       list: 'List',
       number: 'Number',
+      integer: 'Integer',
       date: 'Date',
       phone: 'Phone',
       email: 'Email',

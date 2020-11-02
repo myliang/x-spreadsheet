@@ -38,6 +38,7 @@ function inputEnter(evt) {
 }
 
 function inputKeydownHandler(evt) {
+    //console.log('suggest:',evt);
   const { keyCode } = evt;
   if (evt.ctrlKey) {
     evt.stopPropagation();

@@ -4,6 +4,9 @@ import helper from './helper';
 const rules = {
   phone: /^[1-9]\d{10}$/,
   email: /w+([-+.]w+)*@w+([-.]w+)*.w+([-.]w+)*/,
+  integer: /^\d+$/,
+  number: /(^\d+$)|(^\d+(\.\d{0,4})?$)/,
+  date: /^\d{4}-\d{1,2}-\d{1,2}$/,
 };
 
 function returnMessage(flag, key, ...arg) {
@@ -32,6 +35,9 @@ export default class Validator {
     }
     if (type === 'number') {
       return Number(v);
+    }
+    if(type==='integer'){
+        return parseInt(v);
     }
     return v;
   }

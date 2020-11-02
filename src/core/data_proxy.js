@@ -94,15 +94,15 @@ function canPaste(src, dst, error = () => { }) {
     return true;
 }
 function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
-    const { rows, merges } = this;
-    // delete dest merge
+    const { rows, merges } = this;    
+    // delete dest merge    
     if (what === 'all' || what === 'format') {
         rows.deleteCells(dstCellRange, what);
         merges.deleteWithin(dstCellRange);
     }
     rows.copyPaste(srcCellRange, dstCellRange, what, autofill, (ri, ci, cell) => {
         if (cell && cell.merge) {
-            // console.log('cell:', ri, ci, cell);
+            console.log('cell:', ri, ci, cell);
             const [rn, cn] = cell.merge;
             if (rn <= 0 && cn <= 0) return;
             merges.add(new CellRange(ri, ci, ri + rn, ci + cn));
@@ -374,12 +374,11 @@ export default class DataProxy {
     }
 
     // what: all | text | format
-    paste(what = 'all', error = () => { }) {
-        // console.log('sIndexes:', sIndexes);
+    paste(what = 'all', error = () => { }) {        
         const { clipboard, selector } = this;
         if (clipboard.isClear()) return false;
         if (!canPaste.call(this, clipboard.range, selector.range, error)) return false;
-
+        
         this.changeData(() => {
             if (clipboard.isCopy()) {
                 copyPaste.call(this, clipboard.range, selector.range, what);
@@ -391,11 +390,12 @@ export default class DataProxy {
     }
 
     pasteFromText(txt) {
+        //console.log('pasteFromText',this);
         const lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
         if (lines.length > 0) lines.length -= 1;
-        const { rows, selector } = this;
+        const { rows, cols, selector } = this;
         this.changeData(() => {
-            rows.paste(lines, selector.range);
+            rows.paste(lines, selector.range, cols);
         });
     }
 

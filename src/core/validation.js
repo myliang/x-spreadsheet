@@ -17,7 +17,7 @@ class Validation {
     return false;
   }
 
-  addRef(ref) {
+  addRef(mode,ref) {
     this.remove(CellRange.valueOf(ref));
     this.refs.push(ref);
   }
@@ -69,6 +69,7 @@ class Validations {
     const { errors } = this;
     if (v !== null) {
       const [flag, message] = v.validator.validate(text);
+      //console.log(flag, message);
       if (!flag) {
         errors.set(key, message);
       } else {
@@ -90,7 +91,7 @@ class Validations {
     );
     const v = this.getByValidator(validator);
     if (v !== null) {
-      v.addRef(ref);
+      v.addRef(mode, ref);
     } else {
       this._.push(new Validation(mode, [ref], validator));
     }
