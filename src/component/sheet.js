@@ -693,6 +693,7 @@ function sheetInitEvents() {
   });
 
   bind(window, 'paste', (evt) => {
+    if(!this.focusing) return;
     paste.call(this, 'all', evt);
     evt.preventDefault();
   });
