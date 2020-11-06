@@ -77,10 +77,18 @@
           console.log('>>>', xs.getData());
         });
 
+      const externalVariables = {
+        test: 2,
+        hello: 3,
+        world: 4
+      }
+
       xs.on('cell-selected', (cell, ri, ci) => {
           console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
         }).on('cell-edited', (text, ri, ci) => {
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
+        }).on('data-query', (expr) => {
+          return externalVariables[expr.toLowerCase()]
         });
 
       setTimeout(() => {

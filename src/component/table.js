@@ -49,7 +49,7 @@ function renderCellBorders(bboxes, translateFunc) {
 }
 */
 
-export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
+export function renderCell(draw, data, rindex, cindex, yoffset = 0, trigger = null) {
   const { sortedRowMap, rows, cols } = data;
   if (rows.isHide(rindex) || cols.isHide(cindex)) return;
   let nrindex = rindex;
@@ -76,7 +76,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     // render text
     let cellText = "";
     if(!data.settings.evalPaused) {
-      cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+      cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)), [], trigger);
     } else {
       cellText = cell.text || '';
     }
@@ -123,7 +123,7 @@ function renderAutofilter(viewRange) {
 }
 
 function renderContent(viewRange, fw, fh, tx, ty) {
-  const { draw, data } = this;
+  const { draw, data, trigger } = this;
   draw.save();
   draw.translate(fw, fh)
     .translate(tx, ty);
@@ -144,7 +144,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.save();
   draw.translate(0, -exceptRowTotalHeight);
   viewRange.each((ri, ci) => {
-    renderCell(draw, data, ri, ci);
+    renderCell(draw, data, ri, ci, 0, trigger);
   }, ri => filteredTranslateFunc(ri));
   draw.restore();
 
@@ -155,7 +155,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.translate(0, -exceptRowTotalHeight);
   data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
     if (!exceptRowSet.has(sri)) {
-      renderCell(draw, data, sri, sci);
+      renderCell(draw, data, sri, sci, 0, trigger);
     } else if (!rset.has(sri)) {
       rset.add(sri);
       const height = data.rows.sumHeight(sri, eri + 1);
@@ -300,10 +300,11 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
 
 /** end */
 class Table {
-  constructor(el, data) {
+  constructor(el, data, trigger) {
     this.el = el;
     this.draw = new Draw(el, data.viewWidth(), data.viewHeight());
     this.data = data;
+    this.trigger = trigger
   }
 
   resetData(data) {

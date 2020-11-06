@@ -119,7 +119,7 @@ const infixExprToSuffixExpr = (src) => {
   return stack;
 };
 
-const evalSubExpr = (subExpr, cellRender) => {
+const evalSubExpr = (subExpr, cellRender, trigger) => {
   const [fl] = subExpr;
   let expr = subExpr;
   if (fl === '"') {
@@ -134,6 +134,9 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
+  if (typeof y === 'number' && isNaN(y) && typeof expr === 'string') {
+    return trigger('data-query', expr) || '';
+  }
   return ret * cellRender(x, y);
 };
 
@@ -141,7 +144,7 @@ const evalSubExpr = (subExpr, cellRender) => {
 // srcStack: <= infixExprToSufixExpr
 // formulaMap: {'SUM': {}, ...}
 // cellRender: (x, y) => {}
-const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
+const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, trigger) => {
   const stack = [];
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
@@ -196,7 +199,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
-      stack.push(evalSubExpr(expr, cellRender));
+      stack.push(evalSubExpr(expr, cellRender, trigger));
       cellList.pop();
     }
     // console.log('stack:', stack);
@@ -204,7 +207,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   return stack[0];
 };
 
-const cellRender = (src, formulaMap, getCellText, cellList = []) => {
+const cellRender = (src, formulaMap, getCellText, cellList = [], trigger = null) => {
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
     if (stack.length <= 0) return src;
@@ -213,6 +216,7 @@ const cellRender = (src, formulaMap, getCellText, cellList = []) => {
       formulaMap,
       (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText, cellList),
       cellList,
+      trigger
     );
   }
   return src;

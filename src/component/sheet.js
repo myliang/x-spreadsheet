@@ -898,7 +898,13 @@ export default class Sheet {
       this.sortFilter.el,
     );
     // table
-    this.table = new Table(this.tableEl.el, data);
+    this.table = new Table(this.tableEl.el, data, (eventName, ...args) => {
+      const { eventMap } = this;
+      if (eventMap.has(eventName)) {
+        return eventMap.get(eventName).call(this, ...args);
+      }
+    });
+    //this.table = new Table(this.tableEl.el, data);
     sheetInitEvents.call(this);
     sheetReset.call(this);
     // init selector [0, 0]
