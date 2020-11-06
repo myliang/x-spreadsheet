@@ -80,15 +80,16 @@
       const externalVariables = {
         test: 2,
         hello: 3,
-        world: 4
+        world: 4,
+        hello_world:10,
       }
 
       xs.on('cell-selected', (cell, ri, ci) => {
           console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
         }).on('cell-edited', (text, ri, ci) => {
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
-        }).on('data-query', (expr) => {
-          return externalVariables[expr.toLowerCase()]
+        }).on('data-query', (expr, type) => {
+          return externalVariables[expr]
         });
 
       setTimeout(() => {

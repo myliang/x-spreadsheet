@@ -55,6 +55,13 @@ const baseFormulas = [
     title: tf('formula.concat'),
     render: ary => ary.join(''),
   },
+  {
+    key: 'GETDATA',
+    title: tf('formula.getdata'),
+    render: (ary, trigger) => {
+      return trigger('data-query', ary[0]) || '';
+    },
+  }
   /* support:  1 + A1 + B2 * 3
   {
     key: 'DIVIDE',

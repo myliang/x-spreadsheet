@@ -119,7 +119,7 @@ const infixExprToSuffixExpr = (src) => {
   return stack;
 };
 
-const evalSubExpr = (subExpr, cellRender, trigger) => {
+const evalSubExpr = (subExpr, cellRender) => {
   const [fl] = subExpr;
   let expr = subExpr;
   if (fl === '"') {
@@ -134,9 +134,6 @@ const evalSubExpr = (subExpr, cellRender, trigger) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  if (typeof y === 'number' && isNaN(y) && typeof expr === 'string') {
-    return trigger('data-query', expr) || '';
-  }
   return ret * cellRender(x, y);
 };
 
@@ -191,7 +188,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, trigger) => 
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      stack.push(formulaMap[formula].render(params.reverse()));
+      stack.push(formulaMap[formula].render(params.reverse(), trigger));
     } else {
       if (cellList.includes(expr)) {
         return 0;
@@ -199,7 +196,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, trigger) => 
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
-      stack.push(evalSubExpr(expr, cellRender, trigger));
+      stack.push(evalSubExpr(expr, cellRender));
       cellList.pop();
     }
     // console.log('stack:', stack);
