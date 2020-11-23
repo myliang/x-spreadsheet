@@ -94,13 +94,13 @@ function canPaste(src, dst, error = () => { }) {
     return true;
 }
 function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
-    const { rows, merges } = this;    
+    const { rows, cols, merges } = this;    
     // delete dest merge    
     if (what === 'all' || what === 'format') {
         rows.deleteCells(dstCellRange, what);
         merges.deleteWithin(dstCellRange);
     }
-    rows.copyPaste(srcCellRange, dstCellRange, what, autofill, (ri, ci, cell) => {
+    rows.copyPaste(srcCellRange, dstCellRange, what, autofill,cols, (ri, ci, cell) => {
         if (cell && cell.merge) {
             console.log('cell:', ri, ci, cell);
             const [rn, cn] = cell.merge;

@@ -111,9 +111,10 @@ class Rows {
     }
 
     // what: all | text | format
-    setCell(ri, ci, cell, what = 'all') {
+    setCell(ri, ci, cell, what = 'all', cols = null) {
         const row = this.getOrNew(ri);
         if (what === 'all') {
+            if(cols) cell = Object.assign(cell, { label: cols.getHeaderText(ci) })
             row.cells[ci] = cell;
         } else if (what === 'text') {
             row.cells[ci] = row.cells[ci] || {};
@@ -132,7 +133,7 @@ class Rows {
     }
 
     // what: all | format | text
-    copyPaste(srcCellRange, dstCellRange, what, autofill = false, cb = () => { }) {
+    copyPaste(srcCellRange, dstCellRange, what, autofill = false, cols, cb = () => { }) {
         const {
             sri, sci, eri, eci,
         } = srcCellRange;
@@ -189,7 +190,7 @@ class Rows {
                                         // }
                                     }
                                 }
-                                this.setCell(nri, nci, ncell, what);
+                                this.setCell(nri, nci, ncell, what,cols);
                                 cb(nri, nci, ncell);
                             }
                         }
@@ -223,7 +224,7 @@ class Rows {
         src.forEach((row, i) => {
             const ri = sri + i;
             row.forEach((cell, j) => {
-                const ci = sci + j;
+                const ci = sci + j;                
                 this.setCellText(ri, ci, cell, cols? cols.getHeaderText(ci):"");
             });
         });

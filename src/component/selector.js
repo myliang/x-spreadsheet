@@ -371,7 +371,6 @@ export default class Selector {
       return;
     }
     if (this.arange !== null) {
-      // console.log(this.saIndexes, ':', this.eaIndexes);
       const offset = this.data.getRect(this.arange);
       offset.width += 2;
       offset.height += 2;

@@ -55,7 +55,7 @@ class Cols {
     }
 
     getOrNew(ci) {
-        this._[ci] = this._[ci] || {};
+        this._[ci] = this._[ci] || {label: this.getHeaderText(ci)};
         return this._[ci];
     }
 
