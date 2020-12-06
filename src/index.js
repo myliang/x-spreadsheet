@@ -6,6 +6,7 @@ import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
 import './index.less';
+import { FeaturesAll } from './core/features';
 
 
 class Spreadsheet {
@@ -122,6 +123,7 @@ const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 if (window) {
   window.x_spreadsheet = spreadsheet;
   window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
+  window.x_spreadsheet.FeaturesAll = FeaturesAll;
 }
 
 export default Spreadsheet;

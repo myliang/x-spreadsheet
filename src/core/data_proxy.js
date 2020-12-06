@@ -13,6 +13,7 @@ import { Validations } from './validation';
 import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
 import { t } from '../locale/locale';
+import { FeaturesAll } from './features';
 
 // private methods
 /*
@@ -76,6 +77,7 @@ const defaultSettings = {
   },
   showGrid: true,
   showToolbar: true,
+  features: FeaturesAll,
   showContextmenu: true,
   row: {
     len: 100,
