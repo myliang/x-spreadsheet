@@ -9,8 +9,9 @@ import './index.less';
 
 
 class Spreadsheet {
-  constructor(selectors, options = {}) {
+  constructor(selectors, options = {}, calculateFormula = null) {
     let targetEl = selectors;
+    this.calculateFormula = calculateFormula;
     this.options = options;
     this.sheetIndex = 1;
     this.datas = [];
@@ -33,9 +34,10 @@ class Spreadsheet {
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
     targetEl.appendChild(rootEl.el);
-    this.sheet = new Sheet(rootEl, this.data);
+    this.sheet = new Sheet(rootEl, this.data, this.calculateFormula);
     rootEl.child(this.bottombar.el);
   }
+
 
   addSheet(name, active = true) {
     const n = name || `sheet${this.sheetIndex}`;
@@ -117,7 +119,11 @@ class Spreadsheet {
   }
 }
 
-const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
+const calculate = () => {
+  return true;
+};
+
+const spreadsheet = (el, options = {}, calculateFormula = calculate) => new Spreadsheet(el, options, calculateFormula);
 
 if (window) {
   window.x_spreadsheet = spreadsheet;
@@ -125,6 +131,7 @@ if (window) {
 }
 
 export default Spreadsheet;
+
 export {
   spreadsheet,
 };

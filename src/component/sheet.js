@@ -848,14 +848,17 @@ function sheetInitEvents() {
 }
 
 export default class Sheet {
-  constructor(targetEl, data) {
+  constructor(targetEl, data, calculateFormula = null) {
     this.eventMap = new Map();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
     this.toolbar = new Toolbar(data, view.width, !showToolbar);
-    this.print = new Print(data);
+    this.print = new Print(data, calculateFormula);
     targetEl.children(this.toolbar.el, this.el, this.print.el);
     this.data = data;
+    
+    this.calculateFormula = calculateFormula;
+
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
@@ -903,7 +906,7 @@ export default class Sheet {
       if (eventMap.has(eventName)) {
         return eventMap.get(eventName).call(this, ...args);
       }
-    });
+    }, calculateFormula);
     //this.table = new Table(this.tableEl.el, data);
     sheetInitEvents.call(this);
     sheetReset.call(this);

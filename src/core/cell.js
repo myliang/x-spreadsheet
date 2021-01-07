@@ -134,6 +134,7 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
+
   return ret * cellRender(x, y);
 };
 
@@ -204,17 +205,21 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, trigger) => 
   return stack[0];
 };
 
-const cellRender = (src, formulaMap, getCellText, cellList = [], trigger = null) => {
+const cellRender = (src, formulaMap, getCellText, cellList = [], trigger = null, calculateFormula =  null) => {
   if (src[0] === '=') {
-    const stack = infixExprToSuffixExpr(src.substring(1));
-    if (stack.length <= 0) return src;
-    return evalSuffixExpr(
-      stack,
-      formulaMap,
-      (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText, cellList),
-      cellList,
-      trigger
-    );
+    if(calculateFormula) {
+        return calculateFormula();
+    } else {
+      const stack = infixExprToSuffixExpr(src.substring(1));
+      if (stack.length <= 0) return src;
+      return evalSuffixExpr(
+        stack,
+        formulaMap,
+        (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText, cellList),
+        cellList,
+        trigger
+      );
+    }
   }
   return src;
 };
