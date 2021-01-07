@@ -128,7 +128,6 @@ class Rows {
       if (deri < sri) dn = drn;
       else dn = dcn;
     }
-    // console.log('drn:', drn, ', dcn:', dcn, dn, isAdd);
     for (let i = sri; i <= eri; i += 1) {
       if (this._[i]) {
         for (let j = sci; j <= eci; j += 1) {
@@ -146,7 +145,7 @@ class Rows {
                     n -= dn + 1;
                   }
                   if (text[0] === '=') {
-                    ncell.text = text.replace(/\w{1,3}\d/g, (word) => {
+                    ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
                       if (sri === dsri) {
                         xn = n - 1;
@@ -157,7 +156,9 @@ class Rows {
                       if (/^\d+$/.test(word)) return word;
                       return expr2expr(word, xn, yn);
                     });
-                  } else {
+                  } else if ((rn <= 1 && cn > 1 && (dsri > eri || deri < sri))
+                    || (cn <= 1 && rn > 1 && (dsci > eci || deci < sci))
+                    || (rn <= 1 && cn <= 1)) {
                     const result = /[\\.\d]+$/.exec(text);
                     // console.log('result:', result);
                     if (result !== null) {
@@ -212,6 +213,11 @@ class Rows {
       let nri = parseInt(ri, 10);
       if (nri >= sri) {
         nri += n;
+        this.eachCells(ri, (ci, cell) => {
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, n, (x, y) => y >= sri));
+          }
+        });
       }
       ndata[nri] = row;
     });
@@ -228,6 +234,11 @@ class Rows {
         ndata[nri] = row;
       } else if (ri > eri) {
         ndata[nri - n] = row;
+        this.eachCells(ri, (ci, cell) => {
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, -n, (x, y) => y > eri));
+          }
+        });
       }
     });
     this._ = ndata;
@@ -241,6 +252,9 @@ class Rows {
         let nci = parseInt(ci, 10);
         if (nci >= sci) {
           nci += n;
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, n, 0, x => x >= sci));
+          }
         }
         rndata[nci] = cell;
       });
@@ -258,6 +272,9 @@ class Rows {
           rndata[nci] = cell;
         } else if (nci > eci) {
           rndata[nci - n] = cell;
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, -n, 0, x => x > eci));
+          }
         }
       });
       row.cells = rndata;

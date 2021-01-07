@@ -11,9 +11,9 @@ const infixExprToSuffixExpr = (src) => {
   let fnArgType = 0; // 1 => , 2 => :
   let fnArgOperator = '';
   let fnArgsLen = 1; // A1,A2,A3...
+  let oldc = '';
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
-    // console.log('c:', c);
     if (c !== ' ') {
       if (c >= 'a' && c <= 'z') {
         subStrs.push(c.toUpperCase());
@@ -27,6 +27,8 @@ const infixExprToSuffixExpr = (src) => {
         }
         stack.push(`"${subStrs.join('')}`);
         subStrs = [];
+      } else if (c === '-' && /[+\-*/,(]/.test(oldc)) {
+        subStrs.push(c);
       } else {
         // console.log('subStrs:', subStrs.join(''), stack);
         if (c !== '(' && subStrs.length > 0) {
@@ -86,7 +88,7 @@ const infixExprToSuffixExpr = (src) => {
           operatorStack.push(subStrs.join(''));
         } else {
           // priority: */ > +-
-          // console.log(operatorStack, c, stack);
+          // console.log('xxxx:', operatorStack, c, stack);
           if (operatorStack.length > 0 && (c === '+' || c === '-')) {
             let top = operatorStack[operatorStack.length - 1];
             if (top !== '(') stack.push(operatorStack.pop());
@@ -97,11 +99,15 @@ const infixExprToSuffixExpr = (src) => {
                 else break;
               }
             }
+          } else if (operatorStack.length > 0) {
+            const top = operatorStack[operatorStack.length - 1];
+            if (top === '*' || top === '/') stack.push(operatorStack.pop());
           }
           operatorStack.push(c);
         }
         subStrs = [];
       }
+      oldc = c;
     }
   }
   if (subStrs.length > 0) {
@@ -114,14 +120,21 @@ const infixExprToSuffixExpr = (src) => {
 };
 
 const evalSubExpr = (subExpr, cellRender) => {
-  if (subExpr[0] >= '0' && subExpr[0] <= '9') {
-    return Number(subExpr);
-  }
-  if (subExpr[0] === '"') {
+  const [fl] = subExpr;
+  let expr = subExpr;
+  if (fl === '"') {
     return subExpr.substring(1);
   }
-  const [x, y] = expr2xy(subExpr);
-  return cellRender(x, y);
+  let ret = 1;
+  if (fl === '-') {
+    expr = subExpr.substring(1);
+    ret = -1;
+  }
+  if (expr[0] >= '0' && expr[0] <= '9') {
+    return ret * Number(expr);
+  }
+  const [x, y] = expr2xy(expr);
+  return ret * cellRender(x, y);
 };
 
 // evaluate the suffix expression
@@ -175,10 +188,8 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      // console.log('::::params:', formulaMap, expr,  formula, params);
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
-      // console.log('cellList:', cellList, expr);
       if (cellList.includes(expr)) {
         return 0;
       }
@@ -186,6 +197,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
         cellList.push(expr);
       }
       stack.push(evalSubExpr(expr, cellRender));
+      cellList.pop();
     }
     // console.log('stack:', stack);
   }

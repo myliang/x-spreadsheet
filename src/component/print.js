@@ -23,7 +23,7 @@ const PAGER_SIZES = [
 const PAGER_ORIENTATIONS = ['landscape', 'portrait'];
 
 function inches2px(inc) {
-  return 96 * inc;
+  return parseInt(96 * inc, 10);
 }
 
 function btnClick(type) {
@@ -131,7 +131,7 @@ export default class Print {
     for (let i = 0; i < pages; i += 1) {
       let th = 0;
       let yo = 0;
-      const wrap = h('div', `${cssPrefix}-canvas-card`).css('height', `${height}px`).css('width', `${width}px`);
+      const wrap = h('div', `${cssPrefix}-canvas-card`);
       const canvas = h('canvas', `${cssPrefix}-canvas`);
       this.canvases.push(canvas.el);
       const draw = new Draw(canvas.el, width, height);
@@ -187,12 +187,15 @@ export default class Print {
       canvas {
         page-break-before: auto;        
         page-break-after: always;
+        image-rendering: pixelated;
       };
     `;
     idoc.head.appendChild(style);
     this.canvases.forEach((it) => {
-      const cn = it.cloneNode();
-      cn.getContext('2d').drawImage(it, 0, 0);
+      const cn = it.cloneNode(false);
+      const ctx = cn.getContext('2d');
+      // ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(it, 0, 0);
       idoc.body.appendChild(cn);
     });
     contentWindow.print();

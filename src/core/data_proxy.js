@@ -1140,6 +1140,8 @@ export default class DataProxy {
       } else if (property === 'freeze') {
         const [x, y] = expr2xy(d[property]);
         this.freeze = [y, x];
+      } else if (property === 'autofilter') {
+        this.autoFilter.setData(d[property]);
       } else if (d[property] !== undefined) {
         this[property] = d[property];
       }

@@ -127,6 +127,8 @@ export function numberCalc(type, a1, a2) {
     ret = num1 * num2;
   } else if (type === '/') {
     ret = num1 / num2;
+    if (digits(ret) > 5) return ret.toFixed(2);
+    return ret;
   }
   return ret.toFixed(Math.max(al1, al2));
 }

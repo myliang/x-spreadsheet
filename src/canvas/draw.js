@@ -291,6 +291,7 @@ class Draw {
   line(...xys) {
     const { ctx } = this;
     if (xys.length > 1) {
+      ctx.beginPath();
       const [x, y] = xys[0];
       ctx.moveTo(npxLine(x), npxLine(y));
       for (let i = 1; i < xys.length; i += 1) {
@@ -305,7 +306,6 @@ class Draw {
   strokeBorders(box) {
     const { ctx } = this;
     ctx.save();
-    ctx.beginPath();
     // border
     const {
       borderTop, borderRight, borderBottom, borderLeft,

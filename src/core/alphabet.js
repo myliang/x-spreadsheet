@@ -79,8 +79,10 @@ export function xy2expr(x, y) {
  * @param {number} yn
  * @returns {tagA1}
  */
-export function expr2expr(src, xn, yn) {
+export function expr2expr(src, xn, yn, condition = () => true) {
+  if (xn === 0 && yn === 0) return src;
   const [x, y] = expr2xy(src);
+  if (!condition(x, y)) return src;
   return xy2expr(x + xn, y + yn);
 }
 

@@ -1,7 +1,8 @@
 {
   "name": "x-data-spreadsheet",
-  "version": "1.1.1",
+  "version": "1.1.7",
   "description": "a javascript xpreadsheet",
+  "types": "src/index.d.ts",
   "main": "src/index.js",
   "files": [
     "assets",
@@ -17,7 +18,8 @@
   "nyc": {
     "all": true,
     "include": [
-      "src/core/*.js"
+      "src/core/*.js",
+      "src/locale/locale.js"
     ],
     "exclude": [
       "**/*.spec.js"
@@ -28,7 +30,7 @@
     "build": "webpack --config build/webpack.prod.js",
     "build-locale": "webpack --config build/webpack.locale.js",
     "lint": "./node_modules/eslint/bin/eslint.js src",
-    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register test/*",
+    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register --recursive test",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd",
     "postinstall": "opencollective-postinstall"
   },
@@ -63,8 +65,8 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
-    "opencollective-postinstall": "^2.0.2",
-    "opencollective": "^1.0.3"
+    "opencollective": "^1.0.3",
+    "opencollective-postinstall": "^2.0.2"
   },
   "collective": {
     "type": "opencollective",
