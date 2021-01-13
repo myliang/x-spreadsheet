@@ -90,11 +90,7 @@ export default class Bottombar {
       this.menuEl = h('ul', `${cssPrefix}-menu`).child(
         h('li', '').children(
           new Icon('add').on('click', () => {
-            if (this.dataNames.length < 10) {
-              addFunc();
-            } else {
-              xtoast('tip', 'it less than or equal to 10');
-            }
+            addFunc();
           }),
           h('span', '').child(this.moreEl),
         ),
