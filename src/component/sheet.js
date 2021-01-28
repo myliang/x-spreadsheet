@@ -1,6 +1,6 @@
 /* global window */
 import { h } from './element';
-import { bind, mouseMoveUp, bindTouch } from './event';
+import { bind, mouseMoveUp, bindTouch, createEventEmitter } from './event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -849,7 +849,7 @@ function sheetInitEvents() {
 
 export default class Sheet {
   constructor(targetEl, data) {
-    this.eventMap = new Map();
+    this.eventMap = createEventEmitter();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
     this.toolbar = new Toolbar(data, view.width, !showToolbar);
@@ -906,15 +906,13 @@ export default class Sheet {
   }
 
   on(eventName, func) {
-    this.eventMap.set(eventName, func);
+    this.eventMap.on(eventName, func);
     return this;
   }
 
   trigger(eventName, ...args) {
     const { eventMap } = this;
-    if (eventMap.has(eventName)) {
-      eventMap.get(eventName).call(this, ...args);
-    }
+    eventMap.fire(eventName, args)
   }
 
   resetData(data) {
