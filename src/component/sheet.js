@@ -312,6 +312,7 @@ function clearClipboard() {
 function copy() {
   const { data, selector } = this;
   data.copy();
+  data.copyToSystemClipboard();
   selector.showClipboard();
 }
 
