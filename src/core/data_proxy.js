@@ -405,6 +405,9 @@ export default class DataProxy {
   }
 
   copyToSystemClipboard() {
+    if (navigator.clipboard == undefined) {
+      return
+    }
     var copyText = "";
     var rowData = this.rows.getData();
     for (var ri = this.selector.range.sri; ri <= this.selector.range.eri; ri++) {
