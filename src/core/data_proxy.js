@@ -417,10 +417,11 @@ export default class DataProxy {
             copyText += '\t'
           }
           if (rowData[ri].cells.hasOwnProperty(ci)) {
-            if ((rowData[ri].cells[ci].text.indexOf("\n") == -1) && (rowData[ri].cells[ci].text.indexOf("\t") == -1) && (rowData[ri].cells[ci].text.indexOf("\"") == -1)) {
-              copyText += rowData[ri].cells[ci].text;
+            var cellText = String(rowData[ri].cells[ci].text)
+            if ((cellText.indexOf("\n") == -1) && (cellText.indexOf("\t") == -1) && (cellText.indexOf("\"") == -1)) {
+              copyText += cellText;
             } else {
-              copyText += "\"" + rowData[ri].cells[ci].text + "\"";
+              copyText += "\"" + cellText + "\"";
             }
           }
         }
