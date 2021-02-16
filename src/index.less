@@ -1,5 +1,5 @@
 @css-prefix: x-spreadsheet;
-// color
+
 @red-color: #DB2828;
 @red-hover-color: #d01919;
 @orange-color: #F2711C;
@@ -29,7 +29,7 @@
 @black-color: #1B1C1D;
 @black-hover-color: #27292a;
 
-// base
+
 @border-style: 1px solid #e0e2e4;
 @icon-size: 18px;
 @line-height: 1.25em;
@@ -43,7 +43,6 @@
 @primary-color: @blue-color;
 @primary-hover-color: @blue-hover-color;
 
-// method
 .type-primary() {
   color: #fff;
   background-color: @primary-color;
@@ -78,7 +77,6 @@ body {
 }
 
 .@{css-prefix}-table {
-  // html5 bottom margin bug
   vertical-align: bottom;
 }
 
@@ -246,7 +244,7 @@ body {
     }
   }
 }
-/* resizer **/
+
 .@{css-prefix}-resizer {
   position: absolute;
   z-index: 11;
