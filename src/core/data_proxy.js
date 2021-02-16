@@ -416,8 +416,12 @@ export default class DataProxy {
           if (ci > this.selector.range.sci) {
             copyText += '\t'
           }
-          if (rowData[ri].cells.hasOwnProperty(ci)){
-            copyText += rowData[ri].cells[ci].text;
+          if (rowData[ri].cells.hasOwnProperty(ci)) {
+            if ((rowData[ri].cells[ci].text.indexOf("\n") == -1) && (rowData[ri].cells[ci].text.indexOf("\t") == -1) && (rowData[ri].cells[ci].text.indexOf("\"") == -1)) {
+              copyText += rowData[ri].cells[ci].text;
+            } else {
+              copyText += "\"" + rowData[ri].cells[ci].text + "\"";
+            }
           }
         }
       } else {
