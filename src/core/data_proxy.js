@@ -405,15 +405,24 @@ export default class DataProxy {
   }
 
   copyToSystemClipboard() {
+    if (navigator.clipboard == undefined) {
+      return
+    }
     var copyText = "";
     var rowData = this.rows.getData();
     for (var ri = this.selector.range.sri; ri <= this.selector.range.eri; ri++) {
       if (rowData.hasOwnProperty(ri)) {
         for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
-          if (rowData[ri].cells.hasOwnProperty(ci)){
-            copyText += '\t' + rowData[ri].cells[ci].text;
-          } else {
+          if (ci > this.selector.range.sci) {
             copyText += '\t'
+          }
+          if (rowData[ri].cells.hasOwnProperty(ci)) {
+            var cellText = String(rowData[ri].cells[ci].text)
+            if ((cellText.indexOf("\n") == -1) && (cellText.indexOf("\t") == -1) && (cellText.indexOf("\"") == -1)) {
+              copyText += cellText;
+            } else {
+              copyText += "\"" + cellText + "\"";
+            }
           }
         }
       } else {
