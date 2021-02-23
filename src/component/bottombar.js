@@ -181,4 +181,11 @@ export default class Bottombar {
     }
     this.activeEl = item;
   }
+
+  getActiveSheet(){
+    if (this.activeEl !== null) {
+      return this.items.findIndex(it=> it === this.activeEl);
+    }
+    return undefined;
+  }
 }

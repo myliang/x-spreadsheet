@@ -79,6 +79,26 @@ class Spreadsheet {
     return this.datas.map(it => it.getData());
   }
 
+  // return the index of currently active spreadsheet
+  // added by Sheldon Su 2021/02/23
+  getCurrentSheetIndex(){
+    return this.bottombar.getActiveSheet()
+  }
+  
+  // Insert a row in Sheet at rowNum
+  // added by Sheldon Su 2021/02/23
+  insertRowAt(rowNum){
+    const currentSheet = this.datas[this.getCurrentSheetIndex];
+    currentSheet.insert('row', rowNum)
+  }
+
+  // Insert a col in Sheet at rowNum
+  // added by Sheldon Su 2021/02/23
+  insertColAt(colNum){
+    const currentSheet = this.datas[this.getCurrentSheetIndex];
+    currentSheet.insert('column', colNum)
+  }
+
   cellText(ri, ci, text, sheetIndex = 0) {
     this.datas[sheetIndex].setCellText(ri, ci, text, 'finished');
     return this;
