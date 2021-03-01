@@ -787,10 +787,11 @@ export default class DataProxy {
   }
 
   // type: row | column
-  insert(type, n = 1) {
+  insert(type, n = 1, index=null) {
     this.changeData(() => {
-      const { sri, sci } = this.selector.range;
+      let { sri, sci } = this.selector.range;
       const { rows, merges, cols } = this;
+      sri = index?index:sri
       let si = sri;
       if (type === 'row') {
         rows.insert(sri, n);
