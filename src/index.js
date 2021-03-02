@@ -87,18 +87,14 @@ class Spreadsheet {
   
   // Insert a row in Sheet at rowNum
   // added by Sheldon Su 2021/02/23
-  insertRowAt(rowNum=null){
+  insertRowAt(rowNum){
     const currentSheet = this.datas[this.getCurrentSheetIndex()];
-    if(rowNum){
-      currentSheet.insert('row', 1, rowNum)
-    }else{
-      currentSheet.insert('row', 1)
-    }
+    currentSheet.insert('row', 1, rowNum)
   }
 
   // Insert a col in Sheet at rowNum
   // added by Sheldon Su 2021/02/23
-  insertColAt(colNum=null){
+  insertColAt(colNum){
     const currentSheet = this.datas[this.getCurrentSheetIndex()];
     currentSheet.insert('column', colNum)
   }

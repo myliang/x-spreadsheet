@@ -794,7 +794,8 @@ export default class DataProxy {
       sri = index?index:sri
       let si = sri;
       if (type === 'row') {
-        rows.insert(sri, n);
+        rows.insert(sri, n);      
+        rows.copyStyleToRow(sri - 1, sri)
       } else if (type === 'column') {
         rows.insertColumn(sci, n);
         si = sci;

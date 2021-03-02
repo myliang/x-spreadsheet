@@ -49,6 +49,22 @@ class Rows {
     row.style = style;
   }
 
+  copyStyleToRow(sourceRi, targetRi){
+    const sourceRowCells = this.get(sourceRi).cells;
+    const targetRowCells = this.getOrNew(targetRi).cells;
+    if (sourceRowCells){
+      for (const ci in sourceRowCells){
+        if (sourceRowCells[ci].style){
+          if (targetRowCells[ci]){
+            targetRowCells[ci].style = sourceRowCells[ci].style
+          }else{
+            targetRowCells[ci] = {text:"", style:sourceRowCells[ci].style}
+          }
+        }
+      }
+    }
+  }
+
   sumHeight(min, max, exceptSet) {
     return helper.rangeSum(min, max, (i) => {
       if (exceptSet && exceptSet.has(i)) return 0;
