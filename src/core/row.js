@@ -49,6 +49,7 @@ class Rows {
     row.style = style;
   }
 
+  // Added by Sheldon Su on 2021/03/01
   copyStyleToRow(sourceRi, targetRi){
     const sourceRowCells = this.get(sourceRi).cells;
     const targetRowCells = this.getOrNew(targetRi).cells;
@@ -61,6 +62,23 @@ class Rows {
             targetRowCells[ci] = {text:"", style:sourceRowCells[ci].style}
           }
         }
+      }
+    }
+  }
+
+  copyStyleToCol(sourceCi, targetCi){
+    const maxRowNum = Math.max(...Object.keys(this._))
+    for (let ri = 0; ri <= maxRowNum; ri++){
+      const sourceCell = this.getCell(ri, sourceCi);
+      if(sourceCell != null && sourceCell.style!=undefined){
+        const targetCell = this.getCellOrNew(ri, targetCi);
+        if (targetCell == {}){
+          targetCell.text = "";
+          targetCell.style = sourceCell.style;
+        }else{
+          targetCell.style = sourceCell.style;
+        }
+        
       }
     }
   }

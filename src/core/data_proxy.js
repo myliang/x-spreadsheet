@@ -800,6 +800,7 @@ export default class DataProxy {
         rows.insertColumn(sci, n);
         si = sci;
         cols.len += 1;
+        rows.copyStyleToCol(sci - 1, sci)
       }
       merges.shift(type, si, n, (ri, ci, rn, cn) => {
         const cell = rows.getCell(ri, ci);

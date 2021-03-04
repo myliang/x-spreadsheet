@@ -96,7 +96,7 @@ class Spreadsheet {
   // added by Sheldon Su 2021/02/23
   insertColAt(colNum){
     const currentSheet = this.datas[this.getCurrentSheetIndex()];
-    currentSheet.insert('column', colNum)
+    currentSheet.insert('column', 1, colNum)
   }
 
   cellText(ri, ci, text, sheetIndex = 0) {
