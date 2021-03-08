@@ -89,8 +89,9 @@ class Rows {
   // Find the Col number of a text, return undefined if input is not present in that row
   findInputColOnRow(ri, input){
     const targetRow = this.get(ri);
-    for (const key in targetRow){
-      if (targetRow[key].text === input){
+    for (const key in targetRow.cells){
+      if (targetRow.cells[key].text === input){
+        console.log(targetRow.cells[key])
         return key;
       }
     }
@@ -99,8 +100,9 @@ class Rows {
 
   findFirstNotNullColOnRow(ri){
     const targetRow = this.get(ri);
-    for (const key in targetRow){
-      if (!isNaN(targetRow[key].text)){
+    for (const key in targetRow.cells){
+      if (!isNaN(targetRow.cells[key].text)){
+        console.log(key)
         return key;
       }
     }

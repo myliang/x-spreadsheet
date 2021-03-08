@@ -79,8 +79,8 @@
 
       xs.on('cell-selected', (cell, ri, ci) => {
          const index = xs.getCurrentSheetIndex();
-         xs.insertRowAt(3)
-        console.log('cell',xs.cellStyle(0,0,1));
+         const int = xs.datas[index].findInputColOnRow(3, 'A-2')
+        // console.log('cell', int);
         }).on('cell-edited', (text, ri, ci) => {
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
         });
