@@ -443,6 +443,14 @@ export default class DataProxy {
     return true;
   }
 
+  findInputColOnRow(ri, input){
+    return this.rows.findInputColOnRow(ri, input);
+  }
+
+  findFirstNotNullColOnRow(ri){
+    return this.rows.findInputColOnRow(ri);
+  }
+
   clearClipboard() {
     this.clipboard.clear();
   }

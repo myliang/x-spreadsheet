@@ -66,6 +66,8 @@ class Rows {
     }
   }
 
+  // Copy style from source col to target col 
+  // By Sheldon Su on 2021/03/05
   copyStyleToCol(sourceCi, targetCi){
     const maxRowNum = Math.max(...Object.keys(this._))
     for (let ri = 0; ri <= maxRowNum; ri++){
@@ -81,6 +83,28 @@ class Rows {
         
       }
     }
+  }
+
+  // Created by Sheldon Su at 2021/03/08
+  // Find the Col number of a text, return undefined if input is not present in that row
+  findInputColOnRow(ri, input){
+    const targetRow = this.get(ri);
+    for (const key in targetRow){
+      if (targetRow[key].text === input){
+        return key;
+      }
+    }
+    return undefined;
+  }
+
+  findFirstNotNullColOnRow(ri){
+    const targetRow = this.get(ri);
+    for (const key in targetRow){
+      if (!isNaN(targetRow[key].text)){
+        return key;
+      }
+    }
+    return 3;
   }
 
   sumHeight(min, max, exceptSet) {
