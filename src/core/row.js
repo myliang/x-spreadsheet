@@ -104,7 +104,7 @@ class Rows {
     const targetRow = this.get(ri);
     for (const key in targetRow.cells){
       // Record the col if entry in cell is a number
-      if (!isNaN(targetRow.cells[key].text)){
+      if (targetRow.cells[key] && !isNaN(targetRow.cells[key].text)){
         colMap[targetRow.cells[key].text] = key;
       }
     }
@@ -114,13 +114,14 @@ class Rows {
 
   rowLookUpTable(ci){
     const maxRowNum = Math.max(...Object.keys(this._))
+    const rowMap = {};
     for (let ri = 0; ri <= maxRowNum; ri++){
       const targetCell = this.getCell(ri, ci);
-      console.log(targetCell)
-      if (!isNaN(targetCell.text)){
-        
+      if (targetCell && !isNaN(targetCell.text)){
+        rowMap[targetCell.text] = ri;
       }
     }
+    return rowMap
   }
 
   // Created by Sheldon Su at 2021/03/08
