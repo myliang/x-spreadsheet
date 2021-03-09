@@ -104,11 +104,10 @@ class Rows {
     const targetRow = this.get(ri);
     for (const key in targetRow.cells){
       // Record the col if entry in cell is a number
-      if (targetRow.cells[key] && !isNaN(targetRow.cells[key].text)){
+      if (targetRow.cells[key] && !isNaN(targetRow.cells[key].text) && targetRow.cells[key].text !== ""){
         colMap[targetRow.cells[key].text] = key;
       }
     }
-
     return colMap;
   }
 
@@ -117,7 +116,7 @@ class Rows {
     const rowMap = {};
     for (let ri = 0; ri <= maxRowNum; ri++){
       const targetCell = this.getCell(ri, ci);
-      if (targetCell && !isNaN(targetCell.text)){
+      if (targetCell && !isNaN(targetCell.text) && targetCell.text !== ""){
         rowMap[targetCell.text] = ri;
       }
     }
