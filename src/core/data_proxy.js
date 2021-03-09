@@ -451,6 +451,14 @@ export default class DataProxy {
     return this.rows.findInputColOnRow(ri);
   }
 
+  colLookUpTable(ri){
+    return this.rows.colLookUpTable(ri);
+  }
+
+  rowLookUpTable(ci){
+    return this.rows.rowLookUpTable(ci);
+  }
+
   clearClipboard() {
     this.clipboard.clear();
   }

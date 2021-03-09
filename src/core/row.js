@@ -91,18 +91,44 @@ class Rows {
     const targetRow = this.get(ri);
     for (const key in targetRow.cells){
       if (targetRow.cells[key].text === input){
-        console.log(targetRow.cells[key])
         return key;
       }
     }
     return undefined;
   }
 
+  // Created by Sheldon Su at 2021/03/08
+  // record all number entry's col number
+  colLookUpTable(ri){
+    const colMap = {};
+    const targetRow = this.get(ri);
+    for (const key in targetRow.cells){
+      // Record the col if entry in cell is a number
+      if (!isNaN(targetRow.cells[key].text)){
+        colMap[targetRow.cells[key].text] = key;
+      }
+    }
+
+    return colMap;
+  }
+
+  rowLookUpTable(ci){
+    const maxRowNum = Math.max(...Object.keys(this._))
+    for (let ri = 0; ri <= maxRowNum; ri++){
+      const targetCell = this.getCell(ri, ci);
+      console.log(targetCell)
+      if (!isNaN(targetCell.text)){
+        
+      }
+    }
+  }
+
+  // Created by Sheldon Su at 2021/03/08
+  // return the first col with a number entry
   findFirstNotNullColOnRow(ri){
     const targetRow = this.get(ri);
     for (const key in targetRow.cells){
       if (!isNaN(targetRow.cells[key].text)){
-        console.log(key)
         return key;
       }
     }
