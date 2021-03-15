@@ -603,6 +603,9 @@ function sheetInitEvents() {
         overlayerMousedown.call(this, evt);
       }
     })
+    .on('mousewheel', (evt) => {
+      evt.preventDefault();
+    })
     .on('mousewheel.stop', (evt) => {
       overlayerMousescroll.call(this, evt);
     })
