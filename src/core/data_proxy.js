@@ -404,6 +404,39 @@ export default class DataProxy {
     this.clipboard.copy(this.selector.range);
   }
 
+  copyToSystemClipboard() {
+    if (navigator.clipboard == undefined) {
+      return
+    }
+    var copyText = "";
+    var rowData = this.rows.getData();
+    for (var ri = this.selector.range.sri; ri <= this.selector.range.eri; ri++) {
+      if (rowData.hasOwnProperty(ri)) {
+        for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
+          if (ci > this.selector.range.sci) {
+            copyText += '\t'
+          }
+          if (rowData[ri].cells.hasOwnProperty(ci)) {
+            var cellText = String(rowData[ri].cells[ci].text)
+            if ((cellText.indexOf("\n") == -1) && (cellText.indexOf("\t") == -1) && (cellText.indexOf("\"") == -1)) {
+              copyText += cellText;
+            } else {
+              copyText += "\"" + cellText + "\"";
+            }
+          }
+        }
+      } else {
+        for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
+          copyText += '\t'
+        }
+      }
+      copyText += '\n'
+    }
+    navigator.clipboard.writeText(copyText).then(function () {}, function (err) {
+      console.log('text copy to the system clipboard error  ', copyText, err);
+    });
+  }
+
   cut() {
     this.clipboard.cut(this.selector.range);
   }
