@@ -73,10 +73,16 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     draw.strokeBorders(dbox);
   }
   draw.rect(dbox, () => {
-    // render text
+    // render text and set cell evaluate result
     let cellText = "";
     if(!data.settings.evalPaused) {
-      cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+      const evalResult = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+      cellText = evalResult;
+      if (cell.text !== evalResult){
+        cell.formulaValue = evalResult;
+      }else{
+        if (cell.formulaValue) delete cell.formulaValue;
+      }
     } else {
       cellText = cell.text || '';
     }
