@@ -78,10 +78,10 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     if(!data.settings.evalPaused) {
       const evalResult = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
       cellText = evalResult;
-      if (cell.text !== evalResult){
+      if (cell.text !== evalResult && evalResult !== ""){
         cell.formulaValue = evalResult;
       }else{
-        if (cell.formulaValue) delete cell.formulaValue;
+        delete cell.formulaValue;
       }
     } else {
       cellText = cell.text || '';
