@@ -71,6 +71,7 @@ export default {
     _if: '条件判断',
     and: '和',
     or: '或',
+    round: '保留小数',
   },
   validation: {
     required: '此值必填',
