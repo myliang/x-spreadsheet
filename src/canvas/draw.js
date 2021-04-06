@@ -358,22 +358,20 @@ class Draw {
     ctx.lineTo(npx(sx), npx(y - 1));
     ctx.lineTo(npx(sx), npx(y + 8));
     ctx.closePath();
-    ctx.fillStyle = 'rgba(255, 0, 0, .65)';
+    ctx.fillStyle = '#E6E6E6';
     ctx.fill();
     ctx.restore();
   }
 
   frozen(box) {
     const { ctx } = this;
-    const { x, y, width } = box;
+    const { x, y, width, height } = box;
     const sx = x + width - 1;
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(npx(sx - 8), npx(y - 1));
-    ctx.lineTo(npx(sx), npx(y - 1));
-    ctx.lineTo(npx(sx), npx(y + 8));
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(0, 255, 0, .85)';
+    ctx.fillStyle = 'rgba(0, 0, 0, .05)';
+    ctx.rect(npxLine(x), npxLine(y), npx(width), npx(height));
+    ctx.clip();
     ctx.fill();
     ctx.restore();
   }

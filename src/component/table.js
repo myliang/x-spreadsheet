@@ -81,12 +81,13 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
       cellText = cell.text || '';
     }
     if (style.format) {
-      // console.log(data.formatm, '>>', cell.format);
       cellText = formatm[style.format].render(cellText);
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
-    // console.log('style:', style);
+
+    if (frozen) style.color = '#6D6D6D';
+
     draw.text(cellText, dbox, {
       align: style.align,
       valign: style.valign,
@@ -98,7 +99,6 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     // error
     const error = data.validations.getError(rindex, cindex);
     if (error) {
-      // console.log('error:', rindex, cindex, error);
       draw.error(dbox);
     }
     if (frozen) {
