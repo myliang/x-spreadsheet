@@ -77,11 +77,8 @@
           console.log('>>>', xs.getData());
         });
 
-      xs.on('cell-selected', (cell, ri, ci) => {
-         const index = xs.getCurrentSheetIndex();
-         const int = xs.datas[index].findInputColOnRow(3, 'A-2')
-        // console.log('cell', int);
-        }).on('cell-edited', (text, ri, ci) => {
+      xs.on('cell-edited', (text, ri, ci) => {
+          console.log('Changed')
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
         });
 

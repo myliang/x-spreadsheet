@@ -808,6 +808,7 @@ export default class DataProxy {
       let { sri, sci } = this.selector.range;
       const { rows, merges, cols } = this;
       sri = index?index:sri
+      sci = index?index:sci
       let si = sri;
       if (type === 'row') {
         rows.insert(sri, n);      
