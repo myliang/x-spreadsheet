@@ -88,7 +88,7 @@ class Rows {
   // Created by Sheldon Su at 2021/03/08
   // Find the Col number of a text, return undefined if input is not present in that row
   findInputColOnRow(ri, input){
-    const targetRow = this.get(ri);
+    const targetRow = this.getOrNew(ri);
     for (const key in targetRow.cells){
       if (targetRow.cells[key].text === input){
         return key;
