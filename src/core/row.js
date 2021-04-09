@@ -101,7 +101,7 @@ class Rows {
   // record all number entry's col number
   colLookUpTable(ri){
     const colMap = {};
-    const targetRow = this.get(ri);
+    const targetRow = this.getOrNew(ri);
     if (targetRow){
       for (const key in targetRow.cells){
         // Record the col if entry in cell is a number
