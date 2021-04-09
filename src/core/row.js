@@ -51,9 +51,10 @@ class Rows {
 
   // Added by Sheldon Su on 2021/03/01
   copyStyleToRow(sourceRi, targetRi){
-    const sourceRowCells = this.get(sourceRi).cells;
+    const sourceRow = this.getOr(sourceRi);
     const targetRowCells = this.getOrNew(targetRi).cells;
-    if (sourceRowCells){
+    if (sourceRow){
+      const sourceRowCells = sourceRow.cells
       for (const ci in sourceRowCells){
         if (sourceRowCells[ci].style){
           if (targetRowCells[ci]){
