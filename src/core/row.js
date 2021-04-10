@@ -106,7 +106,7 @@ class Rows {
 
   setCellText(ri, ci, text) {
     const cell = this.getCellOrNew(ri, ci);
-    cell.text = text;
+    if (cell.editable !== false) cell.text = text;
   }
 
   // what: all | format | text
