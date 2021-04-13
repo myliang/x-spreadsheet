@@ -27,7 +27,7 @@ declare module 'x-data-spreadsheet' {
       underline: boolean;
       color: string;
       font: {
-        name: 'Helvetica';
+        name: string;
         size: number;
         bold: boolean;
         italic: false;
@@ -161,11 +161,17 @@ declare module 'x-data-spreadsheet' {
       colIndex: number,
       text: string,
       sheetIndex?: number
-    ): string;
+    ): Spreadsheet;
+    
     /**
      * remove current sheet
      */
     deleteSheet(): void;
+
+    /**
+     * render sheet
+     */
+    reRender(): Spreadsheet;
 
     /**
      * load data
