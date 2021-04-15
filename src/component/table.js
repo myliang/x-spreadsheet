@@ -12,7 +12,7 @@ const cellPaddingWidth = 5;
 const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
 const tableGridStyle = {
   fillStyle: '#fff',
-  lineWidth: thinLineWidth,
+  lineWidth: thinLineWidth(),
   strokeStyle: '#e6e6e6',
 };
 function tableFixedHeaderStyle() {
