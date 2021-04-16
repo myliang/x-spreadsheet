@@ -6,8 +6,8 @@ const formatNumberRender = (v) => {
   // match "-12.1" or "12" or "12.1"
   if (/^(-?\d*.?\d*)$/.test(v)) {
     const v1 = Number(v).toFixed(2).toString();
-    const [first, ...parts] = v1.split('\\.');
-    return [first.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'), ...parts];
+    const [first, ...parts] = v1.split('.');
+    return [first.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'), ...parts].join('.');
   }
   return v;
 };
