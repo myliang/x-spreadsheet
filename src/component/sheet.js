@@ -86,7 +86,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
 // direction: left | right | up | down | row-first | row-last | col-first | col-last
 function selectorMove(multiple, direction) {
   const {
-    selector, data,
+    selector, data, contTabsPressed
   } = this;
   const { rows, cols } = data;
   let [ri, ci] = selector.indexes;
@@ -113,6 +113,9 @@ function selectorMove(multiple, direction) {
     ri = 0;
   } else if (direction === 'col-last') {
     ri = rows.len - 1;
+  } else if (direction === 'tabs+enter'){
+    if (ri < rows.len - 1) ri += 1;
+    ci = Math.max(0, ci - contTabsPressed.n)
   }
   if (multiple) {
     selector.moveIndexes = [ri, ci];
@@ -579,6 +582,7 @@ function sheetInitEvents() {
     modalValidation,
     sortFilter,
   } = this;
+  let { contTabsPressed } = this; 
   // overlayer
   overlayerEl
     .on('mousemove', (evt) => {
@@ -812,6 +816,7 @@ function sheetInitEvents() {
           editor.clear();
           // shift + tab => move left
           // tab => move right
+          contTabsPressed.n = !shiftKey ? contTabsPressed.n + 1 : 0,
           selectorMove.call(this, false, shiftKey ? 'left' : 'right');
           evt.preventDefault();
           break;
@@ -819,8 +824,9 @@ function sheetInitEvents() {
           editor.clear();
           // shift + enter => move up
           // enter => move down
-          selectorMove.call(this, false, shiftKey ? 'up' : 'down');
+          selectorMove.call(this, false, shiftKey ? 'up' : (contTabsPressed.n > 0 ? 'tabs+enter' : 'down'));
           evt.preventDefault();
+          contTabsPressed.n = 0;
           break;
         case 8: // backspace
           insertDeleteRowColumn.call(this, 'delete-cell-text');
@@ -884,6 +890,9 @@ export default class Sheet {
       );
     this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);
+    this.contTabsPressed = {
+      n: 0
+    };
     // sortFilter
     this.sortFilter = new SortFilter();
     // root element
