@@ -695,6 +695,11 @@ function sheetInitEvents() {
 
   bind(window, 'click', (evt) => {
     this.focusing = overlayerEl.contains(evt.target);
+    const {ri, ci} = contTabsPressed.lastCurrentCell;
+    if(this.focusing && (ri != this.data.selector.ri || this.data.selector.ci - ci != 1)) {
+      contTabsPressed = {n: 0, lastCurrentCell: { ri: this.data.selector.ri, ci: this.data.selector.ci}}
+      this.contTabsPressed = contTabsPressed;
+    }
   });
 
   bind(window, 'paste', (evt) => {
@@ -816,7 +821,15 @@ function sheetInitEvents() {
           editor.clear();
           // shift + tab => move left
           // tab => move right
-          contTabsPressed.n = !shiftKey ? contTabsPressed.n + 1 : 0,
+          if(!shiftKey){
+            const {ri, ci} = contTabsPressed.lastCurrentCell;
+            if(contTabsPressed.n == 0 || ri != this.data.selector.ri || this.data.selector.ci - ci != 1)
+              contTabsPressed = {n: 1, lastCurrentCell: { ri: this.data.selector.ri, ci: this.data.selector.ci}}
+            else
+              if(this.data.selector.ci < this.data.cols.len - 1)
+                contTabsPressed = {n: contTabsPressed.n + 1, lastCurrentCell: { ri: this.data.selector.ri, ci: this.data.selector.ci}}
+            this.contTabsPressed = contTabsPressed;
+          }
           selectorMove.call(this, false, shiftKey ? 'left' : 'right');
           evt.preventDefault();
           break;
@@ -826,7 +839,6 @@ function sheetInitEvents() {
           // enter => move down
           selectorMove.call(this, false, shiftKey ? 'up' : (contTabsPressed.n > 0 ? 'tabs+enter' : 'down'));
           evt.preventDefault();
-          contTabsPressed.n = 0;
           break;
         case 8: // backspace
           insertDeleteRowColumn.call(this, 'delete-cell-text');
@@ -836,6 +848,9 @@ function sheetInitEvents() {
           break;
       }
 
+      if([32,37,38,39,40,13].includes(keyCode))
+        contTabsPressed.n = 0;
+        
       if (key === 'Delete') {
         insertDeleteRowColumn.call(this, 'delete-cell-text');
         evt.preventDefault();
@@ -891,7 +906,11 @@ export default class Sheet {
     this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);
     this.contTabsPressed = {
-      n: 0
+      n: 0,
+      lastCurrentCell : {
+        ri: null,
+        ci: null,
+      }
     };
     // sortFilter
     this.sortFilter = new SortFilter();
