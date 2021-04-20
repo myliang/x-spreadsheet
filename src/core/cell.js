@@ -116,7 +116,7 @@ const infixExprToSuffixExpr = (src) => {
   while (operatorStack.length > 0) {
     stack.push(operatorStack.pop());
   }
-  console.log(stack)
+  // console.log(stack)
   return stack;
 };
 

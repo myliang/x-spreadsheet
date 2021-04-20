@@ -233,21 +233,39 @@ class Draw {
     const txts = `${mtxt}`.split('\n');
     const biw = box.innerWidth();
     const ntxts = [];
+    const boxSize = npx(biw)
     txts.forEach((it) => {
       const txtWidth = ctx.measureText(it).width;
-      if (textWrap && txtWidth > npx(biw)) {
-        let textLine = { w: 0, len: 0, start: 0 };
-        for (let i = 0; i < it.length; i += 1) {
-          if (textLine.w >= npx(biw)) {
-            ntxts.push(it.substr(textLine.start, textLine.len));
-            textLine = { w: 0, len: 0, start: i };
+      if (textWrap && txtWidth > boxSize) {
+        const txtSplit = it.split(' ');
+
+        let resultString = '';
+
+        txtSplit.forEach(word=>{
+          if (ctx.measureText(word + ' ').width > boxSize){
+            if (resultString !== '') ntxts.push(resultString);
+
+            let textLine = { w: 0, len: 0, start: 0 };
+            for (let i = 0; i < word.length; i += 1) {
+              if (textLine.w >= boxSize) {
+                ntxts.push(word.substr(textLine.start, textLine.len));
+                textLine = { w: 0, len: 0, start: i };
+              }
+              textLine.len += 1;
+              textLine.w += ctx.measureText(word[i]).width + 1;
+            }
+            if (textLine.len > 0) {
+              resultString = word.substr(textLine.start, textLine.len) + ' ';
+            }
+          }else if (ctx.measureText(resultString + word + ' ').width > boxSize){
+            ntxts.push(resultString);
+            resultString = word + ' ';
+          }else{
+            resultString = resultString + word + ' ';
           }
-          textLine.len += 1;
-          textLine.w += ctx.measureText(it[i]).width + 1;
-        }
-        if (textLine.len > 0) {
-          ntxts.push(it.substr(textLine.start, textLine.len));
-        }
+        })
+        if (resultString !== '') ntxts.push(resultString);
+        
       } else {
         ntxts.push(it);
       }
