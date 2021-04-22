@@ -8,7 +8,6 @@ import Editor from './editor';
 import Print from './print';
 import ContextMenu from './contextmenu';
 import Table from './table';
-import Toolbar from './toolbar/index';
 import ModalValidation from './modal_validation';
 import SortFilter from './sort_filter';
 import { xtoast } from './message';
@@ -694,7 +693,7 @@ function sheetInitEvents() {
   });
 
   bind(window, 'paste', (evt) => {
-    if(!this.focusing) return;
+    if (!this.focusing) return;
     paste.call(this, 'all', evt);
     evt.preventDefault();
   });
@@ -849,13 +848,13 @@ function sheetInitEvents() {
 }
 
 export default class Sheet {
-  constructor(targetEl, data) {
+  constructor(targetEl, data, toolbar) {
     this.eventMap = createEventEmitter();
-    const { view, showToolbar, showContextmenu } = data.settings;
+    const { showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(data, view.width, !showToolbar);
+    this.toolbar = toolbar;
     this.print = new Print(data);
-    targetEl.children(this.toolbar.el, this.el, this.print.el);
+    targetEl.children(this.el, this.print.el);
     this.data = data;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);

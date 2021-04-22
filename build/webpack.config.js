@@ -7,6 +7,11 @@ module.exports = {
   entry: {
     xspreadsheet: './src/index.js',
   },
+  output: {
+    library: 'Spreadsheet',
+    libraryTarget: 'umd',
+    libraryExport: 'default'
+  },
   module: {
     rules: [
       {
