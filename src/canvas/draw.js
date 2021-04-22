@@ -1,14 +1,12 @@
 /* global window */
-function dpr() {
-  return window.devicePixelRatio || 1;
-}
+import { dpr } from '../config';
 
 function thinLineWidth() {
-  return dpr() - 0.5;
+  return dpr - 0.5;
 }
 
 function npx(px) {
-  return parseInt(px * dpr(), 10);
+  return parseInt(px * dpr, 10);
 }
 
 function npxLine(px) {
@@ -135,7 +133,7 @@ class Draw {
     this.el = el;
     this.ctx = el.getContext('2d');
     this.resize(width, height);
-    this.ctx.scale(dpr(), dpr());
+    this.ctx.scale(dpr, dpr);
   }
 
   resize(width, height) {

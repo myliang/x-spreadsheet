@@ -3,13 +3,14 @@ import { h } from './component/element';
 import DataProxy from './core/data_proxy';
 import Sheet from './component/sheet';
 import Bottombar from './component/bottombar';
+import Toolbar from './component/toolbar/index';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
 import './index.less';
 
 
 class Spreadsheet {
-  constructor(selectors, options = {}) {
+  constructor(selectors, options = {}, toolbar) {
     let targetEl = selectors;
     this.options = options;
     this.sheetIndex = 1;
@@ -33,7 +34,10 @@ class Spreadsheet {
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
     targetEl.appendChild(rootEl.el);
-    this.sheet = new Sheet(rootEl, this.data);
+    const { view, showToolbar } = this.data.settings;
+    const defaultToolbar = new Toolbar(this.data, view.width, !showToolbar);
+    const tb = toolbar || defaultToolbar
+    this.sheet = new Sheet(rootEl, this.data, tb);
     rootEl.child(this.bottombar.el);
   }
 
@@ -117,14 +121,12 @@ class Spreadsheet {
   }
 }
 
-const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
+// const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 
-if (window) {
-  window.x_spreadsheet = spreadsheet;
-  window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
-}
+// if (window) {
+//   window.x_spreadsheet = spreadsheet;
+//   window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
+// }
+// Spreadsheet.Toolbar = Toolbar;
 
 export default Spreadsheet;
-export {
-  spreadsheet,
-};
