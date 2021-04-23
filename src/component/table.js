@@ -76,8 +76,8 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     // render text and set cell evaluate result
     let cellText = "";
     if(!data.settings.evalPaused) {
-      const evalResult = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
-      cellText = evalResult;
+      const evalResult = _cell.render(cell.text || '', formulam, (y, x, z) => (data.getCellTextOrDefault(x, y, z)));
+      cellText = Object.is(evalResult, NaN)? 'NA': evalResult;
       if (cell.text !== evalResult && evalResult != ''){
         cell.formulaValue = evalResult;
       }else{

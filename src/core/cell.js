@@ -17,7 +17,7 @@ const infixExprToSuffixExpr = (src) => {
     if (c !== ' ') {
       if (c >= 'a' && c <= 'z') {
         subStrs.push(c.toUpperCase());
-      } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c === '.') {
+      } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c === '.' || c ==='!') {
         subStrs.push(c);
       } else if (c === '"') {
         i += 1;
@@ -30,7 +30,7 @@ const infixExprToSuffixExpr = (src) => {
       } else if (c === '-' && /[+\-*/,(]/.test(oldc)) {
         subStrs.push(c);
       } else {
-        // console.log('subStrs:', subStrs.join(''), stack);
+        console.log('subStrs:', subStrs.join(''), stack);
         if (c !== '(' && subStrs.length > 0) {
           stack.push(subStrs.join(''));
         }
@@ -41,7 +41,7 @@ const infixExprToSuffixExpr = (src) => {
             try {
               const [ex, ey] = expr2xy(stack.pop());
               const [sx, sy] = expr2xy(stack.pop());
-              // console.log('::', sx, sy, ex, ey);
+              console.log('::', sx, sy, ex, ey);
               let rangelen = 0;
               for (let x = sx; x <= ex; x += 1) {
                 for (let y = sy; y <= ey; y += 1) {
@@ -59,7 +59,6 @@ const infixExprToSuffixExpr = (src) => {
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
           } else {
-            // console.log('c1:', c1, fnArgType, stack, operatorStack);
             while (c1 !== '(') {
               stack.push(c1);
               if (operatorStack.length <= 0) break;
@@ -88,7 +87,6 @@ const infixExprToSuffixExpr = (src) => {
           operatorStack.push(subStrs.join(''));
         } else {
           // priority: */ > +-
-          // console.log('xxxx:', operatorStack, c, stack);
           if (operatorStack.length > 0 && (c === '+' || c === '-')) {
             let top = operatorStack[operatorStack.length - 1];
             if (top !== '(') stack.push(operatorStack.pop());
@@ -116,13 +114,25 @@ const infixExprToSuffixExpr = (src) => {
   while (operatorStack.length > 0) {
     stack.push(operatorStack.pop());
   }
-  // console.log(stack)
   return stack;
 };
 
 const evalSubExpr = (subExpr, cellRender) => {
   const [fl] = subExpr;
   let expr = subExpr;
+  let sheetIndex;
+  let exclamationPos = expr.indexOf('!');
+
+  if (exclamationPos != -1){
+    //Find the sheet index
+    sheetIndex = expr.substr(0, exclamationPos);
+    //Finds the cell position
+    expr = expr.substr(exclamationPos + 1)
+    if (sheetIndex[0] === '\'' && sheetIndex[exclamationPos - 1] === '\''){
+      sheetIndex = sheetIndex.replace('\'', '');
+    }
+  }
+
   if (fl === '"') {
     return subExpr.substring(1);
   }
@@ -135,7 +145,14 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  return ret * cellRender(x, y);
+
+  if (sheetIndex === undefined){
+    const result = cellRender(x, y);
+    return isNaN(result)? result: ret * result;
+  } else {
+    const result = cellRender(x, y, sheetIndex);
+    return isNaN(result)? result: ret * result;
+  }
 };
 
 // evaluate the suffix expression
@@ -144,9 +161,9 @@ const evalSubExpr = (subExpr, cellRender) => {
 // cellRender: (x, y) => {}
 const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   const stack = [];
+  console.log(':::>>>', srcStack);
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
-    // console.log(':::>>>', srcStack[i]);
     const expr = srcStack[i];
     const fc = expr[0];
     if (expr === '+') {
@@ -212,7 +229,7 @@ const cellRender = (src, formulaMap, getCellText, cellList = []) => {
     return evalSuffixExpr(
       stack,
       formulaMap,
-      (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText, cellList),
+      (x, y, z) => cellRender(getCellText(x, y, z), formulaMap, getCellText, cellList),
       cellList,
     );
   }

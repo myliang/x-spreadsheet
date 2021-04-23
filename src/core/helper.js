@@ -111,6 +111,7 @@ function digits(a) {
 }
 
 export function numberCalc(type, a1, a2) {
+  console.log('numcalc', a1, a2)
   if (Number.isNaN(a1) || Number.isNaN(a2)) {
     return a1 + type + a2;
   }

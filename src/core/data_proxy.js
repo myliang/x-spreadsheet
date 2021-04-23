@@ -323,7 +323,7 @@ function getCellColByX(x, scrollOffsetx) {
 }
 
 export default class DataProxy {
-  constructor(name, settings) {
+  constructor(name, settings, sheetDatas) {
     this.settings = helper.merge(defaultSettings, settings || {});
     // save data begin
     this.name = name || 'sheet';
@@ -335,6 +335,7 @@ export default class DataProxy {
     this.validations = new Validations();
     this.hyperlinks = {};
     this.comments = {};
+    this.sheetDatas = sheetDatas;
     // save data end
 
     // don't save object
@@ -828,15 +829,20 @@ export default class DataProxy {
   }
 
   // type: row | column
-  delete(type) {
+  delete(type, number = null) {
     this.changeData(() => {
       const {
         rows, merges, selector, cols,
       } = this;
-      const { range } = selector;
-      const {
+      let {
         sri, sci, eri, eci,
       } = selector.range;
+
+      sri = number?number:sri;
+      eri = number?number:eri;
+      sci = number?number:sci;
+      eci =number?number:eci;
+
       const [rsize, csize] = selector.range.size();
       let si = sri;
       let size = rsize;
@@ -844,7 +850,7 @@ export default class DataProxy {
         rows.delete(sri, eri);
       } else if (type === 'column') {
         rows.deleteColumn(sci, eci);
-        si = range.sci;
+        si = sci;
         size = csize;
         cols.len -= 1;
       }
@@ -926,9 +932,22 @@ export default class DataProxy {
     return this.rows.getCell(ri, ci);
   }
 
-  getCellTextOrDefault(ri, ci) {
-    const cell = this.getCell(ri, ci);
-    return (cell && cell.text) ? cell.text : '';
+  getCellTextOrDefault(ri, ci, si=this.name) {
+    let sheetData;
+
+    for (let i = 0; i < this.sheetDatas.length; i++){
+      if (this.sheetDatas[i].name.toUpperCase() === si.toUpperCase()) {
+        sheetData = this.sheetDatas[i];
+        break;
+      } 
+    }
+
+    if (sheetData === undefined){
+      return 0;
+    } else {
+      const cell = sheetData.getCell(ri, ci);
+      return (cell && cell.text) ? cell.text : '';
+    }
   }
 
   getCellStyle(ri, ci) {
