@@ -17,17 +17,30 @@ class Spreadsheet {
     if (typeof selectors === 'string') {
       targetEl = document.querySelector(selectors);
     }
-    this.bottombar = new Bottombar(() => {
-      const d = this.addSheet();
-      this.sheet.resetData(d);
-    }, (index) => {
-      const d = this.datas[index];
-      this.sheet.resetData(d);
-    }, () => {
-      this.deleteSheet();
-    }, (index, value) => {
-      this.datas[index].name = value;
-    });
+
+    if (this.options.mode == 'edit'){
+      this.bottombar = new Bottombar(() => {
+        const d = this.addSheet();
+        this.sheet.resetData(d);
+      }, (index) => {
+        const d = this.datas[index];
+        this.sheet.resetData(d);
+      }, () => {
+        this.deleteSheet();
+      }, (index, value) => {
+        this.datas[index].name = value;
+      });
+    }else{
+      this.bottombar = new Bottombar(() => {
+      }, (index) => {
+        const d = this.datas[index];
+        this.sheet.resetData(d);
+      }, () => {
+       
+      }, (index, value) => {
+        this.datas[index].name = value;
+      });
+    }
     this.data = this.addSheet();
     const rootEl = h('div', `${cssPrefix}`)
       .on('contextmenu', evt => evt.preventDefault());
