@@ -30,7 +30,6 @@ const infixExprToSuffixExpr = (src) => {
       } else if (c === '-' && /[+\-*/,(]/.test(oldc)) {
         subStrs.push(c);
       } else {
-        console.log('subStrs:', subStrs.join(''), stack);
         if (c !== '(' && subStrs.length > 0) {
           stack.push(subStrs.join(''));
         }
@@ -41,7 +40,6 @@ const infixExprToSuffixExpr = (src) => {
             try {
               const [ex, ey] = expr2xy(stack.pop());
               const [sx, sy] = expr2xy(stack.pop());
-              console.log('::', sx, sy, ex, ey);
               let rangelen = 0;
               for (let x = sx; x <= ex; x += 1) {
                 for (let y = sy; y <= ey; y += 1) {
@@ -161,7 +159,6 @@ const evalSubExpr = (subExpr, cellRender) => {
 // cellRender: (x, y) => {}
 const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   const stack = [];
-  console.log(':::>>>', srcStack);
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
     const expr = srcStack[i];
