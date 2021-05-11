@@ -4,6 +4,7 @@ declare module 'x-data-spreadsheet' {
     showToolbar?: boolean;
     showGrid?: boolean;
     showContextmenu?: boolean;
+    showBottomBar?: boolean;
     view?: {
       height: () => number;
       width: () => number;
