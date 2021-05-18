@@ -67,7 +67,7 @@ body {
   background: #fff;
   -webkit-font-smoothing: antialiased;
 
-  textarea {
+  .textarea {
     font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
   }
 }
@@ -197,6 +197,13 @@ body {
     z-index: 200;
     background: #fff;
     box-shadow: 1px 2px 5px 2px rgba(51,51,51,.15);
+  }
+
+  &.limit-height {
+    & > .@{css-prefix}-dropdown-content {
+			max-height: 250px;
+			overflow: auto;
+    }
   }
 
   &.bottom-left {
@@ -383,7 +390,7 @@ body {
     z-index: 100;
     pointer-events: auto;
 
-    textarea {
+    .textarea {
       box-sizing: content-box;
       border: none;
       padding: 0 3px;
@@ -397,6 +404,11 @@ body {
       word-wrap: break-word;
       line-height: 22px;
       margin: 0;
+      background-color: white;
+
+      .formula-token {
+        margin-right: 2px;
+      }
     }
 
     .textline {
