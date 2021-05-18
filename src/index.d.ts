@@ -4,6 +4,7 @@ declare module 'x-data-spreadsheet' {
     showToolbar?: boolean;
     showGrid?: boolean;
     showContextmenu?: boolean;
+    showBottomBar?: boolean;
     view?: {
       height: () => number;
       width: () => number;
@@ -161,17 +162,17 @@ declare module 'x-data-spreadsheet' {
       colIndex: number,
       text: string,
       sheetIndex?: number
-    ): string;
+    ): this;
     /**
      * remove current sheet
      */
     deleteSheet(): void;
 
-    /**
+    /**s
      * load data
      * @param json
      */
-    loadData(json: Record<string, any>): void;
+    loadData(json: Record<string, any>): this;
     /**
      * get data
      */
@@ -180,13 +181,13 @@ declare module 'x-data-spreadsheet' {
      * bind handler to change event, including data change and user actions
      * @param callback
      */
-    change(callback: (json: Record<string, any>) => void): void;
+    change(callback: (json: Record<string, any>) => void): this;
     /**
      * set locale
      * @param lang
      * @param message
      */
-    locale(lang: string, message: string): void;
+    static locale(lang: string, message: object): void;
   }
   global {
     interface Window {
