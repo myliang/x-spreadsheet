@@ -88,9 +88,17 @@ function genBtn(it) {
   });
   btn.tip = it.tip || '';
 
-  const icon = h('div', `${cssPrefix}-icon`);
-  icon.child(it.el);
-  btn.el.child(icon);
+  let { el } = it;
+
+  if (it.icon) {
+    el = h('img').attr('src', it.icon);
+  }
+
+  if (el) {
+    const icon = h('div', `${cssPrefix}-icon`);
+    icon.child(el);
+    btn.el.child(icon);
+  }
 
   return btn;
 }
