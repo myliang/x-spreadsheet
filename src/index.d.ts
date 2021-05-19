@@ -1,7 +1,8 @@
 declare module 'x-data-spreadsheet' {
   export interface ExtendToolbarOption {
     tip?: string;
-    el: HTMLElement;
+    el?: HTMLElement;
+    icon?: string;
     onClick?: (data: object, sheet: object) => void
   }
   export interface Options {
