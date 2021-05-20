@@ -120,7 +120,6 @@ const evalSubExpr = (subExpr, cellRender, sheetScope = undefined) => {
   let expr = subExpr;
   let sheetIndex;
   let exclamationPos = expr.indexOf('!');
-  console.log('exclamationPos', exclamationPos)
 
   if (exclamationPos >= 0){
     //Find the sheet index
@@ -141,11 +140,9 @@ const evalSubExpr = (subExpr, cellRender, sheetScope = undefined) => {
     ret = -1;
   }
   if (expr[0] >= '0' && expr[0] <= '9') {
-    console.log('middle If')
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  console.log('expr', expr);
   if (sheetIndex === undefined){
     let result;
     if (sheetScope !== undefined){
@@ -153,11 +150,9 @@ const evalSubExpr = (subExpr, cellRender, sheetScope = undefined) => {
     }else{
       result = cellRender(x, y);
     }
-    console.log('res if', isNaN(result)? result: ret * result, result)
     return isNaN(result)? result: ret * result;
   } else {
     const result = cellRender(x, y, sheetIndex);
-    console.log('res else', isNaN(result)? result: ret * result, result, [x, y, sheetIndex])
     return isNaN(result)? result: ret * result;
   }
 };
