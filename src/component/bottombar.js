@@ -4,7 +4,8 @@ import { cssPrefix } from '../config';
 import Icon from './icon';
 import FormInput from './form_input';
 import Dropdown from './dropdown';
-import { xtoast } from './message';
+// Record: temp not used
+// import { xtoast } from './message';
 import { tf } from '../locale/locale';
 
 class DropdownMore extends Dropdown {

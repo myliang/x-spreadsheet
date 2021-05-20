@@ -1,6 +1,11 @@
 /* global window */
 import { h } from './element';
-import { bind, mouseMoveUp, bindTouch, createEventEmitter } from './event';
+import {
+  bind,
+  mouseMoveUp,
+  bindTouch,
+  createEventEmitter,
+} from './event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -694,7 +699,7 @@ function sheetInitEvents() {
   });
 
   bind(window, 'paste', (evt) => {
-    if(!this.focusing) return;
+    if (!this.focusing) return;
     paste.call(this, 'all', evt);
     evt.preventDefault();
   });
@@ -913,7 +918,7 @@ export default class Sheet {
 
   trigger(eventName, ...args) {
     const { eventMap } = this;
-    eventMap.fire(eventName, args)
+    eventMap.fire(eventName, args);
   }
 
   resetData(data) {
