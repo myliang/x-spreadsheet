@@ -110,6 +110,10 @@ const toolbarHeight = 41;
 const bottombarHeight = 41;
 
 
+// Utility functions
+const hasOwnProperty = (obj, name) => Object.prototype.hasOwnProperty.call(obj, name);
+
+
 // src: cellRange
 // dst: cellRange
 function canPaste(src, dst, error = () => {}) {
@@ -406,34 +410,35 @@ export default class DataProxy {
   }
 
   copyToSystemClipboard() {
-    if (navigator.clipboard == undefined) {
-      return
+    /* global navigator */
+    if (navigator.clipboard === undefined) {
+      return;
     }
-    var copyText = "";
-    var rowData = this.rows.getData();
-    for (var ri = this.selector.range.sri; ri <= this.selector.range.eri; ri++) {
-      if (rowData.hasOwnProperty(ri)) {
-        for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
+    let copyText = '';
+    const rowData = this.rows.getData();
+    for (let ri = this.selector.range.sri; ri <= this.selector.range.eri; ri += 1) {
+      if (hasOwnProperty(rowData, ri)) {
+        for (let ci = this.selector.range.sci; ci <= this.selector.range.eci; ci += 1) {
           if (ci > this.selector.range.sci) {
-            copyText += '\t'
+            copyText += '\t';
           }
-          if (rowData[ri].cells.hasOwnProperty(ci)) {
-            var cellText = String(rowData[ri].cells[ci].text)
-            if ((cellText.indexOf("\n") == -1) && (cellText.indexOf("\t") == -1) && (cellText.indexOf("\"") == -1)) {
+          if (hasOwnProperty(rowData[ri].cells, ci)) {
+            const cellText = String(rowData[ri].cells[ci].text);
+            if ((cellText.indexOf(`\n`) === -1) && (cellText.indexOf(`\t`) === -1) && (cellText.indexOf(`"`) === -1)) {
               copyText += cellText;
             } else {
-              copyText += "\"" + cellText + "\"";
+              copyText += `"${cellText}"`;
             }
           }
         }
       } else {
-        for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
-          copyText += '\t'
+        for (let ci = this.selector.range.sci; ci <= this.selector.range.eci; ci += 1) {
+          copyText += '\t';
         }
       }
-      copyText += '\n'
+      copyText += '\n';
     }
-    navigator.clipboard.writeText(copyText).then(function () {}, function (err) {
+    navigator.clipboard.writeText(copyText).then(() => {}, (err) => {
       console.log('text copy to the system clipboard error  ', copyText, err);
     });
   }
