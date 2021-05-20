@@ -115,13 +115,14 @@ const infixExprToSuffixExpr = (src) => {
   return stack;
 };
 
-const evalSubExpr = (subExpr, cellRender) => {
+const evalSubExpr = (subExpr, cellRender, sheetScope = undefined) => {
   const [fl] = subExpr;
   let expr = subExpr;
   let sheetIndex;
   let exclamationPos = expr.indexOf('!');
+  console.log('exclamationPos', exclamationPos)
 
-  if (exclamationPos != -1){
+  if (exclamationPos >= 0){
     //Find the sheet index
     sheetIndex = expr.substr(0, exclamationPos);
     //Finds the cell position
@@ -140,15 +141,23 @@ const evalSubExpr = (subExpr, cellRender) => {
     ret = -1;
   }
   if (expr[0] >= '0' && expr[0] <= '9') {
+    console.log('middle If')
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-
+  console.log('expr', expr);
   if (sheetIndex === undefined){
-    const result = cellRender(x, y);
+    let result;
+    if (sheetScope !== undefined){
+      result = cellRender(x, y, sheetScope);
+    }else{
+      result = cellRender(x, y);
+    }
+    console.log('res if', isNaN(result)? result: ret * result, result)
     return isNaN(result)? result: ret * result;
   } else {
     const result = cellRender(x, y, sheetIndex);
+    console.log('res else', isNaN(result)? result: ret * result, result, [x, y, sheetIndex])
     return isNaN(result)? result: ret * result;
   }
 };
@@ -157,7 +166,7 @@ const evalSubExpr = (subExpr, cellRender) => {
 // srcStack: <= infixExprToSufixExpr
 // formulaMap: {'SUM': {}, ...}
 // cellRender: (x, y) => {}
-const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
+const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, zIndex=undefined) => {
   const stack = [];
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
@@ -211,7 +220,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
-      stack.push(evalSubExpr(expr, cellRender));
+      stack.push(evalSubExpr(expr, cellRender, zIndex));
       cellList.pop();
     }
     // console.log('stack:', stack);
@@ -219,15 +228,16 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   return stack[0];
 };
 
-const cellRender = (src, formulaMap, getCellText, cellList = []) => {
+const cellRender = (src, formulaMap, getCellText, cellList = [], zIndex = undefined) => {
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
     if (stack.length <= 0) return src;
     return evalSuffixExpr(
       stack,
       formulaMap,
-      (x, y, z) => cellRender(getCellText(x, y, z), formulaMap, getCellText, cellList),
+      (x, y, z) => cellRender(getCellText(x, y, z), formulaMap, getCellText, cellList, zIndex=z),
       cellList,
+      zIndex
     );
   }
   return src;
