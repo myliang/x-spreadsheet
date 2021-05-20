@@ -13,6 +13,8 @@ import { Validations } from './validation';
 import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
 import { t } from '../locale/locale';
+// for conditional formatting
+import ConditionFactory from './conditionfactory'
 
 // private methods
 /*
@@ -336,6 +338,11 @@ export default class DataProxy {
     this.hyperlinks = {};
     this.comments = {};
     this.sheetDatas = sheetDatas;
+    this.conditionalFormatting = [] // save this?
+    this.ConditionFactory = new ConditionFactory(
+      this.rows,
+      (x, y, z) => this.getCellTextOrDefault(x, y, z)
+    )
     // save data end
 
     // don't save object
@@ -348,6 +355,11 @@ export default class DataProxy {
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
     this.unsortedRowMap = new Map();
+
+    // make a bunch of conditions to test
+    this.conditionalFormatting.push(this.ConditionFactory.numberGreaterThan(6, 6, 5, 5, '=b2-a1', { bgcolor: '#ff0000'}))
+    // this.conditionalFormatting.push(this.ConditionFactory.duplicateValues(7, 8, 5, 6, { bgcolor: '#ff00ff' }))
+    // this.conditionalFormatting.push(this.ConditionFactory.exprTest(5, 5, 5, 5, { bgcolor: '#ffff00' }))
   }
 
   addValidation(mode, ref, validator) {
@@ -958,11 +970,23 @@ export default class DataProxy {
     return null;
   }
 
+  getConditionalStyles(ri, ci, text) {
+    let style = {}
+    this.conditionalFormatting.forEach(test => {
+      style = { ...style, ...test(ri, ci, text) }
+    })
+    return style
+  }
+
   getCellStyleOrDefault(ri, ci) {
     const { styles, rows } = this;
     const cell = rows.getCell(ri, ci);
     const cellStyle = (cell && cell.style !== undefined) ? styles[cell.style] : {};
-    return helper.merge(this.defaultStyle(), cellStyle);
+    const cellText = (cell && cell.text) || ''
+    return helper.merge(this.defaultStyle(), {
+      ...cellStyle,
+      ...this.getConditionalStyles(ri, ci, cellText)
+    });
   }
 
   getSelectedCellStyle() {

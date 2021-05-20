@@ -28,9 +28,16 @@
       }
       const rows = {
         len: 80,
+        0: {
+          cells: {
+            0: { text: '51' },
+            1: { text: '52' }
+          }
+        },
         1: {
           cells: {
             0: { text: 'testingtesttestetst' },
+            1: { text: '52' },
             2: { text: 'testing' },
           },
         },
@@ -85,7 +92,7 @@
       setTimeout(() => {
         // xs.loadData([{ rows }]);
         xs.cellText(14, 3, 'cell-text').reRender();
-        console.log('cell(8, 8):', xs.cell(8, 8));
+        console.log('cell(8, 8):', xs.getData());
         console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
       }, 5000);
     }

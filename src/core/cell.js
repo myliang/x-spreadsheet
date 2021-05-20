@@ -210,16 +210,19 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, zIndex=undef
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
       if (cellList.includes(expr)) {
+        console.log('returning 0')
         return 0;
       }
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
       stack.push(evalSubExpr(expr, cellRender, zIndex));
+      console.log('for source', srcStack, 'we have', stack)
       cellList.pop();
     }
     // console.log('stack:', stack);
   }
+  console.log('returning stack[0]', stack[0])
   return stack[0];
 };
 
@@ -227,13 +230,15 @@ const cellRender = (src, formulaMap, getCellText, cellList = [], zIndex = undefi
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
     if (stack.length <= 0) return src;
-    return evalSuffixExpr(
+    const temp = evalSuffixExpr(
       stack,
       formulaMap,
       (x, y, z) => cellRender(getCellText(x, y, z), formulaMap, getCellText, cellList, zIndex=z),
       cellList,
       zIndex
     );
+    console.log('TEMP', temp)
+    return temp
   }
   return src;
 };
