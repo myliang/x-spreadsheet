@@ -27,6 +27,7 @@ import More from './more';
 import { h } from '../element';
 import { cssPrefix } from '../../config';
 import { bind } from '../event';
+import { Features } from '../../core/features';
 
 function buildDivider() {
   return h('div', `${cssPrefix}-toolbar-divider`);
@@ -87,51 +88,60 @@ export default class Toolbar {
     this.widthFn = widthFn;
     this.isHide = isHide;
     const style = data.defaultStyle();
-    this.items = [
+    var allItems = [
       [
-        this.undoEl = new Undo(),
-        this.redoEl = new Redo(),
-        new Print(),
-        this.paintformatEl = new Paintformat(),
-        this.clearformatEl = new Clearformat(),
+        [this.undoEl = new Undo(), 'Undo'],
+        [this.redoEl = new Redo(), 'Redo'],
+        [new Print(), 'Print'],
+        [this.paintformatEl = new Paintformat(), 'PaintFormat'],
+        [this.clearformatEl = new Clearformat(), 'ClearFormat'],
       ],
-      buildDivider(),
       [
-        this.formatEl = new Format(),
+        [this.formatEl = new Format(), 'Format'],
       ],
-      buildDivider(),
       [
-        this.fontEl = new Font(),
-        this.fontSizeEl = new FontSize(),
+        [this.fontEl = new Font(), 'Font'],
+        [this.fontSizeEl = new FontSize(), 'FontSize'],
       ],
-      buildDivider(),
       [
-        this.boldEl = new Bold(),
-        this.italicEl = new Italic(),
-        this.underlineEl = new Underline(),
-        this.strikeEl = new Strike(),
-        this.textColorEl = new TextColor(style.color),
+        [this.boldEl = new Bold(), 'Bold'],
+        [this.italicEl = new Italic(), 'Italic'],
+        [this.underlineEl = new Underline(), 'Underline'],
+        [this.strikeEl = new Strike(), 'Strike'],
+        [this.textColorEl = new TextColor(style.color), 'TextColor'],
       ],
-      buildDivider(),
       [
-        this.fillColorEl = new FillColor(style.bgcolor),
-        this.borderEl = new Border(),
-        this.mergeEl = new Merge(),
+        [this.fillColorEl = new FillColor(style.bgcolor), 'FillColor'],
+        [this.borderEl = new Border(), 'Border'],
+        [this.mergeEl = new Merge(), 'Merge'],
       ],
-      buildDivider(),
       [
-        this.alignEl = new Align(style.align),
-        this.valignEl = new Valign(style.valign),
-        this.textwrapEl = new Textwrap(),
+        [this.alignEl = new Align(style.align), 'Align'],
+        [this.valignEl = new Valign(style.valign), 'VAlign'],
+        [this.textwrapEl = new Textwrap(), 'TextWrap'],
       ],
-      buildDivider(),
       [
-        this.freezeEl = new Freeze(),
-        this.autofilterEl = new Autofilter(),
-        this.formulaEl = new Formula(),
-        this.moreEl = new More(),
+        [this.freezeEl = new Freeze(), 'Freeze'],
+        [this.autofilterEl = new Autofilter(), 'AutoFilter'],
+        [this.formulaEl = new Formula(), 'Formula'],
+        [this.moreEl = new More(), 'More'],
       ],
     ];
+    this.items = [];
+    allItems.forEach((it) => {
+      var tmp = [];
+      it.forEach((item) => {
+        if (this.data.settings.features[item[1]]) {
+          tmp.push(item[0]);
+        };
+      });
+      if (tmp.length) {
+        if (this.items.length) {
+          this.items.push(buildDivider());
+        };
+        this.items.push(tmp);
+      };
+    });
 
     this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`);
