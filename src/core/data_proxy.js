@@ -362,6 +362,13 @@ export default class DataProxy {
     this.ConditionFormatter.addEqualTo(8, 8, 1, 1, '=d1', styles.redFill)
     this.ConditionFormatter.addTextContains(9, 9, 1, 1, 'Hi', { bgcolor: '#00ffff' })
     this.ConditionFormatter.addCheckDuplicate(10, 11, 1, 2, { bgcolor: '#ff00ff' })
+    // TESTING NEW STUFF NICE
+    this.ConditionFormatter.addTopXItems(12, 13, 1, 2, 2, styles.greenFillDarkGreenText)
+    this.ConditionFormatter.addBottomXItems(12, 13, 1, 2, 1, styles.redFillDarkRedText)
+    this.ConditionFormatter.addTopXPercent(14, 15, 1, 2, 50, styles.greenFillDarkGreenText)
+    this.ConditionFormatter.addBottomXPercent(14, 15, 1, 2, 25, styles.redFillDarkRedText)
+    this.ConditionFormatter.addAboveAverage(16, 18, 1, 3, styles.greenFillDarkGreenText)
+    this.ConditionFormatter.addBelowAverage(16, 18, 1, 3, styles.redFillDarkRedText)
   }
 
   addValidation(mode, ref, validator) {

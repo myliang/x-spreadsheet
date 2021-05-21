@@ -7,6 +7,7 @@ export default class ConditionFormatter {
     this.conditionalFormatting = [];
   }
 
+  // generates conditional styles for given cell
   generateStyles = (ri, ci, text) => {
     let style = {};
     this.conditionalFormatting.forEach(
@@ -15,6 +16,7 @@ export default class ConditionFormatter {
     return style;
   };
 
+  // functions to create conditions
   addGreaterThan = (minRi, maxRi, minCi, maxCi, value, style) =>
     this.conditionalFormatting.push(
       this.ConditionFactory.greaterThan(
@@ -66,6 +68,36 @@ export default class ConditionFormatter {
     this.conditionalFormatting.push(
       this.ConditionFactory.duplicateValues(minRi, maxRi, minCi, maxCi, style)
     );
+
+  addTopXItems = (minRi, maxRi, minCi, maxCi, x, style) =>
+    this.conditionalFormatting.push(
+      this.ConditionFactory.topXItems(minRi, maxRi, minCi, maxCi, x, style)
+    );
+
+  addTopXPercent = (minRi, maxRi, minCi, maxCi, x, style) =>
+    this.conditionalFormatting.push(
+      this.ConditionFactory.topXPercent(minRi, maxRi, minCi, maxCi, x, style)
+    );
+
+  addBottomXItems = (minRi, maxRi, minCi, maxCi, x, style) =>
+    this.conditionalFormatting.push(
+      this.ConditionFactory.bottomXItems(minRi, maxRi, minCi, maxCi, x, style)
+    );
+
+  addBottomXPercent = (minRi, maxRi, minCi, maxCi, x, style) =>
+    this.conditionalFormatting.push(
+      this.ConditionFactory.bottomXPercent(minRi, maxRi, minCi, maxCi, x, style)
+    );
+
+  addAboveAverage = (minRi, maxRi, minCi, maxCi, style) =>
+    this.conditionalFormatting.push(
+      this.ConditionFactory.aboveAverage(minRi, maxRi, minCi, maxCi, style)
+    );
+
+  addBelowAverage = (minRi, maxRi, minCi, maxCi, style) =>
+    this.conditionalFormatting.push(
+      this.ConditionFactory.belowAverage(minRi, maxRi, minCi, maxCi, style)
+    );
 }
 
 // style constants for convenience
@@ -94,5 +126,5 @@ export const styles = {
   redBorder,
   redFillDarkRedText,
   yellowFillDarkYellowText,
-  greenFillDarkGreenText
-}
+  greenFillDarkGreenText,
+};
