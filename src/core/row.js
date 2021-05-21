@@ -166,6 +166,20 @@ class Rows {
     return null;
   }
 
+  // temporary - please delete me
+  getValuesInRange(minRi, maxRi, minCi, maxCi) {
+    const values = []
+    for (let ri = minRi; ri <= maxRi; ri++) {
+      const row = this.getOrNew(ri)
+      Object.keys(row.cells).forEach(ci => {
+        if (ci >= minCi && ci <= maxCi) {
+          values.push(row.cells[ci].text)
+        }
+      })
+    }
+    return values
+  }
+
   getCellMerge(ri, ci) {
     const cell = this.getCell(ri, ci);
     if (cell && cell.merge) return cell.merge;

@@ -28,10 +28,19 @@
       }
       const rows = {
         len: 80,
+        0: {
+          cells: {
+            0: { text: '51' },
+            1: { text: '52' },
+            3: { text: '54' },
+          }
+        },
         1: {
           cells: {
             0: { text: 'testingtesttestetst' },
+            1: { text: '52' },
             2: { text: 'testing' },
+            3: { text: '60' }
           },
         },
         2: {
@@ -41,9 +50,70 @@
             2: { text: 'haha', merge: [1, 1] },
           }
         },
+        5: {
+          cells: {
+            0: { text: '>D1:' }
+          }
+        },
+        6: {
+          cells: {
+            0: { text: '<D2:' }
+          }
+        },
+        7: {
+          cells: {
+            0: { text: 'D1<=x<=D2:' }
+          }
+        },
         8: {
           cells: {
+            0: { text: ' = D1:' },
             8: { text: 'border test', style: 0 },
+          }
+        },
+        9: {
+          cells: {
+            0: { text: 'contains \'Hi\':' }
+          }
+        },
+        10: {
+          cells: {
+            0: { text: 'duplicate (2x2):', merge: [1,0] }
+          }
+        },
+        12: {
+          cells: {
+            0: { text: '2 highest (green):' }
+          }
+        },
+        13: {
+          cells: {
+            0: { text: '1 lowest (red):' }
+          }
+        },
+        14: {
+          cells: {
+            0: { text: 'top 50% (green):' }
+          }
+        },
+        15: {
+          cells: {
+            0: { text: 'bottom 25% (red):' }
+          }
+        },
+        16: {
+          cells: {
+            0: { text: 'above avg (green):' }
+          }
+        },
+        17: {
+          cells: {
+            0: { text: 'below avg (red):' }
+          }
+        },
+        18: {
+          cells: {
+            0: { text: '(3x3 area)' }
           }
         }
       };
@@ -69,6 +139,7 @@
           ],
           cols: {
             len: 10,
+            0: { width: 150 },
             2: { width: 200 },
           },
           rows,
@@ -85,7 +156,7 @@
       setTimeout(() => {
         // xs.loadData([{ rows }]);
         xs.cellText(14, 3, 'cell-text').reRender();
-        console.log('cell(8, 8):', xs.cell(8, 8));
+        console.log('cell(8, 8):', xs.getData());
         console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
       }, 5000);
     }

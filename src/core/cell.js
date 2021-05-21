@@ -210,6 +210,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, zIndex=undef
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
       if (cellList.includes(expr)) {
+        console.log('returning 0')
         return 0;
       }
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
