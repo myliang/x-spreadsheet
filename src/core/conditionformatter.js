@@ -121,10 +121,10 @@ export const yellowFillDarkYellowText = {
 export const greenFillDarkGreenText = { bgcolor: "#99e2b4", color: "#344e41" };
 
 export const styles = {
+  redFillDarkRedText,
   redFill,
   darkRedText,
   redBorder,
-  redFillDarkRedText,
   yellowFillDarkYellowText,
   greenFillDarkGreenText,
 };

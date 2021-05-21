@@ -4,6 +4,7 @@ import Align from './align';
 import Valign from './valign';
 import Autofilter from './autofilter';
 import Bold from './bold';
+import Conditional from './conditional'
 import Italic from './italic';
 import Strike from './strike';
 import Underline from './underline';
@@ -129,6 +130,7 @@ export default class Toolbar {
         this.freezeEl = new Freeze(),
         this.autofilterEl = new Autofilter(),
         this.formulaEl = new Formula(),
+        this.conditionalEl = new Conditional(),
         this.moreEl = new More(),
       ],
     ];
