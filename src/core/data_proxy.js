@@ -14,7 +14,7 @@ import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
 import { t } from '../locale/locale';
 // for conditional formatting
-import ConditionFactory from './conditionfactory'
+import ConditionFormatter, { styles } from './conditionformatter'
 
 // private methods
 /*
@@ -338,8 +338,7 @@ export default class DataProxy {
     this.hyperlinks = {};
     this.comments = {};
     this.sheetDatas = sheetDatas;
-    this.conditionalFormatting = [] // save this?
-    this.ConditionFactory = new ConditionFactory(
+    this.ConditionFormatter = new ConditionFormatter(
       this.rows,
       (x, y, z) => this.getCellTextOrDefault(y, x, z)
     )
@@ -356,13 +355,13 @@ export default class DataProxy {
     this.sortedRowMap = new Map();
     this.unsortedRowMap = new Map();
 
-    // make a bunch of conditions to test
-    this.conditionalFormatting.push(this.ConditionFactory.greaterThan(5, 5, 1, 1, '=d1', { bgcolor: '#ff0000'}))
-    this.conditionalFormatting.push(this.ConditionFactory.lessThan(6, 6, 1, 1, '=d2', { bgcolor: '#00ff00' }))
-    this.conditionalFormatting.push(this.ConditionFactory.between(7, 7, 1, 1, '=d1', '=d2', { bgcolor: '#0000ff' }))
-    this.conditionalFormatting.push(this.ConditionFactory.equal(8, 8, 1, 1, '=d1', { bgcolor: '#ffff00' }))
-    this.conditionalFormatting.push(this.ConditionFactory.textContains(9, 9, 1, 1, 'Hi', { bgcolor: '#00ffff' }))
-    this.conditionalFormatting.push(this.ConditionFactory.duplicateValues(10, 11, 1, 2, { bgcolor: '#ff00ff' }))
+    // conditional formatting is here for now
+    this.ConditionFormatter.addGreaterThan(5, 5, 1, 1, '=d1', styles.redFillDarkRedText)
+    this.ConditionFormatter.addLessThan(6, 6, 1, 1, '=d2', styles.greenFillDarkGreenText)
+    this.ConditionFormatter.addBetween(7, 7, 1, 1, '=d1', '=d2', styles.yellowFillDarkYellowText)
+    this.ConditionFormatter.addEqualTo(8, 8, 1, 1, '=d1', styles.redFill)
+    this.ConditionFormatter.addTextContains(9, 9, 1, 1, 'Hi', { bgcolor: '#00ffff' })
+    this.ConditionFormatter.addCheckDuplicate(10, 11, 1, 2, { bgcolor: '#ff00ff' })
   }
 
   addValidation(mode, ref, validator) {
@@ -973,14 +972,6 @@ export default class DataProxy {
     return null;
   }
 
-  getConditionalStyles(ri, ci, text) {
-    let style = {}
-    this.conditionalFormatting.forEach(test => {
-      style = { ...style, ...test(ri, ci, text) }
-    })
-    return style
-  }
-
   getCellStyleOrDefault(ri, ci) {
     const { styles, rows } = this;
     const cell = rows.getCell(ri, ci);
@@ -988,7 +979,7 @@ export default class DataProxy {
     const cellText = (cell && cell.text) || ''
     return helper.merge(this.defaultStyle(), {
       ...cellStyle,
-      ...this.getConditionalStyles(ri, ci, cellText)
+      ...this.ConditionFormatter.generateStyles(ri, ci, cellText)
     });
   }
 
