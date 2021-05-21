@@ -217,12 +217,10 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, zIndex=undef
         cellList.push(expr);
       }
       stack.push(evalSubExpr(expr, cellRender, zIndex));
-      console.log('for source', srcStack, 'we have', stack)
       cellList.pop();
     }
     // console.log('stack:', stack);
   }
-  console.log('returning stack[0]', stack[0])
   return stack[0];
 };
 
@@ -230,15 +228,13 @@ const cellRender = (src, formulaMap, getCellText, cellList = [], zIndex = undefi
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));
     if (stack.length <= 0) return src;
-    const temp = evalSuffixExpr(
+    return evalSuffixExpr(
       stack,
       formulaMap,
       (x, y, z) => cellRender(getCellText(x, y, z), formulaMap, getCellText, cellList, zIndex=z),
       cellList,
       zIndex
     );
-    console.log('TEMP', temp)
-    return temp
   }
   return src;
 };

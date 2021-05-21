@@ -341,7 +341,7 @@ export default class DataProxy {
     this.conditionalFormatting = [] // save this?
     this.ConditionFactory = new ConditionFactory(
       this.rows,
-      (x, y, z) => this.getCellTextOrDefault(x, y, z)
+      (x, y, z) => this.getCellTextOrDefault(y, x, z)
     )
     // save data end
 
@@ -357,9 +357,12 @@ export default class DataProxy {
     this.unsortedRowMap = new Map();
 
     // make a bunch of conditions to test
-    this.conditionalFormatting.push(this.ConditionFactory.numberGreaterThan(6, 6, 5, 5, '=b2-a1', { bgcolor: '#ff0000'}))
-    // this.conditionalFormatting.push(this.ConditionFactory.duplicateValues(7, 8, 5, 6, { bgcolor: '#ff00ff' }))
-    // this.conditionalFormatting.push(this.ConditionFactory.exprTest(5, 5, 5, 5, { bgcolor: '#ffff00' }))
+    this.conditionalFormatting.push(this.ConditionFactory.greaterThan(5, 5, 1, 1, '=d1', { bgcolor: '#ff0000'}))
+    this.conditionalFormatting.push(this.ConditionFactory.lessThan(6, 6, 1, 1, '=d2', { bgcolor: '#00ff00' }))
+    this.conditionalFormatting.push(this.ConditionFactory.between(7, 7, 1, 1, '=d1', '=d2', { bgcolor: '#0000ff' }))
+    this.conditionalFormatting.push(this.ConditionFactory.equal(8, 8, 1, 1, '=d1', { bgcolor: '#ffff00' }))
+    this.conditionalFormatting.push(this.ConditionFactory.textContains(9, 9, 1, 1, 'Hi', { bgcolor: '#00ffff' }))
+    this.conditionalFormatting.push(this.ConditionFactory.duplicateValues(10, 11, 1, 2, { bgcolor: '#ff00ff' }))
   }
 
   addValidation(mode, ref, validator) {
