@@ -555,16 +555,10 @@ function toolbarChange(type, value) {
     if (type === 'formula' && !data.selector.multiple()) {
       editorSet.call(this);
     } else if (type === 'conditional' && !data.selector.multiple()) {
-      openConditionalModal.call(this)
+      this.modalConditional.setValue(value)
     }
     sheetReset.call(this);
   }
-}
-
-function openConditionalModal() {
-  const { editor, data } = this
-  console.log(editor, data)
-  this.modalConditional.setValue(true);
 }
 
 function sortFilterChange(ci, order, operator, value) {
@@ -883,7 +877,7 @@ export default class Sheet {
     // data validation
     this.modalValidation = new ModalValidation();
     // modal for conditional formatting
-    this.modalConditional = new ModalConditional(data.ConditionFormatter);
+    this.modalConditional = new ModalConditional(this.data);
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector
