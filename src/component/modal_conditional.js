@@ -11,18 +11,18 @@ import { styles } from "../core/conditionformatter";
 
 const styleList = Object.keys(styles).map((style) => style.toString());
 export const keyMethodMap = {
-  gt: { name: "addGreaterThan", values: 1 },
-  lt: { name: "addLessThan", values: 1 },
-  btw: { name: "addBetween", values: 2 },
-  eq: { name: "addEqualTo", values: 1 },
-  cont: { name: "addTextContains", values: 1 },
-  dup: { name: "addCheckDuplicate", values: 0 },
-  topx: { name: "addTopXItems", values: 1 },
-  botx: { name: "addBottomXItems", values: 1 },
-  topp: { name: "addTopXPercent", values: 1 },
-  botp: { name: "addBottomXPercent", values: 1 },
-  aavg: { name: "addAboveAverage", values: 0 },
-  bavg: { name: "addBelowAverage", values: 0 },
+  gt: { func: "addGreaterThan", title: "Greater Than:", values: 1 },
+  lt: { func: "addLessThan", title: "Less Than:", values: 1 },
+  btw: { func: "addBetween", title: "Between:", values: 2 },
+  eq: { func: "addEqualTo", title: "Equal To:", values: 1 },
+  cont: { func: "addTextContains", title: "Contains:", values: 1 },
+  dup: { func: "addCheckDuplicate", title: "Duplicates:", values: 0 },
+  topx: { func: "addTopXItems", title: "Top X Items:", values: 1 },
+  botx: { func: "addBottomXItems", title: "Bottom X Items:", values: 1 },
+  topp: { func: "addTopXPercent", title: "Top X Percent:", values: 1 },
+  botp: { func: "addBottomXPercent", title: "Bottom X Percent", values: 1 },
+  aavg: { func: "addAboveAverage", title: "Above Average:", values: 0 },
+  bavg: { func: "addBelowAverage", title: "Below Average:", values: 0 },
 };
 
 const getFields = (values) => {
@@ -40,7 +40,7 @@ const getFields = (values) => {
       (it) => t(`conditionalFormatting.style.${it}`),
       (it) => this.styleSelected(it)
     ),
-    { required: true }
+    { required: true },
   );
   const vf1 = new FormField(new FormInput("80px", "Number, Text, or Cell"), {
     required: true,
@@ -64,7 +64,9 @@ export default class ModalConditional extends Modal {
     
     // value input eventually here
     const fields = getFields(values)
+    const title = h("h4").children('Greater Than:')
     super(`Conditional Formatting:`, [
+      title,
       h("div", `${cssPrefix}-form-fields`).children(...fields.map(field => field.el)),
       h("div", `${cssPrefix}-buttons`).children(
         new Button("cancel").on("click", () => this.btnClick("cancel")),
@@ -73,6 +75,7 @@ export default class ModalConditional extends Modal {
         )
       ),
     ]);
+    this.title = title
     this.mf = fields[1];
     this.rf = fields[0];
     this.vf1 = fields[2] || null
@@ -104,7 +107,7 @@ export default class ModalConditional extends Modal {
         new CustomEvent("addConditional", {
           detail: {
             sheetName: "sheet2", // TODO fix mismatch in sheet names here/dataproxy
-            functionName: keyMethodMap[this.condition].name,
+            functionName: keyMethodMap[this.condition].func,
             params: [sri, eri, sci, eci, ...values, styles[this.style]],
           },
         })
@@ -115,6 +118,8 @@ export default class ModalConditional extends Modal {
 
   setValue(v) {
     this.condition = v;
+    this.title.removeChild(this.title.children()[0])
+    this.title.children(keyMethodMap[v].title)
     this.show();
   }
 
