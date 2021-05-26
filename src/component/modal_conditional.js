@@ -31,7 +31,7 @@ export default class ModalConditional extends Modal {
       required: true,
       pattern: /^([A-Z]{1,2}[1-9]\d*)(:[A-Z]{1,2}[1-9]\d*)?$/,
     }, 'Range & Style:');
-    const mf = new FormField(
+    const sf = new FormField(
       // will select style
       new FormSelect(
         styleList[0],
@@ -56,7 +56,7 @@ export default class ModalConditional extends Modal {
     const title = h("h4").children('Greater Than:')
     super(`Conditional Formatting:`, [
       title,
-      h("div", `${cssPrefix}-form-fields`).children(rf.el, mf.el),
+      h("div", `${cssPrefix}-form-fields`).children(rf.el, sf.el),
       args,
       h("div", `${cssPrefix}-buttons`).children(
         new Button("cancel").on("click", () => this.btnClick("cancel")),
@@ -67,7 +67,7 @@ export default class ModalConditional extends Modal {
     ]);
     this.title = title
     this.args = args
-    this.mf = mf;
+    this.sf = sf;
     this.rf = rf;
     this.vf1 = vf1
     this.vf2 = vf2
@@ -76,8 +76,14 @@ export default class ModalConditional extends Modal {
     this.condition = undefined;
   }
 
-  btnClick(action, data) {
+  btnClick(action) {
     if (action === "cancel") {
+      // reset title
+      this.title.removeChild(this.title.children()[0])
+      // reset args
+      const children = [...this.args.children()]
+      children.forEach(child => this.args.removeChild(child))
+
       this.hide();
     } else if (action === "save") {
       // validation eventually
@@ -109,14 +115,12 @@ export default class ModalConditional extends Modal {
   }
 
   setValue(v) {
+    console.log('selected')
     this.condition = v;
-    // reset title
-    this.title.removeChild(this.title.children()[0])
+    // set title
     this.title.children(keyMethodMap[v].title)
-    // reset arguments
+    // set arguments
     const values = keyMethodMap[v].values
-    const children = [...this.args.children()]
-    children.forEach(child => this.args.removeChild(child))
     if (values === 1) {
       this.args.child(this.vf1.el)
     } else if (values === 2) {
