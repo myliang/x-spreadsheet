@@ -142,6 +142,34 @@ export default {
       redFillDarkRedText: 'Red Fill Dark Red Text',
       yellowFillDarkYellowText: 'Yellow Fill Dark Yellow Text',
       greenFillDarkGreenText: 'Green Fill Dark Green Text',
+    },
+    title: {
+      gt: 'Greater Than:',
+      lt: 'Less Than:',
+      btw: 'Between:',
+      eq: 'Equal To:',
+      cont: 'Contains:',
+      dup: 'Duplicates:',
+      topx: 'Top X Items:',
+      botx: 'Bottom X Items:',
+      topp: 'Top X Percent:',
+      botp: 'Bottom X Percent:',
+      aavg: 'Above Average:',
+      bavg: 'Below Average:'
+    },
+    details: {
+      gt: 'Style values greater than the given argument',
+      lt: 'Style values less than the given argument',
+      btw: 'Style values betweeen the two arguments',
+      eq: 'Style values equal to the given argument',
+      cont: 'Style text containing the given argument',
+      dup: 'Style duplicate values in the range',
+      topx: 'Style the top x values in the range',
+      botx: 'Style the bottom x values in the range',
+      topp: 'Style the top x% values in the range',
+      botp: 'Style the bottom x% values in the range',
+      aavg: 'Style values in the range above average',
+      bavg: 'Style values in the range below average',
     }
   }
 };

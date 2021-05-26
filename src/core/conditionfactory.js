@@ -55,6 +55,11 @@ export default class ConditionFactory {
     }
   };
 
+  // helper function to check if input text is a number
+  isNumber = (value) => {
+    return parseFloat(value).toString() === value;
+  };
+
   //=========================Highlight Cell Conditions=========================//
 
   // style if input is greater than a given value
@@ -65,7 +70,13 @@ export default class ConditionFactory {
       minCi,
       maxCi, // range
       (text) => {
-        return text > this.getExpressionValue(value);
+        const exprVal = this.getExpressionValue(value);
+        if (this.isNumber(text) && this.isNumber(exprVal)) {
+          // compare numbers
+          return parseFloat(text) > parseFloat(exprVal);
+        }
+        // compare strings
+        return text > exprVal;
       }, // condition
       style // style
     );
@@ -78,23 +89,59 @@ export default class ConditionFactory {
       minCi,
       maxCi,
       (text) => {
-        return text < this.getExpressionValue(value);
+        const exprVal = this.getExpressionValue(value);
+        if (this.isNumber(text) && this.isNumber(exprVal)) {
+          // compare numbers
+          return parseFloat(text) < parseFloat(exprVal);
+        }
+        // compare strings
+        return text < exprVal;
       },
       style
     );
 
   // style if input is between two given values (inclusive)
-  between = (minRi, maxRi, minCi, maxCi, low, high, style) =>
-    this.baseFunction(
+  between = (minRi, maxRi, minCi, maxCi, low, high, style) => {
+    let exprLow = this.getExpressionValue(low);
+    let exprHigh = this.getExpressionValue(high);
+    // make sure high > low
+    if (
+      // if both numbers, compare as numbers
+      (this.isNumber(exprHigh) &&
+        this.isNumber(exprLow) &&
+        parseFloat(exprHigh) < parseFloat(exprLow)) ||
+      // if both strings compare as strings
+      (!this.isNumber(exprHigh) &&
+        !this.isNumber(exprLow) &&
+        exprHigh < exprLow)
+    ) {
+      const temp = exprLow;
+      exprLow = exprHigh;
+      exprHigh = temp;
+    }
+    return this.baseFunction(
       minRi,
       maxRi,
       minCi,
       maxCi,
-      (text) =>
-        text >= this.getExpressionValue(low) &&
-        text <= this.getExpressionValue(high),
+      (text) => {
+        if (
+          this.isNumber(text) &&
+          this.isNumber(exprLow) &&
+          this.isNumber(exprHigh)
+        ) {
+          // compare numbers
+          return (
+            parseFloat(text) >= parseFloat(exprLow) &&
+            parseFloat(text) <= parseFloat(exprHigh)
+          );
+        }
+        // compare strings
+        return text >= exprLow && text <= exprHigh;
+      },
       style
     );
+  };
 
   // style if input equals given value
   equal = (minRi, maxRi, minCi, maxCi, value, style) =>
