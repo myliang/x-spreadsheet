@@ -54,8 +54,10 @@ export default class ModalConditional extends Modal {
     // value input eventually here
     const args = h("div", `${cssPrefix}-form-fields`)
     const title = h("h4").children('Greater Than:')
+    const detail = h("p", `${cssPrefix}-modal-detail`).children('')
     super(`Conditional Formatting:`, [
       title,
+      detail,
       h("div", `${cssPrefix}-form-fields`).children(rf.el, sf.el),
       args,
       h("div", `${cssPrefix}-buttons`).children(
@@ -67,6 +69,7 @@ export default class ModalConditional extends Modal {
     ]);
     this.title = title
     this.args = args
+    this.detail = detail
     this.sf = sf;
     this.rf = rf;
     this.vf1 = vf1
@@ -116,11 +119,13 @@ export default class ModalConditional extends Modal {
   }
 
   setValue(v) {
-    console.log('selected')
     this.condition = v;
     // reset title
     this.title.removeChild(this.title.children()[0])
-    this.title.child(keyMethodMap[v].title)
+    this.title.child(t(`conditionalFormatting.title.${v}`))
+    // reset details
+    this.detail.removeChild(this.detail.children()[0])
+    this.detail.child(t(`conditionalFormatting.details.${v}`))
     // set arguments
     const values = keyMethodMap[v].values
     if (values === 1) {
