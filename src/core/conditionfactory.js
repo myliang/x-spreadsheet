@@ -102,29 +102,26 @@ export default class ConditionFactory {
 
   // style if input is between two given values (inclusive)
   between = (minRi, maxRi, minCi, maxCi, low, high, style) => {
-    let exprLow = this.getExpressionValue(low);
-    let exprHigh = this.getExpressionValue(high);
-    // make sure high > low
-    if (
-      // if both numbers, compare as numbers
-      (this.isNumber(exprHigh) &&
-        this.isNumber(exprLow) &&
-        parseFloat(exprHigh) < parseFloat(exprLow)) ||
-      // if both strings compare as strings
-      (!this.isNumber(exprHigh) &&
-        !this.isNumber(exprLow) &&
-        exprHigh < exprLow)
-    ) {
-      const temp = exprLow;
-      exprLow = exprHigh;
-      exprHigh = temp;
-    }
     return this.baseFunction(
       minRi,
       maxRi,
       minCi,
       maxCi,
       (text) => {
+        let exprLow = this.getExpressionValue(low);
+        let exprHigh = this.getExpressionValue(high);
+        if (
+          (this.isNumber(exprLow) &&
+            this.isNumber(exprHigh) &&
+            parseFloat(exprLow) > parseFloat(exprHigh)) ||
+          (!this.isNumber(exprLow) &&
+            !this.isNumber(exprHigh) &&
+            exprLow > exprHigh)
+        ) {
+          const temp = exprLow;
+          exprLow = exprHigh;
+          exprHigh = temp;
+        }
         if (
           this.isNumber(text) &&
           this.isNumber(exprLow) &&
