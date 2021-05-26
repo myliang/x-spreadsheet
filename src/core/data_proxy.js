@@ -369,6 +369,13 @@ export default class DataProxy {
     this.ConditionFormatter.addBottomXPercent(14, 15, 1, 2, 25, styles.redFillDarkRedText)
     this.ConditionFormatter.addAboveAverage(16, 18, 1, 3, styles.greenFillDarkGreenText)
     this.ConditionFormatter.addBelowAverage(16, 18, 1, 3, styles.redFillDarkRedText)
+    // listen for new conditions
+    document.addEventListener('addConditional', (e) => {
+      const { sheetName, functionName, params } = e.detail
+      if (sheetName === this.name) {
+        this.ConditionFormatter[functionName](...params)
+      }
+    })
   }
 
   addValidation(mode, ref, validator) {

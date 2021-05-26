@@ -22,6 +22,7 @@ export default {
     freeze: 'Freeze cell',
     autofilter: 'Filter',
     formula: 'Functions',
+    conditional: 'Conditional Formatting',
     more: 'More',
   },
   contextmenu: {
@@ -133,4 +134,14 @@ export default {
       neq: 'not equal to',
     },
   },
+  conditionalFormatting: {
+    style: {
+      redFill: 'Red Fill',
+      darkRedText: 'Dark Red Text',
+      redBorder: 'Red Border',
+      redFillDarkRedText: 'Red Fill Dark Red Text',
+      yellowFillDarkYellowText: 'Yellow Fill Dark Yellow Text',
+      greenFillDarkGreenText: 'Green Fill Dark Green Text',
+    }
+  }
 };

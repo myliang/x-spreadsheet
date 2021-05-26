@@ -10,6 +10,7 @@ import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar/index';
 import ModalValidation from './modal_validation';
+import ModalConditional from './modal_conditional';
 import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
@@ -553,6 +554,8 @@ function toolbarChange(type, value) {
     data.setSelectedCellAttr(type, value);
     if (type === 'formula' && !data.selector.multiple()) {
       editorSet.call(this);
+    } else if (type === 'conditional' && !data.selector.multiple()) {
+      this.modalConditional.setValue(value)
     }
     sheetReset.call(this);
   }
@@ -576,6 +579,7 @@ function sheetInitEvents() {
     contextMenu,
     toolbar,
     modalValidation,
+    modalConditional,
     sortFilter,
   } = this;
   // overlayer
@@ -872,6 +876,9 @@ export default class Sheet {
     );
     // data validation
     this.modalValidation = new ModalValidation();
+    // modal for conditional formatting
+    // different modals depending on required values
+    this.modalConditional = new ModalConditional(this.data);
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector
@@ -895,6 +902,7 @@ export default class Sheet {
       this.horizontalScrollbar.el,
       this.contextMenu.el,
       this.modalValidation.el,
+      this.modalConditional.el,
       this.sortFilter.el,
     );
     // table
