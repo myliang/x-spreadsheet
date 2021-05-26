@@ -25,49 +25,39 @@ export const keyMethodMap = {
   bavg: { func: "addBelowAverage", title: "Below Average:", values: 0 },
 };
 
-const getFields = (values) => {
-  // will be range input
-  const rf = new FormField(new FormInput("120px", "E3 or E3:F12"), {
-    required: true,
-    pattern: /^([A-Z]{1,2}[1-9]\d*)(:[A-Z]{1,2}[1-9]\d*)?$/,
-  });
-  const mf = new FormField(
-    // will select style
-    new FormSelect(
-      styleList[0],
-      styleList,
-      "100%",
-      (it) => t(`conditionalFormatting.style.${it}`),
-      (it) => this.styleSelected(it)
-    ),
-    { required: true },
-  );
-  const vf1 = new FormField(new FormInput("80px", "Number, Text, or Cell"), {
-    required: true,
-    pattern: /\.*/
-  })
-  const vf2 = new FormField(new FormInput("80px", "Number, Text, or Cell"), {
-    required: true,
-    pattern: /\.*/
-  })
-  if (values <= 0) {
-    return [rf, mf]
-  } else if (values === 1) {
-    return [rf, mf, vf1]
-  } else {
-    return [rf, mf, vf1, vf2]
-  }
-}
-
 export default class ModalConditional extends Modal {
-  constructor(data, values) {
+  constructor(data) {
+    const rf = new FormField(new FormInput("120px", "E3 or E3:F12"), {
+      required: true,
+      pattern: /^([A-Z]{1,2}[1-9]\d*)(:[A-Z]{1,2}[1-9]\d*)?$/,
+    }, 'Range & Style:');
+    const mf = new FormField(
+      // will select style
+      new FormSelect(
+        styleList[0],
+        styleList,
+        "100%",
+        (it) => t(`conditionalFormatting.style.${it}`),
+        (it) => this.styleSelected(it)
+      ),
+      { required: true },
+    );
+    const vf1 = new FormField(new FormInput("130px", "Number, Text, or Cell"), {
+      required: true,
+      pattern: /\.*/
+    }, 'Arguments:')
+    const vf2 = new FormField(new FormInput("130px", "Number, Text, or Cell"), {
+      required: true,
+      pattern: /\.*/
+    })
     
     // value input eventually here
-    const fields = getFields(values)
+    const args = h("div", `${cssPrefix}-form-fields`)
     const title = h("h4").children('Greater Than:')
     super(`Conditional Formatting:`, [
       title,
-      h("div", `${cssPrefix}-form-fields`).children(...fields.map(field => field.el)),
+      h("div", `${cssPrefix}-form-fields`).children(rf.el, mf.el),
+      args,
       h("div", `${cssPrefix}-buttons`).children(
         new Button("cancel").on("click", () => this.btnClick("cancel")),
         new Button("save", "primary").on("click", () =>
@@ -76,10 +66,11 @@ export default class ModalConditional extends Modal {
       ),
     ]);
     this.title = title
-    this.mf = fields[1];
-    this.rf = fields[0];
-    this.vf1 = fields[2] || null
-    this.vf2 = fields[3] || null
+    this.args = args
+    this.mf = mf;
+    this.rf = rf;
+    this.vf1 = vf1
+    this.vf2 = vf2
     this.change = () => {};
     this.style = styleList[0];
     this.condition = undefined;
@@ -96,10 +87,11 @@ export default class ModalConditional extends Modal {
       const { sri, eri, sci, eci } = CellRange.valueOf(this.rf.val());
       // get extra values if available
       let values = []
-      if (this.vf1) {
+      const numValues = keyMethodMap[this.condition].values
+      if (numValues >= 1) {
         values.push(this.vf1.val())
       }
-      if (this.vf2) {
+      if (numValues === 2) {
         values.push(this.vf2.val())
       }
       this.change("save"); // does this do anything??
@@ -118,8 +110,18 @@ export default class ModalConditional extends Modal {
 
   setValue(v) {
     this.condition = v;
+    // reset title
     this.title.removeChild(this.title.children()[0])
     this.title.children(keyMethodMap[v].title)
+    // reset arguments
+    const values = keyMethodMap[v].values
+    const children = [...this.args.children()]
+    children.forEach(child => this.args.removeChild(child))
+    if (values === 1) {
+      this.args.child(this.vf1.el)
+    } else if (values === 2) {
+      this.args.children(this.vf1.el, this.vf2.el)
+    }
     this.show();
   }
 

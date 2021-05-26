@@ -372,11 +372,9 @@ export default class DataProxy {
     // listen for new conditions
     document.addEventListener('addConditional', (e) => {
       const { sheetName, functionName, params } = e.detail
-      console.log(this.name)
       if (sheetName === this.name) {
         this.ConditionFormatter[functionName](...params)
-        console.log('shoulda added')
-      } else { console.log('issue') }
+      }
     })
   }
 
