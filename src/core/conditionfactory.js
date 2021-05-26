@@ -57,7 +57,10 @@ export default class ConditionFactory {
 
   // helper function to check if input text is a number
   isNumber = (value) => {
-    return parseFloat(value).toString() === value;
+    return (
+      parseFloat(value).toString() === value ||
+      parseFloat(value).toFixed(2) === value // hotfix for now - check formats
+    );
   };
 
   //=========================Highlight Cell Conditions=========================//
@@ -94,6 +97,7 @@ export default class ConditionFactory {
           // compare numbers
           return parseFloat(text) < parseFloat(exprVal);
         }
+        console.log("comparing str", text, exprVal);
         // compare strings
         return text < exprVal;
       },
