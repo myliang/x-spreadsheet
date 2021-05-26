@@ -555,7 +555,7 @@ function toolbarChange(type, value) {
     if (type === 'formula' && !data.selector.multiple()) {
       editorSet.call(this);
     } else if (type === 'conditional' && !data.selector.multiple()) {
-      this.modalConditional.setValue(value)
+      this.modalConditional.setValue(value, this.data.name)
     }
     sheetReset.call(this);
   }

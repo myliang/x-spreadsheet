@@ -63,13 +63,14 @@ export default class ModalConditional extends Modal {
       h("div", `${cssPrefix}-buttons`).children(
         new Button("cancel").on("click", () => this.btnClick("cancel")),
         new Button("save", "primary").on("click", () =>
-          this.btnClick("save", data)
+          this.btnClick("save")
         )
       ),
     ]);
     this.title = title
     this.args = args
     this.detail = detail
+    this.sheetName = data.name
     this.sf = sf;
     this.rf = rf;
     this.vf1 = vf1
@@ -108,7 +109,7 @@ export default class ModalConditional extends Modal {
       document.dispatchEvent(
         new CustomEvent("addConditional", {
           detail: {
-            sheetName: "sheet2", // TODO fix mismatch in sheet names here/dataproxy
+            sheetName: this.sheetName,
             functionName: keyMethodMap[this.condition].func,
             params: [sri, eri, sci, eci, ...values, styles[this.style]],
           },
@@ -118,7 +119,8 @@ export default class ModalConditional extends Modal {
     }
   }
 
-  setValue(v) {
+  setValue(v, sheetName) {
+    this.sheetName = sheetName
     this.condition = v;
     // reset title
     this.title.removeChild(this.title.children()[0])
