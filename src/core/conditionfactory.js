@@ -95,7 +95,6 @@ export default class ConditionFactory {
         const exprVal = this.getExpressionValue(value);
         if (this.isNumber(text) && this.isNumber(exprVal)) {
           // compare numbers
-          console.log("comparing", text, exprVal);
           return parseFloat(text) < parseFloat(exprVal);
         }
         console.log("comparing str", text, exprVal);
