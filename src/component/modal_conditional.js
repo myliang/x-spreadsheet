@@ -76,14 +76,15 @@ export default class ModalConditional extends Modal {
     this.condition = undefined;
   }
 
+  hide() {
+    // reset args
+    const achildren = [...this.args.children()]
+    achildren.forEach(child => this.args.removeChild(child))
+    super.hide()
+  }
+
   btnClick(action) {
     if (action === "cancel") {
-      // reset title
-      this.title.removeChild(this.title.children()[0])
-      // reset args
-      const children = [...this.args.children()]
-      children.forEach(child => this.args.removeChild(child))
-
       this.hide();
     } else if (action === "save") {
       // validation eventually
@@ -117,8 +118,9 @@ export default class ModalConditional extends Modal {
   setValue(v) {
     console.log('selected')
     this.condition = v;
-    // set title
-    this.title.children(keyMethodMap[v].title)
+    // reset title
+    this.title.removeChild(this.title.children()[0])
+    this.title.child(keyMethodMap[v].title)
     // set arguments
     const values = keyMethodMap[v].values
     if (values === 1) {
