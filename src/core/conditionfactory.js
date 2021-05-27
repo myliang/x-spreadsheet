@@ -144,6 +144,25 @@ export default class ConditionFactory {
     );
   };
 
+  // style if input is outside given range - only works on numbers
+  variance = (minRi, maxRi, minCi, maxCi, value, tolerance, style) =>
+    this.baseNumberFunction(
+      minRi,
+      maxRi,
+      minCi,
+      maxCi,
+      (input) => {
+        let exprValue = parseFloat(this.getExpressionValue(value));
+        let exprTolerance = parseFloat(this.getExpressionValue(tolerance));
+        if (!exprValue || !exprTolerance) {
+          // if not numbers don't style
+          return false
+        }
+        return input < exprValue - exprTolerance || input > exprValue + exprTolerance
+      },
+      style
+    );
+
   // style if input equals given value
   equal = (minRi, maxRi, minCi, maxCi, value, style) =>
     this.baseFunction(
