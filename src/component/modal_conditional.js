@@ -11,17 +11,64 @@ import { styles } from "../core/conditionformatter";
 
 const styleList = Object.keys(styles).map((style) => style.toString());
 export const keyMethodMap = {
-  gt: { func: "addGreaterThan", title: "Greater Than:", values: 1, vf1Tip: 'Greater Than:' },
-  lt: { func: "addLessThan", title: "Less Than:", values: 1, vf1Tip: 'Less Than:' },
-  btw: { func: "addBetween", title: "Between:", values: 2, vf1Tip: 'At Least:', vf2Tip: 'At Most:' },
-  var: { func: "addVariance", title: "Variance:", values: 2, vf1Tip: 'Value:', vf2Tip: 'Variance:' },
-  eq: { func: "addEqualTo", title: "Equal To:", values: 1, vf1Tip: 'Equals:' },
-  cont: { func: "addTextContains", title: "Contains:", values: 1, vf1Tip: 'Contains:' },
+  gt: {
+    func: "addGreaterThan",
+    title: "Greater Than:",
+    values: 1,
+    vf1Tip: "Greater Than:",
+  },
+  lt: {
+    func: "addLessThan",
+    title: "Less Than:",
+    values: 1,
+    vf1Tip: "Less Than:",
+  },
+  btw: {
+    func: "addBetween",
+    title: "Between:",
+    values: 2,
+    vf1Tip: "At Least:",
+    vf2Tip: "At Most:",
+  },
+  var: {
+    func: "addVariance",
+    title: "Variance:",
+    values: 2,
+    vf1Tip: "Value:",
+    vf2Tip: "Variance:",
+  },
+  eq: { func: "addEqualTo", title: "Equal To:", values: 1, vf1Tip: "Equals:" },
+  cont: {
+    func: "addTextContains",
+    title: "Contains:",
+    values: 1,
+    vf1Tip: "Contains:",
+  },
   dup: { func: "addCheckDuplicate", title: "Duplicates:", values: 0 },
-  topx: { func: "addTopXItems", title: "Top X Items:", values: 1, vf1Tip: 'X:' },
-  botx: { func: "addBottomXItems", title: "Bottom X Items:", values: 1, vf1Tip: 'X:' },
-  topp: { func: "addTopXPercent", title: "Top X Percent:", values: 1, vf1Tip: 'X:' },
-  botp: { func: "addBottomXPercent", title: "Bottom X Percent", values: 1, vf1Tip: 'X:' },
+  topx: {
+    func: "addTopXItems",
+    title: "Top X Items:",
+    values: 1,
+    vf1Tip: "X:",
+  },
+  botx: {
+    func: "addBottomXItems",
+    title: "Bottom X Items:",
+    values: 1,
+    vf1Tip: "X:",
+  },
+  topp: {
+    func: "addTopXPercent",
+    title: "Top X Percent:",
+    values: 1,
+    vf1Tip: "X:",
+  },
+  botp: {
+    func: "addBottomXPercent",
+    title: "Bottom X Percent",
+    values: 1,
+    vf1Tip: "X:",
+  },
   aavg: { func: "addAboveAverage", title: "Above Average:", values: 0 },
   bavg: { func: "addBelowAverage", title: "Below Average:", values: 0 },
 };
@@ -33,15 +80,19 @@ const getArgFields = (vf1Tip, vf2Tip) => {
       required: true,
       pattern: /\.*/,
     },
-    vf1Tip || 'Arguments:'
+    vf1Tip || "Arguments:"
   );
-  const vf2 = new FormField(new FormInput("130px", "Number, Text, or Cell"), {
-    required: true,
-    pattern: /\.*/,
-  }, vf2Tip || '');
+  const vf2 = new FormField(
+    new FormInput("130px", "Number, Text, or Cell"),
+    {
+      required: true,
+      pattern: /\.*/,
+    },
+    vf2Tip || ""
+  );
 
-  return { vf1, vf2 }
-}
+  return { vf1, vf2 };
+};
 
 export default class ModalConditional extends Modal {
   constructor(data) {
@@ -64,9 +115,8 @@ export default class ModalConditional extends Modal {
       ),
       { required: true }
     );
-    const { vf1, vf2 } = getArgFields()
-    console.log('With nothing', vf1, vf2)
-    
+    const { vf1, vf2 } = getArgFields();
+    console.log("With nothing", vf1, vf2);
 
     // value input eventually here
     const args = h("div", `${cssPrefix}-form-fields`);
@@ -144,9 +194,9 @@ export default class ModalConditional extends Modal {
     this.detail.removeChild(this.detail.children()[0]);
     this.detail.child(t(`conditionalFormatting.details.${v}`));
     // set tips
-    const vf = getArgFields(keyMethodMap[v].vf1Tip, keyMethodMap[v].vf2Tip)
-    this.vf1 = vf.vf1
-    this.vf2 = vf.vf2
+    const vf = getArgFields(keyMethodMap[v].vf1Tip, keyMethodMap[v].vf2Tip);
+    this.vf1 = vf.vf1;
+    this.vf2 = vf.vf2;
     // set arguments
     const values = keyMethodMap[v].values;
     if (values === 1) {
