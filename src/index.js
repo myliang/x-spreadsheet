@@ -112,6 +112,12 @@ class Spreadsheet {
     currentSheet.insert('column', 1, colNum)
   }
 
+   // add greater Than conditional formatting
+  addGreterThan(minRi, maxRi, minCi, maxCi, value, style, index){
+    const targetProxy = this.datas[index];
+    targetProxy.addGreaterThan(minRi, maxRi, minCi, maxCi, value, style)
+  }
+
   cellText(ri, ci, text, sheetIndex = 0, lockOverride = false) {
     this.datas[sheetIndex].setCellText(ri, ci, text, 'finished', lockOverride);
     return this;

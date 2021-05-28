@@ -384,6 +384,41 @@ export default class DataProxy {
     return v ? v.validator : null;
   }
 
+  // add greater Than conditional formatting
+  addGreterThan(minRi, maxRi, minCi, maxCi, value, style){
+    this.ConditionFormatter.addGreaterThan(minRi, maxRi, minCi, maxCi, value, style);
+  }
+
+  // add less Than conditional formatting
+  addLessThan(minRi, maxRi, minCi, maxCi, value, style){
+    this.ConditionFormatter.addLessThan(minRi, maxRi, minCi, maxCi, value, style);
+  }
+
+  // add bewtween conditional formatting
+  addBetween(minRi, maxRi, minCi, maxCi, value, style){
+    this.ConditionFormatter.addBetween(minRi, maxRi, minCi, maxCi, value, style);
+  }
+
+  // add variance conditional formatting
+  addVariance(minRi, maxRi, minCi, maxCi, tolerance, value, style){
+    this.ConditionFormatter.addVariance(minRi, maxRi, minCi, maxCi, value, tolerance ,style);
+  }
+
+  // add equal to conditional formatting
+  addEqualTo(minRi, maxRi, minCi, maxCi, value, style){
+    this.ConditionFormatter.addEqualTo(minRi, maxRi, minCi, maxCi, value, style);
+  }
+
+  // add contain conditional formatting
+  addTextContains(minRi, maxRi, minCi, maxCi, value, style){
+    this.ConditionFormatter.addEqualTo(minRi, maxRi, minCi, maxCi, value, style);
+  }
+
+   // add contain conditional formatting
+  addCheckDuplicate(minRi, maxRi, minCi, maxCi, value, style){
+    this.ConditionFormatter.addCheckDuplicate(minRi, maxRi, minCi, maxCi, value, style);
+  }
+
   getSelectedValidation() {
     const { ri, ci, range } = this.selector;
     const v = this.validations.get(ri, ci);
