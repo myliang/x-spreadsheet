@@ -355,21 +355,6 @@ export default class DataProxy {
     this.sortedRowMap = new Map();
     this.unsortedRowMap = new Map();
     
-    // sample formatting -- only on sheet2
-    if (this.name === 'sheet2') {
-      this.ConditionFormatter.addGreaterThan(5, 5, 1, 1, '=d1', styles.redFillDarkRedText)
-      this.ConditionFormatter.addLessThan(6, 6, 1, 1, '=d2', styles.greenFillDarkGreenText)
-      this.ConditionFormatter.addBetween(7, 7, 1, 1, '=d1', '=d2', styles.yellowFillDarkYellowText)
-      this.ConditionFormatter.addEqualTo(8, 8, 1, 1, '=d1', styles.redFill)
-      this.ConditionFormatter.addTextContains(9, 9, 1, 1, 'Hi', { bgcolor: '#00ffff' })
-      this.ConditionFormatter.addCheckDuplicate(10, 11, 1, 2, { bgcolor: '#ff00ff' })
-      this.ConditionFormatter.addTopXItems(12, 13, 1, 2, 2, styles.greenFillDarkGreenText)
-      this.ConditionFormatter.addBottomXItems(12, 13, 1, 2, 1, styles.redFillDarkRedText)
-      this.ConditionFormatter.addTopXPercent(14, 15, 1, 2, 50, styles.greenFillDarkGreenText)
-      this.ConditionFormatter.addBottomXPercent(14, 15, 1, 2, 25, styles.redFillDarkRedText)
-      this.ConditionFormatter.addAboveAverage(16, 18, 1, 3, styles.greenFillDarkGreenText)
-      this.ConditionFormatter.addBelowAverage(16, 18, 1, 3, styles.redFillDarkRedText)
-    }
     // listen for new conditions
     document.addEventListener('addConditional', (e) => {
       const { sheetName, functionName, params } = e.detail
@@ -1222,6 +1207,8 @@ export default class DataProxy {
         this.freeze = [y, x];
       } else if (property === 'autofilter') {
         this.autoFilter.setData(d[property]);
+      } else if (property === 'ConditionFormatter') {
+        this.ConditionFormatter.setData(d[property])
       } else if (d[property] !== undefined) {
         this[property] = d[property];
       }
@@ -1231,7 +1218,7 @@ export default class DataProxy {
 
   getData() {
     const {
-      name, freeze, styles, merges, rows, cols, validations, autoFilter,
+      name, freeze, styles, merges, rows, cols, validations, autoFilter, ConditionFormatter
     } = this;
     return {
       name,
@@ -1242,6 +1229,7 @@ export default class DataProxy {
       cols: cols.getData(),
       validations: validations.getData(),
       autofilter: autoFilter.getData(),
+      ConditionFormatter: ConditionFormatter.getData()
     };
   }
 }
