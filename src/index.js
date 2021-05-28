@@ -112,8 +112,8 @@ class Spreadsheet {
     currentSheet.insert('column', 1, colNum)
   }
 
-  cellText(ri, ci, text, sheetIndex = 0) {
-    this.datas[sheetIndex].setCellText(ri, ci, text, 'finished');
+  cellText(ri, ci, text, sheetIndex = 0, lockOverride = false) {
+    this.datas[sheetIndex].setCellText(ri, ci, text, 'finished', lockOverride);
     return this;
   }
 
