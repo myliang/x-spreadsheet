@@ -10,33 +10,59 @@ export default class ConditionFormatter {
   }
 
   // generates conditional styles for given cell
-  generateStyles (ri, ci, text) {
+  generateStyles(ri, ci, text) {
     let style = {};
     this.conditionalFormatting.forEach(
-      (test) => (style = { ...style, ...test(ri, ci, text) })
+      (test) => {
+        (style = { ...style, ...test(ri, ci, text) })
+      }
     );
     return style;
-  };
+  }
 
   // generates object and adds to formatting data
-  addFormattingData (functionName, params) {
+  addFormattingData(functionName, params) {
     this.formattingData.push({ functionName, params });
-  };
+  }
 
   // get formatting data
-  getData () {
+  getData() {
     return this.formattingData;
   }
 
   // set formatting data
-  setData (formattingData) {
+  setData(formattingData) {
     formattingData.forEach((data) => {
       this[data.functionName](...data.params);
     });
-  };
+  }
+
+  addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style) {
+    // console.log('MY ARGS', arguments)
+    this.conditionalFormatting.push(
+      this.ConditionFactory.otherGreaterThan(
+        minRi,
+        maxRi,
+        minCi,
+        maxCi,
+        val1,
+        val2,
+        style
+      )
+    );
+    this.addFormattingData("addOtherGreaterThan", [
+      minRi,
+      maxRi,
+      minCi,
+      maxCi,
+      val1,
+      val2,
+      style,
+    ]);
+  }
 
   // functions to create conditions
-  addGreaterThan (minRi, maxRi, minCi, maxCi, value, style) {
+  addGreaterThan(minRi, maxRi, minCi, maxCi, value, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.greaterThan(
         minRi,
@@ -55,9 +81,9 @@ export default class ConditionFormatter {
       value,
       style,
     ]);
-  };
+  }
 
-  addLessThan (minRi, maxRi, minCi, maxCi, value, style) {
+  addLessThan(minRi, maxRi, minCi, maxCi, value, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.lessThan(minRi, maxRi, minCi, maxCi, value, style)
     );
@@ -69,9 +95,9 @@ export default class ConditionFormatter {
       value,
       style,
     ]);
-  };
+  }
 
-  addBetween (minRi, maxRi, minCi, maxCi, low, high, style) {
+  addBetween(minRi, maxRi, minCi, maxCi, low, high, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.between(
         minRi,
@@ -92,10 +118,10 @@ export default class ConditionFormatter {
       high,
       style,
     ]);
-  };
+  }
 
   // value is base number, tolerance is acceptable range from base number
-  addVariance (minRi, maxRi, minCi, maxCi, value, tolerance, style) {
+  addVariance(minRi, maxRi, minCi, maxCi, value, tolerance, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.variance(
         minRi,
@@ -116,9 +142,9 @@ export default class ConditionFormatter {
       tolerance,
       style,
     ]);
-  };
+  }
 
-  addEqualTo (minRi, maxRi, minCi, maxCi, value, style) {
+  addEqualTo(minRi, maxRi, minCi, maxCi, value, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.equal(minRi, maxRi, minCi, maxCi, value, style)
     );
@@ -130,9 +156,9 @@ export default class ConditionFormatter {
       value,
       style,
     ]);
-  };
+  }
 
-  addTextContains (minRi, maxRi, minCi, maxCi, value, style) {
+  addTextContains(minRi, maxRi, minCi, maxCi, value, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.textContains(
         minRi,
@@ -151,9 +177,9 @@ export default class ConditionFormatter {
       value,
       style,
     ]);
-  };
+  }
 
-  addCheckDuplicate (minRi, maxRi, minCi, maxCi, style) {
+  addCheckDuplicate(minRi, maxRi, minCi, maxCi, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.duplicateValues(minRi, maxRi, minCi, maxCi, style)
     );
@@ -164,9 +190,9 @@ export default class ConditionFormatter {
       maxCi,
       style,
     ]);
-  };
+  }
 
-  addTopXItems (minRi, maxRi, minCi, maxCi, x, style) {
+  addTopXItems(minRi, maxRi, minCi, maxCi, x, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.topXItems(minRi, maxRi, minCi, maxCi, x, style)
     );
@@ -178,9 +204,9 @@ export default class ConditionFormatter {
       x,
       style,
     ]);
-  };
+  }
 
-  addTopXPercent (minRi, maxRi, minCi, maxCi, x, style) {
+  addTopXPercent(minRi, maxRi, minCi, maxCi, x, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.topXPercent(minRi, maxRi, minCi, maxCi, x, style)
     );
@@ -192,9 +218,9 @@ export default class ConditionFormatter {
       x,
       style,
     ]);
-  };
+  }
 
-  addBottomXItems (minRi, maxRi, minCi, maxCi, x, style) {
+  addBottomXItems(minRi, maxRi, minCi, maxCi, x, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.bottomXItems(minRi, maxRi, minCi, maxCi, x, style)
     );
@@ -206,9 +232,9 @@ export default class ConditionFormatter {
       x,
       style,
     ]);
-  };
+  }
 
-  addBottomXPercent (minRi, maxRi, minCi, maxCi, x, style) {
+  addBottomXPercent(minRi, maxRi, minCi, maxCi, x, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.bottomXPercent(minRi, maxRi, minCi, maxCi, x, style)
     );
@@ -220,9 +246,9 @@ export default class ConditionFormatter {
       x,
       style,
     ]);
-  };
+  }
 
-  addAboveAverage (minRi, maxRi, minCi, maxCi, style) {
+  addAboveAverage(minRi, maxRi, minCi, maxCi, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.aboveAverage(minRi, maxRi, minCi, maxCi, style)
     );
@@ -233,9 +259,9 @@ export default class ConditionFormatter {
       maxCi,
       style,
     ]);
-  };
+  }
 
-  addBelowAverage (minRi, maxRi, minCi, maxCi, style) {
+  addBelowAverage(minRi, maxRi, minCi, maxCi, style) {
     this.conditionalFormatting.push(
       this.ConditionFactory.belowAverage(minRi, maxRi, minCi, maxCi, style)
     );
@@ -246,7 +272,7 @@ export default class ConditionFormatter {
       maxCi,
       style,
     ]);
-  };
+  }
 }
 
 // style constants for convenience

@@ -360,6 +360,17 @@ export default class DataProxy {
       const { sheetName, functionName, params } = e.detail
       if (sheetName === this.name) {
         this.ConditionFormatter[functionName](...params)
+
+        if (functionName === 'addOtherGreaterThan') {
+          // receiving cells must have text to be styled
+          for (let r = params[0]; r <= params[1]; r++) {
+            for (let c = params[2]; c <= params[3]; c++) {
+              if (!this.getCell(r, c) || !this.getCell(r,c).text) {
+                this.setCellText(r, c, ' ', 'finished')
+              }
+            }
+          }
+        }
       }
     })
   }
