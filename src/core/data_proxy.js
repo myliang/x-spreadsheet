@@ -598,7 +598,7 @@ export default class DataProxy {
   }
 
   // state: input | finished
-  setSelectedCellText(text, state = 'input') {
+  setSelectedCellText(text, state = 'input', lockOverride=false) {
     const { autoFilter, selector, rows } = this;
     const { ri, ci } = selector;
     let nri = ri;
@@ -607,7 +607,15 @@ export default class DataProxy {
     }
     const oldCell = rows.getCell(nri, ci);
     const oldText = oldCell ? oldCell.text : '';
-    this.setCellText(nri, ci, text, state);
+    if (oldCell){
+      if (oldCell.editable === undefined){
+        this.setCellText(nri, ci, text, state);
+      } else if (oldCell.editable || lockOverride){
+        this.setCellText(nri, ci, text, state);
+      }
+    }else{
+      this.setCellText(nri, ci, text, state);
+    }
     // replace filter.value
     if (autoFilter.active()) {
       const filter = autoFilter.getFilter(ci);
