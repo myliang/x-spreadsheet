@@ -58,7 +58,11 @@ export default class ConditionFactory {
 
   // helper function to check if input text is a number
   isNumber(value) {
+    if (value !== 0 && !value) {
+      return false
+    }
     return (
+      typeof value === number ||
       parseFloat(value).toString() === value ||
       parseFloat(value).toFixed(2) === value // hotfix for now - check formats
     );
@@ -67,7 +71,7 @@ export default class ConditionFactory {
   //=========================Highlight Cell Conditions=========================//
 
   // made specifically for MOH online tool
-  // style if one given value is greater than another - ONLY CHECKS NUMBERS
+  // style if one given |val1| > |val2| - ONLY CHECKS NUMBERS
   otherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style) {
     return this.baseFunction(
       minRi,
@@ -78,9 +82,10 @@ export default class ConditionFactory {
         const exprVal1 = this.getExpressionValue(val1);
         const exprVal2 = this.getExpressionValue(val2);
         if (!this.isNumber(exprVal1) || !this.isNumber(exprVal2)) {
-          return {};
+          // something unexpected here so we apply style
+          return true;
         }
-        return exprVal1 > exprVal2 && text === ' ';
+        return Math.abs(exprVal1) > Math.abs(exprVal2) && text === '';
       },
       style
     );
