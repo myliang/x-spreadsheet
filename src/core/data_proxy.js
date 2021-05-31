@@ -400,6 +400,10 @@ export default class DataProxy {
     this.ConditionFormatter.addGreaterThan(minRi, maxRi, minCi, maxCi, value, style);
   }
 
+  addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style) {
+    this.ConditionFormatter.addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style);
+  }
+
   // add less Than conditional formatting
   addLessThan(minRi, maxRi, minCi, maxCi, value, style){
     this.ConditionFormatter.addLessThan(minRi, maxRi, minCi, maxCi, value, style);

@@ -118,6 +118,11 @@ class Spreadsheet {
     targetProxy.addGreaterThan(minRi, maxRi, minCi, maxCi, value, style)
   }
 
+  addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style, index) {
+    const targetProxy = this.datas[index];
+    targetProxy.addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style);
+  }
+
   cellText(ri, ci, text, sheetIndex = 0, lockOverride = false) {
     this.datas[sheetIndex].setCellText(ri, ci, text, 'finished', lockOverride);
     return this;
