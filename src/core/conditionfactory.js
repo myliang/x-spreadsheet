@@ -62,7 +62,7 @@ export default class ConditionFactory {
       return false
     }
     return (
-      typeof value === number ||
+      typeof value === 'number' ||
       parseFloat(value).toString() === value ||
       parseFloat(value).toFixed(2) === value // hotfix for now - check formats
     );
