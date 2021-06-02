@@ -470,7 +470,7 @@ export default class DataProxy {
       const contentToPaste = this.parseClipboardContent(content);
       let startRow = selector.ri;
       contentToPaste.forEach((row) => {
-        let startColumn = selector.ci; // content will be pasted to cells in this row
+        let startColumn = selector.ci;
         row.forEach((cellContent) => {
           this.setCellText(startRow, startColumn, cellContent, 'input');
           startColumn += 1;
