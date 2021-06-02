@@ -752,10 +752,6 @@ function sheetInitEvents() {
           evt.preventDefault();
           break;
         case 86:
-          // console.log('even 86');
-          // paste.call(this, 'all');
-          // evt.preventDefault();
-          // console.log('finished pasting');
           // ctrl + v
           // => paste
           // evt.preventDefault();
