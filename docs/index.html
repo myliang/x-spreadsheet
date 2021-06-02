@@ -80,7 +80,7 @@
         console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
       }).on('cell-edited', (text, ri, ci) => {
         console.log('text:', text, ', ri: ', ri, ', ci:', ci);
-      }).on('clipboard', (data) => {
+      }).on('pasted-clipboard', (data) => {
         console.log('>>>>>data is ', data);
       });
 
