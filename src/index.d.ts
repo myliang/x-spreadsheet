@@ -1,10 +1,20 @@
 declare module 'x-data-spreadsheet' {
+  export interface ExtendToolbarOption {
+    tip?: string;
+    el?: HTMLElement;
+    icon?: string;
+    onClick?: (data: object, sheet: object) => void
+  }
   export interface Options {
     mode?: 'edit' | 'read';
     showToolbar?: boolean;
     showGrid?: boolean;
     showContextmenu?: boolean;
     showBottomBar?: boolean;
+    extendToolbar?: {
+      left?: ExtendToolbarOption[],
+      right?: ExtendToolbarOption[],
+    };
     view?: {
       height: () => number;
       width: () => number;
