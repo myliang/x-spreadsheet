@@ -55,6 +55,7 @@ class Merges {
 
   // type: row | column
   shift(type, index, n, cbWithin) {
+    let merges_to_be_deleted = []
     this._.forEach((cellRange) => {
       const {
         sri, sci, eri, eci,
@@ -68,6 +69,11 @@ class Merges {
           range.eri += n;
           cbWithin(sri, sci, n, 0);
         }
+        if(sri == index && n<0){
+          // This is called just to handle when we delete the row that has merged cells
+          merges_to_be_deleted.push(cellRange)
+
+        }
       } else if (type === 'column') {
         if (sci >= index) {
           range.sci += n;
@@ -76,8 +82,16 @@ class Merges {
           range.eci += n;
           cbWithin(sri, sci, 0, n);
         }
+        if(sci == index && n<0){
+          // This is called just to handle when we delete the column that has merged cells
+          merges_to_be_deleted.push(cellRange)
+        }
       }
     });
+    merges_to_be_deleted.forEach((cellRange)=>{
+      var index = this._.indexOf(cellRange);
+      if (index !== -1) this._.splice(index, 1);
+    })
   }
 
   move(cellRange, rn, cn) {
