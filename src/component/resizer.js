@@ -1,7 +1,7 @@
 /* global window */
 import { h } from './element';
 import { mouseMoveUp } from './event';
-import { cssPrefix } from '../config';
+import {cssPrefix, dprf} from '../config';
 
 export default class Resizer {
   constructor(vertical = false, minDistance) {
@@ -78,22 +78,20 @@ export default class Resizer {
   mousedownHandler(evt) {
     let startEvt = evt;
     const {
-      el, lineEl, cRect, vertical, minDistance,
+      el, lineEl, cRect, vertical, minDistance
     } = this;
-    let distance = vertical ? cRect.width : cRect.height;
-    // console.log('distance:', distance);
+    let distance = vertical ? cRect.width- el.offset().width: cRect.height-el.offset().height;
     lineEl.show();
     mouseMoveUp(window, (e) => {
       this.moving = true;
       if (startEvt !== null && e.buttons === 1) {
-        // console.log('top:', top, ', left:', top, ', cRect:', cRect);
         if (vertical) {
-          distance += e.movementX;
+          distance += e.movementX/dprf();
           if (distance > minDistance) {
             el.css('left', `${cRect.left + distance}px`);
           }
         } else {
-          distance += e.movementY;
+          distance += e.movementY/dprf();
           if (distance > minDistance) {
             el.css('top', `${cRect.top + distance}px`);
           }
