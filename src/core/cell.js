@@ -8,12 +8,14 @@ const infixExprToSuffixExpr = (src) => {
   const operatorStack = [];
   const stack = [];
   let subStrs = []; // SUM, A1, B2, 50 ...
-  let fnArgType = 0; // 1 => , 2 => :
+  let fnArgType = [0]; // 1 => , 2 => :
   let fnArgOperator = '';
-  let fnArgsLen = 1; // A1,A2,A3...
+  let fnArgsLen = [1];  // A1,A2,A3...
+  let moreCal = false;
   let oldc = '';
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
+    // console.log('c:', c);
     if (c !== ' ') {
       if (c >= 'a' && c <= 'z') {
         subStrs.push(c.toUpperCase());
@@ -36,7 +38,7 @@ const infixExprToSuffixExpr = (src) => {
         }
         if (c === ')') {
           let c1 = operatorStack.pop();
-          if (fnArgType === 2) {
+          if (fnArgType[fnArgType.length-1] === 2) {
             // fn argument range => A1:B5
             try {
               const [ex, ey] = expr2xy(stack.pop());
@@ -53,11 +55,13 @@ const infixExprToSuffixExpr = (src) => {
             } catch (e) {
               // console.log(e);
             }
-          } else if (fnArgType === 1 || fnArgType === 3) {
-            if (fnArgType === 3) stack.push(fnArgOperator);
+          } else if (fnArgType[fnArgType.length-1] === 1 || fnArgType[fnArgType.length-1] === 3) {
+            if (fnArgType[fnArgType.length-1] === 3) stack.push(fnArgOperator);
             // fn argument => A1,A2,B5
-            stack.push([c1, fnArgsLen]);
-            fnArgsLen = 1;
+            stack.push([c1, fnArgsLen[fnArgsLen.length-1]]);
+            if(fnArgsLen.length>1) {
+              fnArgsLen.pop
+            }
           } else {
             // console.log('c1:', c1, fnArgType, stack, operatorStack);
             while (c1 !== '(') {
@@ -66,7 +70,11 @@ const infixExprToSuffixExpr = (src) => {
               c1 = operatorStack.pop();
             }
           }
-          fnArgType = 0;
+          if(fnArgType.length >=1 ) {
+            fnArgType.pop()
+          } else {
+            fnArgType[0] = 0
+          }
         } else if (c === '=' || c === '>' || c === '<') {
           const nc = src.charAt(i + 1);
           fnArgOperator = c;
@@ -74,18 +82,36 @@ const infixExprToSuffixExpr = (src) => {
             fnArgOperator += nc;
             i += 1;
           }
-          fnArgType = 3;
+          if(fnArgType[fnArgType.length-1] !=0 ) {
+            fnArgType.push(3)
+          } else {
+            fnArgType[fnArgType.length-1] = 3
+          }
         } else if (c === ':') {
-          fnArgType = 2;
+          if(fnArgType[fnArgType.length-1] !=0 ) {
+            fnArgType.push(2)
+          } else {
+            fnArgType[fnArgType.length-1] = 2
+          }
         } else if (c === ',') {
-          if (fnArgType === 3) {
+          if (fnArgType[fnArgType.length-1] === 3) {
             stack.push(fnArgOperator);
           }
-          fnArgType = 1;
-          fnArgsLen += 1;
+          if(fnArgType[fnArgType.length-1] !=0 ) {
+            fnArgType.push(1)
+          } else {
+            fnArgType[fnArgType.length-1] = 1
+          }
+          moreCal = true
+          fnArgsLen[fnArgsLen.length-1] += 1
         } else if (c === '(' && subStrs.length > 0) {
           // function
           operatorStack.push(subStrs.join(''));
+          if(moreCal) {
+            fnArgsLen.push(1)
+            moreCal = false
+          } else {
+          }
         } else {
           // priority: */ > +-
           // console.log('xxxx:', operatorStack, c, stack);
@@ -188,6 +214,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
+      // console.log('::::params:', formulaMap, expr,  formula, params);
       stack.push(formulaMap[formula].render(params.reverse()));
     } else {
       if (cellList.includes(expr)) {
