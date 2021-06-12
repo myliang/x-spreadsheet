@@ -134,7 +134,9 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  return ret * cellRender(x, y);
+  const rendered = cellRender(x, y);
+  const calculated = ret * rendered;
+  return isNaN(calculated) ? rendered : calculated;
 };
 
 // evaluate the suffix expression
