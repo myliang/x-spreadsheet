@@ -271,8 +271,9 @@ class Draw {
 
   border(style, color) {
     const { ctx } = this;
-    ctx.lineWidth = thinLineWidth;
+    ctx.lineWidth = thinLineWidth();
     ctx.strokeStyle = color;
+    ctx.setLineDash([]);
     // console.log('style:', style);
     if (style === 'medium') {
       ctx.lineWidth = npx(2) - 0.5;
