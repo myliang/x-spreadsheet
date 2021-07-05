@@ -238,12 +238,12 @@ class Draw {
       if (textWrap && txtWidth > npx(biw)) {
         let textLine = { w: 0, len: 0, start: 0 };
         for (let i = 0; i < it.length; i += 1) {
-          if (textLine.w >= npx(biw)) {
-            ntxts.push(it.substr(textLine.start, textLine.len));
-            textLine = { w: 0, len: 0, start: i };
-          }
+          textLine.w += ctx.measureText(it[i]).width;
           textLine.len += 1;
-          textLine.w += ctx.measureText(it[i]).width + 1;
+          if (textLine.w > npx(biw)) {
+            ntxts.push(it.substr(textLine.start, textLine.len));
+            textLine = { w: ctx.measureText(it[i]).width, len: 1, start: i };
+          }
         }
         if (textLine.len > 0) {
           ntxts.push(it.substr(textLine.start, textLine.len));
