@@ -176,7 +176,7 @@ function setStyleBorders({ mode, style, color }) {
   const {
     sri, sci, eri, eci,
   } = selector.range;
-  const multiple = !this.isSignleSelected();
+  const multiple = !this.isSingleSelected();
   if (!multiple) {
     if (mode === 'inside' || mode === 'horizontal' || mode === 'vertical') {
       return;
@@ -714,7 +714,7 @@ export default class DataProxy {
     };
   }
 
-  isSignleSelected() {
+  isSingleSelected() {
     const {
       sri, sci, eri, eci,
     } = this.selector.range;
@@ -740,7 +740,7 @@ export default class DataProxy {
 
   merge() {
     const { selector, rows } = this;
-    if (this.isSignleSelected()) return;
+    if (this.isSingleSelected()) return;
     const [rn, cn] = selector.size();
     // console.log('merge:', rn, cn);
     if (rn > 1 || cn > 1) {
@@ -759,7 +759,7 @@ export default class DataProxy {
 
   unmerge() {
     const { selector } = this;
-    if (!this.isSignleSelected()) return;
+    if (!this.isSingleSelected()) return;
     const { sri, sci } = selector.range;
     this.changeData(() => {
       this.rows.deleteCell(sri, sci, 'merge');
@@ -865,7 +865,7 @@ export default class DataProxy {
         rows.deleteColumn(sci, eci);
         si = range.sci;
         size = csize;
-        cols.len -= 1;
+        cols.len -= (eci - sci + 1);
       }
       // console.log('type:', type, ', si:', si, ', size:', size);
       merges.shift(type, si, -size, (ri, ci, rn, cn) => {
