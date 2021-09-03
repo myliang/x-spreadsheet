@@ -6,8 +6,9 @@ const selectorHeightBorderWidth = 2 * 2 - 1;
 let startZIndex = 10;
 
 class SelectorElement {
-  constructor(useHideInput = false) {
+  constructor(useHideInput = false, autoFocus = true) {
     this.useHideInput = useHideInput;
+    this.autoFocus = autoFocus;
     this.inputChange = () => {};
     this.cornerEl = h('div', `${cssPrefix}-selector-corner`);
     this.areaEl = h('div', `${cssPrefix}-selector-area`)
@@ -52,7 +53,11 @@ class SelectorElement {
     this.areaEl.offset(of).show();
     if (this.useHideInput) {
       this.hideInputDiv.offset(of);
-      this.hideInput.val('').focus();
+      if (this.autoFocus) {
+        this.hideInput.val('').focus();
+      } else {
+        this.hideInput.val('');
+      }
     }
   }
 
@@ -195,9 +200,10 @@ function setAllClipboardOffset(offset) {
 
 export default class Selector {
   constructor(data) {
+    const { autoFocus } = data.settings;
     this.inputChange = () => {};
     this.data = data;
-    this.br = new SelectorElement(true);
+    this.br = new SelectorElement(true, autoFocus);
     this.t = new SelectorElement();
     this.l = new SelectorElement();
     this.tl = new SelectorElement();
