@@ -18,6 +18,7 @@ class Spreadsheet {
       targetEl = document.querySelector(selectors);
     }
     this.bottombar = this.options.showBottomBar ? new Bottombar(() => {
+      if (this.options.mode === "read") return;
       const d = this.addSheet();
       this.sheet.resetData(d);
     }, (index) => {
@@ -27,6 +28,7 @@ class Spreadsheet {
       this.deleteSheet();
     }, (index, value) => {
       this.datas[index].name = value;
+      this.sheet.trigger('change');
     }) : null;
     this.data = this.addSheet();
     const rootEl = h('div', `${cssPrefix}`)
@@ -48,7 +50,7 @@ class Spreadsheet {
     this.datas.push(d);
     // console.log('d:', n, d, this.datas);
     if (this.bottombar !== null) {
-      this.bottombar.addItem(n, active);
+      this.bottombar.addItem(n, active, this.options);
     }
     this.sheetIndex += 1;
     return d;
@@ -61,6 +63,7 @@ class Spreadsheet {
     if (oldIndex >= 0) {
       this.datas.splice(oldIndex, 1);
       if (nindex >= 0) this.sheet.resetData(this.datas[nindex]);
+      this.sheet.trigger('change');
     }
   }
 
