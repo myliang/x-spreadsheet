@@ -151,6 +151,16 @@ class Spreadsheet {
     return validations.errors.size <= 0;
   }
 
+  addValidation(ri, ci, sheetIndex = 0) {
+    console.log('called', this.sheet)
+    this.datas[0].addValidation('cell', 'B7', {
+      operator: 'be',
+      required: false,
+      type: 'number',
+      value: ['1', '3']
+    })
+  }
+
   change(cb) {
     this.sheet.on('change', cb);
     return this;

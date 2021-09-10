@@ -980,4 +980,14 @@ export default class Sheet {
       top: rows.height,
     };
   }
+
+  addValidation() {
+    console.log('running in sheet')
+    this.data.addValidation('cell', 'B5', {
+      operator: 'be',
+      required: false,
+      type: "number",
+      value: ['1', '3']
+    })
+  }
 }
