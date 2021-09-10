@@ -148,7 +148,6 @@ body {
 .x-spreadsheet-dropdown .x-spreadsheet-dropdown-header .x-spreadsheet-icon.arrow-right .arrow-down {
   left: -130px;
 }
-/* resizer **/
 .x-spreadsheet-resizer {
   position: absolute;
   z-index: 11;
@@ -825,6 +824,9 @@ form fieldset select {
   background: rgba(0, 0, 0, 0.08);
   font-size: 1.0785em;
 }
+.x-spreadsheet-modal-detail {
+  color: #6b6b6b;
+}
 .x-spreadsheet-modal-header,
 .x-spreadsheet-modal-content,
 .x-spreadsheet-toast-header,
@@ -848,7 +850,7 @@ form fieldset select {
   display: inline-block;
 }
 .x-spreadsheet-icon .x-spreadsheet-icon-img {
-  background-image: url(58eaeb4e52248a5c75936c6f4c33a370.svg);
+  background-image: url(d6ae8c4e5d2a92c50bf10583aad2d141.svg);
   position: absolute;
   width: 262px;
   height: 444px;
