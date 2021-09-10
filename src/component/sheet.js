@@ -907,6 +907,7 @@ export default class Sheet {
     );
     // table
     this.table = new Table(this.tableEl.el, data);
+    this.julien_sheet_flag = true;
     sheetInitEvents.call(this);
     sheetReset.call(this);
     // init selector [0, 0]

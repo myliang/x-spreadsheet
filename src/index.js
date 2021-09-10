@@ -47,6 +47,7 @@ class Spreadsheet {
     // create canvas element
     targetEl.appendChild(rootEl.el);
     this.sheet = new Sheet(rootEl, this.data);
+    this.julien_spreadsheet_flag = true;
     rootEl.child(this.bottombar.el);
   }
 
