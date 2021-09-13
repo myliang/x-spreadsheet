@@ -120,8 +120,6 @@ class Spreadsheet {
   }
 
   addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style, index) {
-    console.log('julien delete me')
-    this.addValidation(0, 0)
     const targetProxy = this.datas[index];
     targetProxy.addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style);
   }
