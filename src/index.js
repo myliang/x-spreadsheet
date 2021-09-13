@@ -120,6 +120,7 @@ class Spreadsheet {
   }
 
   addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style, index) {
+    console.log('Im back')
     const targetProxy = this.datas[index];
     targetProxy.addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style);
   }
