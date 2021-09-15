@@ -13,6 +13,7 @@ import { Validations } from './validation';
 import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
 import { t } from '../locale/locale';
+import { GDCTValidators } from './gdct_validators';
 // for conditional formatting
 import ConditionFormatter, { styles } from './conditionformatter'
 
@@ -335,6 +336,8 @@ export default class DataProxy {
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
     this.validations = new Validations();
+    this.GDCTValidators  = new GDCTValidators();
+    this.GDCTValidators.addTypeValidator(15, 2, '$')
     this.hyperlinks = {};
     this.comments = {};
     this.sheetDatas = sheetDatas;
@@ -393,6 +396,14 @@ export default class DataProxy {
     const { ri, ci } = this.selector;
     const v = this.validations.get(ri, ci);
     return v ? v.validator : null;
+  }
+
+  addTypeValidator(ri, ci, type) {
+    this.GDCTValidators.addTypeValidator(ri, ci, type)
+  }
+
+  removeGDCTValidator(ri, ci) {
+    this.GDCTValidators.removeRule(ri, ci)
   }
 
   // add greater Than conditional formatting
@@ -1058,6 +1069,7 @@ export default class DataProxy {
       this.change(this.getData());
     }
     // validator
+    this.GDCTValidators.validateAll(ri, ci, text)
     validations.validate(ri, ci, text);
   }
 
