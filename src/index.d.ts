@@ -15,6 +15,7 @@ declare module 'x-data-spreadsheet' {
       left?: ExtendToolbarOption[],
       right?: ExtendToolbarOption[],
     };
+    autoFocus?: boolean;
     view?: {
       height: () => number;
       width: () => number;
