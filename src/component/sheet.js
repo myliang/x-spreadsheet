@@ -316,6 +316,7 @@ function clearClipboard() {
 
 function copy() {
   const { data, selector } = this;
+  if (data.settings.mode === 'read') return;
   data.copy();
   data.copyToSystemClipboard();
   selector.showClipboard();
@@ -323,6 +324,7 @@ function copy() {
 
 function cut() {
   const { data, selector } = this;
+  if (data.settings.mode === 'read') return;
   data.cut();
   selector.showClipboard();
 }
