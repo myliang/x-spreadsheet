@@ -26,11 +26,15 @@ function tableFixedHeaderStyle() {
   };
 }
 
-function getDrawBox(data, rindex, cindex, yoffset = 0) {
+function getDrawBox(data, rindex, cindex, xoffset = 0, yoffset = 0, pagewidth, pageheight) {
   const {
     left, top, width, height,
   } = data.cellRect(rindex, cindex);
-  return new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
+
+  const ileft = left + xoffset;
+  const itop = top + yoffset;
+
+  return new DrawBox(ileft, itop, width, height, cellPaddingWidth);
 }
 /*
 function renderCellBorders(bboxes, translateFunc) {
@@ -49,7 +53,7 @@ function renderCellBorders(bboxes, translateFunc) {
 }
 */
 
-export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
+export function renderCell(draw, data, rindex, cindex, xoffset = 0, yoffset = 0) {
   const { sortedRowMap, rows, cols } = data;
   if (rows.isHide(rindex) || cols.isHide(cindex)) return;
   let nrindex = rindex;
@@ -65,7 +69,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
   }
 
   const style = data.getCellStyleOrDefault(nrindex, cindex);
-  const dbox = getDrawBox(data, rindex, cindex, yoffset);
+  const dbox = getDrawBox(data, rindex, cindex, xoffset, yoffset);
   dbox.bgcolor = style.bgcolor;
   if (style.border !== undefined) {
     dbox.setBorders(style.border);
