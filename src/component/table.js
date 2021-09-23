@@ -364,7 +364,7 @@ class Table {
       renderContentGrid.call(this, freezeViewRange, fw, fh, 0, 0);
       renderFixedHeaders.call(this, 'all', freezeViewRange, fw, fh, 0, 0);
       renderContent.call(this, freezeViewRange, fw, fh, 0, 0);
-      // 5
+      // 5 .
       renderFreezeHighlightLine.call(this, fw, fh, tx, ty);
     }
   }
