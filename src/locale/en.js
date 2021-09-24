@@ -49,7 +49,7 @@ export default {
     orientation: 'Page orientation',
     orientations: ['Landscape', 'Portrait'],
 	printmodel: 'printScale',
-    printmodels: ['print all rows on one page', 'print all on one page', 'none', 'print all colums on one page'],
+    printmodels: ['print all colums on one page', 'print all on one page', 'none', 'print all rows on one page'],
     showPageNumers: 'show page numbers',
     numbertype: 1,
   },
