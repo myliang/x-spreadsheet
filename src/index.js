@@ -18,7 +18,7 @@ class Spreadsheet {
       targetEl = document.querySelector(selectors);
     }
     this.bottombar = this.options.showBottomBar ? new Bottombar(() => {
-      if (this.options.mode === "read") return;
+      if (this.options.mode === 'read') return;
       const d = this.addSheet();
       this.sheet.resetData(d);
     }, (index) => {

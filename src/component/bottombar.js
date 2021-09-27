@@ -105,12 +105,12 @@ export default class Bottombar {
     item.on('click', () => {
       this.clickSwap2(item);
     }).on('contextmenu', (evt) => {
-      if (options.mode === "read") return;
+      if (options.mode === 'read') return;
       const { offsetLeft, offsetHeight } = evt.target;
       this.contextMenu.setOffset({ left: offsetLeft, bottom: offsetHeight + 1 });
       this.deleteEl = item;
     }).on('dblclick', () => {
-      if (options.mode === "read") return;
+      if (options.mode === 'read') return;
       const v = item.html();
       const input = new FormInput('auto', '');
       input.val(v);

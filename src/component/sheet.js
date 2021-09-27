@@ -314,11 +314,11 @@ function clearClipboard() {
   selector.hideClipboard();
 }
 
-function copy() {
+function copy(evt) {
   const { data, selector } = this;
   if (data.settings.mode === 'read') return;
   data.copy();
-  data.copyToSystemClipboard();
+  data.copyToSystemClipboard(evt);
   selector.showClipboard();
 }
 
@@ -706,6 +706,12 @@ function sheetInitEvents() {
     evt.preventDefault();
   });
 
+  bind(window, 'copy', (evt) => {
+    if (!this.focusing) return;
+    copy.call(this, evt);
+    evt.preventDefault();
+  });
+
   // for selector
   bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
@@ -732,8 +738,9 @@ function sheetInitEvents() {
           break;
         case 67:
           // ctrl + c
-          copy.call(this);
-          evt.preventDefault();
+          // => copy
+          // copy.call(this);
+          // evt.preventDefault();
           break;
         case 88:
           // ctrl + x

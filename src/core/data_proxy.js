@@ -109,11 +109,6 @@ const defaultSettings = {
 const toolbarHeight = 41;
 const bottombarHeight = 41;
 
-
-// Utility functions
-const hasOwnProperty = (obj, name) => Object.prototype.hasOwnProperty.call(obj, name);
-
-
 // src: cellRange
 // dst: cellRange
 function canPaste(src, dst, error = () => {}) {
@@ -409,38 +404,39 @@ export default class DataProxy {
     this.clipboard.copy(this.selector.range);
   }
 
-  copyToSystemClipboard() {
-    /* global navigator */
-    if (navigator.clipboard === undefined) {
-      return;
-    }
-    let copyText = '';
-    const rowData = this.rows.getData();
-    for (let ri = this.selector.range.sri; ri <= this.selector.range.eri; ri += 1) {
-      if (hasOwnProperty(rowData, ri)) {
-        for (let ci = this.selector.range.sci; ci <= this.selector.range.eci; ci += 1) {
-          if (ci > this.selector.range.sci) {
-            copyText += '\t';
-          }
-          if (hasOwnProperty(rowData[ri].cells, ci)) {
-            const cellText = String(rowData[ri].cells[ci].text);
-            if ((cellText.indexOf(`\n`) === -1) && (cellText.indexOf(`\t`) === -1) && (cellText.indexOf(`"`) === -1)) {
-              copyText += cellText;
-            } else {
-              copyText += `"${cellText}"`;
-            }
-          }
-        }
-      } else {
-        for (let ci = this.selector.range.sci; ci <= this.selector.range.eci; ci += 1) {
-          copyText += '\t';
-        }
+  copyToSystemClipboard(evt) {
+    let copyText = [];
+    const {
+      sri, eri, sci, eci,
+    } = this.selector.range;
+
+    for (let ri = sri; ri <= eri; ri += 1) {
+      const row = [];
+      for (let ci = sci; ci <= eci; ci += 1) {
+        const cell = this.getCell(ri, ci);
+        row.push((cell && cell.text) || '');
       }
-      copyText += '\n';
+      copyText.push(row);
     }
-    navigator.clipboard.writeText(copyText).then(() => {}, (err) => {
-      console.log('text copy to the system clipboard error  ', copyText, err);
-    });
+
+    // Adding \n and why not adding \r\n is to support online office and client MS office and WPS
+    copyText = copyText.map(row => row.join('\t')).join('\n');
+
+    // why used this
+    // cuz http protocol will be blocked request clipboard by browser
+    if (evt) {
+      evt.clipboardData.clearData();
+      evt.clipboardData.setData('text/plain', copyText);
+      evt.preventDefault();
+    }
+
+    // this need https protocol
+    /* global navigator */
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(copyText).then(() => {}, (err) => {
+        console.log('text copy to the system clipboard error  ', copyText, err);
+      });
+    }
   }
 
   cut() {
@@ -465,12 +461,18 @@ export default class DataProxy {
   }
 
   pasteFromText(txt) {
-    const lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
-    if (lines.length > 0) lines.length -= 1;
-    const { rows, selector } = this;
-    this.changeData(() => {
-      rows.paste(lines, selector.range);
-    });
+    let lines = [];
+
+    if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
+    else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
+
+    if (lines.length) {
+      const { rows, selector } = this;
+
+      this.changeData(() => {
+        rows.paste(lines, selector.range);
+      });
+    }
   }
 
   autofill(cellRange, what, error = () => {}) {
