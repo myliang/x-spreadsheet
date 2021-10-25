@@ -848,6 +848,20 @@ export default class DataProxy {
     });
   }
 
+  insertRowBelow(n = 1) {
+    this.changeData(() => {
+      const { sri } = this.selector.range;
+      const { rows, merges } = this;
+      let si = sri;
+      rows.insertBelow(sri, n);
+      merges.shift('row', si, n, (ri, ci, rn, cn) => {
+        const cell = rows.getCell(ri, ci);
+        cell.merge[0] += rn;
+        cell.merge[1] += cn;
+      });
+    });
+  }
+
   // type: row | column
   delete(type) {
     this.changeData(() => {

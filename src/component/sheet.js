@@ -505,6 +505,8 @@ function insertDeleteRowColumn(type) {
   if (data.settings.mode === 'read') return;
   if (type === 'insert-row') {
     data.insert('row');
+  } else if (type === 'insert-row-below') {
+    data.insertRowBelow();
   } else if (type === 'delete-row') {
     data.delete('row');
   } else if (type === 'insert-column') {
@@ -831,6 +833,11 @@ function sheetInitEvents() {
           break;
         case 13: // enter
           editor.clear();
+          const { eri } = this.selector.range;
+          const rows = this.data.rows;
+          if (eri === rows.len - 1 && !shiftKey) {
+            insertDeleteRowColumn.call(this, 'insert-row-below');
+          }
           // shift + enter => move up
           // enter => move down
           selectorMove.call(this, false, shiftKey ? 'up' : 'down');
