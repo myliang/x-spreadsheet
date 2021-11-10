@@ -35,7 +35,7 @@ export default class Scrollbar {
       // console.log('d:', d);
       this.el.css(cssKey, `${d - 15}px`).show();
       this.contentEl
-        .css(this.vertical ? 'width' : 'height', '1px')
+        .css(this.vertical ? 'width' : 'height', '12px')
         .css(cssKey, `${contentDistance}px`);
     } else {
       this.el.hide();

@@ -128,6 +128,7 @@ function selectorMove(multiple, direction) {
 
 // private methods
 function overlayerMousemove(evt) {
+  evt.preventDefault();
   // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
   if (evt.buttons !== 0) return;
   if (evt.target.className === `${cssPrefix}-resizer-hover`) return;
@@ -173,6 +174,7 @@ function overlayerMousemove(evt) {
 
 // let scrollThreshold = 15;
 function overlayerMousescroll(evt) {
+  evt.preventDefault();
   // scrollThreshold -= 1;
   // if (scrollThreshold > 0) return;
   // scrollThreshold = 15;

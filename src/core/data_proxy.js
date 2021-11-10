@@ -469,8 +469,17 @@ export default class DataProxy {
     if (lines.length) {
       const { rows, selector } = this;
 
+      if (rows.len < lines.length) {
+        rows.setNewLen(lines.length);
+      }
+
       this.changeData(() => {
         rows.paste(lines, selector.range);
+        // clear the clipboard after pasting a large amount of data
+        // if (lines.length > 10000) {
+        //   this.clearClipboard();
+        //   console.log('cleared clipboard');
+        // }
       });
     }
   }
