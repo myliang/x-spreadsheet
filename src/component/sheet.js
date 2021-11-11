@@ -91,7 +91,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
 // direction: left | right | up | down | row-first | row-last | col-first | col-last
 function selectorMove(multiple, direction) {
   const {
-    selector, data,
+    selector, data
   } = this;
   const { rows, cols } = data;
   let [ri, ci] = selector.indexes;
@@ -592,6 +592,13 @@ function sheetInitEvents() {
       overlayerMousemove.call(this, evt);
     })
     .on('mousedown', (evt) => {
+      if (evt.buttons === 1 && evt.detail <= 1 && editor.formulaCellSelecting()) {
+        const { offsetX, offsetY } = evt;
+        const { ri, ci } = this.data.getCellRectByXY(offsetX, offsetY);
+        editor.formulaSelectCell(ri, ci);
+        return;
+      }
+
       editor.clear();
       contextMenu.hide();
       // the left mouse button: mousedown → mouseup → click
@@ -883,7 +890,7 @@ export default class Sheet {
     this.editor = new Editor(
       formulas,
       () => this.getTableOffset(),
-      data.rows.height,
+      data,
     );
     // data validation
     this.modalValidation = new ModalValidation();
@@ -895,6 +902,7 @@ export default class Sheet {
       .children(
         this.editor.el,
         this.selector.el,
+        this.editor.cellEl,
       );
     this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);
@@ -937,6 +945,7 @@ export default class Sheet {
     this.data = data;
     verticalScrollbarSet.call(this);
     horizontalScrollbarSet.call(this);
+    this.editor.resetData(data);
     this.toolbar.resetData(data);
     this.print.resetData(data);
     this.selector.resetData(data);
