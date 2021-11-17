@@ -1,4 +1,4 @@
-declare module 'x-data-spreadsheet' {
+declare module '@bergfreunde/x-data-spreadsheet' {
   export interface ExtendToolbarOption {
     tip?: string;
     el?: HTMLElement;

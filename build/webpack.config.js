@@ -28,11 +28,11 @@ module.exports = {
         ],
       },
       {
-        test: /\.less$/,
+        test: /\.s[ac]ss$/i,
         use: [
           MiniCssExtractPlugin.loader,
           'css-loader',
-          'less-loader',
+          'sass-loader',
         ],
       },
       {

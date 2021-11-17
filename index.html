@@ -20,6 +20,13 @@
       previewEl.width = 16
       previewEl.height = 16
 
+      const initialCols = ["VendorID","SeasonID","ProductID","Fehler","Fehler ignorieren?","Marke","Artikelname","Herstellerartikelnummer","Farbcode","Größencode","H-SKU","EAN","UPC","Code 128","Sonstige Codes","Größensystem","Größe1","Größe2","Sonstiges","Farbbezeichnung","Formelspalte1","Geschlecht","Mwst.","FEDAS/eigenes Kategoriesystem","VPE","EK","UVP DE EUR","UVP UK GBP","UVP CH CHF","UVP FR EUR","UVP NL EUR","UVP DK EUR","UVP NO EUR","UVP SE EUR","UVP FI EUR","UVP IT EUR","UVP ESP EUR","UVP CH EUR","UVP AT EUR","NOS (0/1)","Gefahrgut (J/N)","Gefahrstoff (J/N)","URL","Zutaten/Nährwerte","Materialzusammensetzung","Zolltarifnummer DE","Ursprungsland","Erzeugerland","Netto-Produktgewicht (kg)","Brutto-Produktgewicht (kg)","Verpackungshöhe (cm)","Verpackungsbreite (cm)","Verpackungslänge (cm)","Verpackungsart","Kollektion","Live-Datum","Business Unit","Bemerkung","IST-Saison","K 1","K 2","K 3","K1 Text","Bergfreunde SKU","Datum Import","User Import","Datum Änderung","User Änderung","Bestellmenge","Hat Produktstatus","CHECKSUM_OLD","CHECKSUM_NEW","Löschen","Hilfsspalte"]
+
+      const cells = initialCols.reduce((acc, cur, i, arr) => ({
+        ...acc,
+        [i]: { text: cur },
+      }), {});
+
       var xs = x_spreadsheet('#x-spreadsheet-demo', {
         showToolbar: true,
         showGrid: true,
@@ -49,13 +56,20 @@
           height: 25,
         },
         col: {
-          len: 80,
+          len: initialCols.length,
           width: 100,
           indexWidth: 60,
           minWidth: 60,
         },
       })
-      // .loadData({});
+      .loadData([
+        { 
+          rows: {
+            len: initialCols.length,
+            0: { cells },
+          }
+        }
+      ]);
 
       // xs.on('cell-selected', (cell, ri, ci) => {
       //     console.log('cell:', cell, ', ri:', ri, ', ci:', ci);

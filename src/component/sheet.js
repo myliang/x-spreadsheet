@@ -308,6 +308,7 @@ function sheetReset() {
   table.render();
   toolbar.reset();
   selector.reset();
+  console.log('sheetReset');
 }
 
 function clearClipboard() {
@@ -338,6 +339,7 @@ function paste(what, evt) {
     sheetReset.call(this);
   } else if (evt) {
     const cdata = evt.clipboardData.getData('text/plain');
+    // sheetReset.call(this); // reset before pasting in case new rows are added
     this.data.pasteFromText(cdata);
     sheetReset.call(this);
   }

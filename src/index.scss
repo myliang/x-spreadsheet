@@ -1,55 +1,54 @@
-@css-prefix: x-spreadsheet;
+$css-prefix: x-spreadsheet;
 // color
-@red-color: #DB2828;
-@red-hover-color: #d01919;
-@orange-color: #F2711C;
-@orange-hover-color: #f26202;
-@yellow-color: #FBBD08;
-@yellow-hover-color: #eaae00;
-@olive-color: #B5CC18;
-@olive-hover-color: #a7bd0d;
-@green-color: #21BA45;
-@green-hover-color: #16ab39;
-@teal-color: #00B5AD;
-@teal-hover-color: #009c95;
-@blue-color: #2185D0;
-@blue-hover-color: #1678c2;
-@violet-color: #6435C9;
-@violet-hover-color: #5829bb;
-@purple-color: #A333C8;
-@purple-hover-color: #9627ba;
-@pink-color: #E03997;
-@pink-hover-color: #e61a8d;
-@brown-color: #A5673F;
-@brown-hover-color: #975b33;
-@grey-color: #767676;
-@grey-hover-color: #838383;
-@dark-color: #343a40;
-@dark-hover-color: darken(@dark-color, 10%);
-@black-color: #1B1C1D;
-@black-hover-color: #27292a;
+$red-color: #DB2828;
+$red-hover-color: #d01919;
+$orange-color: #F2711C;
+$orange-hover-color: #f26202;
+$yellow-color: #FBBD08;
+$yellow-hover-color: #eaae00;
+$olive-color: #B5CC18;
+$olive-hover-color: #a7bd0d;
+$green-color: #21BA45;
+$green-hover-color: #16ab39;
+$teal-color: #00B5AD;
+$teal-hover-color: #009c95;
+$blue-color: #2185D0;
+$blue-hover-color: #1678c2;
+$violet-color: #6435C9;
+$violet-hover-color: #5829bb;
+$purple-color: #A333C8;
+$purple-hover-color: #9627ba;
+$pink-color: #E03997;
+$pink-hover-color: #e61a8d;
+$brown-color: #A5673F;
+$brown-hover-color: #975b33;
+$grey-color: #767676;
+$grey-hover-color: #838383;
+$dark-color: #343a40;
+$dark-hover-color: darken($dark-color, 10%);
+$black-color: #1B1C1D;
+$black-hover-color: #27292a;
 
 // base
-@border-style: 1px solid #e0e2e4;
-@icon-size: 18px;
-@line-height: 1.25em;
-@border-color: #e9e9e9;
-@border: 1px solid @border-color;
-@input-border: @border;
-@input-padding: 0.5em 0.75em;
-@input-box-shadow: inset 0 1px 2px hsla(0,0%,4%,.06);
-@border-radius: 2px;
-@form-field-height: 30px;
-@primary-color: @blue-color;
-@primary-hover-color: @blue-hover-color;
+$border-style: 1px solid #e0e2e4;
+$icon-size: 18px;
+$line-height: 1.25em;
+$border-color: #e9e9e9;
+$border: 1px solid $border-color;
+$input-border: $border;
+$input-padding: 0.5em 0.75em;
+$input-box-shadow: inset 0 1px 2px hsla(0,0%,4%,.06);
+$border-radius: 2px;
+$form-field-height: 30px;
+$primary-color: $blue-color;
+$primary-hover-color: $blue-hover-color;
 
-// method
-.type-primary() {
+@mixin type-primary {
   color: #fff;
-  background-color: @primary-color;
+  background-color: $primary-color;
   &:hover, &.active {
     color: #fff;
-    background-color: @primary-hover-color;
+    background-color: $primary-hover-color;
   }
 }
 
@@ -57,7 +56,7 @@ body {
   margin: 0;
 }
 
-.@{css-prefix} {
+.#{$css-prefix} {
   font-size: 13px;
   line-height: normal;
   user-select: none;
@@ -72,17 +71,17 @@ body {
   }
 }
 
-.@{css-prefix}-sheet {
+.#{$css-prefix}-sheet {
   position: relative;
   overflow: hidden;
 }
 
-.@{css-prefix}-table {
+.#{$css-prefix}-table {
   // html5 bottom margin bug
   vertical-align: bottom;
 }
 
-.@{css-prefix}-tooltip {
+.#{$css-prefix}-tooltip {
   font-family: inherit;
   position: absolute;
   padding: 5px 10px;
@@ -108,7 +107,7 @@ body {
   }
 }
 
-.@{css-prefix}-color-palette {
+.#{$css-prefix}-color-palette {
   padding: 5px;
 
   table {
@@ -127,7 +126,7 @@ body {
         border-color: #ddd;
       }
 
-      .@{css-prefix}-color-palette-cell {
+      .#{$css-prefix}-color-palette-cell {
         width: 16px;
         height: 16px;
       }
@@ -135,7 +134,7 @@ body {
   }
 }
 
-.@{css-prefix}-border-palette {
+.#{$css-prefix}-border-palette {
   padding: 6px;
 
   table {
@@ -151,17 +150,17 @@ body {
     }
   }
 
-  .@{css-prefix}-border-palette-left {
+  .#{$css-prefix}-border-palette-left {
     border-right: 1px solid #eee;
     padding-right: 6px;
 
-    .@{css-prefix}-border-palette-cell {
+    .#{$css-prefix}-border-palette-cell {
       width: 30px;
       height: 30px;
       cursor: pointer;
       text-align: center;
 
-      .@{css-prefix}-icon-img {
+      .#{$css-prefix}-icon-img {
         opacity: .8;
       }
 
@@ -171,15 +170,15 @@ body {
     }
   }
 
-  .@{css-prefix}-border-palette-right {
+  .#{$css-prefix}-border-palette-right {
     padding-left: 6px;
 
-    .@{css-prefix}-toolbar-btn {
+    .#{$css-prefix}-toolbar-btn {
       margin-top: 0;
       margin-bottom: 3px;
     }
 
-    .@{css-prefix}-line-type {
+    .#{$css-prefix}-line-type {
       position: relative;
       left: 0;
       top: -3px;
@@ -189,10 +188,10 @@ body {
 
 }
 
-.@{css-prefix}-dropdown {
+.#{$css-prefix}-dropdown {
   position: relative;
 
-  .@{css-prefix}-dropdown-content {
+  .#{$css-prefix}-dropdown-content {
     position: absolute;
     z-index: 200;
     background: #fff;
@@ -200,44 +199,44 @@ body {
   }
 
   &.bottom-left {
-    .@{css-prefix}-dropdown-content {
-      top: calc(~'100% + 5px');
+    .#{$css-prefix}-dropdown-content {
+      top: calc(100% + 5px);
       left: 0;
     }
   }
 
   &.bottom-right {
-    .@{css-prefix}-dropdown-content {
-      top: calc(~'100% + 5px');
+    .#{$css-prefix}-dropdown-content {
+      top: calc(100% + 5px);
       right: 0;
     }
   }
 
   &.top-left {
-    .@{css-prefix}-dropdown-content {
-      bottom: calc(~'100% + 5px');
+    .#{$css-prefix}-dropdown-content {
+      bottom: calc(100% + 5px);
       left: 0;
     }
   }
 
   &.top-right {
-    .@{css-prefix}-dropdown-content {
-      bottom: calc(~'100% + 5px');
+    .#{$css-prefix}-dropdown-content {
+      bottom: calc(100% + 5px);
       right: 0;
     }
   }
 
 
-  .@{css-prefix}-dropdown-title {
+  .#{$css-prefix}-dropdown-title {
     padding: 0 5px;
     display: inline-block;
   }
 
-  .@{css-prefix}-dropdown-header {
-    .@{css-prefix}-icon.arrow-left {
+  .#{$css-prefix}-dropdown-header {
+    .#{$css-prefix}-icon.arrow-left {
       margin-left: 4px;
     }
-    .@{css-prefix}-icon.arrow-right {
+    .#{$css-prefix}-icon.arrow-right {
       width: 10px;
       margin-right: 4px;
       .arrow-down {
@@ -247,20 +246,20 @@ body {
   }
 }
 /* resizer **/
-.@{css-prefix}-resizer {
+.#{$css-prefix}-resizer {
   position: absolute;
   z-index: 11;
 
-  .@{css-prefix}-resizer-hover {
+  .#{$css-prefix}-resizer-hover {
     background-color: rgba(75, 137, 255, .25);
   }
-  .@{css-prefix}-resizer-line {
+  .#{$css-prefix}-resizer-line {
     position: absolute;
   }
 
   &.horizontal {
     cursor: row-resize;
-    .@{css-prefix}-resizer-line {
+    .#{$css-prefix}-resizer-line {
       border-bottom: 2px dashed rgb(75, 137, 255);
       left: 0;
       bottom: 0;
@@ -268,7 +267,7 @@ body {
   }
   &.vertical {
     cursor: col-resize;
-    .@{css-prefix}-resizer-line {
+    .#{$css-prefix}-resizer-line {
       border-right: 2px dashed rgb(75, 137, 255);
       top: 0;
       right: 0;
@@ -276,7 +275,7 @@ body {
   }
 }
 /* scrollbar */
-.@{css-prefix}-scrollbar {
+.#{$css-prefix}-scrollbar {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -306,13 +305,13 @@ body {
   }
 }
 
-/* @{css-prefix}-overlayer */
-.@{css-prefix}-overlayer {
+/* ${css-prefix}-overlayer */
+.#{$css-prefix}-overlayer {
   position: absolute;
   left: 0;
   top: 0;
   z-index: 10;
-  .@{css-prefix}-overlayer-content {
+  .#{$css-prefix}-overlayer-content {
     position: absolute;
     overflow: hidden;
     pointer-events: none;
@@ -321,7 +320,7 @@ body {
   }
 }
 
-.@{css-prefix}-editor, .@{css-prefix}-selector {
+.#{$css-prefix}-editor, .#{$css-prefix}-selector {
   box-sizing: content-box;
   position: absolute;
   overflow: hidden;
@@ -332,8 +331,8 @@ body {
   height: 100%;
 }
 
-/* @{css-prefix}-selector */
-.@{css-prefix}-selector {
+/* ${css-prefix}-selector */
+.#{$css-prefix}-selector {
   .hide-input {
     position: absolute;
     z-index: 0;
@@ -343,24 +342,24 @@ body {
       border: none!important;
     }
   }
-  .@{css-prefix}-selector-area {
+  .#{$css-prefix}-selector-area {
     position: absolute;
     border: 2px solid rgb(75, 137, 255);
     background: rgba(75, 137, 255, .1);
     z-index: 5;
   }
-  .@{css-prefix}-selector-clipboard, .@{css-prefix}-selector-autofill {
+  .#{$css-prefix}-selector-clipboard, .#{$css-prefix}-selector-autofill {
     position: absolute;
     background: transparent;
     z-index: 100;
   }
-  .@{css-prefix}-selector-clipboard {
+  .#{$css-prefix}-selector-clipboard {
     border: 2px dashed rgb(75, 137, 255);
   }
-  .@{css-prefix}-selector-autofill {
+  .#{$css-prefix}-selector-autofill {
     border: 1px dashed rgba(0, 0, 0, .45); // #606060; // rgba(0, 0, 0, .2);
   }
-  .@{css-prefix}-selector-corner {
+  .#{$css-prefix}-selector-corner {
     pointer-events: auto;
     position: absolute;
     cursor: crosshair;
@@ -373,9 +372,9 @@ body {
     background: rgb(75, 137, 255);
   }
 }
-.@{css-prefix}-editor {
+.#{$css-prefix}-editor {
   z-index: 20;
-  .@{css-prefix}-editor-area {
+  .#{$css-prefix}-editor-area {
     position: absolute;
     text-align: left;
     border: 2px solid rgb(75, 137, 255);
@@ -409,7 +408,7 @@ body {
   }
 }
 
-.@{css-prefix}-item {
+.#{$css-prefix}-item {
   user-select: none;
   background: 0;
   border: 1px solid transparent;
@@ -452,8 +451,7 @@ body {
 }
 
 .x-spreadsheet-item,
-.x-spreadsheet-header,
-{
+.x-spreadsheet-header {
 
   &.state {
     padding-left: 35px!important;
@@ -493,7 +491,7 @@ body {
 
 }
 
-.@{css-prefix}-checkbox {
+.#{$css-prefix}-checkbox {
   position: relative;
   display: inline-block;
   backface-visibility: hidden;
@@ -512,9 +510,9 @@ body {
   }
 }
 
-.@{css-prefix}-suggest,
-.@{css-prefix}-contextmenu,
-.@{css-prefix}-sort-filter {
+.#{$css-prefix}-suggest,
+.#{$css-prefix}-contextmenu,
+.#{$css-prefix}-sort-filter {
   position: absolute;
   box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
   background: #fff;
@@ -524,39 +522,39 @@ body {
   overflow: auto;
 }
 
-.@{css-prefix}-suggest {
+.#{$css-prefix}-suggest {
   width: 200px;
 }
 
-.@{css-prefix}-filter {
+.#{$css-prefix}-filter {
   border: 1px solid #e9e9e9;
   font-size: 12px;
   margin: 10px;
 
-  .@{css-prefix}-header {
+  .#{$css-prefix}-header {
     padding: .5em .75em;
     background: #f8f8f9;
     border-bottom: 1px solid #e9e9e9;
     border-left: 1px solid transparent;
   }
-  .@{css-prefix}-body {
+  .#{$css-prefix}-body {
     height: 200px;
     overflow-y: auto;
 
-    .@{css-prefix}-item {
+    .#{$css-prefix}-item {
       height: 20px;
       line-height: 20px;
     }
   }
 }
 
-.@{css-prefix}-sort-filter {
-  .@{css-prefix}-buttons {
+.#{$css-prefix}-sort-filter {
+  .#{$css-prefix}-buttons {
     margin: 10px;
   }
 }
 
-.@{css-prefix}-toolbar, .@{css-prefix}-bottombar {
+.#{$css-prefix}-toolbar, .#{$css-prefix}-bottombar {
   height: 40px;
   padding: 0 30px;
   text-align: left;
@@ -564,11 +562,11 @@ body {
   display: flex;
 }
 
-.@{css-prefix}-bottombar {
+.#{$css-prefix}-bottombar {
   position: relative;
   border-top: 1px solid #e0e2e4;
 
-  .@{css-prefix}-menu > li {
+  .#{$css-prefix}-menu > li {
     line-height: 40px;
     height: 40px;
     padding-top: 0;
@@ -578,13 +576,13 @@ body {
   }
 }
 
-.@{css-prefix}-menu {
+.#{$css-prefix}-menu {
   list-style: none;
   margin: 0;
   padding: 0;
   user-select: none;
 }
-.@{css-prefix}-menu > li {
+.#{$css-prefix}-menu > li {
   float: left;
   line-height: 1.25em;
   padding: .785em 1em;
@@ -603,37 +601,37 @@ body {
     color: rgba(0, 0, 0, .65);
   }
 
-  .@{css-prefix}-icon {
+  .#{$css-prefix}-icon {
     margin: 0 6px;
 
-    .@{css-prefix}-icon-img {
+    .#{$css-prefix}-icon-img {
       &:hover {
         opacity: .85;
       }
     }
   }
 
-  .@{css-prefix}-dropdown {
+  .#{$css-prefix}-dropdown {
     display: inline-block;
   }
 }
 
-.@{css-prefix}-toolbar {
+.#{$css-prefix}-toolbar {
   border-bottom: 1px solid #e0e2e4;
 
-  .@{css-prefix}-toolbar-btns {
+  .#{$css-prefix}-toolbar-btns {
     display: inline-flex;
   }
 
-  .@{css-prefix}-toolbar-more {
+  .#{$css-prefix}-toolbar-more {
     padding: 0 6px 6px;
     text-align: left;
-    .@{css-prefix}-toolbar-divider {
+    .#{$css-prefix}-toolbar-divider {
       margin-top: 0;
     }
   }
 
-  .@{css-prefix}-toolbar-btn {
+  .#{$css-prefix}-toolbar-btn {
     flex: 0 0 auto;
     display: inline-block;
     border: 1px solid transparent;
@@ -656,7 +654,7 @@ body {
   }
 }
 
-.@{css-prefix}-toolbar-divider {
+.#{$css-prefix}-toolbar-divider {
   display: inline-block;
   border-right: 1px solid #e0e2e4;
   width: 0;
@@ -665,7 +663,7 @@ body {
   margin: 12px 3px 0;
 }
 
-.@{css-prefix}-print {
+.#{$css-prefix}-print {
   position: absolute;
   left: 0;
   top: 0;
@@ -675,7 +673,7 @@ body {
   display: flex;
   flex-direction: column;
 }
-.@{css-prefix}-print-bar {
+.#{$css-prefix}-print-bar {
   background: #424242;
   height: 60px;
   line-height: 60px;
@@ -693,7 +691,7 @@ body {
     margin-top: 12px;
   }
 }
-.@{css-prefix}-print-content {
+.#{$css-prefix}-print-content {
   display: flex;
   flex: auto;
   flex-direction: row;
@@ -716,10 +714,10 @@ body {
 }
 
 
-.@{css-prefix}-canvas-card-wraper {
+.#{$css-prefix}-canvas-card-wraper {
   margin: 40px 20px;
 }
-.@{css-prefix}-canvas-card {
+.#{$css-prefix}-canvas-card {
   background: #fff;
   margin: auto;
   page-break-before: auto;
@@ -727,7 +725,7 @@ body {
   box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 3px rgba(0,0,0,0.12), 0 4px 5px 0 rgba(0,0,0,0.20);
 }
 
-.@{css-prefix}-calendar {
+.#{$css-prefix}-calendar {
   color: rgba(0,0,0,.65);
   background: #ffffff;
   user-select: none;
@@ -792,7 +790,7 @@ body {
   }
 }
 
-.@{css-prefix}-datepicker {
+.#{$css-prefix}-datepicker {
   box-shadow: 2px 2px 5px rgba(0,0,0,.2);
   position: absolute;
   left: 0;
@@ -801,15 +799,15 @@ body {
   width: auto;
 }
 
-.@{css-prefix}-buttons {
+.#{$css-prefix}-buttons {
   display: flex;
   justify-content: flex-end;
 
-  .@{css-prefix}-button {
+  .#{$css-prefix}-button {
     margin-left: 8px;
   }
 }
-.@{css-prefix}-button {
+.#{$css-prefix}-button {
   display: inline-block;
   border-radius: 3px;
   line-height: 1em;
@@ -824,7 +822,7 @@ body {
   background: #E0E1E2;
   text-decoration: none;
   font-family: "Lato","proxima-nova","Helvetica Neue",Arial,sans-serif;
-  //box-shadow: 0px 1px 2px -1px rgba(255,255,255,0.5) inset, 0px -2px 0px 0px rgba(0,0,0,0.1) inset;
+  //box-shadow: 0px 1px 2px -1px rgba(255,255,255,0@mixin 5) inset, 0px -2px 0px 0px rgba(0,0,0,0.1) inset;
   //box-shadow: 0 0 0 0 rgba(0,0,0,.5) inset;
   outline: none;
   vertical-align: baseline;
@@ -838,12 +836,12 @@ body {
   }
 
   &.primary {
-    .type-primary;
+    @include type-primary;
   }
 }
 
 // form begin
-.@{css-prefix}-form-input {
+.#{$css-prefix}-form-input {
   font-size: 1em;
   position: relative;
   font-weight: 400;
@@ -858,8 +856,8 @@ body {
     outline: 0;
     -webkit-tap-highlight-color: rgba(255,255,255,0);
     text-align: left;
-    line-height: @form-field-height;
-    height: @form-field-height;
+    line-height: $form-field-height;
+    height: $form-field-height;
     padding: 0 8px;
     background: #fff;
     border: 1px solid #e9e9e9;
@@ -874,11 +872,11 @@ body {
   }
 }
 
-.@{css-prefix}-form-select {
+.#{$css-prefix}-form-select {
   position: relative;
   display: inline-block;
   background: #fff;
-  border: @input-border;
+  border: $input-border;
   border-radius: 2px;
   cursor: pointer;
   color: rgba(0,0,0,.87);
@@ -890,17 +888,17 @@ body {
     white-space: nowrap;
     min-width: 60px;
     width: auto;
-    height: @form-field-height;
-    line-height: @form-field-height;
+    height: $form-field-height;
+    line-height: $form-field-height;
     padding: 0 8px;
   }
 }
-.@{css-prefix}-form-fields {
+.#{$css-prefix}-form-fields {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
 
-  .@{css-prefix}-form-field {
+  .#{$css-prefix}-form-field {
     flex: 0 1 auto;
     .label {
       display: inline-block;
@@ -908,7 +906,7 @@ body {
     }
   }
 }
-.@{css-prefix}-form-field {
+.#{$css-prefix}-form-field {
   display: block;
   vertical-align: middle;
   margin-left: 10px;
@@ -919,7 +917,7 @@ body {
   }
 
   &.error {
-    .@{css-prefix}-form-select, input {
+    .#{$css-prefix}-form-select, input {
       border-color: #f04134;
     }
   }
@@ -930,7 +928,7 @@ body {
   }
 }
 // form end
-.@{css-prefix}-dimmer {
+.#{$css-prefix}-dimmer {
   display: none;
   position: absolute;
   top: 0 !important;
@@ -976,12 +974,12 @@ form fieldset {
   }
 }
 
-.@{css-prefix}-modal, .@{css-prefix}-toast {
+.#{$css-prefix}-modal, .#{$css-prefix}-toast {
   font-size: 13px;
   position: fixed;
   z-index: 1001;
   text-align: left;
-  line-height: @line-height;
+  line-height: $line-height;
   min-width: 360px;
   color: rgba(0,0,0,.87);
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
@@ -992,18 +990,18 @@ form fieldset {
   box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 8px;
 }
 
-.@{css-prefix}-toast {
+.#{$css-prefix}-toast {
   background-color: rgba(255,255,255,.85);
 }
 
-.@{css-prefix}-modal-header, .@{css-prefix}-toast-header {
+.#{$css-prefix}-modal-header, .#{$css-prefix}-toast-header {
   font-weight: 600;
   background-clip: padding-box;
   background-color: rgba(255,255,255,.85);
   border-bottom: 1px solid rgba(0,0,0,.05);
   border-radius: 4px 4px 0 0;
 
-  .@{css-prefix}-icon {
+  .#{$css-prefix}-icon {
     position: absolute;
     right: .8em;
     top: .65em;
@@ -1016,30 +1014,30 @@ form fieldset {
   }
 }
 
-.@{css-prefix}-toast-header {
-  color: @orange-color;
+.#{$css-prefix}-toast-header {
+  color: $orange-color;
 }
 
-.@{css-prefix}-modal-header {
-  border-bottom: @border-style;
+.#{$css-prefix}-modal-header {
+  border-bottom: $border-style;
   background: rgba(0, 0, 0, .08);
   font-size: 1.0785em;
 }
 
-.@{css-prefix}-modal-header,
-.@{css-prefix}-modal-content,
-.@{css-prefix}-toast-header,
-.@{css-prefix}-toast-content {
+.#{$css-prefix}-modal-header,
+.#{$css-prefix}-modal-content,
+.#{$css-prefix}-toast-header,
+.#{$css-prefix}-toast-content {
   padding: .75em 1em;
 }
 
 @media screen and (min-width: 320px) and (max-width: 480px) {
-  .@{css-prefix}-toolbar {
+  .#{$css-prefix}-toolbar {
     display: none;
   }
 }
 
-.@{css-prefix}-icon {
+.#{$css-prefix}-icon {
   width: 18px;
   height: 18px;
   margin: 1px 1px 2px 1px;
@@ -1051,7 +1049,7 @@ form fieldset {
   display: inline-block;
   line-height: 0;
 
-  .@{css-prefix}-icon-img {
+  .#{$css-prefix}-icon-img {
     background-image: url('../assets/sprite.svg');
     position: absolute;
     width: 262px;
@@ -1063,180 +1061,180 @@ form fieldset {
       top: 0;
     }
     &.redo {
-      left: -1 * @icon-size;
+      left: -1 * $icon-size;
       top: 0;
     }
     &.print {
-      left: -2 * @icon-size;
+      left: -2 * $icon-size;
       top: 0;
     }
     &.paintformat {
-      left: -3 * @icon-size;
+      left: -3 * $icon-size;
       top: 0;
     }
     &.clearformat {
-      left: -4 * @icon-size;
+      left: -4 * $icon-size;
       top: 0;
     }
     &.font-bold {
-      left: -5 * @icon-size;
+      left: -5 * $icon-size;
       top: 0;
     }
     &.font-italic {
-      left: -6 * @icon-size;
+      left: -6 * $icon-size;
       top: 0;
     }
     &.underline {
-      left: -7 * @icon-size;
+      left: -7 * $icon-size;
       top: 0;
     }
     &.strike {
-      left: -8 * @icon-size;
+      left: -8 * $icon-size;
       top: 0;
     }
     &.color {
-      left: -9 * @icon-size;
+      left: -9 * $icon-size;
       top: 0;
     }
     &.bgcolor {
-      left: -10 * @icon-size;
+      left: -10 * $icon-size;
       top: 0;
     }
     &.merge {
-      left: -11 * @icon-size;
+      left: -11 * $icon-size;
       top: 0;
     }
     &.align-left {
-      left: -12 * @icon-size;
+      left: -12 * $icon-size;
       top: 0;
     }
     &.align-center {
-      left: -13 * @icon-size;
+      left: -13 * $icon-size;
       top: 0;
     }
     &.align-right {
       left: 0;
-      top: -1 * @icon-size;
+      top: -1 * $icon-size;
     }
     &.align-top {
-      left: -1 * @icon-size;
-      top: -1 * @icon-size;
+      left: -1 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.align-middle {
-      left: -2 * @icon-size;
-      top: -1 * @icon-size;
+      left: -2 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.align-bottom {
-      left: -3 * @icon-size;
-      top: -1 * @icon-size;
+      left: -3 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.textwrap {
-      left: -4 * @icon-size;
-      top: -1 * @icon-size;
+      left: -4 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.autofilter {
-      left: -5 * @icon-size;
-      top: -1 * @icon-size;
+      left: -5 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.formula {
-      left: -6 * @icon-size;
-      top: -1 * @icon-size;
+      left: -6 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.arrow-down {
-      left: -7 * @icon-size;
-      top: -1 * @icon-size;
+      left: -7 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.arrow-right {
-      left: -8 * @icon-size;
-      top: -1 * @icon-size;
+      left: -8 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.link {
-      left: -9 * @icon-size;
-      top: -1 * @icon-size;
+      left: -9 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.chart {
-      left: -10 * @icon-size;
-      top: -1 * @icon-size;
+      left: -10 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.freeze {
-      left: -11 * @icon-size;
-      top: -1 * @icon-size;
+      left: -11 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.ellipsis {
-      left: -12 * @icon-size;
-      top: -1 * @icon-size;
+      left: -12 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.add {
-      left: -13 * @icon-size;
-      top: -1 * @icon-size;
+      left: -13 * $icon-size;
+      top: -1 * $icon-size;
     }
     &.border-all {
       left: 0;
-      top: -2 * @icon-size;
+      top: -2 * $icon-size;
     }
     &.border-inside {
-      left: -1 * @icon-size;
-      top: -2 * @icon-size;
+      left: -1 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-horizontal {
-      left: -2 * @icon-size;
-      top: -2 * @icon-size;
+      left: -2 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-vertical {
-      left: -3 * @icon-size;
-      top: -2 * @icon-size;
+      left: -3 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-outside {
-      left: -4 * @icon-size;
-      top: -2 * @icon-size;
+      left: -4 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-left {
-      left: -5 * @icon-size;
-      top: -2 * @icon-size;
+      left: -5 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-top {
-      left: -6 * @icon-size;
-      top: -2 * @icon-size;
+      left: -6 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-right {
-      left: -7 * @icon-size;
-      top: -2 * @icon-size;
+      left: -7 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-bottom {
-      left: -8 * @icon-size;
-      top: -2 * @icon-size;
+      left: -8 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.border-none {
-      left: -9 * @icon-size;
-      top: -2 * @icon-size;
+      left: -9 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.line-color {
-      left: -10 * @icon-size;
-      top: -2 * @icon-size;
+      left: -10 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.line-type {
-      left: -11 * @icon-size;
-      top: -2 * @icon-size;
+      left: -11 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.close {
-      left: -13 * @icon-size;
-      top: -2 * @icon-size;
+      left: -13 * $icon-size;
+      top: -2 * $icon-size;
     }
     &.chevron-down {
       left: 0;
-      top: -3 * @icon-size;
+      top: -3 * $icon-size;
     }
     &.chevron-up {
-      left: -1 * @icon-size;
-      top: -3 * @icon-size;
+      left: -1 * $icon-size;
+      top: -3 * $icon-size;
     }
     &.chevron-left {
-      left: -2 * @icon-size;
-      top: -3 * @icon-size;
+      left: -2 * $icon-size;
+      top: -3 * $icon-size;
     }
     &.chevron-right {
-      left: -3 * @icon-size;
-      top: -3 * @icon-size;
+      left: -3 * $icon-size;
+      top: -3 * $icon-size;
     }
   }
 }

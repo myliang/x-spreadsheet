@@ -215,7 +215,6 @@ class Rows {
   insert(sri, n = 1) {
     const ndata = {};
     this.each((ri, row) => {
-      console.log({ ri, row });
       let nri = parseInt(ri, 10);
       if (nri >= sri) {
         nri += n;
