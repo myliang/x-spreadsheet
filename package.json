@@ -5,9 +5,11 @@
   "types": "src/index.d.ts",
   "main": "src/index.js",
   "files": [
-    "assets",
-    "dist",
-    "src"
+    "dist/xspreadsheet.css",
+    "dist/xspreadsheet.css.map",
+    "dist/xspreadsheet.js",
+    "dist/xspreadsheet.js.map",
+    "src/index.d.ts"
   ],
   "author": "myliang <liangyuliang0335@gmail.com>",
   "license": "MIT",

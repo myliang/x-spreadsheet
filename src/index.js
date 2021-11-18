@@ -130,10 +130,10 @@ class Spreadsheet {
 
 const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 
-if (window) {
-  window.x_spreadsheet = spreadsheet;
-  window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
-}
+// if (window) {
+//   window.x_spreadsheet = spreadsheet;
+//   window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
+// }
 
 export default Spreadsheet;
 export {
