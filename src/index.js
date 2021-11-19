@@ -5,7 +5,7 @@ import Sheet from './component/sheet';
 import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
-import './index.scss';
+// import './index.scss';
 
 
 class Spreadsheet {
@@ -130,10 +130,12 @@ class Spreadsheet {
 
 const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
 
-// if (window) {
-//   window.x_spreadsheet = spreadsheet;
-//   window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
-// }
+if (process.env.NODE_ENV === 'development') {
+  if (window) {
+    window.x_spreadsheet = spreadsheet;
+    window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
+  }
+}
 
 export default Spreadsheet;
 export {

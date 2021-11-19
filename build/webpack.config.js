@@ -5,7 +5,10 @@ const resolve = dir => path.join(__dirname, '..', dir);
 
 module.exports = {
   entry: {
-    xspreadsheet: './src/index.js',
+    index: './src/index.js',
+    styles: [
+      "./src/index.scss"
+    ]
   },
   module: {
     rules: [
@@ -38,7 +41,7 @@ module.exports = {
       {
         test: /\.(png|svg|jpg|gif)$/,
         use: [
-          'file-loader',
+          'base64-inline-loader',
         ],
       },
       {

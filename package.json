@@ -5,11 +5,9 @@
   "types": "src/index.d.ts",
   "main": "src/index.js",
   "files": [
-    "dist/xspreadsheet.css",
-    "dist/xspreadsheet.css.map",
-    "dist/xspreadsheet.js",
-    "dist/xspreadsheet.js.map",
-    "src/index.d.ts"
+    "assets",
+    "dist",
+    "src"
   ],
   "author": "myliang <liangyuliang0335@gmail.com>",
   "license": "MIT",
@@ -47,6 +45,7 @@
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
     "babel-loader": "^8.0.5",
+    "base64-inline-loader": "^2.0.1",
     "clean-webpack-plugin": "^0.1.19",
     "codecov": "^3.8.2",
     "css-loader": "^1.0.0",
@@ -61,6 +60,7 @@
     "sass": "^1.43.4",
     "sass-loader": "10.1.1",
     "style-loader": "^0.23.0",
+    "terser-webpack-plugin": "^4.2.3",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^3.10.2",

@@ -39,8 +39,10 @@ function translate(key, messages) {
 
 function t(key) {
   let v = translate(key, $messages);
-  if (!v && window && window.x_spreadsheet && window.x_spreadsheet.$messages) {
-    v = translate(key, window.x_spreadsheet.$messages);
+  if (process.env.NODE_ENV === 'development') {
+    if (!v && window && window.x_spreadsheet && window.x_spreadsheet.$messages) {
+      v = translate(key, window.x_spreadsheet.$messages);
+    }
   }
   return v || '';
 }
