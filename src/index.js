@@ -5,8 +5,6 @@ import Sheet from './component/sheet';
 import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
-// import './index.scss';
-
 
 class Spreadsheet {
   constructor(selectors, options = {}) {
@@ -43,6 +41,7 @@ class Spreadsheet {
 
   addSheet(name, active = true) {
     const n = name || `sheet${this.sheetIndex}`;
+    console.log(this.options);
     const d = new DataProxy(n, this.options);
     d.change = (...args) => {
       this.sheet.trigger('change', ...args);

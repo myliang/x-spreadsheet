@@ -140,6 +140,19 @@ declare module '@bergfreunde/x-data-spreadsheet' {
   export interface Cell {}
   export interface Sheet {}
 
+  export class DataProxy {
+    constructor(name: string, settings: Options);
+    undo(): void;
+    redo(): void;
+    copy(): void;
+    clearClipboard(): void;
+    cut(): void;
+    paste(mode: 'all' | 'text' | 'format', cb?: () => void): void;
+    pasteFromText(text: string): void;
+    clearClipboard(): void;
+    // TODO add type for missing methods in this class
+  }
+
   export default class Spreadsheet {
     constructor(container: string | HTMLElement, opts?: Options);
     on: SpreadsheetEventHandler;
@@ -161,6 +174,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       colIndex: number,
       sheetIndex: number
     ): CellStyle;
+
     /**
      * get/set cell text
      * @param rowIndex
@@ -174,6 +188,19 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       text: string,
       sheetIndex?: number
     ): this;
+
+    /**
+     * add new sheet
+     * @param name {string}
+     * @param active {boolean}
+     */
+    addSheet(
+      name: string,
+      active?: boolean,
+    ): DataProxy;
+
+    addSheet(): DataProxy;
+
     /**
      * remove current sheet
      */
@@ -184,15 +211,28 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param json
      */
     loadData(json: Record<string, any>): this;
+
     /**
      * get data
      */
     getData(): Record<string, any>;
+
     /**
      * bind handler to change event, including data change and user actions
      * @param callback
      */
     change(callback: (json: Record<string, any>) => void): this;
+
+    /**
+     * validate date
+     */
+    validate(): boolean;
+
+    /**
+     * rerender sheet
+     */
+    reRender(): this;
+
     /**
      * set locale
      * @param lang

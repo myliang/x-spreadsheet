@@ -62,12 +62,16 @@ body {
   user-select: none;
   -moz-user-select: none;
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
-  box-sizing: content-box;
+  box-sizing: content-box ;
   background: #fff;
   -webkit-font-smoothing: antialiased;
 
   textarea {
     font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
+  }
+  // avoid collisions with css resets
+  & *, ::after, ::before {
+    box-sizing: content-box !important;
   }
 }
 
