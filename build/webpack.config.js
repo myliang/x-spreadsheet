@@ -5,9 +5,8 @@ const resolve = dir => path.join(__dirname, '..', dir);
 
 module.exports = {
   entry: {
-    index: './src/index.js',
     styles: [
-      "./src/index.scss"
+      './src/index.scss',
     ]
   },
   module: {

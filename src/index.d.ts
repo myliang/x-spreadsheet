@@ -240,10 +240,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      */
     static locale(lang: string, message: object): void;
   }
-  global {
-    interface Window {
-      x_spreadsheet(container: string | HTMLElement, opts?: Options): Spreadsheet; 
-    }
-  }
+  
+  export function spreadsheet(container: string | HTMLElement, opts?: Options): Spreadsheet
 }
-

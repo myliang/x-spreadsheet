@@ -41,7 +41,6 @@ class Spreadsheet {
 
   addSheet(name, active = true) {
     const n = name || `sheet${this.sheetIndex}`;
-    console.log(this.options);
     const d = new DataProxy(n, this.options);
     d.change = (...args) => {
       this.sheet.trigger('change', ...args);
@@ -128,13 +127,6 @@ class Spreadsheet {
 }
 
 const spreadsheet = (el, options = {}) => new Spreadsheet(el, options);
-
-if (process.env.NODE_ENV === 'development') {
-  if (window) {
-    window.x_spreadsheet = spreadsheet;
-    window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
-  }
-}
 
 export default Spreadsheet;
 export {
