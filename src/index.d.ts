@@ -209,8 +209,12 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     /**s
      * load data
      * @param json
+     * @param t {object}
      */
-    loadData(json: Record<string, any>): this;
+    loadData(
+      json: Record<string, any>,
+      t?: { transform: (l: any) => any, list: object[], property: string }
+    ): this;
 
     /**
      * get data
