@@ -145,11 +145,6 @@ const arr = new Array(100000)
   .fill(obj)
   .map((elm, i) => ({ [i + 1]: elm }));
 
-// const rows = arr.reduce((acc, curr) => ({
-//   ...acc,
-//   ...curr,
-// }), {});
-
 const transform = list => list.reduce((acc, curr) => ({
   ...acc,
   ...curr,
