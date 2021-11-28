@@ -65,7 +65,7 @@ class Spreadsheet {
     }
   }
 
-  loadData(data, t) {
+  loadData(data) {
     const ds = Array.isArray(data) ? data : [data];
     if (this.bottombar !== null) {
       this.bottombar.clear();
@@ -73,19 +73,7 @@ class Spreadsheet {
     this.datas = [];
     if (ds.length > 0) {
       for (let i = 0; i < ds.length; i += 1) {
-        let it = ds[i];
-        if (t) {
-          console.log('transforming...');
-          const { transform, list, property } = t;
-          const transformed = transform(list);
-          it = {
-            ...it,
-            [property]: {
-              ...it[property],
-              ...transformed,
-            },
-          };
-        }
+        const it = ds[i];
         const nd = this.addSheet(it.name, i === 0);
         nd.setData(it);
         if (i === 0) {

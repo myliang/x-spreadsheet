@@ -145,10 +145,19 @@ const arr = new Array(100000)
   .fill(obj)
   .map((elm, i) => ({ [i + 1]: elm }));
 
-const transform = list => list.reduce((acc, curr) => ({
-  ...acc,
-  ...curr,
-}), {});
+// const rows = arr.reduce((acc, curr) => ({
+//   ...acc,
+//   ...curr,
+// }), {});
+
+let rows = {};
+
+for (let i = 0; i < arr.length; i += 1) {
+  rows = {
+    ...rows,
+    ...arr[i],
+  };
+}
 
 new Spreadsheet('#x-spreadsheet-demo', {
   showToolbar: true,
@@ -189,11 +198,7 @@ new Spreadsheet('#x-spreadsheet-demo', {
     rows: {
       len: arr.length + 1,
       0: { cells },
-      // ...rows,
+      ...rows,
     },
   },
-], {
-  transform,
-  list: arr,
-  property: 'rows',
-});
+]);
