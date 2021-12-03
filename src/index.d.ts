@@ -1,4 +1,4 @@
-declare module 'x-data-spreadsheet' {
+declare module 'poly-spreadsheet' {
   export interface ExtendToolbarOption {
     tip?: string;
     el?: HTMLElement;
@@ -202,7 +202,7 @@ declare module 'x-data-spreadsheet' {
   }
   global {
     interface Window {
-      x_spreadsheet(container: string | HTMLElement, opts?: Options): Spreadsheet; 
+      x_spreadsheet(container: string | HTMLElement, opts?: Options): Spreadsheet;
     }
   }
 }
