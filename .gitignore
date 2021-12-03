@@ -1,4 +1,7 @@
-node_modules
+/node_modules
 yarn.lock
 
 .nyc_output/*
+.idea/
+dist/
+
