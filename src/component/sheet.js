@@ -500,13 +500,15 @@ function dataSetCellText(text, state = 'finished') {
   }
 }
 
-function insertDeleteRowColumn(type) {
+function insertDeleteRowColumn(type, num) {
   const { data } = this;
   if (data.settings.mode === 'read') return;
   if (type === 'insert-row') {
     data.insert('row');
   } else if (type === 'insert-row-below') {
-    data.insertRowBelow();
+    data.insertRowBelow(num);
+  } else if (type === 'insert-column-right') {
+    data.insertColumnRight(num);
   } else if (type === 'delete-row') {
     data.delete('row');
   } else if (type === 'insert-column') {
@@ -704,6 +706,42 @@ function sheetInitEvents() {
   bind(window, 'paste', (evt) => {
     if (!this.focusing) return;
     paste.call(this, 'all', evt);
+
+    const rows = [];
+    const cols = [];
+
+    const rowsData = this.data.rows;
+    const colsData = this.data.cols;
+
+    const { sri } = this.selector.range;
+    const { sci } = this.selector.range;
+
+
+    for (const prop in this.data.rows._) {
+      if (prop > sri) {
+        rows.push(this.data.rows._[prop]);
+      }
+    }
+
+    rows.forEach((row) => {
+      for (const cell in row) {
+        cols.push(Object.keys(cell).length);
+      }
+    });
+
+    const colLength = Math.max(...cols);
+
+    const rowCount = (rows.length - rowsData.len) + sri;
+    const colCount = colLength - (colsData.len - sci);
+
+    if (rowsData.len < (rows.length + sri)) {
+      insertDeleteRowColumn.call(this, 'insert-row-below', rowCount);
+    }
+
+    if (colCount > 0) {
+      insertDeleteRowColumn.call(this, 'insert-column-right', colCount);
+    }
+
     evt.preventDefault();
   });
 
@@ -832,12 +870,6 @@ function sheetInitEvents() {
           break;
         case 13: // enter
           editor.clear();
-          const { eri } = this.selector.range;
-          const rows = this.data.rows;
-          if (eri === rows.len - 1 && !shiftKey) {
-            insertDeleteRowColumn.call(this, 'insert-row-below');
-            evt.preventDefault();
-          }
           // shift + enter => move up
           // enter => move down
           selectorMove.call(this, false, shiftKey ? 'up' : 'down');
@@ -992,13 +1024,6 @@ export default class Sheet {
       height: height - rows.height,
       left: cols.indexWidth,
       top: rows.height,
-    };
-  }
-
-  insertRowBelow2() {
-    this.contextMenu.itemClick = (type) => {
-      console.log(type)
-      insertDeleteRowColumn.call(this, type);
     };
   }
 }

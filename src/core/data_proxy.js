@@ -850,20 +850,19 @@ export default class DataProxy {
 
   insertRowBelow(n) {
     this.changeData(() => {
-      const { sri } = this.selector.range;
-      const { rows, merges } = this;
-      const si = sri;
-      rows.insertBelow(sri, n);
-      merges.shift('row', si, n, (ri, ci, rn, cn) => {
-        const cell = rows.getCell(ri, ci);
-        cell.merge[0] += rn;
-        cell.merge[1] += cn;
-      });
+      const { rows } = this;
+      rows.len += n;
+    });
+  }
+
+  insertColumnRight(n) {
+    this.changeData(() => {
+      const { cols } = this;
+      cols.len += n;
     });
   }
 
   // type: row | column
-
   delete(type) {
     this.changeData(() => {
       const {

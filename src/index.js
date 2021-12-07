@@ -88,17 +88,6 @@ class Spreadsheet {
   }
 
   getData() {
-    // const d = new DataProxy();
-    // d.insertRowBelow(3);
-    // const {data} = this;
-    // this.datas.insertRowBelow(3);
-    // console.log(this.datas);
-
-    // this.sheet.insertRowBelow2();
-
-    const array = this.datas.map(it => it.getData());
-    console.log(array)
-
     return this.datas.map(it => it.getData());
   }
 
