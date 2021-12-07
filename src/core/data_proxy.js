@@ -848,6 +848,20 @@ export default class DataProxy {
     });
   }
 
+  insertRowBelow(n) {
+    this.changeData(() => {
+      const { rows } = this;
+      rows.len += n;
+    });
+  }
+
+  insertColumnRight(n) {
+    this.changeData(() => {
+      const { cols } = this;
+      cols.len += n;
+    });
+  }
+
   // type: row | column
   delete(type) {
     this.changeData(() => {
