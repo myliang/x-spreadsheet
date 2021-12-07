@@ -225,6 +225,24 @@ class Rows {
     this.len += n;
   }
 
+  insertBelow(sri, n) {
+    const ndata = {};
+    this.each((ri, row) => {
+      let nri = parseInt(ri, 10);
+      if (nri > sri) {
+        nri += n;
+        this.eachCells(ri, (ci, cell) => {
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, n, (x, y) => y >= sri));
+          }
+        });
+      }
+      ndata[nri] = row;
+    });
+    this._ = ndata;
+    this.len += n;
+  }
+
   delete(sri, eri) {
     const n = eri - sri + 1;
     const ndata = {};

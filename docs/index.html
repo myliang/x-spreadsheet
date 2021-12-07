@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>x-spreadsheet</title>
-    
+
 <link href="xspreadsheet.css" rel="stylesheet"></head>
 <body onload="load()">
   <div style="position: fixed; right: 0; top: .3em;">
@@ -74,7 +74,7 @@
           rows,
         }, { name: 'sheet-test', rows: rows10 }]).change((cdata) => {
           // console.log(cdata);
-          console.log('>>>', xs.getData());
+          console.log('getData', xs.getData());
         });
 
       xs.on('cell-selected', (cell, ri, ci) => {

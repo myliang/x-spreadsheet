@@ -505,6 +505,8 @@ function insertDeleteRowColumn(type) {
   if (data.settings.mode === 'read') return;
   if (type === 'insert-row') {
     data.insert('row');
+  } else if (type === 'insert-row-below') {
+    data.insertRowBelow();
   } else if (type === 'delete-row') {
     data.delete('row');
   } else if (type === 'insert-column') {
@@ -672,7 +674,6 @@ function sheetInitEvents() {
   };
   // contextmenu
   contextMenu.itemClick = (type) => {
-    // console.log('type:', type);
     if (type === 'validation') {
       modalValidation.setValue(this.data.getSelectedValidation());
     } else if (type === 'copy') {
@@ -831,6 +832,12 @@ function sheetInitEvents() {
           break;
         case 13: // enter
           editor.clear();
+          const { eri } = this.selector.range;
+          const rows = this.data.rows;
+          if (eri === rows.len - 1 && !shiftKey) {
+            insertDeleteRowColumn.call(this, 'insert-row-below');
+            evt.preventDefault();
+          }
           // shift + enter => move up
           // enter => move down
           selectorMove.call(this, false, shiftKey ? 'up' : 'down');
@@ -985,6 +992,13 @@ export default class Sheet {
       height: height - rows.height,
       left: cols.indexWidth,
       top: rows.height,
+    };
+  }
+
+  insertRowBelow2() {
+    this.contextMenu.itemClick = (type) => {
+      console.log(type)
+      insertDeleteRowColumn.call(this, type);
     };
   }
 }
