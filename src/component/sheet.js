@@ -716,7 +716,6 @@ function sheetInitEvents() {
     const { sri } = this.selector.range;
     const { sci } = this.selector.range;
 
-
     for (const prop in this.data.rows._) {
       if (prop > sri) {
         rows.push(this.data.rows._[prop]);
