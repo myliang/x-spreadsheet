@@ -134,7 +134,9 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  return ret * cellRender(x, y);
+  const cellVal = cellRender(x, y);
+
+  return typeof cellVal === 'number' ? ret * cellVal : cellVal;
 };
 
 // evaluate the suffix expression
@@ -147,7 +149,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   for (let i = 0; i < srcStack.length; i += 1) {
     // console.log(':::>>>', srcStack[i]);
     const expr = srcStack[i];
-    const fc = expr[0];
+    const [fc] = expr;
     if (expr === '+') {
       const top = stack.pop();
       stack.push(numberCalc('+', stack.pop(), top));

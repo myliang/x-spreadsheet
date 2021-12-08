@@ -71,6 +71,8 @@ export default {
     and: 'AND',
     or: 'OR',
     concat: 'Concat',
+    concatenate: 'Concatenate',
+    divide: 'Divide',
   },
   validation: {
     required: 'it must be required',

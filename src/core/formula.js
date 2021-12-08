@@ -55,12 +55,17 @@ const baseFormulas = [
     title: tf('formula.concat'),
     render: ary => ary.join(''),
   },
-  /* support:  1 + A1 + B2 * 3
+  {
+    key: 'CONCATENATE',
+    title: tf('formula.concatenate'),
+    render: ary => ary.join(''),
+  },
   {
     key: 'DIVIDE',
     title: tf('formula.divide'),
     render: ary => ary.reduce((a, b) => Number(a) / Number(b)),
   },
+  /* support:  1 + A1 + B2 * 3
   {
     key: 'PRODUCT',
     title: tf('formula.product'),

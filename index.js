@@ -141,23 +141,14 @@ const obj = {
   },
 };
 
-const arr = new Array(100000)
+const arr = new Array(10000)
   .fill(obj)
   .map((elm, i) => ({ [i + 1]: elm }));
 
-// const rows = arr.reduce((acc, curr) => ({
-//   ...acc,
-//   ...curr,
-// }), {});
-
-let rows = {};
-
-for (let i = 0; i < arr.length; i += 1) {
-  rows = {
-    ...rows,
-    ...arr[i],
-  };
-}
+const rows = arr.reduce((acc, curr) => ({
+  ...acc,
+  ...curr,
+}), {});
 
 new Spreadsheet('#x-spreadsheet-demo', {
   showToolbar: true,
