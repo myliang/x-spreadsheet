@@ -707,31 +707,27 @@ function sheetInitEvents() {
     if (!this.focusing) return;
     paste.call(this, 'all', evt);
 
-    const rows = [];
-    const cols = [];
+    const clipboardData = evt.clipboardData || window.clipboardData;
+    const pastedData = clipboardData.getData('text/plain');
+
+    let rows = [];
+    let cols = [];
+    let colsLength;
+
+    rows = pastedData.trim().split(/\r?\n/);
+
+    rows.forEach((row) => {
+      cols = row.trim().split(/\r?\t/);
+      colsLength = cols.length;
+    });
 
     const rowsData = this.data.rows;
     const colsData = this.data.cols;
-
     const { sri } = this.selector.range;
     const { sci } = this.selector.range;
 
-    for (const prop in this.data.rows._) {
-      if (prop > sri) {
-        rows.push(this.data.rows._[prop]);
-      }
-    }
-
-    rows.forEach((row) => {
-      for (const cell in row) {
-        cols.push(Object.keys(cell).length);
-      }
-    });
-
-    const colLength = Math.max(...cols);
-
     const rowCount = (rows.length - rowsData.len) + sri;
-    const colCount = colLength - (colsData.len - sci);
+    const colCount = colsLength - (colsData.len - sci);
 
     if (rowsData.len < (rows.length + sri)) {
       insertDeleteRowColumn.call(this, 'insert-row-below', rowCount);
