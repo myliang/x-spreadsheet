@@ -133,6 +133,19 @@ export function numberCalc(type, a1, a2) {
   return ret.toFixed(Math.max(al1, al2));
 }
 
+export function mapValuesToMatrix(mapping, values) {
+  const chunks = [];
+  for (let i = 0; i < mapping.length; i += 1) {
+    const last = chunks[chunks.length - 1];
+    if (!last || mapping[i - 1].charAt(0) !== mapping[i].charAt(0)) {
+      chunks.push([values[i]]);
+    } else {
+      last.push(values[i]);
+    }
+  }
+  return chunks;
+}
+
 export default {
   cloneDeep,
   merge: (...sources) => mergeDeep({}, ...sources),
@@ -144,4 +157,5 @@ export default {
   rangeReduceIf,
   deleteProperty,
   numberCalc,
+  mapValuesToMatrix,
 };

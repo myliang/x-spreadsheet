@@ -73,6 +73,7 @@ export default {
     concat: 'Concat',
     concatenate: 'Concatenate',
     divide: 'Divide',
+    vlookup: 'Vlookup',
   },
   validation: {
     required: 'it must be required',

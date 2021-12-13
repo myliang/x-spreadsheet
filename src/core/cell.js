@@ -36,26 +36,29 @@ const infixExprToSuffixExpr = (src) => {
         }
         if (c === ')') {
           let c1 = operatorStack.pop();
-          if (fnArgType === 2) {
-            // fn argument range => A1:B5
-            try {
-              const [ex, ey] = expr2xy(stack.pop());
-              const [sx, sy] = expr2xy(stack.pop());
-              // console.log('::', sx, sy, ex, ey);
-              let rangelen = 0;
+
+          if (fnArgType > 0) {
+            while (stack.includes(':')) {
+              const startIndex = stack.indexOf(':') - 1;
+
+              const [ex, ey] = expr2xy(stack[startIndex + 2]);
+              const [sx, sy] = expr2xy(stack[startIndex]);
+              fnArgsLen -= 1;
+
+              stack.splice(startIndex, 3);
+              let insertAt = startIndex;
               for (let x = sx; x <= ex; x += 1) {
                 for (let y = sy; y <= ey; y += 1) {
-                  stack.push(xy2expr(x, y));
-                  rangelen += 1;
+                  stack.splice(insertAt, 0, xy2expr(x, y));
+                  insertAt += 1;
+                  fnArgsLen += 1;
                 }
               }
-              stack.push([c1, rangelen]);
-            } catch (e) {
-              // console.log(e);
             }
-          } else if (fnArgType === 1 || fnArgType === 3) {
-            if (fnArgType === 3) stack.push(fnArgOperator);
-            // fn argument => A1,A2,B5
+
+            if (fnArgType === 3) {
+              stack.push(fnArgOperator);
+            }
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
           } else {
@@ -76,8 +79,9 @@ const infixExprToSuffixExpr = (src) => {
           }
           fnArgType = 3;
         } else if (c === ':') {
+          stack.push(':');
           fnArgType = 2;
-        } else if (c === ',') {
+        } else if (c === ',' || c === ';') {
           if (fnArgType === 3) {
             stack.push(fnArgOperator);
           }
@@ -187,10 +191,12 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     } else if (Array.isArray(expr)) {
       const [formula, len] = expr;
       const params = [];
+      const mapping = [];
       for (let j = 0; j < len; j += 1) {
-        params.push(stack.pop());
+        params.unshift(stack.pop());
+        mapping.push(srcStack[j]);
       }
-      stack.push(formulaMap[formula].render(params.reverse()));
+      stack.push(formulaMap[formula].render(params, mapping));
     } else {
       if (cellList.includes(expr)) {
         return 0;
