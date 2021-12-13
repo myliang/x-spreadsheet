@@ -11,7 +11,7 @@
  * @property {function} render
  */
 import { tf } from '../locale/locale';
-import { numberCalc } from './helper';
+import { numberCalc, mapValuesToMatrix } from './helper';
 
 /** @type {Formula[]} */
 const baseFormulas = [
@@ -59,6 +59,34 @@ const baseFormulas = [
     key: 'CONCATENATE',
     title: tf('formula.concatenate'),
     render: ary => ary.join(''),
+  },
+  {
+    key: 'VLOOKUP',
+    title: tf('formula.vlookup'),
+    render: (ary, matrixMapping) => {
+      const [loopupVal, ...values] = ary;
+      const [, ...mapping] = matrixMapping;
+
+      let colIndex = 0;
+
+      if (Number.isNaN(parseInt(mapping.at(-1), 10))) {
+        return '#N/A';
+      }
+
+      const index = values.pop();
+
+      if (index === 0) {
+        return '#VALUE!';
+      }
+
+      colIndex = index - 1;
+      mapping.pop();
+
+      const matrix = mapValuesToMatrix(mapping, values);
+
+      const indexOfElm = matrix[0].indexOf(loopupVal);
+      return indexOfElm !== -1 ? matrix[colIndex][indexOfElm] : '#N/A';
+    },
   },
   {
     key: 'DIVIDE',
