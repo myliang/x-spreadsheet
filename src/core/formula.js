@@ -84,7 +84,7 @@ const baseFormulas = [
 
       const matrix = mapValuesToMatrix(mapping, values);
 
-      const indexOfElm = matrix[0].lastIndexOf(loopupVal);
+      const indexOfElm = matrix[0].indexOf(loopupVal);
       return indexOfElm !== -1 ? matrix[colIndex][indexOfElm] : '#N/A';
     },
   },
