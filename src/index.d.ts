@@ -184,6 +184,27 @@ declare module 'poly-spreadsheet' {
      * @param json
      */
     loadData(json: Record<string, any>): this;
+
+    /**
+     * rows length
+     */
+    rowsLength: number;
+
+    /**
+     * cols length
+     */
+    colsLength: number;
+
+    /**
+     * insert row below
+     */
+    insertRow(n: number): void;
+
+    /**
+     * insert column right
+     */
+    insertColumn(n: number): void;
+
     /**
      * get data
      */

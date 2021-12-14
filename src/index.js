@@ -87,6 +87,22 @@ class Spreadsheet {
     return this;
   }
 
+  get rowsLength() {
+    return this.sheet.rowsLength;
+  }
+
+  get colsLength() {
+    return this.sheet.colsLength;
+  }
+
+  insertRow(n) {
+    this.sheet.insertRow(n);
+  }
+
+  insertColumn(n) {
+    this.sheet.insertColumn(n);
+  }
+
   getData() {
     return this.datas.map(it => it.getData());
   }
