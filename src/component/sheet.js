@@ -733,7 +733,7 @@ function sheetInitEvents() {
       insertDeleteRowColumn.call(this, 'insert-row-below', rowCount);
     }
 
-    if (colCount > 0) {
+    if (colCount) {
       insertDeleteRowColumn.call(this, 'insert-column-right', colCount);
     }
 
@@ -981,6 +981,22 @@ export default class Sheet {
     this.data.setData(data);
     sheetReset.call(this);
     return this;
+  }
+
+  get rowsLength() {
+    return this.data.rowsLength;
+  }
+
+  get colsLength() {
+    return this.data.colsLength;
+  }
+
+  insertRow(n) {
+    this.data.insertRowBelow(n);
+  }
+
+  insertColumn(n) {
+    this.data.insertColumnRight(n);
   }
 
   // freeze rows or cols
