@@ -993,10 +993,12 @@ export default class Sheet {
 
   insertRow(n) {
     this.data.insertRowBelow(n);
+    this.reload();
   }
 
   insertColumn(n) {
     this.data.insertColumnRight(n);
+    this.reload();
   }
 
   // freeze rows or cols
@@ -1019,6 +1021,7 @@ export default class Sheet {
 
   reload() {
     sheetReset.call(this);
+    console.log('reload');
     return this;
   }
 
