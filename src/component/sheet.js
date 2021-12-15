@@ -726,14 +726,14 @@ function sheetInitEvents() {
     const { sri } = this.selector.range;
     const { sci } = this.selector.range;
 
-    const rowCount = (rows.length - rowsData.len) + sri;
+    const rowCount = rows.length - (rowsData.len - sri);
     const colCount = colsLength - (colsData.len - sci);
 
-    if (rowsData.len < (rows.length + sri)) {
+    if (rowCount > 0) {
       insertDeleteRowColumn.call(this, 'insert-row-below', rowCount);
     }
 
-    if (colCount) {
+    if (colCount > 0) {
       insertDeleteRowColumn.call(this, 'insert-column-right', colCount);
     }
 
