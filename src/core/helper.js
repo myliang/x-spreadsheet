@@ -137,10 +137,11 @@ export function mapValuesToMatrix(mapping, values) {
   const chunks = [];
   for (let i = 0; i < mapping.length; i += 1) {
     const last = chunks[chunks.length - 1];
+    const v = Number.isNaN(Number(values[i])) ? values[i] : Number(values[i]);
     if (!last || mapping[i - 1].charAt(0) !== mapping[i].charAt(0)) {
-      chunks.push([values[i]]);
+      chunks.push([v]);
     } else {
-      last.push(values[i]);
+      last.push(v);
     }
   }
   return chunks;
