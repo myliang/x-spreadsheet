@@ -106,6 +106,15 @@ class Spreadsheet {
     return this;
   }
 
+  setCellStyle(ri, ci, style, sheetIndex = 0) {
+    this.datas[sheetIndex].setCellStyle(ri, ci, style);
+    this.reRender();
+  }
+
+  highlightCell(ri, ci, { error = false, color = '#ffff01' } = {}, sheetIndex = 0) {
+    this.setCellStyle(ri, ci, { bgcolor: error ? '#fe0000' : color }, sheetIndex);
+  }
+
   on(eventName, func) {
     this.sheet.on(eventName, func);
     return this;

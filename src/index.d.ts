@@ -137,7 +137,11 @@ declare module '@bergfreunde/x-data-spreadsheet' {
 
   export interface Row {}
   export interface Table {}
-  export interface Cell {}
+  export interface Cell {
+    text: string;
+    style: number;
+  }
+
   export interface Sheet {}
 
   export class DataProxy {
@@ -150,6 +154,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     paste(mode: 'all' | 'text' | 'format', cb?: () => void): void;
     pasteFromText(text: string): void;
     clearClipboard(): void;
+    setCellStyle(rowIndex: number, colIndex: number, style: CellStyle): void;
     // TODO add type for missing methods in this class
   }
 
@@ -174,6 +179,33 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       colIndex: number,
       sheetIndex: number
     ): CellStyle;
+
+    /**
+     * set cell style
+     * @param rowIndex
+     * @param colIndex
+     * @param style
+     * @param sheetIndex
+     */
+     setCellStyle(
+      rowIndex: number,
+      colIndex: number,
+      style: CellStyle,
+      sheetIndex: number
+    ): void;
+
+    /**
+     * set cell style
+     * @param rowIndex
+     * @param colIndex
+     * @param options
+     */
+     highlightCell(
+      rowIndex: number,
+      colIndex: number,
+      options?: { error: boolean, color?: never } | { color: string, error?: never },
+      sheetIndex?: number,
+    ): void;
 
     /**
      * get/set cell text

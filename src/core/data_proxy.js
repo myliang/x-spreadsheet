@@ -963,6 +963,17 @@ export default class DataProxy {
     return null;
   }
 
+  setCellStyle(ri, ci, style) {
+    const { rows, styles } = this;
+    const cell = rows.getCell(ri, ci);
+    let cstyle = {};
+    if (cell.style !== undefined) {
+      cstyle = { ...styles[cell.style] };
+    }
+    cstyle = { ...cstyle, ...style };
+    cell.style = this.addStyle(cstyle);
+  }
+
   getCellStyleOrDefault(ri, ci) {
     const { styles, rows } = this;
     const cell = rows.getCell(ri, ci);
