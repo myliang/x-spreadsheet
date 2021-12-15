@@ -64,12 +64,17 @@ const baseFormulas = [
     key: 'VLOOKUP',
     title: tf('formula.vlookup'),
     render: (ary, matrixMapping) => {
-      const [loopupVal, ...values] = ary;
+      const [lookup, ...values] = ary;
       const [, ...mapping] = matrixMapping;
 
       let colIndex = 0;
+      let lookupValue = lookup;
 
-      if (Number.isNaN(parseInt(mapping.at(-1), 10))) {
+      if (!Number.isNaN(Number(lookup))) {
+        lookupValue = Number(lookup);
+      }
+
+      if (Number.isNaN(Number(mapping.at(-1)))) {
         return '#N/A';
       }
 
@@ -84,7 +89,7 @@ const baseFormulas = [
 
       const matrix = mapValuesToMatrix(mapping, values);
 
-      const indexOfElm = matrix[0].indexOf(loopupVal);
+      const indexOfElm = matrix[0].indexOf(lookupValue);
       return indexOfElm !== -1 ? matrix[colIndex][indexOfElm] : '#N/A';
     },
   },
