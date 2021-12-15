@@ -1021,7 +1021,6 @@ export default class Sheet {
 
   reload() {
     sheetReset.call(this);
-    console.log('reload');
     return this;
   }
 
