@@ -328,7 +328,27 @@ export default class DataProxy {
     // save data begin
     this.name = name || 'sheet';
     this.freeze = [0, 0];
-    this.styles = []; // Array<Style>
+    this.styles = [
+      {
+        border: {
+          top: ["thin", "black"],
+          bottom: ["thin", "black"],
+          right: ["thin", "black"],
+          left: ["thin", "black"],
+        },
+      },
+      {
+        font: {
+          bold: true,
+        },
+        border: {
+          top: ["thin", "black"],
+          bottom: ["thin", "black"],
+          right: ["thin", "black"],
+          left: ["thin", "black"],
+        },
+      },
+    ];; // Array<Style>
     this.merges = new Merges(); // [CellRange, ...]
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
