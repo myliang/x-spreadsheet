@@ -43,6 +43,15 @@ class Element {
     return this;
   }
 
+  closest(selector) {
+    return new Element(this.el.closest(selector));
+  }
+
+  dispatch(event) {
+    this.el.dispatchEvent(event);
+    return this;
+  }
+
   offset(value) {
     if (value !== undefined) {
       Object.keys(value).forEach((k) => {

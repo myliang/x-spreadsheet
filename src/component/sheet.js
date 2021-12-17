@@ -1,10 +1,12 @@
 /* global window */
+/* eslint-env browser */
 import { h } from './element';
 import {
   bind,
   mouseMoveUp,
   bindTouch,
   createEventEmitter,
+  unbind,
 } from './event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
@@ -68,6 +70,7 @@ function scrollbarMove() {
 }
 
 function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
+  // console.log('selectorSet:', { ri, ci, indexesUpdated, moving, multiple });
   if (ri === -1 && ci === -1) return;
   const {
     table, selector, toolbar, data,
@@ -95,20 +98,17 @@ function selectorMove(multiple, direction) {
   } = this;
   const { rows, cols } = data;
   let [ri, ci] = selector.indexes;
-  const { eri, eci } = selector.range;
   if (multiple) {
     [ri, ci] = selector.moveIndexes;
   }
-  // console.log('selector.move:', ri, ci);
+  // console.log('selector.move:', { ri, ci });
   if (direction === 'left') {
     if (ci > 0) ci -= 1;
   } else if (direction === 'right') {
-    if (eci !== ci) ci = eci;
     if (ci < cols.len - 1) ci += 1;
   } else if (direction === 'up') {
     if (ri > 0) ri -= 1;
   } else if (direction === 'down') {
-    if (eri !== ri) ri = eri;
     if (ri < rows.len - 1) ri += 1;
   } else if (direction === 'row-first') {
     ci = 0;
@@ -431,6 +431,17 @@ function overlayerMousedown(evt) {
   }
 }
 
+// update moveIndexes on mouse up
+function overlayerMouseup(evt) {
+  const {
+    selector, data,
+  } = this;
+  const { offsetX, offsetY } = evt;
+  const cellRect = data.getCellRectByXY(offsetX, offsetY);
+  const { ri, ci } = cellRect;
+  selector.moveIndexes = [ri, ci];
+}
+
 function editorSetOffset() {
   const { editor, data } = this;
   const sOffset = data.getSelectedRect();
@@ -585,10 +596,47 @@ function sheetInitEvents() {
     horizontalScrollbar,
     editor,
     contextMenu,
+    table,
     toolbar,
     modalValidation,
     sortFilter,
   } = this;
+
+  const handleSelectAll = (evt) => {
+    const keyCode = evt.keyCode || evt.which;
+    const {
+      ctrlKey, metaKey,
+    } = evt;
+    if (ctrlKey || metaKey) {
+      switch (keyCode) {
+        case 65: {
+          // ctrl + A, select all
+          selector.set(-1, -1);
+          contextMenu.setMode('range');
+          toolbar.reset();
+          table.render();
+          break;
+        }
+        default:
+          break;
+      }
+    }
+  };
+
+  const parent = overlayerEl.closest('.x-spreadsheet');
+
+  parent
+    .on('mouseover', (evt) => {
+      evt.preventDefault();
+      bind(window, 'keydown', handleSelectAll);
+    })
+    .on('mouseout', (evt) => {
+      evt.preventDefault();
+      unbind(window, 'keydown', handleSelectAll);
+    });
+
+  parent.dispatch(new Event('mouseover'));
+
   // overlayer
   overlayerEl
     .on('mousemove', (evt) => {
@@ -620,6 +668,9 @@ function sheetInitEvents() {
       const { offsetX, offsetY } = evt;
       if (offsetY <= 0) colResizer.hide();
       if (offsetX <= 0) rowResizer.hide();
+    })
+    .on('mouseup', (evt) => {
+      overlayerMouseup.call(this, evt);
     });
 
   selector.inputChange = (v) => {
@@ -722,7 +773,7 @@ function sheetInitEvents() {
     const {
       key, ctrlKey, shiftKey, metaKey,
     } = evt;
-    // console.log('keydown.evt: ', keyCode);
+    // console.log('keydown.evt: ', keyCode, shiftKey, metaKey, ctrlKey);
     if (ctrlKey || metaKey) {
       // const { sIndexes, eIndexes } = selector;
       // let what = 'all';
@@ -758,6 +809,7 @@ function sheetInitEvents() {
         case 86:
           // ctrl + v
           // => paste
+          clearClipboard.call(this);
           // evt.preventDefault();
           break;
         case 37:
