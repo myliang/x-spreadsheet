@@ -74,6 +74,11 @@ export default {
     concatenate: 'Concatenate',
     divide: 'Divide',
     vlookup: 'Vlookup',
+    substitute: 'Substitute',
+    len: 'Len',
+    left: 'Left',
+    right: 'Right',
+    find: 'Find',
   },
   validation: {
     required: 'it must be required',

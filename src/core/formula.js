@@ -74,15 +74,11 @@ const baseFormulas = [
         lookupValue = Number(lookup);
       }
 
-      if (Number.isNaN(Number(mapping.at(-1)))) {
-        return '#N/A';
-      }
+      if (Number.isNaN(Number(mapping.at(-1)))) return '#N/A';
 
       const index = values.pop();
 
-      if (index === 0) {
-        return '#VALUE!';
-      }
+      if (index === 0) return '#VALUE!';
 
       colIndex = index - 1;
       mapping.pop();
@@ -91,6 +87,89 @@ const baseFormulas = [
 
       const indexOfElm = matrix[0].indexOf(lookupValue);
       return indexOfElm !== -1 ? matrix[colIndex][indexOfElm] : '#N/A';
+    },
+  },
+  {
+    key: 'SUBSTITUTE',
+    title: tf('formula.substitute'),
+    render: (ary) => {
+      const [txt, ...rest] = ary;
+      if (rest.length < 2) return '#N/A';
+      let i;
+      let oldTxt = '';
+      let newTxt = '';
+      if (rest.length === 2) {
+        oldTxt = rest.at(-2).toString();
+        newTxt = rest.at(-1).toString();
+      } else {
+        oldTxt = rest.at(-3).toString();
+        newTxt = rest.at(-2).toString();
+        i = rest.at(-1);
+      }
+
+      if (i && Number.isNaN(Number(i))) return '#N/A';
+
+      const regex = new RegExp(oldTxt, 'g');
+      let iteration = 0;
+      const r = txt.replace(regex, (s) => {
+        iteration += 1;
+        if (i) {
+          return iteration === Number(i) ? newTxt : s;
+        }
+        return newTxt;
+      });
+      return r;
+    },
+  },
+  {
+    key: 'LEN',
+    title: tf('formula.len'),
+    render: ([first]) => {
+      if (!Number.isNaN(Number(first))) {
+        return first.toString().length;
+      }
+      return first.length;
+    },
+  },
+  {
+    key: 'LEFT',
+    title: tf('formula.left'),
+    render: (ary) => {
+      const [txt, ...rest] = ary;
+      const i = rest.at(-1);
+      const chars = i ? Number(i) : 1;
+      if (Number.isNaN(chars)) return '#N/A';
+      return txt.substring(0, chars);
+    },
+  },
+  {
+    key: 'RIGHT',
+    title: tf('formula.right'),
+    render: (ary) => {
+      const [txt, ...rest] = ary;
+      const i = rest.at(-1);
+      const chars = i ? Number(i) : 1;
+      if (Number.isNaN(chars)) return '#N/A';
+      return txt.substring(txt.length - chars);
+    },
+  },
+  {
+    key: 'FIND',
+    title: tf('formula.find'),
+    render: (ary) => {
+      const [txt, ...rest] = ary;
+      let within = '';
+      let i = 0;
+      if (!rest.length) return '#N/A';
+      if (rest.length === 1) {
+        within = rest.at(-1).toString();
+      }
+      if (rest.length > 1) {
+        within = rest.at(-2).toString();
+        i = rest.at(-1);
+      }
+      if (Number.isNaN(Number(i))) return '#N/A';
+      return within.indexOf(txt, Number(i)) + 1;
     },
   },
   {
