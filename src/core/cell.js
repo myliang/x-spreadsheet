@@ -37,7 +37,8 @@ const infixExprToSuffixExpr = (src) => {
         if (c === ')') {
           let c1 = operatorStack.pop();
 
-          if (fnArgType > 0) {
+          // stack.length === 1 for formulae with just one parameter
+          if (fnArgType > 0 || stack.length === 1) {
             while (stack.includes(':')) {
               const startIndex = stack.indexOf(':') - 1;
 
