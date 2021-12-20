@@ -141,7 +141,7 @@ const obj = {
   },
 };
 
-const arr = new Array(100000)
+const arr = new Array(100)
   .fill(obj)
   .map((elm, i) => ({ [i + 1]: elm }));
 

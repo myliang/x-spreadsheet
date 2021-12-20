@@ -139,7 +139,7 @@ const baseFormulas = [
       const i = rest.at(-1);
       const chars = i ? Number(i) : 1;
       if (Number.isNaN(chars)) return '#N/A';
-      return txt.substr(0, chars);
+      return txt.substring(0, chars);
     },
   },
   {
@@ -150,7 +150,7 @@ const baseFormulas = [
       const i = rest.at(-1);
       const chars = i ? Number(i) : 1;
       if (Number.isNaN(chars)) return '#N/A';
-      return txt.substr(txt.length - chars);
+      return txt.substring(txt.length - chars);
     },
   },
   {
