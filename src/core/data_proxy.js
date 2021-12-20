@@ -329,6 +329,7 @@ export default class DataProxy {
     this.name = name || 'sheet';
     this.freeze = [0, 0];
     this.styles = [
+      {},
       {
         border: {
           top: ["thin", "black"],
