@@ -328,9 +328,34 @@ export default class DataProxy {
     // save data begin
     this.name = name || 'sheet';
     this.freeze = [0, 0];
-    this.styles = [
+    this.styles = settings.styles || [
       {},
       {
+        font: {
+          align: "left",
+        },
+        border: {
+          top: ["thin", "black"],
+          bottom: ["thin", "black"],
+          right: ["thin", "black"],
+          left: ["thin", "black"],
+        },
+      },
+      {
+        font: {
+          align: "center",
+        },
+        border: {
+          top: ["thin", "black"],
+          bottom: ["thin", "black"],
+          right: ["thin", "black"],
+          left: ["thin", "black"],
+        },
+      },
+      {
+        font: {
+          align: "right",
+        },
         border: {
           top: ["thin", "black"],
           bottom: ["thin", "black"],
@@ -341,6 +366,7 @@ export default class DataProxy {
       {
         font: {
           bold: true,
+          align: "left",
         },
         border: {
           top: ["thin", "black"],
@@ -349,7 +375,31 @@ export default class DataProxy {
           left: ["thin", "black"],
         },
       },
-    ];; // Array<Style>
+      {
+        font: {
+          bold: true,
+          align: "center",
+        },
+        border: {
+          top: ["thin", "black"],
+          bottom: ["thin", "black"],
+          right: ["thin", "black"],
+          left: ["thin", "black"],
+        },
+      },
+      {
+        font: {
+          bold: true,
+          align: "right",
+        },
+        border: {
+          top: ["thin", "black"],
+          bottom: ["thin", "black"],
+          right: ["thin", "black"],
+          left: ["thin", "black"],
+        },
+      },
+    ]; // Array<Style>
     this.merges = new Merges(); // [CellRange, ...]
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
