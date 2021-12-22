@@ -206,6 +206,11 @@ declare module 'poly-spreadsheet' {
     insertColumn(n: number): void;
 
     /**
+     * select cell
+     */
+    selectCell(sri: number, sci: number): void;
+
+    /**
      * get data
      */
     getData(): Record<string, any>;

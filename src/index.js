@@ -86,6 +86,10 @@ class Spreadsheet {
     return this;
   }
 
+  get stringAt() {
+    return this.sheet.stringAt;
+  }
+
   get rowsLength() {
     return this.sheet.rowsLength;
   }
@@ -100,6 +104,11 @@ class Spreadsheet {
 
   insertColumn(n) {
     this.sheet.insertColumn(n);
+  }
+
+  selectCell(sri, sci) {
+    console.log(sri, sci);
+    // this.sheet.selectCell(sri, sci);
   }
 
   getData() {
