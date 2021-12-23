@@ -336,7 +336,7 @@ export default class DataProxy {
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
     this.validations = new Validations();
-    this.GDCTValidators  = new GDCTValidators();
+    this.GDCTValidators = new GDCTValidators();
     this.GDCTValidators.addTypeValidator(15, 2, '$')
     this.hyperlinks = {};
     this.comments = {};
@@ -357,7 +357,7 @@ export default class DataProxy {
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
     this.unsortedRowMap = new Map();
-    
+
     // listen for new conditions
     document.addEventListener('addConditional', (e) => {
       const { sheetName, functionName, params } = e.detail
@@ -895,7 +895,7 @@ export default class DataProxy {
       sci = index?index:sci
       let si = sri;
       if (type === 'row') {
-        rows.insert(sri, n);      
+        rows.insert(sri, n);
         rows.copyStyleToRow(sri - 1, sri)
       } else if (type === 'column') {
         rows.insertColumn(sci, n);
@@ -1022,7 +1022,7 @@ export default class DataProxy {
       if (this.sheetDatas[i].name.toUpperCase() === si.toUpperCase()) {
         sheetData = this.sheetDatas[i];
         break;
-      } 
+      }
     }
 
     if (sheetData === undefined){

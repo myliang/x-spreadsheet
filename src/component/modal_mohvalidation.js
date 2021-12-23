@@ -9,72 +9,101 @@ import { cssPrefix } from '../config';
 
 const fieldLabelWidth = 100;
 
-export default class ModalValidation extends Modal {
+export default class ModalMOHValidation extends Modal {
   constructor() {
-    const mf = new FormField(
-      new FormSelect('cell',
-        ['cell'], // cell|row|column
-        '100%',
-        it => t(`dataValidation.modeType.${it}`)),
+    const attributeField = new FormField( // value should be initialized
+      new FormInput('280px', '2021/22 Q2 Actual, 2021/22 Q2 Budget, ...'),
       { required: true },
-      `${t('dataValidation.range')}:`,
-      fieldLabelWidth,
+      `${t('MOHValidation.attributes')}`
     );
-    const rf = new FormField(
-      new FormInput('120px', 'E3 or E3:F12'),
-      { required: true, pattern: /^([A-Z]{1,2}[1-9]\d*)(:[A-Z]{1,2}[1-9]\d*)?$/ },
+    const categoryField = new FormField(
+      new FormInput('280px', 'Current Assets, Liabilities, ...'),
+      { required: true },
+      `${t('MOHValidation.categories')}`
     );
-    const cf = new FormField(
-      new FormSelect('list',
-        ['list', 'number', 'date', 'phone', 'email'],
+    const typeField = new FormField(
+      new FormSelect('format',
+        ['format', 'value', 'relative'],
         '100%',
-        it => t(`dataValidation.type.${it}`),
+        it => t(`MOHValidation.type.${it}`),
         it => this.criteriaSelected(it)),
       { required: true },
-      `${t('dataValidation.criteria')}:`,
+      `${t('MOHValidation.validationType')}:`,
       fieldLabelWidth,
     );
 
-    // operator
-    const of = new FormField(
+    // FORMAT type operators
+    const formatTypeField = new FormField(
+      new FormSelect('text',
+        ['text', 'number'],
+        '100%',
+        it => t(`MOHValidation.formatType.${it}`),
+        it => this.criteriaFormatSelected(it)),
+      { required: true },
+      `${t('MOHValidation.params')}`
+    );
+    const strLenField = new FormField(
+      new FormInput('140px', 'Text length ex: <5, 12 >=1'),
+      { required: true },
+    );
+    const numLenField = new FormField(
+      new FormInput('140px', 'Length before decimal'),
+      { required: true },
+    ).hide();
+    const decLenField = new FormField(
+      new FormInput('140px', 'Length after decimal'),
+      { required: true },
+    ).hide();
+    // VALUE type operators
+    const ltField = new FormField(
+      new FormInput('140px', 'Maximum value of number'),
+      { required: true },
+      `${t('MOHValidation.params')}`,
+    ).hide();
+    const gtField = new FormField(
+      new FormInput('140px', 'Minimum value of number'),
+    ).hide();
+    // RELATIVE type operators
+    const of = new FormField( // operator
       new FormSelect('be',
         ['be', 'nbe', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte'],
         '160px',
         it => t(`dataValidation.operator.${it}`),
         it => this.criteriaOperatorSelected(it)),
       { required: true },
-    ).hide();
-    // min, max
-    const minvf = new FormField(
+      `${t('MOHValidation.params')}`,
+    );
+    const minvf = new FormField( // min
       new FormInput('70px', '10'),
-      { required: true },
-    ).hide();
-    const maxvf = new FormField(
-      new FormInput('70px', '100'),
-      { required: true, type: 'number' },
-    ).hide();
-    // value
-    const svf = new FormField(
-      new FormInput('120px', 'a,b,c'),
       { required: true },
     );
-    const vf = new FormField(
+    const maxvf = new FormField( // max
+      new FormInput('70px', '100'),
+      { required: true, type: 'number' },
+    );
+    const vf = new FormField( // value
       new FormInput('70px', '10'),
       { required: true, type: 'number' },
     ).hide();
+    const sheetField = new FormField( // sheetName
+      new FormInput('70px', 'Balance Sheet'),
+      { required: false, type: 'text' },
+      `${t('MOHValidation.sheetLabel')}`,
+    );
 
-    super(t('contextmenu.validation'), [
+    super(t('contextmenu.moh-validation'), [
       h('div', `${cssPrefix}-form-fields`).children(
-        mf.el,
-        rf.el,
+        attributeField.el,
       ),
       h('div', `${cssPrefix}-form-fields`).children(
-        cf.el,
+        categoryField.el,
+      ),
+      h('div', `${cssPrefix}-form-fields`).children(
         of.el,
         minvf.el,
         maxvf.el,
         vf.el,
-        svf.el,
+        sheetField.el,
       ),
       h('div', `${cssPrefix}-buttons`).children(
         new Button('cancel').on('click', () => this.btnClick('cancel')),
@@ -82,14 +111,13 @@ export default class ModalValidation extends Modal {
         new Button('save', 'primary').on('click', () => this.btnClick('save')),
       ),
     ]);
-    this.mf = mf;
-    this.rf = rf;
-    this.cf = cf;
+    this.attributeField = attributeField;
+    this.categoryField = categoryField;
     this.of = of;
     this.minvf = minvf;
     this.maxvf = maxvf;
     this.vf = vf;
-    this.svf = svf;
+    this.sheetField = sheetField;
     this.change = () => {};
   }
 
@@ -102,33 +130,31 @@ export default class ModalValidation extends Modal {
 
   criteriaSelected(it) {
     const {
-      of, minvf, maxvf, vf, svf,
+      of,
+      minvf,
+      maxvf,
+      vf,
+      sheetField,
     } = this;
-    if (it === 'date' || it === 'number') {
-      of.show();
-      minvf.rule.type = it;
-      maxvf.rule.type = it;
-      if (it === 'date') {
-        minvf.hint('2018-11-12');
-        maxvf.hint('2019-11-12');
-      } else {
-        minvf.hint('10');
-        maxvf.hint('100');
-      }
-      minvf.show();
-      maxvf.show();
-      vf.hide();
-      svf.hide();
-    } else {
-      if (it === 'list') {
-        svf.show();
-      } else {
-        svf.hide();
-      }
-      vf.hide();
+    // it === 'format' | 'value' | 'relative'
+    if (it === 'format') {
       of.hide();
       minvf.hide();
       maxvf.hide();
+      vf.hide();
+      sheetField.hide();
+    } else if (it === 'value') {
+      of.hide();
+      minvf.hide();
+      maxvf.hide();
+      vf.hide();
+      sheetField.hide();
+    } else if (it === 'relative') {
+      of.show();
+      minvf.show();
+      maxvf.show();
+      vf.hide();
+      sheetField.show();
     }
   }
 
@@ -142,9 +168,8 @@ export default class ModalValidation extends Modal {
       maxvf.show();
       vf.hide();
     } else {
-      const type = this.cf.val();
-      vf.rule.type = type;
-      if (type === 'date') {
+      // vf.rule.type = type; WHAT
+      if (null === 'date') {
         vf.hint('2018-11-12');
       } else {
         vf.hint('10');
@@ -163,7 +188,9 @@ export default class ModalValidation extends Modal {
       this.hide();
     } else if (action === 'save') {
       // validate
-      const attrs = ['mf', 'rf', 'cf', 'of', 'vf', 'minvf', 'maxvf'];
+      const attrs = ['attributeField', 'categoryField', 'typeField', 'formatTypeField',
+        'strLenField', 'numLenField', 'decLenField', 'ltField', 'gtField', 'ofField', 'minvf',
+        'maxvf', 'vf', 'sheetField'];
       for (let i = 0; i < attrs.length; i += 1) {
         const field = this[attrs[i]];
         // console.log('field:', field);
@@ -173,17 +200,18 @@ export default class ModalValidation extends Modal {
         }
       }
 
-      const mode = this.mf.val();
-      const ref = this.rf.val();
-      const type = this.cf.val();
+      const ref = this.categoryField.val();
+      const type = this.typeField.val();
       const operator = this.of.val();
-      let value = this.svf.val();
-      if (type === 'number' || type === 'date') {
+      let value;
+      if (type === 'relative') {
         if (operator === 'be' || operator === 'nbe') {
           value = [this.minvf.val(), this.maxvf.val()];
         } else {
           value = this.vf.val();
         }
+      } else if (type === 'value') {
+        value = [this.gtField.val(), this.ltField.val()];
       }
       // console.log(mode, ref, type, operator, value);
       this.change('save',
@@ -200,7 +228,7 @@ export default class ModalValidation extends Modal {
   setValue(v) {
     if (v) {
       const {
-        mf, rf, cf, of, svf, vf, minvf, maxvf,
+        categoryField, of, vf, minvf, maxvf,
       } = this;
       const {
         mode, ref, validator,
@@ -208,15 +236,12 @@ export default class ModalValidation extends Modal {
       const {
         type, operator, value,
       } = validator || { type: 'list' };
-      mf.val(mode || 'cell');
-      rf.val(ref);
-      cf.val(type);
+      categoryField.val(ref);
       of.val(operator);
       if (Array.isArray(value)) {
         minvf.val(value[0]);
         maxvf.val(value[1]);
       } else {
-        svf.val(value || '');
         vf.val(value || '');
       }
       this.criteriaSelected(type);

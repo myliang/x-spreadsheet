@@ -19,6 +19,7 @@ const menuItems = [
   { key: 'hide', title: tf('contextmenu.hide') },
   { key: 'divider' },
   { key: 'validation', title: tf('contextmenu.validation') },
+  { key: 'moh-validation', title: tf('contextmenu.moh-validation') },
   { key: 'divider' },
   { key: 'cell-printable', title: tf('contextmenu.cellprintable') },
   { key: 'cell-non-printable', title: tf('contextmenu.cellnonprintable') },
@@ -33,6 +34,7 @@ function buildMenuItem(item) {
   }
   return h('div', `${cssPrefix}-item`)
     .on('click', () => {
+      console.log(this.itemClick)
       this.itemClick(item.key);
       this.hide();
     })

@@ -10,6 +10,7 @@ import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar/index';
 import ModalValidation from './modal_validation';
+import ModalMOHValidation from './modal_mohvalidation';
 import ModalConditional from './modal_conditional';
 import SortFilter from './sort_filter';
 import { xtoast } from './message';
@@ -579,6 +580,7 @@ function sheetInitEvents() {
     contextMenu,
     toolbar,
     modalValidation,
+    modalMOHValidation,
     modalConditional,
     sortFilter,
   } = this;
@@ -671,6 +673,8 @@ function sheetInitEvents() {
     // console.log('type:', type);
     if (type === 'validation') {
       modalValidation.setValue(this.data.getSelectedValidation());
+    } else if (type === 'moh-validation') {
+      modalMOHValidation.setValue(this.data.getSelectedValidation());
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -876,6 +880,8 @@ export default class Sheet {
     );
     // data validation
     this.modalValidation = new ModalValidation();
+    // MOH validation
+    this.modalMOHValidation = new ModalMOHValidation();
     // modal for conditional formatting
     // different modals depending on required values
     this.modalConditional = new ModalConditional(this.data);
@@ -902,6 +908,7 @@ export default class Sheet {
       this.horizontalScrollbar.el,
       this.contextMenu.el,
       this.modalValidation.el,
+      this.modalMOHValidation.el,
       this.modalConditional.el,
       this.sortFilter.el,
     );
