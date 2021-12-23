@@ -331,72 +331,66 @@ export default class DataProxy {
     this.styles = settings.styles || [
       {},
       {
-        font: {
-          align: "left",
-        },
+        align: 'left',
         border: {
-          top: ["thin", "black"],
-          bottom: ["thin", "black"],
-          right: ["thin", "black"],
-          left: ["thin", "black"],
+          top: ['thin', 'black'],
+          bottom: ['thin', 'black'],
+          right: ['thin', 'black'],
+          left: ['thin', 'black'],
         },
       },
       {
-        font: {
-          align: "center",
-        },
+        align: 'center',
         border: {
-          top: ["thin", "black"],
-          bottom: ["thin", "black"],
-          right: ["thin", "black"],
-          left: ["thin", "black"],
+          top: ['thin', 'black'],
+          bottom: ['thin', 'black'],
+          right: ['thin', 'black'],
+          left: ['thin', 'black'],
         },
       },
       {
-        font: {
-          align: "right",
-        },
+        align: 'right',
         border: {
-          top: ["thin", "black"],
-          bottom: ["thin", "black"],
-          right: ["thin", "black"],
-          left: ["thin", "black"],
+          top: ['thin', 'black'],
+          bottom: ['thin', 'black'],
+          right: ['thin', 'black'],
+          left: ['thin', 'black'],
         },
       },
       {
+        align: 'left',
         font: {
           bold: true,
-          align: "left",
         },
         border: {
-          top: ["thin", "black"],
-          bottom: ["thin", "black"],
-          right: ["thin", "black"],
-          left: ["thin", "black"],
+          top: ['thin', 'black'],
+          bottom: ['thin', 'black'],
+          right: ['thin', 'black'],
+          left: ['thin', 'black'],
         },
       },
       {
+        align: 'center',
         font: {
           bold: true,
-          align: "center",
         },
         border: {
-          top: ["thin", "black"],
-          bottom: ["thin", "black"],
-          right: ["thin", "black"],
-          left: ["thin", "black"],
+          top: ['thin', 'black'],
+          bottom: ['thin', 'black'],
+          right: ['thin', 'black'],
+          left: ['thin', 'black'],
         },
       },
       {
+        align: 'right',
         font: {
           bold: true,
-          align: "right",
         },
         border: {
-          top: ["thin", "black"],
-          bottom: ["thin", "black"],
-          right: ["thin", "black"],
-          left: ["thin", "black"],
+          top: ['thin', 'black'],
+          bottom: ['thin', 'black'],
+          right: ['thin', 'black'],
+          left: ['thin', 'black'],
         },
       },
     ]; // Array<Style>
