@@ -19,6 +19,7 @@ import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
+import { expr2xy, xy2expr } from '../core/alphabet';
 
 /**
  * @desc throttle fn
@@ -999,6 +1000,19 @@ export default class Sheet {
   insertColumn(n) {
     this.data.insertColumnRight(n);
     this.reload();
+  }
+
+  stringAt() {
+    const { sri, sci } = this.selector.range;
+    return xy2expr(sci, sri);
+  }
+
+  expr2xy(src) {
+    return expr2xy(src);
+  }
+
+  selectCell(ri, ci) {
+    selectorSet.call(this, false, ri, ci);
   }
 
   // freeze rows or cols
