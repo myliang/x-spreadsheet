@@ -186,6 +186,11 @@ declare module 'poly-spreadsheet' {
     loadData(json: Record<string, any>): this;
 
     /**
+     * string at
+     */
+    stringAt: string;
+
+    /**
      * rows length
      */
     rowsLength: number;
@@ -209,6 +214,11 @@ declare module 'poly-spreadsheet' {
      * select cell
      */
     selectCell(sri: number, sci: number): void;
+
+    /**
+     * select cell
+     */
+    expr2xy(str: string): any;
 
     /**
      * get data

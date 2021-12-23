@@ -19,7 +19,7 @@ import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
-import { xy2expr } from '../core/alphabet';
+import { expr2xy, xy2expr } from '../core/alphabet';
 
 /**
  * @desc throttle fn
@@ -984,11 +984,6 @@ export default class Sheet {
     return this;
   }
 
-  get stringAt() {
-    const { sri, sci } = this.selector.range;
-    return xy2expr(sci, sri);
-  }
-
   get rowsLength() {
     return this.data.rowsLength;
   }
@@ -1007,12 +1002,17 @@ export default class Sheet {
     this.reload();
   }
 
-  selectCell(ri, ci) {
-    // this.data.selectCell(ri, ci);
-    const { selector } = this;
+  stringAt() {
+    const { sri, sci } = this.selector.range;
+    return xy2expr(sci, sri);
+  }
 
-    // selectorSet.call(this, true, ri, ci);
-    selector.set(ri, ci);
+  expr2xy(src) {
+    return expr2xy(src);
+  }
+
+  selectCell(ri, ci) {
+    selectorSet.call(this, false, ri, ci);
   }
 
   // freeze rows or cols

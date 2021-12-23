@@ -107,8 +107,11 @@ class Spreadsheet {
   }
 
   selectCell(sri, sci) {
-    console.log(sri, sci);
-    // this.sheet.selectCell(sri, sci);
+    this.sheet.selectCell(sri, sci);
+  }
+
+  expr2xy(str) {
+    return this.sheet.expr2xy(str);
   }
 
   getData() {
