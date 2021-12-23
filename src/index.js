@@ -86,16 +86,16 @@ class Spreadsheet {
     return this;
   }
 
-  get stringAt() {
-    return this.sheet.stringAt;
-  }
-
   get rowsLength() {
     return this.sheet.rowsLength;
   }
 
   get colsLength() {
     return this.sheet.colsLength;
+  }
+
+  get stringAt() {
+    return this.sheet.stringAt;
   }
 
   insertRow(n) {
