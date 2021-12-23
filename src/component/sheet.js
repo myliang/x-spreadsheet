@@ -992,6 +992,11 @@ export default class Sheet {
     return this.data.colsLength;
   }
 
+  get stringAt() {
+    const { sri, sci } = this.selector.range;
+    return xy2expr(sci, sri);
+  }
+
   insertRow(n) {
     this.data.insertRowBelow(n);
     this.reload();
@@ -1000,11 +1005,6 @@ export default class Sheet {
   insertColumn(n) {
     this.data.insertColumnRight(n);
     this.reload();
-  }
-
-  stringAt() {
-    const { sri, sci } = this.selector.range;
-    return xy2expr(sci, sri);
   }
 
   expr2xy(src) {
