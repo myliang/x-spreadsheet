@@ -328,7 +328,7 @@ export default class DataProxy {
     // save data begin
     this.name = name || 'sheet';
     this.freeze = [0, 0];
-    this.styles = settings.styles || [
+    this.styles = settings.cellsStyles || [
       {},
       {
         align: 'left',
