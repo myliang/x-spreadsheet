@@ -997,6 +997,13 @@ export default class Sheet {
     return xy2expr(sci, sri);
   }
 
+  get stringAtRange() {
+    const {
+      sri, sci, eri, eci,
+    } = this.selector.range;
+    return `${xy2expr(sci, sri)}:${xy2expr(eci, eri)}`;
+  }
+
   insertRow(n) {
     this.data.insertRowBelow(n);
     this.reload();
