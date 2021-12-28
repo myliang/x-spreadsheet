@@ -76,9 +76,9 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     // render text
     let cellText = '';
     if (!data.settings.evalPaused) {
-      cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+      cellText = _cell.render(cell.text || 0, formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
     } else {
-      cellText = cell.text || '';
+      cellText = cell.text || 0;
     }
     if (style.format) {
       // console.log(data.formatm, '>>', cell.format);
