@@ -98,6 +98,10 @@ class Spreadsheet {
     return this.sheet.stringAt;
   }
 
+  insert(type, n) {
+    this.sheet.insert(type, n);
+  }
+
   insertRow(n) {
     this.sheet.insertRow(n);
   }
