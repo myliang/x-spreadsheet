@@ -45,7 +45,7 @@ declare module 'poly-spreadsheet' {
         italic: false;
       };
     };
-    cellsStyles: CellStyle[]
+    cellsStyles?: CellStyle[]
   }
 
   export type CELL_SELECTED = 'cell-selected';
@@ -217,7 +217,7 @@ declare module 'poly-spreadsheet' {
     selectCell(sri: number, sci: number): void;
 
     /**
-     * select cell
+     * expr2xy
      */
     expr2xy(str: string): any;
 
