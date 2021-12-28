@@ -98,10 +98,6 @@ class Spreadsheet {
     return this.sheet.stringAt;
   }
 
-  get stringAtRange() {
-    return this.sheet.stringAtRange;
-  }
-
   insertRow(n) {
     this.sheet.insertRow(n);
   }

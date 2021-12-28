@@ -192,11 +192,6 @@ declare module 'poly-spreadsheet' {
     stringAt: string;
 
     /**
-     * string at range
-     */
-    stringAtRange: string;
-
-    /**
      * rows length
      */
     rowsLength: number;
