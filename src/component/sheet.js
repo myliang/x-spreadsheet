@@ -1000,11 +1000,13 @@ export default class Sheet {
   insertRow(n) {
     this.data.insertRowBelow(n);
     this.reload();
+    scrollbarMove.call(this);
   }
 
   insertColumn(n) {
     this.data.insertColumnRight(n);
     this.reload();
+    scrollbarMove.call(this);
   }
 
   expr2xy(src) {
