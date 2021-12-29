@@ -200,6 +200,10 @@ declare module 'poly-spreadsheet' {
      * cols length
      */
     colsLength: number;
+    /**
+     * insert row or column
+     */
+    insert(type: 'row' | 'column' ,n: number): void;
 
     /**
      * insert row below

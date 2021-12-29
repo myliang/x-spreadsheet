@@ -997,6 +997,11 @@ export default class Sheet {
     return xy2expr(sci, sri);
   }
 
+  insert(type, n) {
+    this.data.insert(type, n);
+    this.reload();
+  }
+
   insertRow(n) {
     this.data.insertRowBelow(n);
     this.reload();
