@@ -76,9 +76,10 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     // render text
     let cellText = '';
     if (!data.settings.evalPaused) {
-      cellText = _cell.render(cell.text || 0, formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+      console.log(cell.text);
+      cellText = _cell.render(cell.text === 0 ? 0 : cell.text ? cell.text : '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
     } else {
-      cellText = cell.text || 0;
+      cellText = cell.text === 0 ? 0 : cell.text ? cell.text : '';
     }
     if (style.format) {
       // console.log(data.formatm, '>>', cell.format);
