@@ -952,8 +952,11 @@ export default class DataProxy {
 
   getCellTextOrDefault(ri, ci) {
     const cell = this.getCell(ri, ci);
+    if (!cell) {
+      return '';
+    }
 
-    return cell ? cell.text === 0 ? 0 : cell.text ? cell.text : '' : '';
+    return cell.text === 0 ? 0 : cell.text || '';
   }
 
   getCellStyle(ri, ci) {
