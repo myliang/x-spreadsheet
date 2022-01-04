@@ -141,7 +141,7 @@ const obj = {
   },
 };
 
-const arr = new Array(100)
+const arr = new Array(26)
   .fill(obj)
   .map((elm, i) => ({ [i + 1]: elm }));
 
@@ -150,10 +150,7 @@ const rows = arr.reduce((acc, curr) => ({
   ...curr,
 }), {});
 
-new Spreadsheet('#x-spreadsheet-demo', {
-  showToolbar: true,
-  showGrid: true,
-  showBottomBar: true,
+const instance = Spreadsheet.getInstance('#x-spreadsheet-demo', {
   extendToolbar: {
     left: [
       {
@@ -174,18 +171,12 @@ new Spreadsheet('#x-spreadsheet-demo', {
       },
     ],
   },
-  row: {
-    len: 100,
-    height: 25,
-  },
-  col: {
-    len: initialCols.length,
-    width: 100,
-    indexWidth: 60,
-    minWidth: 60,
-  },
-}).loadData([
+});
+instance.loadData([
   {
+    cols: {
+      len: initialCols.length,
+    },
     rows: {
       len: arr.length + 1,
       0: { cells },
