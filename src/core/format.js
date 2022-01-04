@@ -12,6 +12,29 @@ const formatNumberRender = (v) => {
   return v;
 };
 
+const formatPercentRender = (v) => {
+  if (!v) {
+    return '';
+  }
+  let n = v * 100;
+  if (v.includes('%')) {
+    n = Number(v.substring(0, v.indexOf('%')));
+  }
+  if (Number.isNaN(n)) {
+    return v;
+  }
+  return `${n.toFixed(2)}%`;
+};
+
+const formatDurationRender = (v) => {
+  if (!v) {
+    return '';
+  }
+  const from = (new Date(v)).getTime();
+  const then = (new Date('1990')).getTime();
+  return from - then;
+};
+
 const baseFormats = [
   {
     key: 'normal',
@@ -37,7 +60,7 @@ const baseFormats = [
     title: tf('format.percent'),
     type: 'number',
     label: '10.12%',
-    render: v => `${v}%`,
+    render: formatPercentRender,
   },
   {
     key: 'rmb',
@@ -64,29 +87,44 @@ const baseFormats = [
     key: 'date',
     title: tf('format.date'),
     type: 'date',
-    label: '26/09/2008',
-    render: formatStringRender,
+    label: '26.09.2008',
+    render: (v) => {
+      if (!v) {
+        return '';
+      }
+      return (new Date(v)).toLocaleDateString('de-DE');
+    },
   },
   {
     key: 'time',
     title: tf('format.time'),
     type: 'date',
     label: '15:59:00',
-    render: formatStringRender,
+    render: (v) => {
+      if (!v) {
+        return '';
+      }
+      return (new Date(v)).toLocaleTimeString();
+    },
   },
   {
     key: 'datetime',
     title: tf('format.datetime'),
     type: 'date',
-    label: '26/09/2008 15:59:00',
-    render: formatStringRender,
+    label: '26.09.2008 15:59:00',
+    render: (v) => {
+      if (!v) {
+        return '';
+      }
+      return (new Date(v)).toLocaleString('de-DE');
+    },
   },
   {
     key: 'duration',
     title: tf('format.duration'),
     type: 'date',
     label: '24:01:00',
-    render: formatStringRender,
+    render: formatDurationRender,
   },
 ];
 

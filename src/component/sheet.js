@@ -333,15 +333,22 @@ function cut() {
 
 function paste(what, evt) {
   const { data } = this;
+  let clen = 0;
+  let rlen = 0;
   if (data.settings.mode === 'read') return;
   if (data.paste(what, msg => xtoast('Tip', msg))) {
     sheetReset.call(this);
   } else if (evt) {
     const cdata = evt.clipboardData.getData('text/plain');
-    // sheetReset.call(this); // reset before pasting in case new rows are added
-    this.data.pasteFromText(cdata);
+    ({ clen, rlen } = this.data.pasteFromText(cdata));
     sheetReset.call(this);
   }
+  const { sri, sci } = this.selector.range;
+  const cdiff = data.clipboard.range ? data.clipboard.range.eci - data.clipboard.range.sci : clen;
+  const rdiff = data.clipboard.range ? data.clipboard.range.eri - data.clipboard.range.sri : rlen;
+  this.selector.hideClipboard();
+  this.selector.moveIndexes = [sri + rdiff, sci + cdiff];
+  selectorSet.call(this, true, sri + rdiff, sci + cdiff, true);
 }
 
 function hideRowsOrCols() {
@@ -809,7 +816,6 @@ function sheetInitEvents() {
         case 86:
           // ctrl + v
           // => paste
-          clearClipboard.call(this);
           // evt.preventDefault();
           break;
         case 37:
