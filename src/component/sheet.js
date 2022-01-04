@@ -797,12 +797,6 @@ function sheetInitEvents() {
           this.redo();
           evt.preventDefault();
           break;
-        case 67:
-          // ctrl + c
-          // => copy
-          // copy.call(this);
-          // evt.preventDefault();
-          break;
         case 88:
           // ctrl + x
           cut.call(this);
@@ -812,11 +806,6 @@ function sheetInitEvents() {
           // ctrl + u
           toolbar.trigger('underline');
           evt.preventDefault();
-          break;
-        case 86:
-          // ctrl + v
-          // => paste
-          // evt.preventDefault();
           break;
         case 37:
           // ctrl + left
@@ -851,6 +840,8 @@ function sheetInitEvents() {
           // ctrl + I
           toolbar.trigger('italic');
           break;
+        case 67: // ctrl + c
+        case 86: // ctrl + v
         default:
           break;
       }

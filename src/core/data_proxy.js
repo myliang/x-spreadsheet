@@ -132,7 +132,6 @@ function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
   const { rows, merges } = this;
   // delete dest merge
   if (what === 'all' || what === 'format') {
-    // rows.deleteCells(dstCellRange, what);
     merges.deleteWithin(dstCellRange);
   }
   rows.copyPaste(srcCellRange, dstCellRange, what, autofill, (ri, ci, cell) => {
