@@ -13,6 +13,7 @@ localeFiles.forEach((file) => {
 
 module.exports = {
   entry,
+  mode: 'production',
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, '../dist/locale'),
