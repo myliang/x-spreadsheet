@@ -152,7 +152,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     clearClipboard(): void;
     cut(): void;
     paste(mode: 'all' | 'text' | 'format', cb?: () => void): void;
-    pasteFromText(text: string): void;
+    pasteFromText(text: string): { rlen: number, clen: number };
     clearClipboard(): void;
     setCellStyle(rowIndex: number, colIndex: number, style: CellStyle): void;
     // TODO add type for missing methods in this class
@@ -264,6 +264,8 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * rerender sheet
      */
     reRender(): this;
+
+    static getInstance(container: string | HTMLElement, opts?: Options): Spreadsheet;
 
     /**
      * set locale

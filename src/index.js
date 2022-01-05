@@ -8,6 +8,7 @@ import { locale } from './locale/locale';
 
 class Spreadsheet {
   constructor(selectors, options = {}) {
+    this.selectors = selectors;
     let targetEl = selectors;
     this.options = { showBottomBar: true, ...options };
     this.sheetIndex = 1;
@@ -132,6 +133,16 @@ class Spreadsheet {
 
   static locale(lang, message) {
     locale(lang, message);
+  }
+
+  static getInstance(selectors, options = {}) {
+    if (!Spreadsheet.instance || Spreadsheet.instance.selectors !== selectors) {
+      delete Spreadsheet.instance; // clean up old instance if any
+      Spreadsheet.instance = new Spreadsheet(selectors, options);
+    }
+    Spreadsheet.instance.options = { ...this.options, ...options };
+    Spreadsheet.instance.reRender();
+    return Spreadsheet.instance;
   }
 }
 
