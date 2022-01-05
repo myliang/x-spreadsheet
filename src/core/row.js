@@ -302,7 +302,7 @@ class Rows {
         if (what === 'all') {
           delete row.cells[ci];
         } else if (what === 'text') {
-          if (cell.text) delete cell.text;
+          if (cell.text === 0 || cell.text) delete cell.text;
           if (cell.value) delete cell.value;
         } else if (what === 'format') {
           if (cell.style !== undefined) delete cell.style;

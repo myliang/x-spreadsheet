@@ -412,8 +412,8 @@ export default class DataProxy {
     for (let ri = sri; ri <= eri; ri += 1) {
       const row = [];
       for (let ci = sci; ci <= eci; ci += 1) {
-        const cell = this.getCell(ri, ci);
-        row.push((cell && cell.text) || '');
+        const { text } = this.getCell(ri, ci) || {};
+        row.push(text === 0 ? 0 : text || '');
       }
       copyText.push(row);
     }
@@ -961,7 +961,11 @@ export default class DataProxy {
 
   getCellTextOrDefault(ri, ci) {
     const cell = this.getCell(ri, ci);
-    return (cell && cell.text) ? cell.text : '';
+    if (!cell) {
+      return '';
+    }
+
+    return cell.text === 0 ? 0 : cell.text || '';
   }
 
   getCellStyle(ri, ci) {
