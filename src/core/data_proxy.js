@@ -413,8 +413,8 @@ export default class DataProxy {
     for (let ri = sri; ri <= eri; ri += 1) {
       const row = [];
       for (let ci = sci; ci <= eci; ci += 1) {
-        const cell = this.getCell(ri, ci);
-        row.push((cell && cell.text) || '');
+        const { text } = this.getCell(ri, ci) || {};
+        row.push(text === 0 ? 0 : text || '');
       }
       copyText.push(row);
     }

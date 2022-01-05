@@ -253,8 +253,8 @@ export default class Editor {
     const { el, datepicker, suggest } = this;
     el.show();
     this.cell = cell;
-    const text = (cell && cell.text) || '';
-    this.setText(text);
+    const { text } = cell || {};
+    this.setText(text === 0 ? 0 : text || '');
 
     this.validator = validator;
     if (validator) {
