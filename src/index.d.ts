@@ -167,7 +167,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param colIndex {number} column index
      * @param sheetIndex {number} sheet iindex
      */
-    cell(rowIndex: number, colIndex: number, sheetIndex: number): Cell;
+    cell(rowIndex: number, colIndex: number, sheetIndex?: number): Cell;
     /**
      * retrieve cell style
      * @param rowIndex
@@ -177,7 +177,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     cellStyle(
       rowIndex: number,
       colIndex: number,
-      sheetIndex: number
+      sheetIndex?: number
     ): CellStyle;
 
     /**
@@ -186,12 +186,34 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param colIndex
      * @param style
      * @param sheetIndex
+     * @param reRender
      */
      setCellStyle(
       rowIndex: number,
       colIndex: number,
       style: CellStyle,
-      sheetIndex: number
+      sheetIndex?: number,
+      reRender?: boolean
+    ): void;
+
+    /**
+     * reset cell style
+     * @param startRowIndex
+     * @param startColIndex
+     * @param endRowIndex
+     * @param endColIndex
+     * @param style
+     * @param sheetIndex
+     * @param reRender
+     */
+    resetCellStyle(
+      startRowIndex: number,
+      startColIndex: number,
+      endRowIndex: number,
+      endColIndex: number,
+      style: CellStyle,
+      sheetIndex?: number,
+      reRender?: boolean
     ): void;
 
     /**
@@ -199,12 +221,15 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param rowIndex
      * @param colIndex
      * @param options
+     * @param sheetIndex
+     * @param reRender
      */
      highlightCell(
       rowIndex: number,
       colIndex: number,
       options?: { error: boolean, color?: never } | { color: string, error?: never },
       sheetIndex?: number,
+      reRender?: boolean
     ): void;
 
     /**
@@ -220,6 +245,26 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       text: string,
       sheetIndex?: number
     ): this;
+
+    /**
+     * reset cell text
+     * @param startRowIndex
+     * @param startColIndex
+     * @param endRowIndex
+     * @param endColIndex
+     * @param style
+     * @param sheetIndex
+     * @param reRender
+     */
+    resetCellText(
+      startRowIndex: number,
+      startColIndex: number,
+      endRowIndex: number,
+      endColIndex: number,
+      style: CellStyle,
+      sheetIndex?: number,
+      reRender?: boolean
+    ): void;
 
     /**
      * add new sheet

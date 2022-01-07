@@ -5,6 +5,7 @@ import Sheet from './component/sheet';
 import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
+import Cr from './core/cell_range';
 
 class Spreadsheet {
   constructor(selectors, options = {}) {
@@ -90,8 +91,18 @@ class Spreadsheet {
   }
 
   cellText(ri, ci, text, sheetIndex = 0) {
-    this.datas[sheetIndex].setCellText(ri, ci, text, 'finished');
+    this.datas[sheetIndex].setCellText(ri, ci, text);
     return this;
+  }
+
+  resetCellText(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
+    const cr = new Cr(sri, sci, eri, eci);
+    cr.each((ri, ci) => {
+      this.datas[sheetIndex].setCellText(ri, ci);
+    });
+    if (reRender) {
+      this.reRender();
+    }
   }
 
   cell(ri, ci, sheetIndex = 0) {
@@ -107,13 +118,25 @@ class Spreadsheet {
     return this;
   }
 
-  setCellStyle(ri, ci, style, sheetIndex = 0) {
+  setCellStyle(ri, ci, style, sheetIndex = 0, reRender = true) {
     this.datas[sheetIndex].setCellStyle(ri, ci, style);
-    this.reRender();
+    if (reRender) {
+      this.reRender();
+    }
   }
 
-  highlightCell(ri, ci, { error = false, color = '#ffff01' } = {}, sheetIndex = 0) {
-    this.setCellStyle(ri, ci, { bgcolor: error ? '#fe0000' : color }, sheetIndex);
+  highlightCell(ri, ci, { error = false, color = '#ffff01' } = {}, sheetIndex = 0, reRender = true) {
+    this.setCellStyle(ri, ci, { bgcolor: error ? '#fe0000' : color }, sheetIndex, reRender);
+  }
+
+  resetCellStyle(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
+    const cr = new Cr(sri, sci, eri, eci);
+    cr.each((ri, ci) => {
+      this.datas[sheetIndex].setCellStyle(ri, ci, sheetIndex, false);
+    });
+    if (reRender) {
+      this.reRender();
+    }
   }
 
   on(eventName, func) {
