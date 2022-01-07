@@ -983,6 +983,12 @@ export default class DataProxy {
     cell.style = this.addStyle(cstyle);
   }
 
+  resetCellStyle(ri, ci) {
+    const { rows } = this;
+    const cell = rows.getCellOrNew(ri, ci);
+    cell.style = undefined;
+  }
+
   getCellStyleOrDefault(ri, ci) {
     const { styles, rows } = this;
     const cell = rows.getCell(ri, ci);

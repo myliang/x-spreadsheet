@@ -132,7 +132,7 @@ class Spreadsheet {
   resetCellStyle(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
     const cr = new Cr(sri, sci, eri, eci);
     cr.each((ri, ci) => {
-      this.datas[sheetIndex].setCellStyle(ri, ci, sheetIndex, false);
+      this.datas[sheetIndex].resetCellStyle(ri, ci);
     });
     if (reRender) {
       this.reRender();
