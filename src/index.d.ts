@@ -202,7 +202,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param startColIndex
      * @param endRowIndex
      * @param endColIndex
-     * @param style
      * @param sheetIndex
      * @param reRender
      */
@@ -211,7 +210,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       startColIndex: number,
       endRowIndex: number,
       endColIndex: number,
-      style: CellStyle,
       sheetIndex?: number,
       reRender?: boolean
     ): void;
@@ -252,7 +250,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param startColIndex
      * @param endRowIndex
      * @param endColIndex
-     * @param style
      * @param sheetIndex
      * @param reRender
      */
@@ -261,7 +258,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       startColIndex: number,
       endRowIndex: number,
       endColIndex: number,
-      style: CellStyle,
       sheetIndex?: number,
       reRender?: boolean
     ): void;
