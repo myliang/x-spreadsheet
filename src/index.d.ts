@@ -138,7 +138,7 @@ declare module 'poly-spreadsheet' {
 
   export interface Row {}
   export interface Table {}
-  export interface Cell {}
+  export interface Cell {text?: string}
   export interface Sheet {}
 
   export default class Spreadsheet {
