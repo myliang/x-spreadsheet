@@ -1,7 +1,5 @@
 import './_.prototypes';
 
-const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-
 /** index number 2 letters
  * @example stringAt(26) ==> 'AA'
  * @date 2019-10-10
@@ -10,16 +8,21 @@ const alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', '
  * @returns {string}
  */
 export function stringAt(index) {
-  let str = '';
-  let cindex = index;
-  while (cindex >= alphabets.length) {
-    cindex /= alphabets.length;
-    cindex -= 1;
-    str += alphabets[parseInt(cindex, 10) % alphabets.length];
+  if (index < 0) {
+    return '';
   }
-  const last = index % alphabets.length;
-  str += alphabets[last];
-  return str;
+
+  index += 1;
+
+  let col = '';
+
+  while (index > 0) {
+    const key = parseInt(((index - 1) % 26) + 65, 10);
+
+    col = String.fromCharCode(key) + col;
+    index = parseInt((index - 1) / 26, 10);
+  }
+  return col;
 }
 
 /** translate letter in A1-tag to number
@@ -29,14 +32,24 @@ export function stringAt(index) {
  * @returns {number}
  */
 export function indexAt(str) {
-  let ret = 0;
-  for (let i = 0; i < str.length - 1; i += 1) {
-    const cindex = str.charCodeAt(i) - 65;
-    const exponet = str.length - 1 - i;
-    ret += (alphabets.length ** exponet) + (alphabets.length * cindex);
+  if (str.length === 0) {
+    return 0;
   }
-  ret += str.charCodeAt(str.length - 1) - 65;
-  return ret;
+  let col = 0;
+  let multi = 1;
+  for (let i = str.length - 1; i >= 0; i--) {
+    const r = str[i];
+    const ind = r.charCodeAt(0);
+    const aInd = 'A'.charCodeAt(0);
+    const zInd = 'Z'.charCodeAt(0);
+    if (ind >= aInd && ind <= zInd) {
+      col += (ind - aInd + 1) * multi;
+    } else {
+      return 0;
+    }
+    multi *= 26;
+  }
+  return col - 1;
 }
 
 // B10 => x,y
