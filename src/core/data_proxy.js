@@ -487,11 +487,34 @@ export default class DataProxy {
     return { rlen: lines.length - 1, clen: first.length - 1 };
   }
 
-  autofill(cellRange, what, error = () => {}) {
-    const srcRange = this.selector.range;
-    if (!canPaste.call(this, srcRange, cellRange, error)) return false;
+  autofill(dpSelector, what, error = () => {}) {
+    const { range } = this.selector;
+    if (!canPaste.call(this, range, dpSelector.arange, error)) return false;
     this.changeData(() => {
-      copyPaste.call(this, srcRange, cellRange, what, true);
+      const {
+        sri: srcSri, sci: srcSci, eri: srcEri, eci: srcEci,
+      } = range;
+      const {
+        sri: destSri, sci: destSci, eri: destEri, eci: destEci,
+      } = dpSelector.arange;
+
+      let sci = srcEci;
+      let eci = destSci;
+      if (srcSci <= destEci) {
+        sci = srcSci;
+        eci = destEci;
+      }
+
+      let sri = srcEri;
+      let eri = destSri;
+      if (srcSri <= destEri) {
+        sri = srcSri;
+        eri = destEri;
+      }
+
+      dpSelector.setStartEnd(sri, sci, eri, eci);
+
+      copyPaste.call(this, range, dpSelector.arange, what, true);
     });
     return true;
   }

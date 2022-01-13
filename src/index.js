@@ -20,10 +20,10 @@ class Spreadsheet {
     this.bottombar = this.options.showBottomBar ? new Bottombar(() => {
       if (this.options.mode === 'read') return;
       const d = this.addSheet();
-      this.sheet.resetData(d);
+      this.sheet.resetData(d, this.datas);
     }, (index) => {
       const d = this.datas[index];
-      this.sheet.resetData(d);
+      this.sheet.resetData(d, this.datas);
     }, () => {
       this.deleteSheet();
     }, (index, value) => {
@@ -35,14 +35,14 @@ class Spreadsheet {
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
     targetEl.appendChild(rootEl.el);
-    this.sheet = new Sheet(rootEl, this.data);
+    this.sheet = new Sheet(rootEl, this.data, this.datas);
     if (this.bottombar !== null) {
       rootEl.child(this.bottombar.el);
     }
   }
 
   addSheet(name, active = true) {
-    const n = name || `sheet${this.sheetIndex}`;
+    const n = name || `Sheet${this.sheetIndex}`;
     const d = new DataProxy(n, this.options);
     d.change = (...args) => {
       this.sheet.trigger('change', ...args);
@@ -73,13 +73,14 @@ class Spreadsheet {
       this.bottombar.clear();
     }
     this.datas = [];
+    this.sheetIndex = 1; // reset sheet index
     if (ds.length > 0) {
       for (let i = 0; i < ds.length; i += 1) {
         const it = ds[i];
         const nd = this.addSheet(it.name, i === 0);
         nd.setData(it);
         if (i === 0) {
-          this.sheet.resetData(nd);
+          this.sheet.resetData(nd, this.datas);
         }
       }
     }

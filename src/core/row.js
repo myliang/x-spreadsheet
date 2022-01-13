@@ -111,6 +111,7 @@ class Rows {
 
   // what: all | format | text
   copyPaste(srcCellRange, dstCellRange, what, autofill = false, cb = () => {}) {
+    console.log('row.copyPaste')
     const {
       sri, sci, eri, eci,
     } = srcCellRange;
@@ -166,6 +167,13 @@ class Rows {
                       ncell.text = text.substring(0, result.index) + index;
                     }
                   }
+                }
+                // paste expressions
+                if (ncell.text[0] === '=') {
+                  ncell.text = ncell.text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
+                    if (/^\d+$/.test(word)) return word;
+                    return expr2expr(word, nci - sci, nri - sri);
+                  });
                 }
                 this.setCell(nri, nci, ncell, what);
                 cb(nri, nci, ncell);

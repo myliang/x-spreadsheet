@@ -320,6 +320,12 @@ export default class Selector {
     setAllAreaOffset.call(this, this.data.getSelectedRect());
   }
 
+  setStartEnd(sri, sci, eri, eci, mri, mci) {
+    this.set(sri, sci);
+    this.setEnd(eri, eci);
+    this.moveIndexes = [mri || eri, mci || eci];
+  }
+
   reset() {
     // console.log('::::', this.data);
     const { eri, eci } = this.data.selector.range;

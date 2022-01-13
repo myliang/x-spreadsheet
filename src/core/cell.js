@@ -5,6 +5,7 @@ import { numberCalc } from './helper';
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
 // return: [A1, A2], SUM[, B1],AVERAGE,50,+,B20,+
 const infixExprToSuffixExpr = (src) => {
+  let source = src;
   const operatorStack = [];
   const stack = [];
   let subStrs = []; // SUM, A1, B2, 50 ...
@@ -12,8 +13,35 @@ const infixExprToSuffixExpr = (src) => {
   let fnArgOperator = '';
   let fnArgsLen = 1; // A1,A2,A3...
   let oldc = '';
-  for (let i = 0; i < src.length; i += 1) {
-    const c = src.charAt(i);
+
+  const xSheetMap = [];
+  if (source.includes('!')) {
+    const sheetRgx = /(?<=\(|;|,)(?:(?!;).)*(?<=!)/g;
+    const cellRgx = /(?<=!)(.*?)(?=\)|;|,)/g;
+    const sMatch = source.match(sheetRgx);
+    const cMatch = source.match(cellRgx);
+    for (let i = 0; i < sMatch.length; i += 1) {
+      const sheet = sMatch[i].replace('!', '');
+      if (cMatch[i].includes(':')) {
+        const [start, end] = cMatch[i].split(':');
+
+        const [ex, ey] = expr2xy(end);
+        const [sx, sy] = expr2xy(start);
+
+        for (let x = sx; x <= ex; x += 1) {
+          for (let y = sy; y <= ey; y += 1) {
+            xSheetMap.push({ sheet, cell: xy2expr(x, y) });
+          }
+        }
+      } else {
+        xSheetMap.push({ sheet, cell: cMatch[i] });
+      }
+    }
+    source = source.replace(sheetRgx, '');
+  }
+
+  for (let i = 0; i < source.length; i += 1) {
+    const c = source.charAt(i);
     if (c !== ' ') {
       if (c >= 'a' && c <= 'z') {
         subStrs.push(c.toUpperCase());
@@ -21,8 +49,8 @@ const infixExprToSuffixExpr = (src) => {
         subStrs.push(c);
       } else if (c === '"') {
         i += 1;
-        while (src.charAt(i) !== '"') {
-          subStrs.push(src.charAt(i));
+        while (source.charAt(i) !== '"') {
+          subStrs.push(source.charAt(i));
           i += 1;
         }
         stack.push(`"${subStrs.join('')}`);
@@ -121,10 +149,10 @@ const infixExprToSuffixExpr = (src) => {
   while (operatorStack.length > 0) {
     stack.push(operatorStack.pop());
   }
-  return stack;
+  return { stack, xSheetMap };
 };
 
-const evalSubExpr = (subExpr, cellRender) => {
+const evalSubExpr = (subExpr, cellRender, xSheetMapping) => {
   const [fl] = subExpr;
   let expr = subExpr;
   if (fl === '"') {
@@ -138,8 +166,12 @@ const evalSubExpr = (subExpr, cellRender) => {
   if (expr[0] >= '0' && expr[0] <= '9') {
     return ret * Number(expr);
   }
+  let sheet;
+  if (xSheetMapping.length) {
+    ({ sheet } = xSheetMapping.find(({ cell }) => cell === expr) || {});
+  }
   const [x, y] = expr2xy(expr);
-  const cellVal = cellRender(x, y);
+  const cellVal = cellRender(x, y, sheet);
 
   return typeof cellVal === 'number' ? ret * cellVal : cellVal;
 };
@@ -148,7 +180,7 @@ const evalSubExpr = (subExpr, cellRender) => {
 // srcStack: <= infixExprToSufixExpr
 // formulaMap: {'SUM': {}, ...}
 // cellRender: (x, y) => {}
-const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
+const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, xSheetMapping) => {
   const stack = [];
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
@@ -173,10 +205,16 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       stack.push(numberCalc('/', stack.pop(), top));
     } else if (fc === '=' || fc === '>' || fc === '<') {
       let top = stack.pop();
-      if (!Number.isNaN(top)) top = Number(top);
       let left = stack.pop();
-      if (!Number.isNaN(left)) left = Number(left);
       let ret = false;
+      if (Number.isNaN(Number(left)) && Number.isNaN(Number(top))) {
+        // use the string length for comparisons
+        top = top.length;
+        left = left.length;
+      } else {
+        top = Number(top);
+        left = Number(left);
+      }
       if (fc === '=') {
         ret = (left === top);
       } else if (expr === '>') {
@@ -205,7 +243,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
-      stack.push(evalSubExpr(expr, cellRender));
+      stack.push(evalSubExpr(expr, cellRender, xSheetMapping));
       cellList.pop();
     }
     // console.log('stack:', stack);
@@ -215,13 +253,14 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
 
 const cellRender = (src, formulaMap, getCellText, cellList = []) => {
   if (src[0] === '=') {
-    const stack = infixExprToSuffixExpr(src.substring(1));
+    const { stack, xSheetMap } = infixExprToSuffixExpr(src.substring(1));
     if (stack.length <= 0) return src;
     return evalSuffixExpr(
       stack,
       formulaMap,
-      (x, y) => cellRender(getCellText(x, y), formulaMap, getCellText, cellList),
+      (x, y, d) => cellRender(getCellText(x, y, d), formulaMap, getCellText, cellList),
       cellList,
+      xSheetMap,
     );
   }
   return src;
