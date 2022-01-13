@@ -169,7 +169,7 @@ class Rows {
                   }
                 }
                 // paste expressions
-                if (ncell.text[0] === '=') {
+                if (ncell.text[0] === '=' && !autofill) {
                   ncell.text = ncell.text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                     if (/^\d+$/.test(word)) return word;
                     return expr2expr(word, nci - sci, nri - sri);
