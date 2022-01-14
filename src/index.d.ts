@@ -51,6 +51,7 @@ declare module 'poly-spreadsheet' {
   export type CELL_SELECTED = 'cell-selected';
   export type CELLS_SELECTED = 'cells-selected';
   export type CELL_EDITED = 'cell-edited';
+  export type CHANGE_SHEET_INDEX = 'changeSheetIndex';
 
   export type CellMerge = [number, number];
 
@@ -69,6 +70,10 @@ declare module 'poly-spreadsheet' {
     (
       evnt: CELL_EDITED,
       callback: (text: string, rowIndex: number, colIndex: number) => void
+    ): void;
+    (
+        evnt: CHANGE_SHEET_INDEX,
+        callback: (index: number) => void
     ): void;
   }
 
@@ -175,6 +180,7 @@ declare module 'poly-spreadsheet' {
       text: string,
       sheetIndex?: number
     ): this;
+
     /**
      * remove current sheet
      */
@@ -200,6 +206,7 @@ declare module 'poly-spreadsheet' {
      * cols length
      */
     colsLength: number;
+
     /**
      * insert row or column
      */
@@ -234,6 +241,13 @@ declare module 'poly-spreadsheet' {
      * @param callback
      */
     change(callback: (json: Record<string, any>) => void): this;
+
+    /**
+     * bind handler to change sheet index event
+     * @param callback
+     */
+    changeSheetIndex(callback: (index: number) => void): this;
+
     /**
      * set locale
      * @param lang

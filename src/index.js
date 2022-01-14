@@ -20,10 +20,13 @@ class Spreadsheet {
     this.bottombar = this.options.showBottomBar ? new Bottombar(() => {
       if (this.options.mode === 'read') return;
       const d = this.addSheet();
+      const idx = this.datas.length - 1;
+      this.sheet.trigger('changeSheetIndex', idx);
       this.sheet.resetData(d);
     }, (index) => {
       const d = this.datas[index];
       this.sheet.resetData(d);
+      this.sheet.trigger('changeSheetIndex', index);
     }, () => {
       this.deleteSheet();
     }, (index, value) => {
@@ -48,7 +51,6 @@ class Spreadsheet {
       this.sheet.trigger('change', ...args);
     };
     this.datas.push(d);
-    // console.log('d:', n, d, this.datas);
     if (this.bottombar !== null) {
       this.bottombar.addItem(n, active, this.options);
     }
@@ -152,6 +154,11 @@ class Spreadsheet {
 
   change(cb) {
     this.sheet.on('change', cb);
+    return this;
+  }
+
+  changeSheetIndex(index) {
+    this.sheet.on('changeSheetIndex', index);
     return this;
   }
 
