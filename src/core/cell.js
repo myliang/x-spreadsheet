@@ -17,14 +17,13 @@ const infixExprToSuffixExpr = (src) => {
   const xSheetMap = [];
   const sheetRegex = /(?<=\(|;|,)(?:(?!;).)*(?<=!)/g;
   if (source.includes('!')) {
-    const [exprContents] = source.match(/(?<=\()(.*?)(?=\))/);
+    const [exprContents] = source.match(/(?<=\()(.*?)(?=\))/); // get contents inside brackets
     const arrayOfArgs = exprContents.replace(',', ';').split(';');
     for (const elm of arrayOfArgs) {
-      const elmRegex = /(?<=^)(?:(?!;).)*(?=!)/g;
+      const elmRegex = /(?<=^)(.*?)(?=!)/g;
       const cellRegex = /(?<=!)(.*?)(?=\)|$)/g;
       const [sheet] = elm.match(elmRegex) || [];
       const [cellOrRange] = elm.match(cellRegex) || [elm];
-      console.log({ sheet, elm, cellOrRange });
 
       if (cellOrRange.includes(':')) {
         const [start, end] = cellOrRange.split(':');
@@ -246,7 +245,9 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, xSheetMappin
         cellList.push(expr);
       }
       const mapping = xSheetMapping.shift();
-      stack.push(evalSubExpr(expr, cellRender, mapping.cell === expr ? mapping : false));
+      stack.push(
+        evalSubExpr(expr, cellRender, mapping && (mapping.cell === expr) ? mapping : false),
+      );
       cellList.pop();
     }
     // console.log('stack:', stack);
