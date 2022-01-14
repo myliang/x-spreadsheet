@@ -421,7 +421,7 @@ function overlayerMousedown(evt) {
       }
     }, () => {
       if (isAutofillEl && selector.arange && data.settings.mode !== 'read') {
-        if (data.autofill(selector.arange, 'all', msg => xtoast('Tip', msg))) {
+        if (data.autofill(selector, 'all', msg => xtoast('Tip', msg))) {
           table.render();
         }
       }
@@ -619,6 +619,7 @@ function sheetInitEvents() {
         case 65: {
           // ctrl + A, select all
           selector.set(-1, -1);
+          selector.moveIndexes = [this.data.rows.len - 1, this.data.cols.len - 1];
           contextMenu.setMode('range');
           toolbar.reset();
           table.render();
@@ -829,7 +830,14 @@ function sheetInitEvents() {
           break;
         case 32:
           // ctrl + space, all cells in col
-          selectorSet.call(this, false, -1, this.data.selector.ci, false);
+          this.selector.setStartEnd(
+            0,
+            this.data.selector.ci,
+            -1,
+            this.data.selector.ci,
+            this.data.rows.len - 1,
+            this.data.selector.ci,
+          );
           evt.preventDefault();
           break;
         case 66:
@@ -851,7 +859,14 @@ function sheetInitEvents() {
         case 32:
           if (shiftKey) {
             // shift + space, all cells in row
-            selectorSet.call(this, false, this.data.selector.ri, -1, false);
+            this.selector.setStartEnd(
+              this.data.selector.ri,
+              0,
+              this.data.selector.ri,
+              -1,
+              this.data.selector.ri,
+              this.data.cols.len - 1,
+            );
           }
           break;
         case 27: // esc
@@ -888,10 +903,13 @@ function sheetInitEvents() {
           selectorMove.call(this, false, shiftKey ? 'up' : 'down');
           evt.preventDefault();
           break;
-        case 8: // backspace
+        case 8: { // backspace
           insertDeleteRowColumn.call(this, 'delete-cell-text');
+          const [ri, ci] = this.selector.moveIndexes;
+          this.selector.setEnd(ri, ci);
           evt.preventDefault();
           break;
+        }
         default:
           break;
       }
@@ -915,7 +933,9 @@ function sheetInitEvents() {
 }
 
 export default class Sheet {
-  constructor(targetEl, data) {
+  // pass datas in the constructor to be able to acces data accross sheets
+  // TODO refactor data to be index of datas
+  constructor(targetEl, data, datas) {
     this.eventMap = createEventEmitter();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
@@ -923,6 +943,7 @@ export default class Sheet {
     this.print = new Print(data);
     targetEl.children(this.toolbar.el, this.el, this.print.el);
     this.data = data;
+    this.datas = datas;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
@@ -965,7 +986,7 @@ export default class Sheet {
       this.sortFilter.el,
     );
     // table
-    this.table = new Table(this.tableEl.el, data);
+    this.table = new Table(this.tableEl.el, data, datas);
     sheetInitEvents.call(this);
     sheetReset.call(this);
     // init selector [0, 0]
@@ -982,7 +1003,7 @@ export default class Sheet {
     eventMap.fire(eventName, args);
   }
 
-  resetData(data) {
+  resetData(data, datas) {
     // before
     this.editor.clear();
     // after
@@ -992,7 +1013,7 @@ export default class Sheet {
     this.toolbar.resetData(data);
     this.print.resetData(data);
     this.selector.resetData(data);
-    this.table.resetData(data);
+    this.table.resetData(data, datas);
   }
 
   loadData(data) {
