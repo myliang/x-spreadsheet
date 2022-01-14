@@ -111,7 +111,6 @@ class Rows {
 
   // what: all | format | text
   copyPaste(srcCellRange, dstCellRange, what, autofill = false, cb = () => {}) {
-    console.log('row.copyPaste')
     const {
       sri, sci, eri, eci,
     } = srcCellRange;
