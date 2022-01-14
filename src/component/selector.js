@@ -320,6 +320,7 @@ export default class Selector {
     setAllAreaOffset.call(this, this.data.getSelectedRect());
   }
 
+  // startRowIndex, startColumnIndex, endRowIndex, endColumnIndex, moveRowIndex, moveColumnIndex
   setStartEnd(sri, sci, eri, eci, mri, mci) {
     this.set(sri, sci);
     this.setEnd(eri, eci);

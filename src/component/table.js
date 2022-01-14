@@ -307,6 +307,8 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
 
 /** end */
 class Table {
+  // pass datas in the constructor to be able to acces data accross sheets
+  // TODO refactor data to be index of datas
   constructor(el, data, datas) {
     this.el = el;
     this.draw = new Draw(el, data.viewWidth(), data.viewHeight());

@@ -392,7 +392,6 @@ function overlayerMousedown(evt) {
   // sort or filter
   const { autoFilter } = data;
   if (autoFilter.includes(ri, ci)) {
-    // console.log('autoFilter.includes', { ri, ci });
     if (left + width - 20 < offsetX && top + height - 20 < offsetY) {
       const items = autoFilter.items(ci, (r, c) => data.rows.getCell(r, c));
       sortFilter.hide();
@@ -934,6 +933,8 @@ function sheetInitEvents() {
 }
 
 export default class Sheet {
+  // pass datas in the constructor to be able to acces data accross sheets
+  // TODO refactor data to be index of datas
   constructor(targetEl, data, datas) {
     this.eventMap = createEventEmitter();
     const { view, showToolbar, showContextmenu } = data.settings;

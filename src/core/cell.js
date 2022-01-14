@@ -15,15 +15,19 @@ const infixExprToSuffixExpr = (src) => {
   let oldc = '';
 
   const xSheetMap = [];
+  const sheetRegex = /(?<=\(|;|,)(?:(?!;).)*(?<=!)/g;
   if (source.includes('!')) {
-    const sheetRgx = /(?<=\(|;|,)(?:(?!;).)*(?<=!)/g;
-    const cellRgx = /(?<=!)(.*?)(?=\)|;|,)/g;
-    const sMatch = source.match(sheetRgx);
-    const cMatch = source.match(cellRgx);
-    for (let i = 0; i < sMatch.length; i += 1) {
-      const sheet = sMatch[i].replace('!', '');
-      if (cMatch[i].includes(':')) {
-        const [start, end] = cMatch[i].split(':');
+    const [exprContents] = source.match(/(?<=\()(.*?)(?=\))/);
+    const arrayOfArgs = exprContents.replace(',', ';').split(';');
+    for (const elm of arrayOfArgs) {
+      const elmRegex = /(?<=^)(?:(?!;).)*(?=!)/g;
+      const cellRegex = /(?<=!)(.*?)(?=\)|$)/g;
+      const [sheet] = elm.match(elmRegex) || [];
+      const [cellOrRange] = elm.match(cellRegex) || [elm];
+      console.log({ sheet, elm, cellOrRange });
+
+      if (cellOrRange.includes(':')) {
+        const [start, end] = cellOrRange.split(':');
 
         const [ex, ey] = expr2xy(end);
         const [sx, sy] = expr2xy(start);
@@ -34,10 +38,10 @@ const infixExprToSuffixExpr = (src) => {
           }
         }
       } else {
-        xSheetMap.push({ sheet, cell: cMatch[i] });
+        xSheetMap.push({ sheet, cell: cellOrRange });
       }
     }
-    source = source.replace(sheetRgx, '');
+    source = source.replace(sheetRegex, '');
   }
 
   for (let i = 0; i < source.length; i += 1) {
@@ -166,10 +170,8 @@ const evalSubExpr = (subExpr, cellRender, xSheetMapping) => {
   if (expr[0] >= '0' && expr[0] <= '9') {
     return ret * Number(expr);
   }
-  let sheet;
-  if (xSheetMapping.length) {
-    ({ sheet } = xSheetMapping.find(({ cell }) => cell === expr) || {});
-  }
+
+  const { sheet } = xSheetMapping || {};
   const [x, y] = expr2xy(expr);
   const cellVal = cellRender(x, y, sheet);
 
@@ -243,7 +245,8 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, xSheetMappin
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
-      stack.push(evalSubExpr(expr, cellRender, xSheetMapping));
+      const mapping = xSheetMapping.shift();
+      stack.push(evalSubExpr(expr, cellRender, mapping.cell === expr ? mapping : false));
       cellList.pop();
     }
     // console.log('stack:', stack);
