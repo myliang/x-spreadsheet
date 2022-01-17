@@ -3,8 +3,6 @@ name: publish to npm
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   publish:
