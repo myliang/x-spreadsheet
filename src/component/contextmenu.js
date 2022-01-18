@@ -28,8 +28,15 @@ const menuItems = [
   { key: 'divider' },
   { key: 'autofit-cell-width', title: tf('contextmenu.autofitCellWidth') },
   { key: 'autofit-cell-height', title: tf('contextmenu.autofitCellHeight') },
-  
 ];
+
+const menuItemsCols = [...menuItems].filter((item)=>{
+ return  item.key !== 'autofit-cell-height'
+})
+
+const menuItemsRows = [...menuItems].filter((item)=>{
+ return  item.key !== 'autofit-cell-width'
+})
 
 function buildMenuItem(item) {
   if (item.key === 'divider') {
@@ -62,15 +69,22 @@ export default class ContextMenu {
     this.setMode('range');
   }
 
-  // row-col: the whole rows or the whole cols
+  // row: the whole rows
+  // col: the whole cols
   // range: select range
   setMode(mode) {
-    const hideEl = this.menuItems[12];
-    if (mode === 'row-col') {
+    if (mode === 'row') {
+      this.menuItems = buildMenu.call(menuItemsRows);
+      let hideEl = this.menuItems[12];
       hideEl.show();
-    } else {
-      hideEl.hide();
     }
+    if (mode === 'col') {
+      this.menuItems = buildMenu.call(menuItemsCols);
+      let hideEl = this.menuItems[12];
+      hideEl.show();
+    }
+    this.menuItems = buildMenu.call(this);
+    this.menuItems[12].hide();
   }
 
   hide() {

@@ -83,7 +83,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     selector.set(ri, ci, indexesUpdated);
     this.trigger('cell-selected', cell, ri, ci);
   }
-  contextMenu.setMode((ri === -1 || ci === -1) ? 'row-col' : 'range');
+  contextMenu.setMode((ri > -1 && ci === -1) ? 'row' : (ri === -1 && ci > -1) ? 'col' : 'range');
   toolbar.reset();
   table.render();
 }
@@ -531,10 +531,10 @@ function insertDeleteRowColumn(type, num) {
   } else if (type === 'cell-non-editable') {
     data.setSelectedCellAttr('editable', false);
   } else if (type === "autofit-cell-width") {
-    data.setAutofit("width", "column");
+    data.setAutoFit("width", "column");
     data.setSelectedCellAttr("textwrap", false);
   } else if (type === "autofit-cell-height") {
-    data.setAutofit("height", "row");
+    data.setAutoFit("height", "row");
     data.setSelectedCellAttr("textwrap", true);
 }
   clearClipboard.call(this);

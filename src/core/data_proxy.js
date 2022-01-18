@@ -554,7 +554,7 @@ export default class DataProxy {
   }
 
   // 'width' | 'height', 'row'| 'column'
-  setAutofit(autoType = "height", sourceType = "column") {
+  setAutoFit(autoType = "height", sourceType = "column") {
     const { selector, rows } = this;
 
     let { sri, sci } = selector.range;
@@ -581,11 +581,11 @@ export default class DataProxy {
       }
     });
 
-    if (autoType === "width") {
-      this.setColWidth(sci, this.getMaxCellWidth(biggestCelltext));
+    if (autoType === "width" && biggestCellText) {
+      this.setColWidth(sci, this.getMaxCellWidth(biggestCellText));
     }
-    if (autoType === "height") {
-      this.setRowHeight(sri, this.getMaxCellHeight(biggestCelltext));
+    if (autoType === "height" && biggestCellText) {
+      this.setRowHeight(sri, this.getMaxCellHeight(biggestCellText));
     }
   }
 
