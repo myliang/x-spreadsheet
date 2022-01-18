@@ -530,7 +530,13 @@ function insertDeleteRowColumn(type, num) {
     data.setSelectedCellAttr('editable', true);
   } else if (type === 'cell-non-editable') {
     data.setSelectedCellAttr('editable', false);
-  }
+  } else if (type === "autofit-cell-width") {
+    data.setAutofit("width", "column");
+    data.setSelectedCellAttr("textwrap", false);
+  } else if (type === "autofit-cell-height") {
+    data.setAutofit("height", "row");
+    data.setSelectedCellAttr("textwrap", true);
+}
   clearClipboard.call(this);
   sheetReset.call(this);
 }

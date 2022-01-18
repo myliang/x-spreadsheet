@@ -25,6 +25,10 @@ const menuItems = [
   { key: 'divider' },
   { key: 'cell-editable', title: tf('contextmenu.celleditable') },
   { key: 'cell-non-editable', title: tf('contextmenu.cellnoneditable') },
+  { key: 'divider' },
+  { key: 'autofit-cell-width', title: tf('contextmenu.autofitCellWidth') },
+  { key: 'autofit-cell-height', title: tf('contextmenu.autofitCellHeight') },
+  
 ];
 
 function buildMenuItem(item) {

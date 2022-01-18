@@ -553,6 +553,100 @@ export default class DataProxy {
     this.clipboard.clear();
   }
 
+  // 'width' | 'height', 'row'| 'column'
+  setAutofit(autoType = "height", sourceType = "column") {
+    const { selector, rows } = this;
+
+    let { sri, sci } = selector.range;
+    let biggestCellText = "";
+    let cells = [];
+
+    if (sourceType === "column") {
+      for (let i = 0; i <= rows.len; i++) {
+        if (this.getCell(i, sci) && this.getCell(i, sci).text)
+          cells.push(this.getCell(i, sci).text);
+      }
+    }
+
+    if (sourceType === "row") {
+      for (let i = 0; i <= rows.height; i++) {
+        if (this.getCell(sri, i) && this.getCell(sri, i).text)
+          cells.push(this.getCell(sri, i).text);
+      }
+    }
+
+    cells.forEach((word) => {
+      if (word.length > biggestCellText.length) {
+        biggestCellText = word;
+      }
+    });
+
+    if (autoType === "width") {
+      this.setColWidth(sci, this.getMaxCellWidth(biggestCelltext));
+    }
+    if (autoType === "height") {
+      this.setRowHeight(sri, this.getMaxCellHeight(biggestCelltext));
+    }
+  }
+
+  setCommonFakeCellsStyles(element) {
+    element.style.top = "-50000%";
+    element.style.left = "-50000%";
+    element.style.display = "flex";
+    element.style.position = "absolute";
+    element.style.background = "blue";
+    element.style.color = "white";
+    element.style.paddingLeft = "2px";
+    element.style.paddingRight = "2px";
+    element.style.paddingTop = "1px";
+    element.style.paddingBottom = "1px";
+  }
+
+  getMaxCellHeight(word) {
+    const id = "fake-cell";
+
+    this.clearFakeCell(id);
+
+    let newDiv = document.createElement("div");
+    newDiv.innerHTML = `${word}`;
+
+    this.setCommonFakeCellsStyles(newDiv);
+    newDiv.style.width = "100px";
+    newDiv.style.minHeight = "25px";
+    newDiv.style.flexWrap = "wrap";
+    newDiv.style.wordBreak = "break-all";
+
+    newDiv.setAttribute("id", `${id}`);
+
+    document.body.append(newDiv);
+
+    return newDiv.getBoundingClientRect().height;
+  }
+
+  getMaxCellWidth(word) {
+    const id = "fake-cell";
+
+    this.clearFakeCell(id);
+
+    let newDiv = document.createElement("div");
+    newDiv.innerHTML = `${word}`;
+
+    this.setCommonFakeCellsStyles(newDiv);
+    newDiv.style.minWidth = "100px";
+    newDiv.style.height = "25px";
+
+    newDiv.setAttribute("id", `${id}`);
+
+    document.body.append(newDiv);
+
+    return newDiv.getBoundingClientRect().width;
+  }
+
+  clearFakeCell(id) {
+    const fakeCell = document.querySelector(`#${id}`);
+    if (fakeCell) fakeCell.parentNode.removeChild(fakeCell);
+  }
+
   calSelectedRangeByEnd(ri, ci) {
     const {
       selector, rows, cols, merges,
