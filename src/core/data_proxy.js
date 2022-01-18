@@ -1006,6 +1006,15 @@ export default class DataProxy {
     cell.style = this.addStyle(cstyle);
   }
 
+  setColStyle(ci, style, excludeRows = []) {
+    const { len } = this.rows;
+    for (let ri = 0; ri < len; ri += 1) {
+      if (!excludeRows.includes(ri)) {
+        this.setCellStyle(ri, ci, style);
+      }
+    }
+  }
+
   resetCellStyle(ri, ci) {
     const { rows } = this;
     const cell = rows.getCellOrNew(ri, ci);
@@ -1241,6 +1250,13 @@ export default class DataProxy {
         this[property] = d[property];
       }
     });
+    if (d.cols && d.cols.styles) {
+      for (const { indices, style, excludeRows } of d.cols.styles) {
+        for (const idx of indices) {
+          this.setColStyle(idx, style, excludeRows);
+        }
+      }
+    }
     return this;
   }
 

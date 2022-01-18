@@ -176,6 +176,13 @@ instance.loadData([
   {
     cols: {
       len: initialCols.length,
+      styles: [
+        {
+          indices: [0],
+          excludeRows: [0],
+          style: { format: 'number' },
+        },
+      ],
     },
     rows: {
       len: arr.length + 1,

@@ -17,7 +17,7 @@ const formatPercentRender = (v) => {
     return '';
   }
   let n = v * 100;
-  if (v.includes('%')) {
+  if (Number.isNaN(v) && v.includes('%')) {
     n = Number(v.substring(0, v.indexOf('%')));
   }
   if (Number.isNaN(n)) {
