@@ -34,9 +34,6 @@ function buildMenuItem(item) {
   if (item.key === 'divider') {
     return h('div', `${cssPrefix}-item divider`);
   }
-  if (item.key === 'divider') {
-    return h('div', `${cssPrefix}-item divider`);
-  }
   return h('div', `${cssPrefix}-item`)
     .on('click', () => {
       this.itemClick(item.key);
@@ -73,24 +70,25 @@ export default class ContextMenu {
     const autifitRow = this.menuItems[this.menuItems.length - 1];
     const autifitCol = this.menuItems[this.menuItems.length - 2];
 
-    if (mode === 'row') {
-      hideEl.show();
-      autifitRow.show();
-      autifitCol.hide();
-      divider.show();
-      return;
+    switch (mode) {
+      case 'row':
+        hideEl.show();
+        autifitRow.show();
+        autifitCol.hide();
+        divider.show();
+        break;
+      case 'col':
+        hideEl.show();
+        autifitRow.hide();
+        autifitCol.show();
+        divider.show();
+        break;
+      default:
+        hideEl.hide();
+        autifitRow.hide();
+        autifitCol.hide();
+        divider.hide();
     }
-    if (mode === 'col') {
-      hideEl.show();
-      autifitRow.hide();
-      autifitCol.show();
-      divider.show();
-      return;
-    }
-    hideEl.hide();
-    autifitRow.hide();
-    autifitCol.hide();
-    divider.hide();
   }
 
   hide() {

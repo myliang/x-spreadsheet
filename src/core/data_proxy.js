@@ -563,15 +563,19 @@ export default class DataProxy {
 
     if (sourceType === "column") {
       for (let i = 0; i <= rows.len; i++) {
-        if (this.getCell(i, sci) && this.getCell(i, sci).text)
+        const cell = this.getCell(i, sci);
+        if (cell && cell.text) {
           cells.push(this.getCell(i, sci).text);
+        }
       }
     }
 
     if (sourceType === "row") {
       for (let i = 0; i <= rows.height; i++) {
-        if (this.getCell(sri, i) && this.getCell(sri, i).text)
+        const cell = this.getCell(i, sci);
+        if (cell && cell.text) {
           cells.push(this.getCell(sri, i).text);
+        }
       }
     }
 
@@ -644,7 +648,7 @@ export default class DataProxy {
 
   clearFakeCell(id) {
     const fakeCell = document.querySelector(`#${id}`);
-    if (fakeCell) fakeCell.parentNode.removeChild(fakeCell);
+    fakeCell.remove();
   }
 
   calSelectedRangeByEnd(ri, ci) {

@@ -83,7 +83,13 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     selector.set(ri, ci, indexesUpdated);
     this.trigger('cell-selected', cell, ri, ci);
   }
-  contextMenu.setMode((ri > -1 && ci === -1) ? 'row' : (ri === -1 && ci > -1) ? 'col' : 'range');
+  if (ri > -1 && ci === -1) {
+    contextMenu.setMode('row');
+  } else if (ri === -1 && ci > -1) {
+    contextMenu.setMode('col');
+  } else {
+    contextMenu.setMode('range');
+  }
   toolbar.reset();
   table.render();
 }
