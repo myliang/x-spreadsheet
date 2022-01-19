@@ -565,7 +565,7 @@ export default class DataProxy {
       for (let i = 0; i <= rows.len; i++) {
         const cell = this.getCell(i, sci);
         if (cell && cell.text) {
-          cells.push(this.getCell(i, sci).text);
+          cells.push(cell.text)
         }
       }
     }
@@ -574,7 +574,7 @@ export default class DataProxy {
       for (let i = 0; i <= rows.height; i++) {
         const cell = this.getCell(i, sci);
         if (cell && cell.text) {
-          cells.push(this.getCell(sri, i).text);
+          cells.push(cell.text)
         }
       }
     }
