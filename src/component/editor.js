@@ -6,7 +6,10 @@ import { cssPrefix } from '../config';
 // import { mouseMoveUp } from '../event';
 
 function resetTextareaSize() {
-  const { inputText } = this;
+  let { inputText } = this;
+  if (!Number.isNaN(inputText)) {
+    inputText = `${inputText} `;
+  }
   if (!/^\s*$/.test(inputText)) {
     const {
       textlineEl, textEl, areaOffset,
