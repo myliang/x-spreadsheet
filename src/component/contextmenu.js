@@ -30,15 +30,10 @@ const menuItems = [
   { key: 'autofit-cell-height', title: tf('contextmenu.autofitCellHeight') },
 ];
 
-const menuItemsCols = [...menuItems].filter((item)=>{
- return  item.key !== 'autofit-cell-height'
-})
-
-const menuItemsRows = [...menuItems].filter((item)=>{
- return  item.key !== 'autofit-cell-width'
-})
-
 function buildMenuItem(item) {
+  if (item.key === 'divider') {
+    return h('div', `${cssPrefix}-item divider`);
+  }
   if (item.key === 'divider') {
     return h('div', `${cssPrefix}-item divider`);
   }
@@ -73,18 +68,29 @@ export default class ContextMenu {
   // col: the whole cols
   // range: select range
   setMode(mode) {
+    const hideEl = this.menuItems[12];
+    const divider = this.menuItems[this.menuItems.length - 3];
+    const autifitRow = this.menuItems[this.menuItems.length - 1];
+    const autifitCol = this.menuItems[this.menuItems.length - 2];
+
     if (mode === 'row') {
-      this.menuItems = buildMenu.call(menuItemsRows);
-      let hideEl = this.menuItems[12];
       hideEl.show();
+      autifitRow.show();
+      autifitCol.hide();
+      divider.show();
+      return;
     }
     if (mode === 'col') {
-      this.menuItems = buildMenu.call(menuItemsCols);
-      let hideEl = this.menuItems[12];
       hideEl.show();
+      autifitRow.hide();
+      autifitCol.show();
+      divider.show();
+      return;
     }
-    this.menuItems = buildMenu.call(this);
-    this.menuItems[12].hide();
+    hideEl.hide();
+    autifitRow.hide();
+    autifitCol.hide();
+    divider.hide();
   }
 
   hide() {
