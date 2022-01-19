@@ -572,7 +572,7 @@ export default class DataProxy {
 
     if (sourceType === "row") {
       for (let i = 0; i <= rows.height; i++) {
-        const cell = this.getCell(i, sci);
+        const cell = this.getCell(sri, i);
         if (cell && cell.text) {
           cells.push(cell.text)
         }
@@ -604,6 +604,8 @@ export default class DataProxy {
     element.style.paddingRight = "2px";
     element.style.paddingTop = "1px";
     element.style.paddingBottom = "1px";
+    element.style.fontSize = "15px";
+    element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif"
   }
 
   getMaxCellHeight(word) {
@@ -615,7 +617,7 @@ export default class DataProxy {
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
-    newDiv.style.width = "100px";
+    newDiv.style.width = "60px";
     newDiv.style.minHeight = "25px";
     newDiv.style.flexWrap = "wrap";
     newDiv.style.wordBreak = "break-all";
@@ -636,7 +638,7 @@ export default class DataProxy {
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
-    newDiv.style.minWidth = "100px";
+    newDiv.style.minWidth = "60px";
     newDiv.style.height = "25px";
 
     newDiv.setAttribute("id", `${id}`);
