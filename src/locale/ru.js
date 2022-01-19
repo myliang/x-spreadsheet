@@ -43,6 +43,8 @@ export default {
     cellnonprintable: 'Отключить экспорт',
     celleditable: 'Разрешить редактирование',
     cellnoneditable: 'Отключить редактирование',
+    autofitCellWidth: 'Автоподбор ширины ячеек',
+    autofitCellHeight: 'Автоподбор высоты ячеек'
   },
   print: {
     size: 'Размер страницы',

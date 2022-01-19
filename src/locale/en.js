@@ -43,6 +43,8 @@ export default {
     cellnonprintable: 'Disable export',
     celleditable: 'Enable editing',
     cellnoneditable: 'Disable editing',
+    autofitCellWidth: 'Autofit cell-width',
+    autofitCellHeight: 'Autofit cell-height'
   },
   print: {
     size: 'Paper size',

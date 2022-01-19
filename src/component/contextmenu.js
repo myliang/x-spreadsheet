@@ -25,6 +25,9 @@ const menuItems = [
   { key: 'divider' },
   { key: 'cell-editable', title: tf('contextmenu.celleditable') },
   { key: 'cell-non-editable', title: tf('contextmenu.cellnoneditable') },
+  { key: 'divider' },
+  { key: 'autofit-cell-width', title: tf('contextmenu.autofitCellWidth') },
+  { key: 'autofit-cell-height', title: tf('contextmenu.autofitCellHeight') },
 ];
 
 function buildMenuItem(item) {
@@ -58,14 +61,33 @@ export default class ContextMenu {
     this.setMode('range');
   }
 
-  // row-col: the whole rows or the whole cols
+  // row: the whole rows
+  // col: the whole cols
   // range: select range
   setMode(mode) {
     const hideEl = this.menuItems[12];
-    if (mode === 'row-col') {
-      hideEl.show();
-    } else {
-      hideEl.hide();
+    const divider = this.menuItems[this.menuItems.length - 3];
+    const autifitRow = this.menuItems[this.menuItems.length - 1];
+    const autifitCol = this.menuItems[this.menuItems.length - 2];
+
+    switch (mode) {
+      case 'row':
+        hideEl.show();
+        autifitRow.show();
+        autifitCol.hide();
+        divider.show();
+        break;
+      case 'col':
+        hideEl.show();
+        autifitRow.hide();
+        autifitCol.show();
+        divider.show();
+        break;
+      default:
+        hideEl.hide();
+        autifitRow.hide();
+        autifitCol.hide();
+        divider.hide();
     }
   }
 
