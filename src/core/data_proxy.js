@@ -648,7 +648,7 @@ export default class DataProxy {
 
   clearFakeCell(id) {
     const fakeCell = document.querySelector(`#${id}`);
-    fakeCell.remove();
+    if(fakeCell) fakeCell.remove();
   }
 
   calSelectedRangeByEnd(ri, ci) {
