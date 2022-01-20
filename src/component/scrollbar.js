@@ -33,10 +33,8 @@ export default class Scrollbar {
     if (contentDistance > d) {
       const cssKey = this.vertical ? 'height' : 'width';
       // console.log('d:', d);
-      this.el.css(cssKey, `${d - 15}px`).show();
-      this.contentEl
-        .css(this.vertical ? 'width' : 'height', '12px')
-        .css(cssKey, `${contentDistance}px`);
+      this.el.css(cssKey, `${d - 17}px`).show();
+      this.contentEl.css(cssKey, `${contentDistance}px`);
     } else {
       this.el.hide();
     }
