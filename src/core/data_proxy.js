@@ -863,15 +863,15 @@ export default class DataProxy {
   }
 
   // type: row | column
-  insert(type, n = 1) {
+  insert(type, n = 1, aboveOrLeft = true) {
     this.changeData(() => {
       const { sri, sci } = this.selector.range;
       const { rows, merges, cols } = this;
       let si = sri;
       if (type === 'row') {
-        rows.insert(sri, n);
+        rows.insert(sri, n, aboveOrLeft);
       } else if (type === 'column') {
-        rows.insertColumn(sci, n);
+        rows.insertColumn(sci, n, aboveOrLeft);
         si = sci;
         cols.len += 1;
       }

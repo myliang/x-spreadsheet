@@ -11,12 +11,16 @@ const menuItems = [
   { key: 'paste-format', title: tf('contextmenu.pasteFormat'), label: 'Ctrl+Alt+V' },
   { key: 'divider' },
   { key: 'insert-row', title: tf('contextmenu.insertRow') },
-  { key: 'insert-column', title: tf('contextmenu.insertColumn') },
-  { key: 'divider' },
+  { key: 'insert-row-below', title: tf('contextmenu.insertRowBelow') },
   { key: 'delete-row', title: tf('contextmenu.deleteRow') },
+  { key: 'hide-row', title: tf('contextmenu.hideRow') },
+  { key: 'divider-row' },
+  { key: 'insert-column', title: tf('contextmenu.insertColumn') },
+  { key: 'insert-column-right', title: tf('contextmenu.insertColumnRight') },
   { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
+  { key: 'hide-column', title: tf('contextmenu.hideColumn') },
+  { key: 'divider-column' },
   { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
-  { key: 'hide', title: tf('contextmenu.hide') },
   { key: 'divider' },
   { key: 'validation', title: tf('contextmenu.validation') },
   { key: 'divider' },
@@ -28,7 +32,7 @@ const menuItems = [
 ];
 
 function buildMenuItem(item) {
-  if (item.key === 'divider') {
+  if (item.key.includes('divider')) {
     return h('div', `${cssPrefix}-item divider`);
   }
   return h('div', `${cssPrefix}-item`)
@@ -58,14 +62,52 @@ export default class ContextMenu {
     this.setMode('range');
   }
 
-  // row-col: the whole rows or the whole cols
+  // row: all cells in a row
+  // col: all cells in a col
   // range: select range
   setMode(mode) {
-    const hideEl = this.menuItems[12];
-    if (mode === 'row-col') {
-      hideEl.show();
-    } else {
-      hideEl.hide();
+    const rowItems = menuItems
+      .map(({ key }, index) => ({ key, index }))
+      .filter(({ key }) => key.includes('row'));
+    const colItems = menuItems
+      .map(({ key }, index) => ({ key, index }))
+      .filter(({ key }) => key.includes('column'));
+    if (['row', 'col'].includes(mode)) {
+      if (mode === 'col') {
+        for (const { index } of colItems) {
+          this.menuItems[index].show();
+        }
+        for (const { index } of rowItems) {
+          this.menuItems[index].hide();
+        }
+      }
+      if (mode === 'row') {
+        for (const { index } of rowItems) {
+          this.menuItems[index].show();
+        }
+        for (const { index } of colItems) {
+          this.menuItems[index].hide();
+        }
+      }
+    }
+    if (['range-single', 'range-multiple'].includes(mode)) {
+      if (mode === 'range-single') {
+        for (const { index, key } of [...colItems, ...rowItems]) {
+          if (key.includes('hide')) {
+            this.menuItems[index].hide();
+          } else {
+            this.menuItems[index].show();
+          }
+        }
+      }
+      if (mode === 'range-multiple') {
+        for (const { index } of colItems) {
+          this.menuItems[index].hide();
+        }
+        for (const { index } of rowItems) {
+          this.menuItems[index].hide();
+        }
+      }
     }
   }
 

@@ -85,7 +85,24 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     selector.set(ri, ci, indexesUpdated);
     this.trigger('cell-selected', cell, ri, ci);
   }
-  contextMenu.setMode((ri === -1 || ci === -1) ? 'row-col' : 'range');
+  const {
+    sri, eri, sci, eci,
+  } = selector.range;
+
+  let mode = 'range-single';
+
+  if (sri !== eri && sci !== eci) {
+    mode = 'range-multiple';
+  }
+
+  if (ri === -1 || (sci === eci && sri !== eri)) {
+    mode = 'col';
+  }
+  if (ci === -1 || (sri === eri && sci !== eci)) {
+    mode = 'row';
+  }
+
+  contextMenu.setMode(mode);
   toolbar.reset();
   table.render();
 }
@@ -524,12 +541,16 @@ function dataSetCellText(text, state = 'finished') {
 function insertDeleteRowColumn(type) {
   const { data } = this;
   if (data.settings.mode === 'read') return;
-  if (type === 'insert-row') {
+  if (type === 'insert-row') { // insert row above
     data.insert('row');
+  } else if (type === 'insert-row-below') {
+    data.insert('row', 1, false);
   } else if (type === 'delete-row') {
     data.delete('row');
-  } else if (type === 'insert-column') {
+  } else if (type === 'insert-column') { // insert column left
     data.insert('column');
+  } else if (type === 'insert-column-right') {
+    data.insert('column', 1, false);
   } else if (type === 'delete-column') {
     data.delete('column');
   } else if (type === 'delete-cell') {
@@ -747,7 +768,7 @@ function sheetInitEvents() {
       paste.call(this, 'text');
     } else if (type === 'paste-format') {
       paste.call(this, 'format');
-    } else if (type === 'hide') {
+    } else if (type === 'hide-row' || type === 'hide-column') {
       hideRowsOrCols.call(this);
     } else {
       insertDeleteRowColumn.call(this, type);
