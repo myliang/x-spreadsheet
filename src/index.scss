@@ -283,29 +283,24 @@ body {
   position: absolute;
   bottom: 0;
   right: 0;
-  background-color: #f4f5f8;
-  opacity: 0.9;
   z-index: 12;
   &.horizontal {
-    right: 15px;
+    height: 17px;
+    right: 17px;
     overflow-x: scroll;
     overflow-y: hidden;
     > div {
       height: 1px;
-      background: #ddd;
     }
   }
   &.vertical {
-    bottom: 15px;
+    width: 17px;
+    bottom: 17px;
     overflow-x: hidden;
     overflow-y: scroll;
     > div {
       width: 1px;
-      background: #ddd;
     }
-  }
-  &:hover {
-    // opacity: .85;
   }
 }
 
