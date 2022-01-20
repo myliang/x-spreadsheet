@@ -156,6 +156,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     clearClipboard(): void;
     setCellStyle(rowIndex: number, colIndex: number, style: CellStyle): void;
     resetCellStyle(rowIndex: number, colIndex: number): void;
+    setColStyle(columnIndex: number, style: CellStyle, excludeRows: number[]): void;
     // TODO add type for missing methods in this class
   }
 

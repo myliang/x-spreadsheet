@@ -863,15 +863,15 @@ export default class DataProxy {
   }
 
   // type: row | column
-  insert(type, n = 1) {
+  insert(type, n = 1, aboveOrLeft = true) {
     this.changeData(() => {
       const { sri, sci } = this.selector.range;
       const { rows, merges, cols } = this;
       let si = sri;
       if (type === 'row') {
-        rows.insert(sri, n);
+        rows.insert(sri, n, aboveOrLeft);
       } else if (type === 'column') {
-        rows.insertColumn(sci, n);
+        rows.insertColumn(sci, n, aboveOrLeft);
         si = sci;
         cols.len += 1;
       }
@@ -1004,6 +1004,15 @@ export default class DataProxy {
     const cell = rows.getCellOrNew(ri, ci);
     const cstyle = { ...(cell.style && styles[cell.style]), ...style };
     cell.style = this.addStyle(cstyle);
+  }
+
+  setColStyle(ci, style, excludeRows = []) {
+    const { len } = this.rows;
+    for (let ri = 0; ri < len; ri += 1) {
+      if (!excludeRows.includes(ri)) {
+        this.setCellStyle(ri, ci, style);
+      }
+    }
   }
 
   resetCellStyle(ri, ci) {
@@ -1241,6 +1250,13 @@ export default class DataProxy {
         this[property] = d[property];
       }
     });
+    if (d.cols && d.cols.styles) {
+      for (const { indices, style, excludeRows } of d.cols.styles) {
+        for (const idx of indices) {
+          this.setColStyle(idx, style, excludeRows);
+        }
+      }
+    }
     return this;
   }
 
