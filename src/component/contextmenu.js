@@ -85,9 +85,9 @@ export default class ContextMenu {
         break;
       default:
         hideEl.hide();
-        autifitRow.hide();
-        autifitCol.hide();
-        divider.hide();
+        autifitRow.show();
+        autifitCol.show();
+        divider.show();
     }
   }
 

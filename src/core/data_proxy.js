@@ -553,76 +553,99 @@ export default class DataProxy {
     this.clipboard.clear();
   }
 
-  // 'width' | 'height', 'row'| 'column'
-  setAutoFit(autoType = "height", sourceType = "column") {
-    const { selector, rows } = this;
+  // 'height' | 'width', 'row'| 'column' => 'column' && 'width' || 'row' && 'height'
+  setAutoFit(autoType = 'height', sourceType = 'row') {
+    const {
+      sri,
+      eri,
+      sci,
+      eci,
+    } = this.selector.range;
 
-    let { sri, sci } = selector.range;
-    let biggestCellText = "";
+    let biggestCellText = '';
+
     let cells = [];
 
-    if (sourceType === "column") {
-      for (let i = 0; i <= rows.len; i++) {
-        const cell = this.getCell(i, sci);
-        if (cell && cell.text) {
-          cells.push(cell.text)
+    if (sourceType === 'column' && autoType === 'width') {
+      for (let ci = sci; ci <= eci; ci += 1) {
+        cells = [];
+        biggestCellText = '';
+
+        for (let ri = sri; ri <= eri; ri += 1) {
+          const cell = this.getCell(ri, ci);
+          if (cell && cell.text) {
+            cells.push(cell.text);
+          }
+          cells.forEach((word) => {
+            if (word.length > biggestCellText.length) {
+              biggestCellText = word;
+            }
+          });
+
+          if (biggestCellText) {
+            const width = this.getMaxCellWidth(biggestCellText) <= 100 ? 100 : this.getMaxCellWidth(biggestCellText);
+            this.setColWidth(ci, width);
+          }
         }
       }
     }
 
-    if (sourceType === "row") {
-      for (let i = 0; i <= rows.height; i++) {
-        const cell = this.getCell(sri, i);
-        if (cell && cell.text) {
-          cells.push(cell.text)
+    if (sourceType === 'row' && autoType === 'height') {
+      for (let ri = sri; ri <= eri; ri += 1) {
+        cells = [];
+        biggestCellText = '';
+        for (let ci = sci; ci <= eci; ci += 1) {
+          const cell = this.getCell(ri, ci);
+          if (cell && cell.text) {
+            cells.push(cell.text);
+          }
+
+          cells.forEach((word) => {
+            if (word.length > biggestCellText.length) {
+              biggestCellText = word;
+            }
+          });
+
+          if (biggestCellText) {
+            this.setColWidth(ci, 100);
+            this.setRowHeight(ri, this.getMaxCellHeight(biggestCellText));
+          }
         }
       }
-    }
-
-    cells.forEach((word) => {
-      if (word.length > biggestCellText.length) {
-        biggestCellText = word;
-      }
-    });
-
-    if (autoType === "width" && biggestCellText) {
-      this.setColWidth(sci, this.getMaxCellWidth(biggestCellText));
-    }
-    if (autoType === "height" && biggestCellText) {
-      this.setRowHeight(sri, this.getMaxCellHeight(biggestCellText));
     }
   }
 
   setCommonFakeCellsStyles(element) {
-    element.style.top = "-50000%";
-    element.style.left = "-50000%";
-    element.style.display = "flex";
-    element.style.position = "absolute";
-    element.style.background = "blue";
-    element.style.color = "white";
-    element.style.paddingLeft = "2px";
-    element.style.paddingRight = "2px";
-    element.style.paddingTop = "1px";
-    element.style.paddingBottom = "1px";
-    element.style.fontSize = "15px";
-    element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif"
+    element.style.top = '-50000%';
+    element.style.left = '-50000%';
+    element.style.display = 'flex';
+    element.style.position = 'absolute';
+    element.style.background = 'blue';
+    element.style.color = 'white';
+    element.style.paddingLeft = '2px';
+    element.style.paddingRight = '2px';
+    element.style.paddingTop = '1px';
+    element.style.paddingBottom = '1px';
+    element.style.fontSize = '14px';
+    element.style.minWidth = '60px';
+    element.style.fontFamily = '\'Lato\', \'Source Sans Pro\', Roboto, Helvetica, Arial, sans-serif';
   }
 
   getMaxCellHeight(word) {
-    const id = "fake-cell";
+    const id = 'fake-cell';
 
     this.clearFakeCell(id);
 
-    let newDiv = document.createElement("div");
+    const newDiv = document.createElement('div');
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
-    newDiv.style.width = "60px";
-    newDiv.style.minHeight = "25px";
-    newDiv.style.flexWrap = "wrap";
-    newDiv.style.wordBreak = "break-all";
+    newDiv.style.width = '100px';
+    newDiv.style.minHeight = '25px';
+    newDiv.style.flexWrap = 'wrap';
+    newDiv.style.wordBreak = 'break-all';
 
-    newDiv.setAttribute("id", `${id}`);
+    newDiv.setAttribute('id', `${id}`);
 
     document.body.append(newDiv);
 
@@ -630,18 +653,18 @@ export default class DataProxy {
   }
 
   getMaxCellWidth(word) {
-    const id = "fake-cell";
+    const id = 'fake-cell';
 
     this.clearFakeCell(id);
 
-    let newDiv = document.createElement("div");
+    const newDiv = document.createElement('div');
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
-    newDiv.style.minWidth = "60px";
-    newDiv.style.height = "25px";
 
-    newDiv.setAttribute("id", `${id}`);
+    newDiv.style.height = '25px';
+
+    newDiv.setAttribute('id', `${id}`);
 
     document.body.append(newDiv);
 
@@ -650,7 +673,7 @@ export default class DataProxy {
 
   clearFakeCell(id) {
     const fakeCell = document.querySelector(`#${id}`);
-    if(fakeCell) fakeCell.remove();
+    if (fakeCell) fakeCell.remove();
   }
 
   calSelectedRangeByEnd(ri, ci) {
