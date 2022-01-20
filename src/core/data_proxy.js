@@ -554,7 +554,7 @@ export default class DataProxy {
   }
 
   // 'height' | 'width', 'row'| 'column' => 'column' && 'width' || 'row' && 'height'
-  setAutoFit(autoType = 'height', sourceType = 'row') {
+  setAutoFit(autoType = "height", sourceType = "row") {
     const {
       sri,
       eri,
@@ -562,14 +562,14 @@ export default class DataProxy {
       eci,
     } = this.selector.range;
 
-    let biggestCellText = '';
+    let biggestCellText = "";
 
     let cells = [];
 
-    if (sourceType === 'column' && autoType === 'width') {
+    if (sourceType === "column" && autoType === "width") {
       for (let ci = sci; ci <= eci; ci += 1) {
         cells = [];
-        biggestCellText = '';
+        biggestCellText = "";
 
         for (let ri = sri; ri <= eri; ri += 1) {
           const cell = this.getCell(ri, ci);
@@ -590,10 +590,10 @@ export default class DataProxy {
       }
     }
 
-    if (sourceType === 'row' && autoType === 'height') {
+    if (sourceType === "row" && autoType === "height") {
       for (let ri = sri; ri <= eri; ri += 1) {
         cells = [];
-        biggestCellText = '';
+        biggestCellText = "";
         for (let ci = sci; ci <= eci; ci += 1) {
           const cell = this.getCell(ri, ci);
           if (cell && cell.text) {
@@ -616,36 +616,37 @@ export default class DataProxy {
   }
 
   setCommonFakeCellsStyles(element) {
-    element.style.top = '-50000%';
-    element.style.left = '-50000%';
-    element.style.display = 'flex';
-    element.style.position = 'absolute';
-    element.style.background = 'blue';
-    element.style.color = 'white';
-    element.style.paddingLeft = '2px';
-    element.style.paddingRight = '2px';
-    element.style.paddingTop = '1px';
-    element.style.paddingBottom = '1px';
-    element.style.fontSize = '14px';
-    element.style.minWidth = '60px';
+    element.style.top = "-50000%";
+    element.style.left = "-50000%";
+    element.style.display = "flex";
+    element.style.position = "absolute";
+    element.style.background = "blue";
+    element.style.color = "white";
+    element.style.paddingLeft = "2px";
+    element.style.paddingRight = "2px";
+    element.style.paddingTop = "1px";
+    element.style.paddingBottom = "1px";
+    element.style.fontSize = "14px";
+    element.style.minWidth = "60px";
     element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif";
   }
 
   getMaxCellHeight(word) {
-    const id = 'fake-cell';
+    const id = "fake-cell";
 
     this.clearFakeCell(id);
 
-    const newDiv = document.createElement('div');
+    const newDiv = document.createElement("div");
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
-    newDiv.style.width = '100px';
-    newDiv.style.minHeight = '25px';
-    newDiv.style.flexWrap = 'wrap';
-    newDiv.style.wordBreak = 'break-all';
+    newDiv.style.width = "100px";
+    newDiv.style.minHeight = "25px";
+    newDiv.style.flexWrap = "wrap";
+    newDiv.style.wordBreak = "break-all";
 
-    newDiv.setAttribute('id', `${id}`);
+
+    newDiv.setAttribute("id", `${id}`);
 
     document.body.append(newDiv);
 
@@ -653,18 +654,17 @@ export default class DataProxy {
   }
 
   getMaxCellWidth(word) {
-    const id = 'fake-cell';
-
+    const id = "fake-cell";
     this.clearFakeCell(id);
 
-    const newDiv = document.createElement('div');
+    const newDiv = document.createElement("div");
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
 
-    newDiv.style.height = '25px';
+    newDiv.style.height = "25px";
 
-    newDiv.setAttribute('id', `${id}`);
+    newDiv.setAttribute("id", `${id}`);
 
     document.body.append(newDiv);
 
