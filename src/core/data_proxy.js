@@ -628,7 +628,7 @@ export default class DataProxy {
     element.style.paddingBottom = '1px';
     element.style.fontSize = '14px';
     element.style.minWidth = '60px';
-    element.style.fontFamily = '\'Lato\', \'Source Sans Pro\', Roboto, Helvetica, Arial, sans-serif';
+    element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif";
   }
 
   getMaxCellHeight(word) {
