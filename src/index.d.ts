@@ -157,6 +157,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     setCellStyle(rowIndex: number, colIndex: number, style: CellStyle): void;
     resetCellStyle(rowIndex: number, colIndex: number): void;
     setColStyle(columnIndex: number, style: CellStyle, excludeRows: number[]): void;
+    setCellTextRaw(rowIndex: number, colIndex: number, text: string): void;
     // TODO add type for missing methods in this class
   }
 

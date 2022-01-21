@@ -92,14 +92,14 @@ class Spreadsheet {
   }
 
   cellText(ri, ci, text, sheetIndex = 0) {
-    this.datas[sheetIndex].setCellText(ri, ci, text);
+    this.datas[sheetIndex].setCellTextRaw(ri, ci, text);
     return this;
   }
 
   resetCellText(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
     const cr = new Cr(sri, sci, eri, eci);
     cr.each((ri, ci) => {
-      this.datas[sheetIndex].setCellText(ri, ci);
+      this.datas[sheetIndex].setCellTextRaw(ri, ci);
     });
     if (reRender) {
       this.reRender();
