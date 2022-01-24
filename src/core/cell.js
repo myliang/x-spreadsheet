@@ -5,7 +5,7 @@ import { numberCalc } from './helper';
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
 // return: [A1, A2], SUM[, B1],AVERAGE,50,+,B20,+
 const infixExprToSuffixExpr = (src) => {
-  let source = src;
+  let source = src.replaceAll('$', '');
   const operatorStack = [];
   const stack = [];
   let subStrs = []; // SUM, A1, B2, 50 ...
@@ -236,7 +236,12 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, xSheetMappin
         params.unshift(stack.pop());
         mapping.push(srcStack[j]);
       }
-      stack.push(formulaMap[formula].render(params, mapping));
+      try {
+        stack.push(formulaMap[formula].render(params, mapping));
+      } catch (e) {
+        console.error(e);
+        return '#ERROR!';
+      }
     } else {
       if (cellList.includes(expr)) {
         return 0;
