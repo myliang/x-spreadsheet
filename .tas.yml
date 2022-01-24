@@ -1,0 +1,17 @@
+framework: mocha
+preRun:
+     command:
+        - npm install
+        - npm run build
+preMerge:
+  pattern:
+    - "./test/**/*.js"
+postMerge:
+  pattern: 
+    - "./test/**/*.js"
+postRun:
+     command:
+        - node --version
+        - node --version
+configFile: "./test/mocha.opts"
+version: 1.0
