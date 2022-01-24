@@ -154,22 +154,6 @@ class Rows {
                         yn = n - 1;
                       }
                       if (/^\d+$/.test(word)) return word;
-                      if (word.includes('$')) {
-                        const byDollarSign = word.split('$');
-                        // only column is locked
-                        if (byDollarSign.length === 2 && byDollarSign[0] === '') {
-                          const e2e = expr2expr(byDollarSign.join(''), 0, yn);
-                          return `$${e2e}`;
-                        }
-                        // only row is locked
-                        if (byDollarSign.length === 2 && byDollarSign[0] !== '') {
-                          const e2e = expr2expr(byDollarSign.join(''), xn, 0);
-                          const [match] = e2e.match(/[a-zA-Z]{1,3}/g);
-                          return `${match}$${e2e.substring(match.length)}`;
-                        }
-                        // column and row are locked
-                        return word;
-                      }
                       return expr2expr(word, xn, yn);
                     });
                   } else if ((rn <= 1 && cn > 1 && (dsri > eri || deri < sri))
@@ -184,7 +168,7 @@ class Rows {
                 }
                 // paste expressions
                 if (ncell.text && !autofill && (ncell.text[0] === '=')) {
-                  ncell.text = ncell.text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
+                  ncell.text = ncell.text.replace(/\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g, (word) => {
                     if (/^\d+$/.test(word)) return word;
                     return expr2expr(word, nci - sci, nri - sri);
                   });
@@ -243,7 +227,10 @@ class Rows {
         nri += n;
         this.eachCells(ri, (ci, cell) => {
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, n, (x, y) => y >= nsri));
+            cell.text = cell.text.replace(
+              /\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g,
+              word => expr2expr(word, 0, n, (x, y) => (y >= nsri)),
+            );
           }
         });
       }
@@ -264,7 +251,10 @@ class Rows {
         ndata[nri - n] = row;
         this.eachCells(ri, (ci, cell) => {
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, -n, (x, y) => y > eri));
+            cell.text = cell.text.replace(
+              /\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g,
+              word => expr2expr(word, 0, -n, (x, y) => y > eri),
+            );
           }
         });
       }
@@ -282,7 +272,10 @@ class Rows {
         if (nci >= nsci) {
           nci += n;
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, n, 0, x => x >= nsci));
+            cell.text = cell.text.replace(
+              /\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g,
+              word => expr2expr(word, n, 0, x => x >= nsci),
+            );
           }
         }
         rndata[nci] = cell;
@@ -302,7 +295,10 @@ class Rows {
         } else if (nci > eci) {
           rndata[nci - n] = cell;
           if (cell.text && cell.text[0] === '=') {
-            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, -n, 0, x => x > eci));
+            cell.text = cell.text.replace(
+              /\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g,
+              word => expr2expr(word, -n, 0, x => x > eci),
+            );
           }
         }
       });

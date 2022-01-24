@@ -67,8 +67,9 @@ export function expr2xy(src) {
  * @param {number} y
  * @returns {tagA1}
  */
-export function xy2expr(x, y) {
-  return `${stringAt(x)}${y + 1}`;
+export function xy2expr(x, y, prefix = {}) {
+  const { col, row } = prefix;
+  return `${col ? '$' : ''}${stringAt(x)}${row ? '$' : ''}${y + 1}`;
 }
 
 /** translate A1-tag src by (xn, yn)
@@ -81,9 +82,29 @@ export function xy2expr(x, y) {
  */
 export function expr2expr(src, xn, yn, condition = () => true) {
   if (xn === 0 && yn === 0) return src;
-  const [x, y] = expr2xy(src);
+  let col = false;
+  let row = false;
+  if (src.includes('$')) {
+    const byDollarSign = src.split('$');
+    if (byDollarSign.length === 3) {
+      return src;
+    }
+    // only column is locked
+    if (byDollarSign.length === 2 && byDollarSign[0] === '') {
+      col = true;
+    }
+    // only row is locked
+    if (byDollarSign.length === 2 && byDollarSign[0] !== '') {
+      row = true;
+    }
+  }
+  const [x, y] = expr2xy(src.replaceAll('$', ''));
   if (!condition(x, y)) return src;
-  return xy2expr(x + xn, y + yn);
+  return xy2expr(
+    x + (col ? 0 : xn),
+    y + (row ? 0 : yn),
+    { col, row },
+  );
 }
 
 export default {
