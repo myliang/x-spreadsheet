@@ -140,6 +140,16 @@ class Spreadsheet {
     }
   }
 
+  getLastRowIndex(sheetIndex = 0) {
+    const usedRange = this.datas[sheetIndex].contentRange();
+    return usedRange.eri;
+  }
+
+  getLastColumnIndex(sheetIndex = 0) {
+    const usedRange = this.datas[sheetIndex].contentRange();
+    return usedRange.eci;
+  }
+
   on(eventName, func) {
     this.sheet.on(eventName, func);
     return this;

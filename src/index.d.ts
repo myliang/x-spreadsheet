@@ -266,6 +266,22 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     ): void;
 
     /**
+     * get last row index
+     * @param sheetIndex
+     */
+    getLastRowIndex(
+      sheetIndex?: number,
+    ): Number;
+
+    /**
+     * get last column index
+     * @param sheetIndex
+     */
+      getLastColumnIndex(
+      sheetIndex?: number,
+    ): Number;
+
+    /**
      * add new sheet
      * @param name {string}
      * @param active {boolean}
