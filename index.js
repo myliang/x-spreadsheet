@@ -172,17 +172,14 @@ const instance = Spreadsheet.getInstance('#x-spreadsheet-demo', {
     ],
   },
 });
+const numberFormat = { format: 'number' };
+const excludeRows = [{ property: 'style', indices: [0] }];
 instance.loadData([
   {
     cols: {
       len: initialCols.length,
-      styles: [
-        {
-          indices: [0],
-          excludeRows: [0],
-          style: { format: 'number' },
-        },
-      ],
+      0: { style: numberFormat, editable: false, excludeRows },
+      3: { style: numberFormat, excludeRows },
     },
     rows: {
       len: arr.length + 1,

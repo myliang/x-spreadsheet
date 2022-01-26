@@ -213,23 +213,17 @@ class Rows {
     });
   }
 
-  // TODO check insert method, setNewLen might not be necessary
-  setNewLen(n) {
-    this.len = n;
-  }
-
-  insert(sri, n = 1, above = true) {
+  insert(sri, n = 1) {
     const ndata = {};
-    const nsri = above ? sri : sri + 1;
     this.each((ri, row) => {
       let nri = parseInt(ri, 10);
-      if (nri >= nsri) {
+      if (nri >= sri) {
         nri += n;
         this.eachCells(ri, (ci, cell) => {
           if (cell.text && cell.text[0] === '=') {
             cell.text = cell.text.replace(
               /\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g,
-              word => expr2expr(word, 0, n, (x, y) => (y >= nsri)),
+              word => expr2expr(word, 0, n, (x, y) => (y >= sri)),
             );
           }
         });
@@ -263,18 +257,17 @@ class Rows {
     this.len -= n;
   }
 
-  insertColumn(sci, n = 1, left = true) {
-    const nsci = left ? sci : sci + 1;
+  insertColumn(sci, n = 1) {
     this.each((ri, row) => {
       const rndata = {};
       this.eachCells(ri, (ci, cell) => {
         let nci = parseInt(ci, 10);
-        if (nci >= nsci) {
+        if (nci >= sci) {
           nci += n;
           if (cell.text && cell.text[0] === '=') {
             cell.text = cell.text.replace(
               /\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g,
-              word => expr2expr(word, n, 0, x => x >= nsci),
+              word => expr2expr(word, n, 0, x => x >= sci),
             );
           }
         }

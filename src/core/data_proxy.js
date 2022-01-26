@@ -445,14 +445,23 @@ export default class DataProxy {
   // what: all | text | format
   paste(what = 'all', error = () => {}) {
     // console.log('sIndexes:', sIndexes);
-    const { clipboard, selector, rows } = this;
+    const {
+      clipboard, selector, rows, cols,
+    } = this;
     if (clipboard.isClear()) return false;
-    const { eri: ceri, sri: csri } = clipboard.range;
-    const { sri } = selector.range;
+    const {
+      eri: ceri, sri: csri, eci: ceci, sci: csci,
+    } = clipboard.range;
+    const { sri, sci } = selector.range;
     const clipboardRowsLen = ceri - csri + 1;
-    const diff = rows.len - sri;
-    if (diff < clipboardRowsLen) {
-      rows.setNewLen(rows.len + clipboardRowsLen - diff);
+    const rowsDiff = rows.len - sri;
+    const clipboardColsLen = ceci - csci + 1;
+    const colsDiff = cols.len - sci;
+    if (rowsDiff < clipboardRowsLen) {
+      this.insert('row', clipboardRowsLen - rowsDiff, false, { sri: rows.len - 1 });
+    }
+    if (colsDiff < clipboardColsLen) {
+      this.insert('column', clipboardColsLen - colsDiff, false, { sci: cols.len - 1 });
     }
     if (!canPaste.call(this, clipboard.range, selector.range, error)) return false;
 
@@ -472,11 +481,17 @@ export default class DataProxy {
     if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
     else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
     if (lines.length) {
-      const { rows, selector } = this;
-      const { sri } = selector.range;
-      const diff = rows.len - sri;
-      if (diff < lines.length) {
-        rows.setNewLen(rows.len + lines.length - diff);
+      const { rows, selector, cols } = this;
+      const { sri, sci } = selector.range;
+      const rowsDiff = rows.len - sri;
+      const colsDiff = cols.len - sci;
+
+      if (rowsDiff < lines.length) {
+        this.insert('row', lines.length - rowsDiff, false, { sri: rows.len - 1 });
+      }
+
+      if (colsDiff < lines[0].length) {
+        this.insert('column', lines[0].length - colsDiff, false, { sci: cols.len - 1 });
       }
 
       this.changeData(() => {
@@ -863,17 +878,23 @@ export default class DataProxy {
   }
 
   // type: row | column
-  insert(type, n = 1, aboveOrLeft = true) {
+  insert(type, n = 1, aboveOrLeft = true, at = {}) {
     this.changeData(() => {
-      const { sri, sci } = this.selector.range;
+      const sri = at.sri || this.selector.range.sri;
+      const sci = at.sci || this.selector.range.sci;
       const { rows, merges, cols } = this;
       let si = sri;
       if (type === 'row') {
-        rows.insert(sri, n, aboveOrLeft);
+        rows.insert(aboveOrLeft ? sri : sri + 1, n);
+        const rowsToUpdateProps = [];
+        for (let i = sri; i < sri + n; i += 1) {
+          rowsToUpdateProps.push(i + 1);
+        }
+        this.setColProperties(rowsToUpdateProps);
       } else if (type === 'column') {
-        rows.insertColumn(sci, n, aboveOrLeft);
+        rows.insertColumn(aboveOrLeft ? sci : sci + 1, n);
         si = sci;
-        cols.len += 1;
+        cols.len += n;
       }
       merges.shift(type, si, n, (ri, ci, rn, cn) => {
         const cell = rows.getCell(ri, ci);
@@ -1006,11 +1027,31 @@ export default class DataProxy {
     cell.style = this.addStyle(cstyle);
   }
 
-  setColStyle(ci, style, excludeRows = []) {
-    const { len } = this.rows;
-    for (let ri = 0; ri < len; ri += 1) {
-      if (!excludeRows.includes(ri)) {
-        this.setCellStyle(ri, ci, style);
+  setColProperties(range = []) {
+    const { rows, cols } = this;
+    for (const [ci, properties] of Object.entries(cols._)) {
+      for (const [key, value] of Object.entries(properties)) {
+        if (key !== 'excludeRows') {
+          const {
+            indices = [],
+          } = properties.excludeRows.find(({ property }) => property === key) || {};
+          const cells = [...range];
+          if (!cells.length) {
+            for (let ri = 0; ri < rows.len; ri += 1) {
+              cells.push(ri);
+            }
+          }
+          for (const ri of cells) {
+            if (!indices.includes(ri)) {
+              if (key === 'style') {
+                this.setCellStyle(ri, ci, value);
+              } else {
+                const cell = rows.getCellOrNew(ri, ci);
+                cell[key] = value;
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -1255,12 +1296,8 @@ export default class DataProxy {
         this[property] = d[property];
       }
     });
-    if (d.cols && d.cols.styles) {
-      for (const { indices, style, excludeRows } of d.cols.styles) {
-        for (const idx of indices) {
-          this.setColStyle(idx, style, excludeRows);
-        }
-      }
+    if (d.cols) {
+      this.setColProperties();
     }
     return this;
   }
