@@ -624,8 +624,8 @@ export default class DataProxy {
     element.style.color = "white";
     element.style.paddingLeft = "2px";
     element.style.paddingRight = "2px";
-    element.style.paddingTop = "1px";
-    element.style.paddingBottom = "1px";
+    element.style.paddingTop = "2px";
+    element.style.paddingBottom = "2px";
     element.style.fontSize = "14px";
     element.style.minWidth = "60px";
     element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif";
