@@ -81,7 +81,7 @@ function inputEventHandler(evt) {
       resetTextareaSize.call(this);
       this.change('input', v);
     } else {
-      evt.target.value = cell.text;
+      evt.target.value = cell.text || '';
     }
   } else {
     this.inputText = v;

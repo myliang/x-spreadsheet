@@ -77,6 +77,7 @@ const defaultSettings = {
   showGrid: true,
   showToolbar: true,
   showContextmenu: true,
+  showBottomBar: true,
   row: {
     len: 100,
     height: 25,
@@ -107,7 +108,6 @@ const defaultSettings = {
 
 const toolbarHeight = 41;
 const bottombarHeight = 41;
-
 
 // src: cellRange
 // dst: cellRange
@@ -171,7 +171,7 @@ function setStyleBorders({ mode, style, color }) {
   const {
     sri, sci, eri, eci,
   } = selector.range;
-  const multiple = !this.isSignleSelected();
+  const multiple = !this.isSingleSelected();
   if (!multiple) {
     if (mode === 'inside' || mode === 'horizontal' || mode === 'vertical') {
       return;
@@ -404,37 +404,39 @@ export default class DataProxy {
     this.clipboard.copy(this.selector.range);
   }
 
-  copyToSystemClipboard() {
-    if (navigator.clipboard == undefined) {
-      return
-    }
-    var copyText = "";
-    var rowData = this.rows.getData();
-    for (var ri = this.selector.range.sri; ri <= this.selector.range.eri; ri++) {
-      if (rowData.hasOwnProperty(ri)) {
-        for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
-          if (ci > this.selector.range.sci) {
-            copyText += '\t'
-          }
-          if (rowData[ri].cells.hasOwnProperty(ci)) {
-            var cellText = String(rowData[ri].cells[ci].text)
-            if ((cellText.indexOf("\n") == -1) && (cellText.indexOf("\t") == -1) && (cellText.indexOf("\"") == -1)) {
-              copyText += cellText;
-            } else {
-              copyText += "\"" + cellText + "\"";
-            }
-          }
-        }
-      } else {
-        for (var ci = this.selector.range.sci; ci <= this.selector.range.eci; ci++) {
-          copyText += '\t'
-        }
+  copyToSystemClipboard(evt) {
+    let copyText = [];
+    const {
+      sri, eri, sci, eci,
+    } = this.selector.range;
+
+    for (let ri = sri; ri <= eri; ri += 1) {
+      const row = [];
+      for (let ci = sci; ci <= eci; ci += 1) {
+        const cell = this.getCell(ri, ci);
+        row.push((cell && cell.text) || '');
       }
-      copyText += '\n'
+      copyText.push(row);
     }
-    navigator.clipboard.writeText(copyText).then(function () {}, function (err) {
-      console.log('text copy to the system clipboard error  ', copyText, err);
-    });
+
+    // Adding \n and why not adding \r\n is to support online office and client MS office and WPS
+    copyText = copyText.map(row => row.join('\t')).join('\n');
+
+    // why used this
+    // cuz http protocol will be blocked request clipboard by browser
+    if (evt) {
+      evt.clipboardData.clearData();
+      evt.clipboardData.setData('text/plain', copyText);
+      evt.preventDefault();
+    }
+
+    // this need https protocol
+    /* global navigator */
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(copyText).then(() => {}, (err) => {
+        console.log('text copy to the system clipboard error  ', copyText, err);
+      });
+    }
   }
 
   cut() {
@@ -459,12 +461,18 @@ export default class DataProxy {
   }
 
   pasteFromText(txt) {
-    const lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
-    if (lines.length > 0) lines.length -= 1;
-    const { rows, selector } = this;
-    this.changeData(() => {
-      rows.paste(lines, selector.range);
-    });
+    let lines = [];
+
+    if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
+    else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
+
+    if (lines.length) {
+      const { rows, selector } = this;
+
+      this.changeData(() => {
+        rows.paste(lines, selector.range);
+      });
+    }
   }
 
   autofill(cellRange, what, error = () => {}) {
@@ -708,7 +716,7 @@ export default class DataProxy {
     };
   }
 
-  isSignleSelected() {
+  isSingleSelected() {
     const {
       sri, sci, eri, eci,
     } = this.selector.range;
@@ -734,7 +742,7 @@ export default class DataProxy {
 
   merge() {
     const { selector, rows } = this;
-    if (this.isSignleSelected()) return;
+    if (this.isSingleSelected()) return;
     const [rn, cn] = selector.size();
     // console.log('merge:', rn, cn);
     if (rn > 1 || cn > 1) {
@@ -753,7 +761,7 @@ export default class DataProxy {
 
   unmerge() {
     const { selector } = this;
-    if (!this.isSignleSelected()) return;
+    if (!this.isSingleSelected()) return;
     const { sri, sci } = selector.range;
     this.changeData(() => {
       this.rows.deleteCell(sri, sci, 'merge');
@@ -859,7 +867,7 @@ export default class DataProxy {
         rows.deleteColumn(sci, eci);
         si = range.sci;
         size = csize;
-        cols.len -= 1;
+        cols.len -= (eci - sci + 1);
       }
       // console.log('type:', type, ', si:', si, ', size:', size);
       merges.shift(type, si, -size, (ri, ci, rn, cn) => {
@@ -1011,9 +1019,11 @@ export default class DataProxy {
   }
 
   viewHeight() {
-    const { view, showToolbar } = this.settings;
+    const { view, showToolbar, showBottomBar } = this.settings;
     let h = view.height();
-    h -= bottombarHeight;
+    if (showBottomBar) {
+      h -= bottombarHeight;
+    }
     if (showToolbar) {
       h -= toolbarHeight;
     }

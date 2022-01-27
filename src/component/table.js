@@ -74,8 +74,8 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
   }
   draw.rect(dbox, () => {
     // render text
-    let cellText = "";
-    if(!data.settings.evalPaused) {
+    let cellText = '';
+    if (!data.settings.evalPaused) {
       cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
     } else {
       cellText = cell.text || '';

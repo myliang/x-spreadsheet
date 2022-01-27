@@ -4,7 +4,8 @@ import { cssPrefix } from '../config';
 import Icon from './icon';
 import FormInput from './form_input';
 import Dropdown from './dropdown';
-import { xtoast } from './message';
+// Record: temp not used
+// import { xtoast } from './message';
 import { tf } from '../locale/locale';
 
 class DropdownMore extends Dropdown {
@@ -98,16 +99,18 @@ export default class Bottombar {
     );
   }
 
-  addItem(name, active) {
+  addItem(name, active, options) {
     this.dataNames.push(name);
     const item = h('li', active ? 'active' : '').child(name);
     item.on('click', () => {
       this.clickSwap2(item);
     }).on('contextmenu', (evt) => {
+      if (options.mode === 'read') return;
       const { offsetLeft, offsetHeight } = evt.target;
       this.contextMenu.setOffset({ left: offsetLeft, bottom: offsetHeight + 1 });
       this.deleteEl = item;
     }).on('dblclick', () => {
+      if (options.mode === 'read') return;
       const v = item.html();
       const input = new FormInput('auto', '');
       input.val(v);

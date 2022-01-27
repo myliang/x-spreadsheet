@@ -1,6 +1,11 @@
 /* global window */
 import { h } from './element';
-import { bind, mouseMoveUp, bindTouch, createEventEmitter } from './event';
+import {
+  bind,
+  mouseMoveUp,
+  bindTouch,
+  createEventEmitter,
+} from './event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -68,7 +73,6 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     table, selector, toolbar, data,
     contextMenu,
   } = this;
-  contextMenu.setMode((ri === -1 || ci === -1) ? 'row-col' : 'range');
   const cell = data.getCell(ri, ci);
   if (multiple) {
     selector.setEnd(ri, ci, moving);
@@ -78,6 +82,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     selector.set(ri, ci, indexesUpdated);
     this.trigger('cell-selected', cell, ri, ci);
   }
+  contextMenu.setMode((ri === -1 || ci === -1) ? 'row-col' : 'range');
   toolbar.reset();
   table.render();
 }
@@ -309,15 +314,17 @@ function clearClipboard() {
   selector.hideClipboard();
 }
 
-function copy() {
+function copy(evt) {
   const { data, selector } = this;
+  if (data.settings.mode === 'read') return;
   data.copy();
-  data.copyToSystemClipboard();
+  data.copyToSystemClipboard(evt);
   selector.showClipboard();
 }
 
 function cut() {
   const { data, selector } = this;
+  if (data.settings.mode === 'read') return;
   data.cut();
   selector.showClipboard();
 }
@@ -694,8 +701,14 @@ function sheetInitEvents() {
   });
 
   bind(window, 'paste', (evt) => {
-    if(!this.focusing) return;
+    if (!this.focusing) return;
     paste.call(this, 'all', evt);
+    evt.preventDefault();
+  });
+
+  bind(window, 'copy', (evt) => {
+    if (!this.focusing) return;
+    copy.call(this, evt);
     evt.preventDefault();
   });
 
@@ -725,8 +738,9 @@ function sheetInitEvents() {
           break;
         case 67:
           // ctrl + c
-          copy.call(this);
-          evt.preventDefault();
+          // => copy
+          // copy.call(this);
+          // evt.preventDefault();
           break;
         case 88:
           // ctrl + x
@@ -913,7 +927,7 @@ export default class Sheet {
 
   trigger(eventName, ...args) {
     const { eventMap } = this;
-    eventMap.fire(eventName, args)
+    eventMap.fire(eventName, args);
   }
 
   resetData(data) {

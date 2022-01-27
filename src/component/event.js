@@ -83,55 +83,71 @@ export function bindTouch(target, { move, end }) {
     calTouchDirection(spanx, spany, evt, end);
   });
 }
+
 // eventemiter
 export function createEventEmitter() {
-  const listeners = new Map()
+  const listeners = new Map();
+
   function on(eventName, callback) {
-    if (listeners.has(eventName)) {
-      const currentListener = listeners.get(eventName)
-      if (Array.isArray(currentListener)) {
-        currentListener.push(callback)
-      }
-    } else {
-      listeners.set(eventName, [].concat(callback))
-    }
+    const push = () => {
+      const currentListener = listeners.get(eventName);
+      return (Array.isArray(currentListener)
+          && currentListener.push(callback))
+          || false;
+    };
+
+    const create = () => listeners.set(eventName, [].concat(callback));
+
+    return (listeners.has(eventName)
+        && push())
+        || create();
   }
+
   function fire(eventName, args) {
-    if (listeners.has(eventName)) {
-      const currentListener = listeners.get(eventName)
-      for (const callback of currentListener) {
-        callback.call(null, ...args)
-      }
-    }
+    const exec = () => {
+      const currentListener = listeners.get(eventName);
+      for (const callback of currentListener) callback.call(null, ...args);
+    };
+
+    return listeners.has(eventName)
+        && exec();
   }
+
   function removeListener(eventName, callback) {
-    if (listeners.has(eventName)) {
-      const currentListener = listeners.get(eventName)
-      const idx = currentListener.indexOf(callback)
-      if (idx && idx >= 0) {
-        currentListener.splice(idx, 1)
-      }
-    }
+    const remove = () => {
+      const currentListener = listeners.get(eventName);
+      const idx = currentListener.indexOf(callback);
+      return (idx >= 0)
+          && currentListener.splice(idx, 1)
+          && listeners.get(eventName).length === 0
+          && listeners.delete(eventName);
+    };
+
+    return listeners.has(eventName)
+        && remove();
   }
+
   function once(eventName, callback) {
-    const execCalllback = function (...args) {
-      callback.call(null, ...args)
-      removeListener(eventName, execCalllback)
-    }
-    on(eventName, execCalllback)
+    const execCalllback = (...args) => {
+      callback.call(null, ...args);
+      removeListener(eventName, execCalllback);
+    };
+
+    return on(eventName, execCalllback);
   }
+
   function removeAllListeners() {
-    listeners.clear()
+    listeners.clear();
   }
-  function getAllListeners() {
-    return listeners
-  }
+
   return {
-    getAllListeners,
+    get current() {
+      return listeners;
+    },
     on,
     once,
     fire,
     removeListener,
-    removeAllListeners
-  }
+    removeAllListeners,
+  };
 }
