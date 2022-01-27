@@ -69,7 +69,7 @@ function scrollbarMove() {
 }
 
 function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
-  if (ri === -1 && ci === -1) return;
+  // if (ri === -1 && ci === -1) return;
   const {
     table, selector, toolbar, data,
     contextMenu,
