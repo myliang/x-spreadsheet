@@ -17,6 +17,7 @@ import ContextMenu from './contextmenu';
 import Table from './table';
 import Toolbar from './toolbar/index';
 import ModalValidation from './modal_validation';
+import ModalFind from './modal_search';
 import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
@@ -868,6 +869,11 @@ function sheetInitEvents() {
           // ctrl + I
           toolbar.trigger('italic');
           break;
+        case 70:
+          // ctrl + f
+          evt.preventDefault();
+          this.modalFind.show();
+          break;
         case 67: // ctrl + c
         case 86: // ctrl + v
         default:
@@ -952,6 +958,47 @@ function sheetInitEvents() {
   });
 }
 
+function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellContents = false) {
+  const { data, table } = this;
+  const { rows } = data;
+  const foundCells = [];
+  const soughtValue = matchCase ? val : val.toLowerCase();
+  rows.each((ri) => {
+    rows.eachCells(ri, (ci, { text }) => {
+      const txt = matchCase ? `${text}` : `${text}`.toLowerCase();
+      const condition = matchCellContents
+        ? txt === val : txt.includes(soughtValue);
+      if (condition) {
+        foundCells.push({ ri, ci, text });
+        if (replace === 'all') {
+          data.setCellTextRaw(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
+        }
+      }
+    });
+  });
+
+  if (!foundCells.length) {
+    return -1;
+  }
+
+  if (replace === 'all') {
+    table.render();
+    return foundCells.length;
+  }
+
+  let { ri, ci } = foundCells[idx];
+  const { text } = foundCells[idx];
+  if (replace === 'current') {
+    data.setCellText(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
+    ({ ri, ci } = foundCells[(idx + 1 === foundCells.length) ? 0 : idx + 1]);
+  }
+
+  selectorSet.call(this, false, parseInt(ri, 10), parseInt(ci, 10));
+  scrollbarMove.call(this);
+
+  return foundCells.length;
+}
+
 export default class Sheet {
   // pass datas in the constructor to be able to acces data accross sheets
   // TODO refactor data to be index of datas
@@ -980,6 +1027,9 @@ export default class Sheet {
     );
     // data validation
     this.modalValidation = new ModalValidation();
+    // search
+    this.modalFind = new ModalFind();
+    this.modalFind.find = (s, i, r, rw, mc, mec) => find.call(this, s, i, r, rw, mc, mec);
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector
@@ -1004,6 +1054,7 @@ export default class Sheet {
       this.contextMenu.el,
       this.modalValidation.el,
       this.sortFilter.el,
+      this.modalFind.el,
     );
     // table
     this.table = new Table(this.tableEl.el, data, datas);
