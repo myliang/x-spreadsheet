@@ -3,6 +3,9 @@ import { tf } from '../locale/locale';
 const formatStringRender = v => v;
 
 const formatNumberRender = (v) => {
+  if (!v) {
+    return '';
+  }
   // match "-12.1" or "12" or "12.1"
   if (/^(-?\d*.?\d*)$/.test(v)) {
     const v1 = Number(v).toFixed(2).toString();

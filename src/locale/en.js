@@ -109,6 +109,10 @@ export default {
     remove: 'Remove',
     save: 'Save',
     ok: 'OK',
+    find: 'Find',
+    replace: 'Replace',
+    replaceAll: 'Replace all',
+    done: 'Done',
   },
   sort: {
     desc: 'Sort Z -> A',
@@ -142,6 +146,13 @@ export default {
       gte: 'greater than or equal to',
       eq: 'equal to',
       neq: 'not equal to',
+    },
+  },
+  modal: {
+    find: {
+      title: 'Find and replace',
+      matchCase: 'Match case',
+      matchCellContents: 'Match entire cell contents',
     },
   },
 };
