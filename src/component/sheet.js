@@ -958,7 +958,7 @@ function sheetInitEvents() {
   });
 }
 
-function find(val, idx, replace, replaceWith, matchCase = false, matchCellContents = false) {
+function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellContents = false) {
   const { data, table } = this;
   const { rows } = data;
   const foundCells = [];
@@ -989,7 +989,7 @@ function find(val, idx, replace, replaceWith, matchCase = false, matchCellConten
   let { ri, ci } = foundCells[idx];
   const { text } = foundCells[idx];
   if (replace === 'current') {
-    data.setCellText(ri, ci, text.replace(soughtValue, replaceWith));
+    data.setCellText(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
     ({ ri, ci } = foundCells[(idx + 1 === foundCells.length) ? 0 : idx + 1]);
   }
 
