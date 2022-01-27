@@ -269,7 +269,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * get last row index
      * @param sheetIndex
      */
-    getLastRowIndex(
+    getLastUsedRowIndex(
       sheetIndex?: number,
     ): Number;
 
@@ -277,7 +277,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * get last column index
      * @param sheetIndex
      */
-      getLastColumnIndex(
+    getLastUsedColumnIndex(
       sheetIndex?: number,
     ): Number;
 
