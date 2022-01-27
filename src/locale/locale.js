@@ -54,7 +54,7 @@ function tf(key) {
 // to find a translation. This allows the use of other languages as a fallback
 // if lang is missing some keys. The language array is preloaded with English.
 // To set the languages array to only include lang, set clearLangList to true.
-function locale(lang, message, clearLangList=false) {
+function locale(lang, message, clearLangList = false) {
   if (clearLangList) {
     $languages = [lang];
   } else {

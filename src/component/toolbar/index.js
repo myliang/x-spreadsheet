@@ -23,6 +23,7 @@ import Undo from './undo';
 import Print from './print';
 import Textwrap from './textwrap';
 import More from './more';
+import Item from './item';
 
 import { h } from '../element';
 import { cssPrefix } from '../../config';
@@ -54,7 +55,7 @@ function moreResize() {
     el, btns, moreEl, btns2,
   } = this;
   const { moreBtns, contentEl } = moreEl.dd;
-  el.css('width', `${this.widthFn() - 60}px`);
+  el.css('width', `${this.widthFn()}px`);
   const elBox = el.box();
 
   let sumWidth = 160;
@@ -78,6 +79,28 @@ function moreResize() {
   } else {
     moreEl.hide();
   }
+}
+
+function genBtn(it) {
+  const btn = new Item();
+  btn.el.on('click', () => {
+    if (it.onClick) it.onClick(this.data.getData(), this.data);
+  });
+  btn.tip = it.tip || '';
+
+  let { el } = it;
+
+  if (it.icon) {
+    el = h('img').attr('src', it.icon);
+  }
+
+  if (el) {
+    const icon = h('div', `${cssPrefix}-icon`);
+    icon.child(el);
+    btn.el.child(icon);
+  }
+
+  return btn;
 }
 
 export default class Toolbar {
@@ -129,9 +152,24 @@ export default class Toolbar {
         this.freezeEl = new Freeze(),
         this.autofilterEl = new Autofilter(),
         this.formulaEl = new Formula(),
-        this.moreEl = new More(),
       ],
     ];
+
+    const { extendToolbar = {} } = data.settings;
+
+    if (extendToolbar.left && extendToolbar.left.length > 0) {
+      this.items.unshift(buildDivider());
+      const btns = extendToolbar.left.map(genBtn.bind(this));
+
+      this.items.unshift(btns);
+    }
+    if (extendToolbar.right && extendToolbar.right.length > 0) {
+      this.items.push(buildDivider());
+      const btns = extendToolbar.right.map(genBtn.bind(this));
+      this.items.push(btns);
+    }
+
+    this.items.push([this.moreEl = new More()]);
 
     this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`);
