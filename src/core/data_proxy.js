@@ -888,7 +888,7 @@ export default class DataProxy {
         rows.insert(aboveOrLeft ? sri : sri + 1, n);
         const rowsToUpdateProps = [];
         for (let i = sri; i < sri + n; i += 1) {
-          rowsToUpdateProps.push(i + 1);
+          rowsToUpdateProps.push(aboveOrLeft ? i : i + 1);
         }
         this.setColProperties(rowsToUpdateProps);
       } else if (type === 'column') {
