@@ -5,6 +5,7 @@ import { cssPrefix } from '../config';
 export default class FormSelect {
   constructor(key, items, width, getTitle = it => it, change = () => {}) {
     this.key = key;
+    this.width = width;
     this.getTitle = getTitle;
     this.vchange = () => {};
     this.el = h('div', `${cssPrefix}-form-select`);
@@ -22,6 +23,7 @@ export default class FormSelect {
   show() {
     this.suggest.search('');
   }
+
 
   itemClick(it) {
     this.key = it;

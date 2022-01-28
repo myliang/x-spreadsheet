@@ -11,6 +11,7 @@ const fieldLabelWidth = 100;
 
 export default class ModalValidation extends Modal {
   constructor() {
+    
     const mf = new FormField(
       new FormSelect('cell',
         ['cell'], // cell|row|column
@@ -34,6 +35,8 @@ export default class ModalValidation extends Modal {
       `${t('dataValidation.criteria')}:`,
       fieldLabelWidth,
     );
+
+    console.log("hit");
 
     // operator
     const of = new FormField(
@@ -86,6 +89,7 @@ export default class ModalValidation extends Modal {
     this.rf = rf;
     this.cf = cf;
     this.of = of;
+    
     this.minvf = minvf;
     this.maxvf = maxvf;
     this.vf = vf;
@@ -156,6 +160,7 @@ export default class ModalValidation extends Modal {
   }
 
   btnClick(action) {
+    
     if (action === 'cancel') {
       this.hide();
     } else if (action === 'remove') {
@@ -166,7 +171,8 @@ export default class ModalValidation extends Modal {
       const attrs = ['mf', 'rf', 'cf', 'of', 'vf', 'minvf', 'maxvf'];
       for (let i = 0; i < attrs.length; i += 1) {
         const field = this[attrs[i]];
-        // console.log('field:', field);
+        console.log(this[attrs[i]]);
+        console.log('field:', field);
         if (field.isShow()) {
           // console.log('it:', it);
           if (!field.validate()) return;
@@ -185,7 +191,8 @@ export default class ModalValidation extends Modal {
           value = this.vf.val();
         }
       }
-      // console.log(mode, ref, type, operator, value);
+      console.log("tracking val 1 (modal validaion) ");
+      console.log(mode, ref, type, operator, value);
       this.change('save',
         mode,
         ref,
@@ -198,6 +205,8 @@ export default class ModalValidation extends Modal {
 
   // validation: { mode, ref, validator }
   setValue(v) {
+    console.log("getselectedvalue");
+    console.log(v);
     if (v) {
       const {
         mf, rf, cf, of, svf, vf, minvf, maxvf,
@@ -222,6 +231,7 @@ export default class ModalValidation extends Modal {
       this.criteriaSelected(type);
       this.criteriaOperatorSelected(operator);
     }
+    
     this.show();
   }
 }

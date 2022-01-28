@@ -336,8 +336,8 @@ export default class DataProxy {
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
     this.validations = new Validations();
-    this.GDCTValidators = new GDCTValidators();
-    this.GDCTValidators.addTypeValidator(15, 2, '$')
+    this.GDCTValidators = new GDCTValidators(this);
+    //this.GDCTValidators.addTypeValidator(15, 2, '$')
     this.hyperlinks = {};
     this.comments = {};
     this.sheetDatas = sheetDatas;
@@ -398,6 +398,10 @@ export default class DataProxy {
     return v ? v.validator : null;
   }
 
+  addGDCTValidaton(cellR,type ,validator){
+    this.GDCTValidators.addValidation(cellR,type,validator);
+  }
+
   addTypeValidator(ri, ci, type) {
     this.GDCTValidators.addTypeValidator(ri, ci, type)
   }
@@ -447,6 +451,8 @@ export default class DataProxy {
 
   getSelectedValidation() {
     const { ri, ci, range } = this.selector;
+    console.log(this.selector);
+    console.log("ri " + ri + " ci " + ci + " range " + range); 
     const v = this.validations.get(ri, ci);
     const ret = { ref: range.toString() };
     if (v !== null) {
@@ -454,6 +460,11 @@ export default class DataProxy {
       ret.validator = v.validator;
     }
     return ret;
+  }
+  
+  getSelectedCellRange(){
+    console.log("range: " + this.selector.range.sci);
+    return this.selector.range;
   }
 
   canUndo() {
@@ -1069,7 +1080,8 @@ export default class DataProxy {
       this.change(this.getData());
     }
     // validator
-    this.GDCTValidators.validateAll(ri, ci, text)
+    console.log("im cute af")
+    this.GDCTValidators.validateAll();
     validations.validate(ri, ci, text);
   }
 

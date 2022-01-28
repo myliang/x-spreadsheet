@@ -46,7 +46,8 @@ class Spreadsheet {
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
     targetEl.appendChild(rootEl.el);
-    this.sheet = new Sheet(rootEl, this.data);
+
+    this.sheet = new Sheet(rootEl, this.data, this);
     this.julien_spreadsheet_flag = true;
     rootEl.child(this.bottombar.el);
   }
@@ -106,6 +107,10 @@ class Spreadsheet {
     currentSheet.insert('row', 1, rowNum)
   }
 
+  getRow(rowNum){
+    return this.datas[this.getCurrentSheetIndex()].rows._[rowNum].cells;
+  }
+
   // Insert a col in Sheet at rowNum
   // added by Sheldon Su 2021/02/23
   insertColAt(colNum){
@@ -144,6 +149,7 @@ class Spreadsheet {
   }
 
   on(eventName, func) {
+    console.log('hiiii' + eventName);
     this.sheet.on(eventName, func);
     return this;
   }

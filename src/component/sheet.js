@@ -663,6 +663,8 @@ function sheetInitEvents() {
   // modal validation
   modalValidation.change = (action, ...args) => {
     if (action === 'save') {
+      console.log("tracking validation 2 modalvaldation.change in sheet.js action: " + action +  " args: "  + args);
+      console.log("data:", this.data);
       this.data.addValidation(...args);
     } else {
       this.data.removeValidation();
@@ -670,10 +672,12 @@ function sheetInitEvents() {
   };
   // contextmenu
   contextMenu.itemClick = (type) => {
-    // console.log('type:', type);
+    console.log('type:', type);
     if (type === 'validation') {
       modalValidation.setValue(this.data.getSelectedValidation());
     } else if (type === 'moh-validation') {
+      
+      modalMOHValidation.prepare(this.data.getSelectedCellRange());
       modalMOHValidation.setValue(this.data.getSelectedValidation());
     } else if (type === 'copy') {
       copy.call(this);
@@ -856,7 +860,7 @@ function sheetInitEvents() {
 }
 
 export default class Sheet {
-  constructor(targetEl, data) {
+  constructor(targetEl, data, spread) {
     this.eventMap = createEventEmitter();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
@@ -864,6 +868,7 @@ export default class Sheet {
     this.print = new Print(data);
     targetEl.children(this.toolbar.el, this.el, this.print.el);
     this.data = data;
+    this.spread = spread;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
@@ -879,9 +884,10 @@ export default class Sheet {
       data.rows.height,
     );
     // data validation
+   
     this.modalValidation = new ModalValidation();
     // MOH validation
-    this.modalMOHValidation = new ModalMOHValidation();
+    this.modalMOHValidation = new ModalMOHValidation(this.spread);
     // modal for conditional formatting
     // different modals depending on required values
     this.modalConditional = new ModalConditional(this.data);
