@@ -134,4 +134,6 @@
 </g>
 <g xmlns="http://www.w3.org/2000/svg" transform="translate(90,54)"><polygon fill="#000000" fill-rule="evenodd" points="12 5 3.125 5 7.06 1.06 6 0 0 6 6 12 7.06 10.94 3.125 7 12 7" transform="translate(3 3)"/>
 </g>
+<g xmlns="http://www.w3.org/2000/svg" transform="translate(108,54)"><path fill="#000000" fill-rule="evenodd" d="M10.5737085,2 L5,2 L5,0 L14,0 L14,1 L14,9 L12,9 L12,3.40213561 L1.70206527,13.7000703 L0.287851709,12.2858568 L10.5737085,2 Z" transform="translate(2 2)"/>
+</g>
 </svg>

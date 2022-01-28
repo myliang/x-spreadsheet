@@ -1027,15 +1027,19 @@ export default class DataProxy {
     cell.style = this.addStyle(cstyle);
   }
 
-  setColProperties(range = []) {
+  setColProperties(r = [], c = []) {
     const { rows, cols } = this;
-    for (const [ci, properties] of Object.entries(cols._)) {
+    let colEntries = Object.entries(cols._);
+    if (c.length > 0) {
+      colEntries = colEntries.filter(([ci]) => c.includes(parseInt(ci, 10)));
+    }
+    for (const [ci, properties] of colEntries) {
       for (const [key, value] of Object.entries(properties)) {
         if (key !== 'excludeRows') {
           const {
             indices = [],
           } = properties.excludeRows.find(({ property }) => property === key) || {};
-          const cells = [...range];
+          const cells = [...r];
           if (!cells.length) {
             for (let ri = 0; ri < rows.len; ri += 1) {
               cells.push(ri);
