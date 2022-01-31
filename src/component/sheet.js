@@ -16,6 +16,7 @@ import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
+import Notes from './note';
 
 /**
  * @desc throttle fn
@@ -361,7 +362,7 @@ function toolbarChangePaintformatPaste() {
 }
 
 function overlayerMousedown(evt) {
-  // console.log(':::::overlayer.mousedown:', evt.detail, evt.button, evt.buttons, evt.shiftKey);
+  //console.log(':::::overlayer.mousedown:', evt.detail, evt.button, evt.buttons, evt.shiftKey);
   // console.log('evt.target.className:', evt.target.className);
   const {
     selector, data, table, sortFilter,
@@ -581,6 +582,7 @@ function sheetInitEvents() {
     toolbar,
     modalValidation,
     modalMOHValidation,
+    notes,
     modalConditional,
     sortFilter,
   } = this;
@@ -600,12 +602,14 @@ function sheetInitEvents() {
         } else {
           overlayerMousedown.call(this, evt);
           contextMenu.setPosition(evt.offsetX, evt.offsetY);
+          
         }
         evt.stopPropagation();
       } else if (evt.detail === 2) {
         editorSet.call(this);
       } else {
         overlayerMousedown.call(this, evt);
+        notes.showNote(...this.selector.indexes)
       }
     })
     .on('mousewheel.stop', (evt) => {
@@ -679,6 +683,10 @@ function sheetInitEvents() {
       
       modalMOHValidation.prepare(this.data.getSelectedCellRange());
       modalMOHValidation.setValue(this.data.getSelectedValidation());
+    }  else if (type === 'comment') {
+      // open comment and set text(?)
+      console.log('open comment herrre' + this.selector.indexes)
+      notes.showNote(...this.selector.indexes)
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -891,6 +899,8 @@ export default class Sheet {
     // modal for conditional formatting
     // different modals depending on required values
     this.modalConditional = new ModalConditional(this.data);
+    // Notes store
+    this.notes = new Notes(() => this.getRect(), () => this.selector.l.areaEl.el);
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector
@@ -916,6 +926,7 @@ export default class Sheet {
       this.modalValidation.el,
       this.modalMOHValidation.el,
       this.modalConditional.el,
+      this.notes.el,
       this.sortFilter.el,
     );
     // table

@@ -18,7 +18,7 @@ export class GDCTValidators {
     //TODO for tomorrow Julien: expose these functions & fix functionality here vvvv then look into making it part of add columns and expand types
     removeRule(ri, ci) {
         for (let i = 0; i < this.validators.length; i++) {
-            if (ri === validators[i].ri && ci && this.validators[i].ci) {
+            if (ri === validators[i].ri && ci === this.validators[i].ci) {
                 this.validators.splice(i, 1)
             }
         }
@@ -67,6 +67,8 @@ export class GDCTValidators {
     // v has type, cell range and validation info
     validate(v){
         let {cellR,type,vInfo} = v;
+
+
         if(type === 'number'){
             for(let x= cellR.sri; x < cellR.eri+1; x++){
                 for(let y= cellR.sci; y < cellR.eci+1; y++){
@@ -86,7 +88,7 @@ export class GDCTValidators {
             }
         }
 
-        if(type === 'attribute'){
+        else if(type === 'attribute'){
             for(let x= cellR.sri; x < cellR.eri+1; x++){
                 for(let y= cellR.sci; y < cellR.eci+1; y++){
                    
@@ -103,6 +105,30 @@ export class GDCTValidators {
                 }
             }
         }
+
+        else if(type === 'required'){
+            console.log('LOOOOOOOL');
+            for(let x= cellR.sri; x < cellR.eri+1; x++){
+                for(let y= cellR.sci; y < cellR.eci+1; y++){
+                   
+                    let t = this.datas.getCell(x,y);
+                    if(t) {
+                        console.log('comnbruh ' + t);
+                        this.errors.clear(`${x}_${y}`);
+                    }
+                    else{
+                        console.log('comnbruh Error');
+                        this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+                    }
+                }
+            }
+        }
+    }
+
+    validateRequired(cellText){
+
+
+
     }
 
     // v has operator type, the value, 

@@ -974,6 +974,27 @@ form fieldset {
   }
 }
 
+.@{css-prefix}-note {
+  position: fixed;
+  z-index: 1001;
+  text-align: left;
+  font-size: 13px;
+  background-color: #f4e285;
+  box-shadow: rgba(0, 0, 0, .05) 0px 2px 8px;
+  line-height: @line-height;
+  height: min-content;
+  width: min-content;
+  // top: 0;
+  // left: 0;
+  padding: 5px;
+}
+
+.@{css-prefix}-notetext {
+  background: inherit;
+  border: none;
+  outline: none;
+}
+
 .@{css-prefix}-modal, .@{css-prefix}-toast {
   font-size: 13px;
   position: fixed;

@@ -31,6 +31,7 @@ export default {
     paste: 'Paste',
     pasteValue: 'Paste values only',
     pasteFormat: 'Paste format only',
+    comment: 'Comment',
     hide: 'Hide',
     insertRow: 'Insert row',
     insertColumn: 'Insert column',
@@ -125,6 +126,7 @@ export default {
       email: 'Email',
     },
     operator: {
+      req: 'required',
       be: 'between',
       nbe: 'not between',
       wr: 'within range',

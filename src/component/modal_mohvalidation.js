@@ -25,49 +25,6 @@ export default class ModalMOHValidation extends Modal {
       { required: true },
       `${t('MOHValidation.categories')}`
     );
-    const typeField = new FormField(
-      new FormSelect('format',
-        ['format', 'value', 'relative'],
-        '100%',
-        it => t(`MOHValidation.type.${it}`),
-        it => this.criteriaSelected(it)),
-      { required: true },
-      `${t('MOHValidation.validationType')}:`,
-      fieldLabelWidth,
-    );
-
-    // FORMAT type operators
-    const formatTypeField = new FormField(
-      new FormSelect('text',
-        ['text', 'number'],
-        '100%',
-        it => t(`MOHValidation.formatType.${it}`),
-        it => this.criteriaFormatSelected(it)),
-      { required: true },
-      `${t('MOHValidation.params')}`
-    );
-    const strLenField = new FormField(
-      new FormInput('140px', 'Text length ex: <5, 12 >=1'),
-      { required: true },
-    );
-    const numLenField = new FormField(
-      new FormInput('140px', 'Length before decimal'),
-      { required: true },
-    ).hide();
-    const decLenField = new FormField(
-      new FormInput('140px', 'Length after decimal'),
-      { required: true },
-    ).hide();
-    // VALUE type operators
-    const ltField = new FormField(
-      new FormInput('140px', 'Maximum value of number'),
-      { required: true },
-      `${t('MOHValidation.params')}`,
-    ).hide();
-    const gtField = new FormField(
-      new FormInput('140px', 'Minimum value of number'),
-    ).hide();
-
     
 
     const valueField = new FormField( // operator
@@ -77,7 +34,7 @@ export default class ModalMOHValidation extends Modal {
     // RELATIVE type operators
     const of = new FormField( // operator
       new FormSelect('be',
-        ['be', 'nbe', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte'],
+        ['req','be', 'nbe', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte'],
         '160px',
         it => t(`dataValidation.operator.${it}`),
         it => this.criteriaOperatorSelected(it)),
@@ -231,6 +188,10 @@ export default class ModalMOHValidation extends Modal {
         value = [this.min_value.val(),this.max_value.val()];
         type = (isNaN(value[0]) || isNaN(value[1])) ? 'attribute' : 'number';
       }
+      else if(operator === 'req'){
+        value = '';
+        type = 'required';
+      }
       else{
         value = this.valueField.val();
         type = isNaN(value) ? 'attribute' : 'number';
@@ -240,6 +201,8 @@ export default class ModalMOHValidation extends Modal {
       console.log( ref, operator,attr,value,type,this.max_value.val(),this.min_value.val());
 
       this.spread.datas[this.spread.getCurrentSheetIndex()].addGDCTValidaton(this.cellRange,type,{operator,value});
+      this.spread.sheet.notes.setNote(13,4,"hehexd");
+      
       
       
       this.hide();

@@ -108,6 +108,10 @@ class Spreadsheet {
   }
 
   getRow(rowNum){
+    let x = this.datas[this.getCurrentSheetIndex()].rows._[rowNum];
+    if(x == undefined){
+      return undefined;
+    }
     return this.datas[this.getCurrentSheetIndex()].rows._[rowNum].cells;
   }
 
