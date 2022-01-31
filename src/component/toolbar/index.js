@@ -24,6 +24,7 @@ import Print from './print';
 import Textwrap from './textwrap';
 import More from './more';
 import Item from './item';
+import Fullscreen from './fullscreen';
 
 import { h } from '../element';
 import { cssPrefix } from '../../config';
@@ -152,6 +153,10 @@ export default class Toolbar {
         this.freezeEl = new Freeze(),
         this.autofilterEl = new Autofilter(),
         this.formulaEl = new Formula(),
+      ],
+      buildDivider(),
+      [
+        this.fullscreenEl = new Fullscreen(),
       ],
     ];
 

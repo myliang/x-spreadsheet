@@ -599,6 +599,17 @@ function toolbarChange(type, value) {
     } else {
       this.freeze(0, 0);
     }
+  } else if (type === 'fullscreen') {
+    if (value) {
+      this.data.settings.view = {
+        width: () => window.innerWidth,
+        height: () => window.innerHeight,
+      };
+      this.container.el.requestFullscreen();
+    } else {
+      this.data.settings.view = { ...this.defaultSettings.view };
+      document.exitFullscreen();
+    }
   } else {
     data.setSelectedCellAttr(type, value);
     if (type === 'formula' && !data.selector.multiple()) {
@@ -1003,12 +1014,13 @@ export default class Sheet {
   // pass datas in the constructor to be able to acces data accross sheets
   // TODO refactor data to be index of datas
   constructor(targetEl, data, datas) {
+    this.container = targetEl;
     this.eventMap = createEventEmitter();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
     this.toolbar = new Toolbar(data, view.width, !showToolbar);
     this.print = new Print(data);
-    targetEl.children(this.toolbar.el, this.el, this.print.el);
+    this.container.children(this.toolbar.el, this.el, this.print.el);
     this.data = data;
     this.datas = datas;
     // table
@@ -1062,6 +1074,7 @@ export default class Sheet {
     sheetReset.call(this);
     // init selector [0, 0]
     selectorSet.call(this, false, 0, 0);
+    this.defaultSettings = { view };
   }
 
   on(eventName, func) {

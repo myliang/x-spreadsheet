@@ -856,13 +856,13 @@ body {
     -webkit-tap-highlight-color: rgba(255,255,255,0);
     text-align: left;
     line-height: $form-field-height;
-    padding: 0 8px;
     background: #fff;
     border: 1px solid #e9e9e9;
     border-radius: 3px;
     transition: box-shadow .1s ease,border-color .1s ease;
     
     &:not([type='checkbox']) {
+      padding: 0 8px;
       height: $form-field-height;
       box-shadow: inset 0 1px 2px hsla(0,0%,4%,.06);
     }
@@ -1236,6 +1236,10 @@ form fieldset {
     }
     &.chevron-right {
       left: -3 * $icon-size;
+      top: -3 * $icon-size;
+    }
+    &.fullscreen {
+      left: -6 * $icon-size;
       top: -3 * $icon-size;
     }
   }

@@ -76,7 +76,7 @@ class Spreadsheet {
     this.sheetIndex = 1; // reset sheet index
     if (ds.length > 0) {
       for (let i = 0; i < ds.length; i += 1) {
-        const it = ds[i];
+        const it = ds[i]; // TODO: check whether lodash.deepClone ist fast enough to handle over 100000^n cells
         const nd = this.addSheet(it.name, i === 0);
         nd.setData(it);
         if (i === 0) {
@@ -132,9 +132,14 @@ class Spreadsheet {
 
   resetCellStyle(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
     const cr = new Cr(sri, sci, eri, eci);
+    const rows = new Set();
+    const cols = new Set();
     cr.each((ri, ci) => {
       this.datas[sheetIndex].resetCellStyle(ri, ci);
+      rows.add(ri);
+      cols.add(ci);
     });
+    this.datas[sheetIndex].setColProperties(Array.from(rows), Array.from(cols));
     if (reRender) {
       this.reRender();
     }
