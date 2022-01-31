@@ -57,7 +57,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     nrindex = sortedRowMap.get(rindex);
   }
 
-  const cell = data.getCell(nrindex, cindex);
+  const cell = data.getCellOrNew(nrindex, cindex);
   if (cell === null) return;
   let frozen = false;
   if ('editable' in cell && cell.editable === false) {

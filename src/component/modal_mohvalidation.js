@@ -259,7 +259,7 @@ export default class ModalMOHValidation extends Modal {
     var attribute_data_row = this.spread.getRow(9);
     var attribute_list = []
     var a2 = []
-
+    if(attribute_data_row === undefined){return a2;}
     Object.keys(attribute_data_row).forEach((key) =>{
       
       if(this.spread.cell(0,key) != null){
@@ -280,6 +280,8 @@ export default class ModalMOHValidation extends Modal {
     var cat = "";
     var attrs = [];
     var attribute_data_row = this.spread.getRow(9);
+
+    if(attribute_data_row === undefined){return attrs;}
     console.log(attribute_data_row);
     console.log(this.spread);
     var start_col = cellR.sci;

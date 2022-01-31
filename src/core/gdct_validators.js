@@ -113,12 +113,12 @@ export class GDCTValidators {
                    
                     let t = this.datas.getCell(x,y);
                     if(t) {
-                        console.log('comnbruh ' + t);
-                        this.errors.clear(`${x}_${y}`);
-                    }
-                    else{
-                        console.log('comnbruh Error');
-                        this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+                        if(t.text === undefined || t.text === ''){
+                            this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+                        }
+                        else{
+                            this.errors.clear(`${x}_${y}`);
+                        }
                     }
                 }
             }

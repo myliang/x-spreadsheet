@@ -1026,6 +1026,10 @@ export default class DataProxy {
     return this.rows.getCell(ri, ci);
   }
 
+  getCellOrNew(ri,ci){
+    return this.rows.getCellOrNew(ri, ci);
+  }
+
   getCellTextOrDefault(ri, ci, si=this.name) {
     let sheetData;
 
