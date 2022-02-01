@@ -217,6 +217,8 @@ body {
     .@{css-prefix}-dropdown-content {
       bottom: calc(~'100% + 5px');
       left: 0;
+      overflow-y: scroll;
+      max-height: 400px;
     }
   }
 
@@ -583,7 +585,19 @@ body {
   margin: 0;
   padding: 0;
   user-select: none;
+  display: flex;
+  overflow-y: hidden;
 }
+
+.@{css-prefix}-menu-div {
+  display: flex;
+  align-items: center;
+  width: 61px;
+  justify-content: space-between;
+  padding: 0.785em 1em;
+  margin: 0;
+}
+
 .@{css-prefix}-menu > li {
   float: left;
   line-height: 1.25em;
