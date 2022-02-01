@@ -129,6 +129,8 @@ body {
 .x-spreadsheet-dropdown.top-left .x-spreadsheet-dropdown-content {
   bottom: calc(100% + 5px);
   left: 0;
+  overflow-y: scroll;
+  max-height: 400px;
 }
 .x-spreadsheet-dropdown.top-right .x-spreadsheet-dropdown-content {
   bottom: calc(100% + 5px);
@@ -433,6 +435,16 @@ body {
   margin: 0;
   padding: 0;
   user-select: none;
+  display: flex;
+  overflow-y: hidden;
+}
+.x-spreadsheet-menu-div {
+  display: flex;
+  align-items: center;
+  width: 61px;
+  justify-content: space-between;
+  padding: 0.785em 1em;
+  margin: 0;
 }
 .x-spreadsheet-menu > li {
   float: left;
