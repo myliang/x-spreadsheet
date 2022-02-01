@@ -51,8 +51,6 @@ export default class Notes {
     hideEl() {
         if (![...this.el.children()].includes(document.activeElement)) {
             this.el.hide()
-        } else {
-            console.log('ac', document.activeElement)
-        }
+        } 
     }
 }

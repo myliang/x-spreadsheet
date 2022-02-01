@@ -169,8 +169,7 @@ export default class ModalMOHValidation extends Modal {
   }
 
   btnClick(action) {
-    console.log(this.spread.data);
-    console.log(this.spread.datas);
+    
     
     if (action === 'cancel') {
       this.hide();
@@ -198,7 +197,7 @@ export default class ModalMOHValidation extends Modal {
       }
       
 
-      console.log( ref, operator,attr,value,type,this.max_value.val(),this.min_value.val());
+      
       
       this.spread.datas[this.spread.getCurrentSheetIndex()].addGDCTValidaton(this.cellRange,type,{operator,value});
       this.spread.sheet.notes.setNote(13,4,"hehexd");
@@ -242,10 +241,9 @@ export default class ModalMOHValidation extends Modal {
     }
 
     let rulesString = this.spread.cell(1,2);
-    console.log("222");
-    console.log(rulesString);
+    
     if(rulesString == undefined){
-      console.log("hi");
+      
       this.spread.cellText(1,2,cellrange + desc);
     }else{
       this.spread.cellText(1,2,rulesString.text +'\n' +cellrange + desc);
@@ -282,8 +280,7 @@ export default class ModalMOHValidation extends Modal {
     var attribute_data_row = this.spread.getRow(9);
 
     if(attribute_data_row === undefined){return attrs;}
-    console.log(attribute_data_row);
-    console.log(this.spread);
+    
     var start_col = cellR.sci;
     var end_col = cellR.eci;
 
@@ -333,7 +330,7 @@ export default class ModalMOHValidation extends Modal {
       
       of.val(operator);
       this.criteriaSelected(type);
-      console.log("lol KekW " + operator);
+      
       this.criteriaOperatorSelected(of.val());
     }
     else{

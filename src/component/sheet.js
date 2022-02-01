@@ -97,7 +97,7 @@ function selectorMove(multiple, direction) {
   if (multiple) {
     [ri, ci] = selector.moveIndexes;
   }
-  // console.log('selector.move:', ri, ci);
+  
   if (direction === 'left') {
     if (ci > 0) ci -= 1;
   } else if (direction === 'right') {
@@ -126,7 +126,7 @@ function selectorMove(multiple, direction) {
 
 // private methods
 function overlayerMousemove(evt) {
-  // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
+  
   if (evt.buttons !== 0) return;
   if (evt.target.className === `${cssPrefix}-resizer-hover`) return;
   const { offsetX, offsetY } = evt;
@@ -667,8 +667,7 @@ function sheetInitEvents() {
   // modal validation
   modalValidation.change = (action, ...args) => {
     if (action === 'save') {
-      console.log("tracking validation 2 modalvaldation.change in sheet.js action: " + action +  " args: "  + args);
-      console.log("data:", this.data);
+      
       this.data.addValidation(...args);
     } else {
       this.data.removeValidation();
@@ -676,7 +675,7 @@ function sheetInitEvents() {
   };
   // contextmenu
   contextMenu.itemClick = (type) => {
-    console.log('type:', type);
+    
     if (type === 'validation') {
       modalValidation.setValue(this.data.getSelectedValidation());
     } else if (type === 'moh-validation') {
@@ -1007,7 +1006,7 @@ export default class Sheet {
   }
 
   addValidation() {
-    console.log('running in sheet')
+    
     this.data.addValidation('cell', 'B5', {
       operator: 'be',
       required: false,

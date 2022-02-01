@@ -27,8 +27,8 @@ export class GDCTValidators {
     }
 
     validateAll() {
-        console.log("hit")
-        console.log(this.validators)
+       // console.log("hit")
+       // console.log(this.validators)
         for (let validator of this.validators) {
             
            this.validate(validator);
@@ -48,8 +48,7 @@ export class GDCTValidators {
 
     addValidation(cellR,type,vInfo){
         this.validators.push({cellR,type,vInfo});
-        console.log("we made it!!");
-        console.log({cellR,type,vInfo});
+        
 
     }
 
@@ -68,13 +67,13 @@ export class GDCTValidators {
             ri,
             ci,
             test: (vri, vci, text) => {
-                console.log(`${text}`, typeMap[type].exec(`${text}`))
+              //  console.log(`${text}`, typeMap[type].exec(`${text}`))
                 const res = typeMap[type].exec(text)
                 if (ri === vri && ci === vci && res && res[0] === res.input) {
-                    console.log('not ok', res, vci, vri)
+                   // console.log('not ok', res, vci, vri)
                     this.errors.delete(`${ri}_${ci}`)
                 } else if (!res || res[0] !== res.input) {
-                    console.log('itnots ok', res)
+                   // console.log('itnots ok', res)
                     this.errors.set(`${ri}_${ci}`, `incorrect type, expected ${type}`)
                 }
                 return false
@@ -95,15 +94,15 @@ export class GDCTValidators {
                    
                     let t = this.datas.getCell(x,y);
                     if(t) {
-                        console.log(this.validateNumber(t.text,vInfo));
+                        
                         if(!this.validateNumber(t.text,vInfo)){  
-                            console.log(" hot the hell " + t.text + " " + vInfo);
+                            
                             this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`);
                             let sheet = this.spread.getSheet()
                             if(sheet){sheet.notes.setNote(x,y,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
                         }
                         else{
-                            console.log(`wtf how ${x}_${y}`);
+                            
                             this.errors.delete(`${x}_${y}`);
                         }
                     }
@@ -127,12 +126,11 @@ export class GDCTValidators {
                             if(sheet){sheet.notes.setNote(x,y,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
                         }
                         else{
-                            console.log(`wtf how ${x}_${y}`);
-                            console.log(this.errors);
+                            
                             this.errors.delete(`${x}_${y}`);
                             let sheet = this.spread.getSheet()
                             if(sheet){sheet.notes.clearNote(x,y);}
-                            console.log(this.errors);
+                            
                             
                         }
                     }
@@ -141,7 +139,7 @@ export class GDCTValidators {
         }
 
         else if(type === 'required'){
-            console.log('LOOOOOOOL');
+            //console.log('LOOOOOOOL');
             for(let x= cellR.sri; x < cellR.eri+1; x++){
                 for(let y= cellR.sci; y < cellR.eci+1; y++){
                    
@@ -153,7 +151,7 @@ export class GDCTValidators {
                             if(sheet){sheet.notes.setNote(x,y,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
                         }
                         else{
-                            console.log(`wtf how ${x}_${y}`);
+                           // console.log(`wtf how ${x}_${y}`);
                             this.errors.delete(`${x}_${y}`);
                         }
                     }
@@ -241,8 +239,7 @@ export class GDCTValidators {
 
             if(!attrtext || !attrtext2){ return true;}
 
-            console.log("hitmanchamp");
-            console.log(attrtext,attrtext2,pinput);
+            
 
             switch(operator){
                 case 'be':

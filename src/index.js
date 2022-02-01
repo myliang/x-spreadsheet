@@ -59,7 +59,7 @@ class Spreadsheet {
       this.sheet.trigger('change', ...args);
     };
     this.datas.push(d);
-    // console.log('d:', n, d, this.datas);
+    
     this.bottombar.addItem(n, active);
     this.sheetIndex += 1;
     return d;
@@ -133,7 +133,7 @@ class Spreadsheet {
   }
 
   addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style, index) {
-    console.log('Im back')
+    
     const targetProxy = this.datas[index];
     targetProxy.addOtherGreaterThan(minRi, maxRi, minCi, maxCi, val1, val2, style);
   }
@@ -157,19 +157,19 @@ class Spreadsheet {
   }
 
   on(eventName, func) {
-    console.log('hiiii' + eventName);
+    
     this.sheet.on(eventName, func);
     return this;
   }
 
   validate() {
-    console.log('IN VALIDATION')
+    
     const { validations } = this.data;
     return validations.errors.size <= 0;
   }
 
   addValidation(ri, ci, sheetIndex = 0) {
-    console.log('called', this.sheet)
+    
     this.datas[0].addValidation('cell', 'B7', {
       operator: 'be',
       required: false,
@@ -179,7 +179,7 @@ class Spreadsheet {
   }
 
   change(cb) {
-    console.log('IN CHANGE')
+    
     this.addValidation(0, 0)
     this.sheet.on('change', cb);
     return this;
