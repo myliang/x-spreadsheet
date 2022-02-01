@@ -326,9 +326,10 @@ function getCellColByX(x, scrollOffsetx) {
 }
 
 export default class DataProxy {
-  constructor(name, settings, sheetDatas) {
+  constructor(name, settings, sheetDatas, spread) {
     this.settings = helper.merge(defaultSettings, settings || {});
     // save data begin
+    this.spread = spread;
     this.name = name || 'sheet';
     this.freeze = [0, 0];
     this.styles = []; // Array<Style>
@@ -336,7 +337,7 @@ export default class DataProxy {
     this.rows = new Rows(this.settings.row);
     this.cols = new Cols(this.settings.col);
     this.validations = new Validations();
-    this.GDCTValidators = new GDCTValidators(this);
+    this.GDCTValidators = new GDCTValidators(this, spread);
     //this.GDCTValidators.addTypeValidator(15, 2, '$')
     this.hyperlinks = {};
     this.comments = {};

@@ -24,14 +24,14 @@ export default class FormOption {
   }
 
   setItems(items){
-    console.log("hellllllooooo");
+  
     this.items = items
     var itemList = this.items.map(it => {
         var option = h('option',`${cssPrefix}-form-option`);
         option.val(it);
         return option.el;
     });
-    console.log(itemList);
+    
 
     const {optionContainer } = this;
 

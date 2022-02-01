@@ -24,26 +24,24 @@ export default class Notes {
     }
 
     showNote(ri, ci) {
-        console.log('selection', this.getSelectBox())
         // remove any previous children of el
         for (let child of this.el.children()) {
             this.el.removeChild(child)
         }
         const text = this.getNote(ri, ci) || ""
-        console.log('I AM HERE', text)
         this.el.children(
             h('textarea', `${cssPrefix}-notetext`)
                 .on('change', (e) => this.setNote(ri, ci, e.target.value))
-                .on('blur', () => {console.log('???????bruh');this.hideEl();})
+                .on('blur', () => {if(text === ""){this.hideEl();}})
                 .children(text)
         )
         const { top, left, width } = this.getSelectBox().getBoundingClientRect()
 
-        console.log('I AM HERE',  top, left, width)
+    
         this.el.css('top', `${top}px`).css('left', `${left + width + 5}px`)
         this.el.show()
         this.el.children()[0].focus()
-        console.log(this.el.el);
+      
     }
 
     clearNote(ri, ci) {

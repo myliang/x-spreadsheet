@@ -104,6 +104,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     // error
     const error = data.validations.getError(rindex, cindex) || data.GDCTValidators.getError(rindex, cindex);
     if (error) {
+      //console.log("Error at the %d %d",rindex, cindex )
       draw.error(dbox);
     }
     if (frozen) {

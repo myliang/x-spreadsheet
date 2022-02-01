@@ -199,11 +199,11 @@ export default class ModalMOHValidation extends Modal {
       
 
       console.log( ref, operator,attr,value,type,this.max_value.val(),this.min_value.val());
-
+      
       this.spread.datas[this.spread.getCurrentSheetIndex()].addGDCTValidaton(this.cellRange,type,{operator,value});
       this.spread.sheet.notes.setNote(13,4,"hehexd");
       
-      
+      this.addValDesc(operator);
       
       this.hide();
     }

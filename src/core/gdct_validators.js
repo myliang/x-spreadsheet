@@ -4,11 +4,12 @@ const typeMap = {
 
 
 export class GDCTValidators {
-    constructor(datas) {
+    constructor(datas,spread) {
         // validators have ri, ci and test function
         this.validators = []
         this.errors = new Map()
         this.datas = datas
+        this.spread = spread
     }
 
     getError(ri, ci) {
@@ -35,6 +36,13 @@ export class GDCTValidators {
         return true
     }
 
+    // validateAll() {
+    //     for (let validator of this.validators) {
+            
+    //        this.validate(validator);
+    //     }
+    // }
+
     // cellR cell range
     // type either number or attribute
 
@@ -44,6 +52,16 @@ export class GDCTValidators {
         console.log({cellR,type,vInfo});
 
     }
+
+    // addValidation(cellR,type){
+    //     for(let x= cellR.sri; x < cellR.eri+1; x++){
+    //         for(let y= cellR.sci; y < cellR.eci+1; y++){
+    //             this.validators.push({ri: x,ci: y,type,vInfo});
+    //         }
+    //     }
+    // }
+
+    
 
     addTypeValidator(ri, ci, type) {
         this.validators.push({
@@ -68,6 +86,8 @@ export class GDCTValidators {
     validate(v){
         let {cellR,type,vInfo} = v;
 
+        // console.log("validating......");
+        // console.log(this.errors);
 
         if(type === 'number'){
             for(let x= cellR.sri; x < cellR.eri+1; x++){
@@ -78,10 +98,13 @@ export class GDCTValidators {
                         console.log(this.validateNumber(t.text,vInfo));
                         if(!this.validateNumber(t.text,vInfo)){  
                             console.log(" hot the hell " + t.text + " " + vInfo);
-                            this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+                            this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`);
+                            let sheet = this.spread.getSheet()
+                            if(sheet){sheet.notes.setNote(x,y,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
                         }
                         else{
-                            this.errors.clear(`${x}_${y}`);
+                            console.log(`wtf how ${x}_${y}`);
+                            this.errors.delete(`${x}_${y}`);
                         }
                     }
                 }
@@ -91,15 +114,26 @@ export class GDCTValidators {
         else if(type === 'attribute'){
             for(let x= cellR.sri; x < cellR.eri+1; x++){
                 for(let y= cellR.sci; y < cellR.eci+1; y++){
-                   
+                    
                     let t = this.datas.getCell(x,y);
+                    // console.log("validating...... %d %d ", x,y);
+                    // console.log(t);
                     if(t) {
+
                         if(!this.validateAttribute(t.text,vInfo,x)){ 
-                            console.log(" hot the hell " + t.text + " " + vInfo); 
+                            //console.log('error set for %d &d', x,y);
                             this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+                            let sheet = this.spread.getSheet()
+                            if(sheet){sheet.notes.setNote(x,y,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
                         }
                         else{
-                            this.errors.clear(`${x}_${y}`);
+                            console.log(`wtf how ${x}_${y}`);
+                            console.log(this.errors);
+                            this.errors.delete(`${x}_${y}`);
+                            let sheet = this.spread.getSheet()
+                            if(sheet){sheet.notes.clearNote(x,y);}
+                            console.log(this.errors);
+                            
                         }
                     }
                 }
@@ -115,9 +149,12 @@ export class GDCTValidators {
                     if(t) {
                         if(t.text === undefined || t.text === ''){
                             this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+                            let sheet = this.spread.getSheet()
+                            if(sheet){sheet.notes.setNote(x,y,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
                         }
                         else{
-                            this.errors.clear(`${x}_${y}`);
+                            console.log(`wtf how ${x}_${y}`);
+                            this.errors.delete(`${x}_${y}`);
                         }
                     }
                 }
@@ -125,9 +162,37 @@ export class GDCTValidators {
         }
     }
 
+
+    // validate(v){
+    //     let {ri,ci,type,vInfo} = v;
+
+    //     let res;
+
+    //     let t = this.datas.getCell(x,y);
+
+    //     if(t.text === undefined){this.errors.clear(`${ri}_${ci}`);}
+
+    //     if(type === 'number'){
+    //         res = this.validateNumber(t.text,vInfo);
+    //     }
+
+    //     else if(type === 'attribute'){
+    //         res = this.validateAttribute(t.text,vInfo,ri);
+    //     }
+
+    //     if(!res){
+    //         let sheet = this.spread.getSheet()
+    //         this.errors.set(`${x}_${y}`, `incorrect type, expected ${vInfo.operator} ${vInfo.value}`)
+    //         if(sheet){sheet.notes.setNote(ri,ci,`incorrect type, expected ${vInfo.operator} ${vInfo.value}`); console.log("Note SETTT");}
+    //     }
+    //     else{
+    //         this.errors.clear(`${ri}_${ci}`);
+    //     }
+
+    // }
+
+    // sempty method for now
     validateRequired(cellText){
-
-
 
     }
 
