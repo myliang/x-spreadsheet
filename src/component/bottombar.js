@@ -80,6 +80,7 @@ export default class Bottombar {
     this.dataNames = [];
     this.activeEl = null;
     this.deleteEl = null;
+    this.firstMenuItems =  null;
     this.items = [];
     this.moreEl = new DropdownMore((i) => {
       this.clickSwap2(this.items[i]);
@@ -88,14 +89,14 @@ export default class Bottombar {
     this.contextMenu.itemClick = deleteFunc;
     this.el = h('div', `${cssPrefix}-bottombar`).children(
       this.contextMenu.el,
-      this.menuEl = h('ul', `${cssPrefix}-menu`).child(
-        h('li', '').children(
+      this.firstMenuItems = h('div', `${cssPrefix}-menu-div`).children(
           new Icon('add').on('click', () => {
             addFunc();
           }),
           h('span', '').child(this.moreEl),
-        ),
+
       ),
+      this.menuEl = h('ul', `${cssPrefix}-menu`)
     );
   }
 
