@@ -4,26 +4,27 @@ import { cssPrefix } from '../config';
 import { bind, unbind } from './event';
 
 export default class Notes {
-    constructor(viewFn, getSelectBox) {
-        this.viewFn = viewFn
-        this.getSelectBox = getSelectBox
-        this.notes = {} // {"ri-ci": "comment"}
+    constructor(sheet) {
+        // this.viewFn = viewFn
+        // this.getSelectBox = getSelectBox
+        this.sheet = sheet;
+        
         this.updateCBs = [] // array of functions to call on update
         this.el = h('div', `${cssPrefix}-note`).on('mouseleave', () => this.hideEl()).hide()
     }
 
     getNote(ri, ci) {
-        return this.notes[`${ri}-${ci}`] || ""
+        return this.sheet.data.comments[`${ri}-${ci}`] || ""
     }
 
     setNote(ri, ci, note) {
-        this.notes[`${ri}-${ci}`] = note
+        this.sheet.data.comments[`${ri}-${ci}`] = note
         for (let cb of this.updateCBs) {
             cb(ri, ci)
         }
     }
 
-    showNote(ri, ci) {
+    showNote(ri, ci, x) {
         // remove any previous children of el
         for (let child of this.el.children()) {
             this.el.removeChild(child)
@@ -35,10 +36,13 @@ export default class Notes {
                 .on('blur', () => {if(text === ""){this.hideEl();}})
                 .children(text)
         )
-        const { top, left, width } = this.getSelectBox().getBoundingClientRect()
+        
+        const { top, left, width } = x;
 
-    
-        this.el.css('top', `${top}px`).css('left', `${left + width + 5}px`)
+        //console.log("top difference %d left difference %d right difference %d ", x.top - top, x.left - left , x.width - width);
+
+        console.log("note position %d %d %d", top, left,width);
+        this.el.css('top', `${top+66}px`).css('left', `${left+60 + width+2 + 5}px`)
         this.el.show()
         this.el.children()[0].focus()
       

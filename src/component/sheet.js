@@ -571,6 +571,7 @@ function sortFilterChange(ci, order, operator, value) {
 
 function sheetInitEvents() {
   const {
+    data,
     selector,
     overlayerEl,
     rowResizer,
@@ -609,7 +610,9 @@ function sheetInitEvents() {
         editorSet.call(this);
       } else {
         overlayerMousedown.call(this, evt);
-        notes.showNote(...this.selector.indexes)
+        // console.log("offsetx %d offsety %d",evt.offsetX, evt.offsetY);
+        // console.log(this.spread.datas[this.spread.getCurrentSheetIndex()].getSelectedRect());
+        notes.showNote(...this.selector.indexes,this.getSelectedRect())
       }
     })
     .on('mousewheel.stop', (evt) => {
@@ -685,7 +688,9 @@ function sheetInitEvents() {
     }  else if (type === 'comment') {
       // open comment and set text(?)
       console.log('open comment herrre' + this.selector.indexes)
-      notes.showNote(...this.selector.indexes)
+      console.log(this.getSelectedRect())
+      console.log(this.selector.indexes)
+      notes.showNote(...this.selector.indexes,this.getSelectedRect())
     } else if (type === 'copy') {
       copy.call(this);
     } else if (type === 'cut') {
@@ -899,7 +904,7 @@ export default class Sheet {
     // different modals depending on required values
     this.modalConditional = new ModalConditional(this.data);
     // Notes store
-    this.notes = new Notes(() => this.getRect(), () => this.selector.l.areaEl.el);
+    this.notes = new Notes(this);
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector
@@ -993,6 +998,11 @@ export default class Sheet {
     const { data } = this;
     return { width: data.viewWidth(), height: data.viewHeight() };
   }
+
+  getSelectedRect(){
+    return this.spread.datas[this.spread.getCurrentSheetIndex()].getSelectedRect()
+  }
+  
 
   getTableOffset() {
     const { rows, cols } = this.data;
