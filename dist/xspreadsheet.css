@@ -129,8 +129,8 @@ body {
 .x-spreadsheet-dropdown.top-left .x-spreadsheet-dropdown-content {
   bottom: calc(100% + 5px);
   left: 0;
-  overflow-y: scroll;
   max-height: 400px;
+  overflow-y: auto;
 }
 .x-spreadsheet-dropdown.top-right .x-spreadsheet-dropdown-content {
   bottom: calc(100% + 5px);
@@ -437,6 +437,7 @@ body {
   user-select: none;
   display: flex;
   overflow-y: hidden;
+  max-width: 90vw;
 }
 .x-spreadsheet-menu-div {
   display: flex;
