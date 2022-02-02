@@ -22,6 +22,7 @@ export default {
     freeze: 'Freeze cell',
     autofilter: 'Filter',
     formula: 'Functions',
+    fullscreen: 'Fullscreen',
     more: 'More',
   },
   contextmenu: {

@@ -345,7 +345,6 @@ export default class DataProxy {
     this.change = () => {};
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
-    this.unsortedRowMap = new Map();
   }
 
   addValidation(mode, ref, validator) {
@@ -647,8 +646,8 @@ export default class DataProxy {
     const { autoFilter, selector, rows } = this;
     const { ri, ci } = selector;
     let nri = ri;
-    if (this.unsortedRowMap.has(ri)) {
-      nri = this.unsortedRowMap.get(ri);
+    if (this.sortedRowMap.has(ri)) {
+      nri = this.sortedRowMap.get(ri);
     }
     const oldCell = rows.getCell(nri, ci);
     const oldText = oldCell ? oldCell.text : '';
@@ -670,8 +669,8 @@ export default class DataProxy {
   getSelectedCell() {
     const { ri, ci } = this.selector;
     let nri = ri;
-    if (this.unsortedRowMap.has(ri)) {
-      nri = this.unsortedRowMap.get(ri);
+    if (this.sortedRowMap.has(ri)) {
+      nri = this.sortedRowMap.get(ri);
     }
     return this.rows.getCell(nri, ci);
   }
@@ -830,7 +829,6 @@ export default class DataProxy {
         autoFilter.clear();
         this.exceptRowSet = new Set();
         this.sortedRowMap = new Map();
-        this.unsortedRowMap = new Map();
       } else {
         autoFilter.ref = selector.range.toString();
       }
@@ -845,7 +843,7 @@ export default class DataProxy {
   }
 
   resetAutoFilter() {
-    const { autoFilter, rows } = this;
+    const { autoFilter, rows, selector } = this;
     if (!autoFilter.active()) return;
     const { sort } = autoFilter;
     const { rset, fset } = autoFilter.filteredRows((r, c) => rows.getCell(r, c));
@@ -853,17 +851,21 @@ export default class DataProxy {
     const oldAry = Array.from(fset);
     if (sort) {
       fary.sort((a, b) => {
-        if (sort.order === 'asc') return a - b;
-        if (sort.order === 'desc') return b - a;
+        let { text: A } = rows.getCell(a, selector.ci);
+        let { text: B } = rows.getCell(b, selector.ci);
+        if (!Number.isNaN(Number(A)) && !Number.isNaN(Number(B))) {
+          A = Number(A);
+          B = Number(B);
+        }
+        if (sort.order === 'asc') return B < A ? 1 : -1;
+        if (sort.order === 'desc') return B < A ? -1 : 1;
         return 0;
       });
     }
-    this.exceptRowSet = rset;
+    this.exceptRowSet = new Set(rset);
     this.sortedRowMap = new Map();
-    this.unsortedRowMap = new Map();
     fary.forEach((it, index) => {
       this.sortedRowMap.set(oldAry[index], it);
-      this.unsortedRowMap.set(it, oldAry[index]);
     });
   }
 
@@ -1183,9 +1185,9 @@ export default class DataProxy {
     let [x, y] = [0, 0];
     let [eri, eci] = [rows.len, cols.len];
     for (let i = ri; i < rows.len; i += 1) {
+      eri = i;
       if (!exceptRowSet.has(i)) {
         y += rows.getHeight(i);
-        eri = i;
       }
       if (y > this.viewHeight()) break;
     }
@@ -1229,8 +1231,8 @@ export default class DataProxy {
   rowEach(min, max, cb) {
     let y = 0;
     const { rows } = this;
-    const frset = this.exceptRowSet;
-    const frary = [...frset];
+    const frset = new Set(this.exceptRowSet);
+    const frary = Array.from(frset);
     let offset = 0;
     for (let i = 0; i < frary.length; i += 1) {
       if (frary[i] < min) {
