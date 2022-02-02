@@ -626,8 +626,9 @@ export default class DataProxy {
     element.style.paddingRight = "2px";
     element.style.paddingTop = "2px";
     element.style.paddingBottom = "2px";
-    element.style.fontSize = "14px";
+    element.style.fontSize = "0.9rem";
     element.style.minWidth = "60px";
+    element.style.boxSizing = "border-box";
     element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif";
   }
 
@@ -640,8 +641,8 @@ export default class DataProxy {
     newDiv.innerHTML = `${word}`;
 
     this.setCommonFakeCellsStyles(newDiv);
-    newDiv.style.width = "100px";
-    newDiv.style.minHeight = "25px";
+    newDiv.style.width = "97px";
+    newDiv.style.minHeight = "23px";
     newDiv.style.flexWrap = "wrap";
     newDiv.style.wordBreak = "break-all";
 
@@ -662,7 +663,7 @@ export default class DataProxy {
 
     this.setCommonFakeCellsStyles(newDiv);
 
-    newDiv.style.height = "25px";
+    newDiv.style.height = "23px";
 
     newDiv.setAttribute("id", `${id}`);
 
