@@ -217,8 +217,8 @@ body {
     .@{css-prefix}-dropdown-content {
       bottom: calc(~'100% + 5px');
       left: 0;
-      overflow-y: scroll;
       max-height: 400px;
+      overflow-y: auto;
     }
   }
 
@@ -587,6 +587,7 @@ body {
   user-select: none;
   display: flex;
   overflow-y: hidden;
+  max-width: 90vw;
 }
 
 .@{css-prefix}-menu-div {
