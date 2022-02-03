@@ -249,6 +249,7 @@ export default class ModalMOHValidation extends Modal {
       this.selectAttributelist.forEach(attr_name => {
         var c = spread_row.findInputColOnRow(9,attr_name);
         if(c != undefined){
+          console.log("this should add to the cell")
           this.spread.cellText(1,c,"For "+ this.categoryField.val() + desc);
         }
       })
