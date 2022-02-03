@@ -562,28 +562,33 @@ export default class DataProxy {
       eci,
     } = this.selector.range;
 
-    let biggestCellText = "";
+    let biggestCell= {text: ''};
 
     let cells = [];
+
+    const onlyLettersOrNum = /[^a-zA-ZА-Яа-яЁё0-9]/gi;
 
     if (sourceType === "column" && autoType === "width") {
       for (let ci = sci; ci <= eci; ci += 1) {
         cells = [];
-        biggestCellText = "";
+        biggestCell= {text: ''};
 
         for (let ri = sri; ri <= eri; ri += 1) {
           const cell = this.getCell(ri, ci);
           if (cell && cell.text) {
-            cells.push(cell.text);
+            cells.push({text: cell.text, style: this.getCellStyle(ri, ci)});
           }
-          cells.forEach((word) => {
-            if (word.length > biggestCellText.length) {
-              biggestCellText = word;
+
+          cells.forEach((cellData) => {
+            const currentWord = cellData.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
+            const currentBiggestWord = biggestCell.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
+            if (currentWord.length > currentBiggestWord.length) {
+              biggestCell = cellData;
             }
           });
 
-          if (biggestCellText) {
-            const width = this.getMaxCellWidth(biggestCellText) <= 100 ? 100 : this.getMaxCellWidth(biggestCellText);
+          if (biggestCell) {
+            const width = this.getMaxCellWidth(biggestCell) <= 100 ? 100 : this.getMaxCellWidth(biggestCell);
             this.setColWidth(ci, width);
           }
         }
@@ -593,22 +598,24 @@ export default class DataProxy {
     if (sourceType === "row" && autoType === "height") {
       for (let ri = sri; ri <= eri; ri += 1) {
         cells = [];
-        biggestCellText = "";
+        biggestCell = {text: ''};
         for (let ci = sci; ci <= eci; ci += 1) {
           const cell = this.getCell(ri, ci);
           if (cell && cell.text) {
-            cells.push(cell.text);
+            cells.push({text: cell.text, style: this.getCellStyle(ri, ci)});
           }
 
-          cells.forEach((word) => {
-            if (word.length > biggestCellText.length) {
-              biggestCellText = word;
+          cells.forEach((cellData) => {
+            const currentWord = cellData.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
+            const currentBiggestWord = biggestCell.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
+            if (currentWord.length > currentBiggestWord.length) {
+              biggestCell = cellData;
             }
           });
 
-          if (biggestCellText) {
+          if (biggestCell) {
             this.setColWidth(ci, 100);
-            this.setRowHeight(ri, this.getMaxCellHeight(biggestCellText));
+            this.setRowHeight(ri, this.getMaxCellHeight(biggestCell));
           }
         }
       }
@@ -622,25 +629,26 @@ export default class DataProxy {
     element.style.position = "absolute";
     element.style.background = "blue";
     element.style.color = "white";
-    element.style.paddingLeft = "2px";
-    element.style.paddingRight = "2px";
-    element.style.paddingTop = "2px";
-    element.style.paddingBottom = "2px";
-    element.style.fontSize = "0.9rem";
+    element.style.padding= "4px 6px";
+    element.style.fontSize = "13px";
     element.style.minWidth = "60px";
     element.style.boxSizing = "border-box";
     element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif";
   }
 
-  getMaxCellHeight(word) {
+  getMaxCellHeight(cellData) {
     const id = "fake-cell";
 
     this.clearFakeCell(id);
 
     const newDiv = document.createElement("div");
-    newDiv.innerHTML = `${word}`;
+    newDiv.innerHTML = `${cellData.text}`;
 
     this.setCommonFakeCellsStyles(newDiv);
+
+    if(cellData.style?.font?.bold) {
+      newDiv.style.fontWeight = "bold";
+    }
     newDiv.style.width = "97px";
     newDiv.style.minHeight = "23px";
     newDiv.style.flexWrap = "wrap";
@@ -654,14 +662,18 @@ export default class DataProxy {
     return newDiv.getBoundingClientRect().height;
   }
 
-  getMaxCellWidth(word) {
+  getMaxCellWidth(cellData) {
     const id = "fake-cell";
     this.clearFakeCell(id);
 
     const newDiv = document.createElement("div");
-    newDiv.innerHTML = `${word}`;
+    newDiv.innerHTML = `${cellData.text}`;
 
     this.setCommonFakeCellsStyles(newDiv);
+
+    if(cellData.style?.font?.bold) {
+      newDiv.style.fontWeight = "bold";
+    }
 
     newDiv.style.height = "23px";
 
