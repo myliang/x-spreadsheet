@@ -4,8 +4,8 @@ import { cssPrefix } from '../config';
 import { bind, unbind } from './event';
 
 export default class Notes {
-    constructor(sheet) {
-        // this.viewFn = viewFn
+    constructor(viewFn,sheet) {
+        this.viewFn = viewFn
         // this.getSelectBox = getSelectBox
         this.sheet = sheet;
         

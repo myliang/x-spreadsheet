@@ -904,7 +904,7 @@ export default class Sheet {
     // different modals depending on required values
     this.modalConditional = new ModalConditional(this.data);
     // Notes store
-    this.notes = new Notes(this);
+    this.notes = new Notes(() => this.getRect(),this);
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector

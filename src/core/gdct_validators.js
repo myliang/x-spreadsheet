@@ -93,7 +93,7 @@ export class GDCTValidators {
                 for(let y= cellR.sci; y < cellR.eci+1; y++){
                    
                     let t = this.datas.getCell(x,y);
-                    if(t) {
+                    if(t.text != undefined) {
                         
                         if(!this.validateNumber(t.text,vInfo)){  
                             
@@ -117,7 +117,7 @@ export class GDCTValidators {
                     let t = this.datas.getCell(x,y);
                     // console.log("validating...... %d %d ", x,y);
                     // console.log(t);
-                    if(t) {
+                    if(t.text != undefined) {
 
                         if(!this.validateAttribute(t.text,vInfo,x)){ 
                             //console.log('error set for %d &d', x,y);

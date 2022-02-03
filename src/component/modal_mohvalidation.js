@@ -94,6 +94,7 @@ export default class ModalMOHValidation extends Modal {
     ]);
 
     this.attributeList = [];
+    this.selectAttributelist= [];
     this.max_value = max_value;
     this.min_value = min_value;
     this.attributeField = attributeField;
@@ -240,14 +241,25 @@ export default class ModalMOHValidation extends Modal {
         break;
     }
 
-    let rulesString = this.spread.cell(1,2);
-    
-    if(rulesString == undefined){
-      
-      this.spread.cellText(1,2,cellrange + desc);
-    }else{
-      this.spread.cellText(1,2,rulesString.text +'\n' +cellrange + desc);
+    //let rulesString = this.spread.cell(1,2);
+
+    let spread_row = this.spread.datas[this.spread.getCurrentSheetIndex()].rows;
+
+    if(this.selectAttributelist){
+      this.selectAttributelist.forEach(attr_name => {
+        var c = spread_row.findInputColOnRow(9,attr_name);
+        if(c != undefined){
+          this.spread.cellText(1,c,"For "+ this.categoryField.val() + desc);
+        }
+      })
     }
+    
+    // if(rulesString == undefined){
+      
+    //   this.spread.cellText(1,2,cellrange + desc);
+    // }else{
+    //   this.spread.cellText(1,2,rulesString.text +'\n' +cellrange + desc);
+    // }
 
     
 
@@ -269,7 +281,7 @@ export default class ModalMOHValidation extends Modal {
       }
     } );
     
-    console.log(a2);
+    //console.log(a2);
     return a2;
   }
 
@@ -309,6 +321,7 @@ export default class ModalMOHValidation extends Modal {
   prepare(cellR){
     var attrList = this.getAttributeList();
     var selectedAttr = this.selectedAtrributesandCategories(cellR,attrList);
+    this.selectAttributelist = selectedAttr;
     var nonselectedAttrs = attrList.filter(x => !(selectedAttr.includes(x)) );
     this.attributeList = attrList;
     this.valueField.input.setItems(nonselectedAttrs);
