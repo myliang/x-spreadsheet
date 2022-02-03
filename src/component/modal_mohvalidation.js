@@ -200,7 +200,7 @@ export default class ModalMOHValidation extends Modal {
       
       
       this.spread.datas[this.spread.getCurrentSheetIndex()].addGDCTValidaton(this.cellRange,type,{operator,value});
-      this.spread.sheet.notes.setNote(13,4,"hehexd");
+      
       
       this.addValDesc(operator);
       
@@ -255,24 +255,26 @@ export default class ModalMOHValidation extends Modal {
   
   getAttributeList(){
     var attribute_data_row = this.spread.getRow(9);
+    var attr_verifacion_row = this.spread.getRow(0);
     var attribute_list = []
     var a2 = []
     if(attribute_data_row === undefined){return a2;}
     Object.keys(attribute_data_row).forEach((key) =>{
-      
-      if(this.spread.cell(0,key) != null){
+      let x = attr_verifacion_row[key];
+      console.log("attr list ;"+  x.text )
+      if(x.text !=undefined  && (!isNaN(x.text))){
         
         attribute_list.push({key: attribute_data_row[key].text , title: attribute_data_row[key].text});
         a2.push(attribute_data_row[key].text);
       }
     } );
     
-    
+    console.log(a2);
     return a2;
   }
 
   //
-  selectedAtrributesandCategories(cellR){
+  selectedAtrributesandCategories(cellR,alist){
     this.cellRange = cellR;
     var attr = ""; 
     var cat = "";
@@ -285,15 +287,16 @@ export default class ModalMOHValidation extends Modal {
     var end_col = cellR.eci;
 
     for (let i = start_col; i < end_col+1; i++) {
-      if(attribute_data_row[i] != undefined){
+      if(attribute_data_row[i] != undefined && alist.includes(attribute_data_row[i].text)){
         attr += attribute_data_row[i].text+","
         attrs.push(attribute_data_row[i].text);
       }
     }
 
     for(let i = cellR.sri; i < cellR.eri+1; i++){
-      if(this.spread.cell(i,1) != undefined){
-        cat += this.spread.cell(i,1).text+","
+      let x = this.spread.getCell(i,1)
+      if(x != undefined && x.text != undefined ){
+        cat += this.spread.getCell(i,1).text+","
       }
     }
 
@@ -305,7 +308,7 @@ export default class ModalMOHValidation extends Modal {
 
   prepare(cellR){
     var attrList = this.getAttributeList();
-    var selectedAttr = this.selectedAtrributesandCategories(cellR);
+    var selectedAttr = this.selectedAtrributesandCategories(cellR,attrList);
     var nonselectedAttrs = attrList.filter(x => !(selectedAttr.includes(x)) );
     this.attributeList = attrList;
     this.valueField.input.setItems(nonselectedAttrs);

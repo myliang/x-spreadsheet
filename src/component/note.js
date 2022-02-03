@@ -42,7 +42,7 @@ export default class Notes {
         //console.log("top difference %d left difference %d right difference %d ", x.top - top, x.left - left , x.width - width);
 
         console.log("note position %d %d %d", top, left,width);
-        this.el.css('top', `${top+66}px`).css('left', `${left+60 + width+2 + 5}px`)
+        this.el.css('top', `${top}px`).css('left', `${left+ width+2}px`)
         this.el.show()
         this.el.children()[0].focus()
       

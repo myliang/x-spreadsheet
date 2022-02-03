@@ -176,19 +176,19 @@
           rows,
         }, { name: 'sheet-test', rows: rows10 }]).change((cdata) => {
           // console.log(cdata);
-          console.log('>>>', xs.getData());
+         // console.log('>>>', xs.getData());
         });
 
       xs.on('cell-edited', (text, ri, ci) => {
-          console.log('Changed')
-          console.log('text:', text, ', ri: ', ri, ', ci:', ci);
+         // console.log('Changed')
+         // console.log('text:', text, ', ri: ', ri, ', ci:', ci);
         });
 
       setTimeout(() => {
         // xs.loadData([{ rows }]);
         xs.cellText(14, 3, 'cell-text').reRender();
-        console.log('cell(8, 8):', xs.getData());
-        console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
+       // console.log('cell(8, 8):', xs.getData());
+       // console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
       }, 5000);
     }
   </script>

@@ -103,6 +103,10 @@ class Spreadsheet {
   getCurrentSheetIndex(){
     return this.bottombar.getActiveSheet()
   }
+
+  getCell(ri,ci){
+    return this.datas[this.getCurrentSheetIndex()].getCell(ri, ci);
+  }
   
   // Insert a row in Sheet at rowNum
   // added by Sheldon Su 2021/02/23
