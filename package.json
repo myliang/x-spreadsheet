@@ -1,6 +1,6 @@
 {
   "name": "poly-spreadsheet",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "a javascript xpreadsheet",
   "types": "src/index.d.ts",
   "main": "src/index.js",

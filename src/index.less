@@ -586,8 +586,6 @@ body {
   padding: 0;
   user-select: none;
   display: flex;
-  overflow-y: hidden;
-  max-width: 90vw;
 }
 
 .@{css-prefix}-menu-div {
@@ -597,6 +595,69 @@ body {
   justify-content: space-between;
   padding: 0.785em 1em;
   margin: 0;
+}
+
+.btns-wrap {
+  position: relative;
+  display: flex;
+  margin-right: 20px;
+}
+
+.disabled {
+  opacity: 0.3;
+}
+
+.no-paddings {
+  padding: 0;
+}
+
+.chevron-left {
+  position: relative;
+
+  &:before {
+    background-image: url("data:image/svg+xml,%3C%3Fxml version='1.0' %3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg height='128px' id='Layer_1' style='enable-background:new 0 0 128 128;' version='1.1' viewBox='0 0 128 128' width='128px' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cg%3E%3Cline style='fill:none;stroke:%232F3435;stroke-width:12;stroke-linecap:square;stroke-miterlimit:10;' x1='87.5' x2='40.5' y1='111' y2='64'/%3E%3Cline style='fill:none;stroke:%232F3435;stroke-width:12;stroke-linecap:square;stroke-miterlimit:10;' x1='40.5' x2='87.5' y1='64' y2='17'/%3E%3C/g%3E%3C/svg%3E");
+  }
+}
+
+.chevron-right {
+  position: relative;
+
+  &:before {
+    background-image: url("data:image/svg+xml,%3C%3Fxml version='1.0' %3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg height='128px' id='Layer_1' style='enable-background:new 0 0 128 128;' version='1.1' viewBox='0 0 128 128' width='128px' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cg%3E%3Cline style='fill:none;stroke:%232F3435;stroke-width:12;stroke-linecap:square;stroke-miterlimit:10;' x1='40.5' x2='87.5' y1='17' y2='64'/%3E%3Cline style='fill:none;stroke:%232F3435;stroke-width:12;stroke-linecap:square;stroke-miterlimit:10;' x1='87.5' x2='40.5' y1='64' y2='111'/%3E%3C/g%3E%3C/svg%3E");
+  }
+}
+
+.chevron-right:before, .chevron-left:before {
+  position: absolute;
+  content: '';
+  width: 11px;
+  height: 11px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.btn {
+  width: 17px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+  }
+}
+
+.w-85 {
+  max-width: 85vw;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.width-unset {
+  width: unset;
 }
 
 .@{css-prefix}-menu > li {
