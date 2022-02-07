@@ -528,15 +528,8 @@ export default class DataProxy {
   pasteFromText(txt) {
     let lines = [];
 
-    if (/\r\n/.test(txt)) {
-      lines = txt.split("\r\n")
-        .map(it => it.replace(/'/g, "")
-          .split("\t"));
-    } else {
-      lines = txt.split("\n")
-        .map(it => it.replace(/'/g, "")
-          .split("\t"));
-    }
+    if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
+    else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
 
     if (lines.length) {
       const {
