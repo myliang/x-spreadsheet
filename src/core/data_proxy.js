@@ -532,7 +532,10 @@ export default class DataProxy {
     else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
 
     if (lines.length) {
-      const { rows, selector } = this;
+      const {
+        rows,
+        selector
+      } = this;
 
       this.changeData(() => {
         rows.paste(lines, selector.range);
@@ -562,7 +565,7 @@ export default class DataProxy {
       eci,
     } = this.selector.range;
 
-    let biggestCell= {text: ''};
+    let biggestCell = { text: "" };
 
     let cells = [];
 
@@ -571,7 +574,7 @@ export default class DataProxy {
     if (sourceType === "column" && autoType === "width") {
       for (let ci = sci; ci <= eci; ci += 1) {
         cells = [];
-        biggestCell= {text: ''};
+        biggestCell = { text: "" };
 
         for (let ri = sri; ri <= eri; ri += 1) {
           const cell = this.getCell(ri, ci);
@@ -598,7 +601,7 @@ export default class DataProxy {
     if (sourceType === "row" && autoType === "height") {
       for (let ri = sri; ri <= eri; ri += 1) {
         cells = [];
-        biggestCell = {text: ''};
+        biggestCell = { text: "" };
         for (let ci = sci; ci <= eci; ci += 1) {
           const cell = this.getCell(ri, ci);
           if (cell && cell.text) {
@@ -629,7 +632,7 @@ export default class DataProxy {
     element.style.position = "absolute";
     element.style.background = "blue";
     element.style.color = "white";
-    element.style.padding= "4px 6px";
+    element.style.padding = "4px 6px";
     element.style.fontSize = "13px";
     element.style.minWidth = "60px";
     element.style.boxSizing = "border-box";
@@ -646,7 +649,8 @@ export default class DataProxy {
 
     this.setCommonFakeCellsStyles(newDiv);
 
-    if(cellData.style?.font?.bold) {
+
+    if (cellData && cellData.style && cellData.style.font && cellData.style.font.bold) {
       newDiv.style.fontWeight = "bold";
     }
     newDiv.style.width = "97px";
@@ -671,7 +675,7 @@ export default class DataProxy {
 
     this.setCommonFakeCellsStyles(newDiv);
 
-    if(cellData.style?.font?.bold) {
+    if (cellData && cellData.style && cellData.style.font && cellData.style.font.bold) {
       newDiv.style.fontWeight = "bold";
     }
 

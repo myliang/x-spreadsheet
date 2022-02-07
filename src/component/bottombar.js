@@ -80,55 +80,117 @@ export default class Bottombar {
     this.dataNames = [];
     this.activeEl = null;
     this.deleteEl = null;
-    this.firstMenuItems =  null;
+    this.btnLeft = null;
+    this.btnRight = null;
+    this.sheetsWrap = null;
     this.items = [];
     this.moreEl = new DropdownMore((i) => {
       this.clickSwap2(this.items[i]);
     });
     this.contextMenu = new ContextMenu();
     this.contextMenu.itemClick = deleteFunc;
-    this.el = h('div', `${cssPrefix}-bottombar`).children(
-      this.contextMenu.el,
-      this.firstMenuItems = h('div', `${cssPrefix}-menu-div`).children(
-          new Icon('add').on('click', () => {
-            addFunc();
-          }),
-          h('span', '').child(this.moreEl),
+    this.el = h('div', `${cssPrefix}-bottombar`)
+      .children(
+        this.contextMenu.el,
+        h('div', `${cssPrefix}-menu-div`)
+          .children(
+            new Icon('add').on('click', () => {
+              addFunc();
+            }),
+            h('span', '')
+              .child(this.moreEl),
+          ),
 
-      ),
-      this.menuEl = h('ul', `${cssPrefix}-menu`)
-    );
+        h('div', `btns-wrap`)
+          .children(
+            this.btnLeft = h('div', `${cssPrefix}-menu-div btn icon chevron-left`)
+              .on('click', (event) => {
+                if (this.btnLeft.el.classList.contains('disabled')) return;
+                this.goNextBtn(event);
+              }),
+            this.btnRight = h('div', `${cssPrefix}-menu-div btn icon chevron-right`)
+              .on('click', (event) => {
+                if (this.btnRight.el.classList.contains('disabled')) return;
+                this.goBackBtn(event);
+              }),
+          ),
+
+        this.sheetsWrap = h('div', `${cssPrefix}-menu-div overflow-hidden width-unset no-paddings w-85`)
+          .children(
+            this.menuEl = h('ul', `${cssPrefix}-menu`),
+          ),
+      );
+    this.init();
+  }
+
+  init() {
+    this.btnRight.disabled(true);
+    this.btnLeft.disabled(true);
+
+    setInterval(() => {
+      if (this.sheetsWrap.el.clientWidth >= this.sheetsWrap.el.scrollWidth) {
+        this.btnRight.disabled(true);
+        this.btnLeft.disabled(true);
+      } else {
+        this.btnRight.disabled(false);
+        this.btnLeft.disabled(false);
+      }
+      if (this.sheetsWrap.el.scrollLeft === 0) {
+        this.btnLeft.disabled(true);
+      }
+      if ((this.sheetsWrap.el.scrollWidth - this.sheetsWrap.el.scrollLeft) === this.sheetsWrap.el.clientWidth) {
+        this.btnRight.disabled(true);
+      }
+    }, 400);
+  }
+
+  goNextBtn(event) {
+    event.target.parentNode.nextElementSibling.scrollLeft -= 25;
+  }
+
+  goBackBtn(event) {
+    event.target.parentNode.nextElementSibling.scrollLeft += 25;
   }
 
   addItem(name, active, options) {
     this.dataNames.push(name);
-    const item = h('li', active ? 'active' : '').child(name);
+    const item = h('li', active ? 'active' : '')
+      .child(name);
     item.on('click', () => {
       this.clickSwap2(item);
-    }).on('contextmenu', (evt) => {
-      if (options.mode === 'read') return;
-      const { offsetLeft, offsetHeight } = evt.target;
-      this.contextMenu.setOffset({ left: offsetLeft, bottom: offsetHeight + 1 });
-      this.deleteEl = item;
-    }).on('dblclick', () => {
-      if (options.mode === 'read') return;
-      const v = item.html();
-      const input = new FormInput('auto', '');
-      input.val(v);
-      input.input.on('blur', ({ target }) => {
-        const { value } = target;
-        const nindex = this.dataNames.findIndex(it => it === v);
-        this.renameItem(nindex, value);
-        /*
-        this.dataNames.splice(nindex, 1, value);
-        this.moreEl.reset(this.dataNames);
-        item.html('').child(value);
-        this.updateFunc(nindex, value);
-        */
+    })
+      .on('contextmenu', (evt) => {
+        if (options.mode === 'read') return;
+        const {
+          offsetLeft,
+          offsetHeight
+        } = evt.target;
+        this.contextMenu.setOffset({
+          left: offsetLeft,
+          bottom: offsetHeight + 1
+        });
+        this.deleteEl = item;
+      })
+      .on('dblclick', () => {
+        if (options.mode === 'read') return;
+        const v = item.html();
+        const input = new FormInput('auto', '');
+        input.val(v);
+        input.input.on('blur', ({ target }) => {
+          const { value } = target;
+          const nindex = this.dataNames.findIndex(it => it === v);
+          this.renameItem(nindex, value);
+          /*
+          this.dataNames.splice(nindex, 1, value);
+          this.moreEl.reset(this.dataNames);
+          item.html('').child(value);
+          this.updateFunc(nindex, value);
+          */
+        });
+        item.html('')
+          .child(input.el);
+        input.focus();
       });
-      item.html('').child(input.el);
-      input.focus();
-    });
     if (active) {
       this.clickSwap(item);
     }
