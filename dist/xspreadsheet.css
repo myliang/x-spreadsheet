@@ -444,6 +444,7 @@ body {
   justify-content: space-between;
   padding: 0.785em 1em;
   margin: 0;
+  flex-shrink: 0;
 }
 .btns-wrap {
   position: relative;
@@ -488,7 +489,7 @@ body {
   background: rgba(0, 0, 0, 0.08);
 }
 .w-85 {
-  max-width: 85vw;
+  max-width: 82vw;
 }
 .overflow-hidden {
   overflow: hidden;
