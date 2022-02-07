@@ -586,10 +586,7 @@ export default class DataProxy {
         for (let ri = sri; ri <= eri; ri += 1) {
           const cell = this.getCell(ri, ci);
           if (cell && cell.text) {
-            cells.push({
-              text: cell.text,
-              style: this.getCellStyle(ri, ci)
-            });
+            cells.push({text: cell.text, style: this.getCellStyle(ri, ci)});
           }
 
           cells.forEach((cellData) => {
@@ -615,10 +612,7 @@ export default class DataProxy {
         for (let ci = sci; ci <= eci; ci += 1) {
           const cell = this.getCell(ri, ci);
           if (cell && cell.text) {
-            cells.push({
-              text: cell.text,
-              style: this.getCellStyle(ri, ci)
-            });
+            cells.push({text: cell.text, style: this.getCellStyle(ri, ci)});
           }
 
           cells.forEach((cellData) => {
@@ -649,13 +643,7 @@ export default class DataProxy {
     element.style.fontSize = "13px";
     element.style.minWidth = "60px";
     element.style.boxSizing = "border-box";
-    element.style.fontFamily = "";
-    Lato;
-    ", ";
-    Source;
-    Sans;
-    Pro;
-    ", Roboto, Helvetica, Arial, sans-serif";
+    element.style.fontFamily = "'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif";
   }
 
   getMaxCellHeight(cellData) {
