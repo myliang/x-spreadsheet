@@ -82,7 +82,7 @@ export default class AutoFilter {
 
   addFilter(ci, operator, value) {
     const filter = this.getFilter(ci);
-    if (filter == null) {
+    if (filter === null) {
       this.filters.push(new Filter(ci, operator, value));
     } else {
       filter.set(operator, value);
@@ -119,8 +119,6 @@ export default class AutoFilter {
   }
 
   filteredRows(getCell) {
-    // const ary = [];
-    // let lastri = 0;
     const rset = new Set();
     const fset = new Set();
     if (this.active()) {
@@ -131,7 +129,7 @@ export default class AutoFilter {
           const filter = filters[i];
           const cell = getCell(ri, filter.ci);
           const ctext = cell ? cell.text : '';
-          if (!filter.includes(ctext)) {
+          if (!filter.includes(String(ctext))) {
             rset.add(ri);
             break;
           } else {

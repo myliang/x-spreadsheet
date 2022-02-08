@@ -621,7 +621,8 @@ function toolbarChange(type, value) {
 
 function sortFilterChange(ci, order, operator, value) {
   // console.log('sort:', sortDesc, operator, value);
-  this.data.setAutoFilter(ci, order, operator, value);
+  const { data } = this;
+  data.setAutoFilter(ci, order, operator, value);
   sheetReset.call(this);
 }
 
