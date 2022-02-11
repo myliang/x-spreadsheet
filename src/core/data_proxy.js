@@ -132,6 +132,12 @@ function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
   const { rows, merges } = this;
   // delete dest merge
   if (what === 'all' || what === 'format') {
+    if (
+      this.clipboard.range.sri === this.selector.ri &&
+      this.clipboard.range.sci === this.selector.ci
+    ) {
+      return;
+    }
     rows.deleteCells(dstCellRange, what);
     merges.deleteWithin(dstCellRange);
   }
