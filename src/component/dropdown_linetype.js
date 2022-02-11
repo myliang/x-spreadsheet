@@ -13,7 +13,7 @@ const lineTypes = [
 ];
 
 export default class DropdownLineType extends Dropdown {
-  constructor(type) {
+  constructor(event, type) {
     const icon = new Icon('line-type');
     let beforei = 0;
     const lineTypeEls = lineTypes.map((it, iti) => h('div', `${cssPrefix}-item state ${type === it[0] ? 'checked' : ''}`)
@@ -28,6 +28,6 @@ export default class DropdownLineType extends Dropdown {
         h('div', `${cssPrefix}-line-type`).html(it[1]),
       ));
 
-    super(icon, 'auto', false, 'bottom-left', ...lineTypeEls);
+    super(event, icon, 'auto', false, 'bottom-left', ...lineTypeEls);
   }
 }

@@ -2,8 +2,8 @@ import DropdownItem from './dropdown_item';
 import DropdownFontsize from '../dropdown_fontsize';
 
 export default class Format extends DropdownItem {
-  constructor() {
-    super('font-size');
+  constructor(event) {
+    super(event, 'font-size');
   }
 
   getValue(it) {
@@ -11,6 +11,6 @@ export default class Format extends DropdownItem {
   }
 
   dropdown() {
-    return new DropdownFontsize();
+    return new DropdownFontsize(this.event);
   }
 }

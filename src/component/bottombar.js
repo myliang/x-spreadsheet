@@ -1,5 +1,4 @@
 import { h } from './element';
-import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 import Icon from './icon';
 import FormInput from './form_input';
@@ -9,9 +8,9 @@ import Dropdown from './dropdown';
 import { tf } from '../locale/locale';
 
 class DropdownMore extends Dropdown {
-  constructor(click) {
+  constructor(event, click) {
     const icon = new Icon('ellipsis');
-    super(icon, 'auto', false, 'top-left');
+    super(event, icon, 'auto', false, 'top-left');
     this.contentClick = click;
   }
 
@@ -48,7 +47,8 @@ function buildMenu() {
 }
 
 class ContextMenu {
-  constructor() {
+  constructor(event) {
+    this.event = event;
     this.el = h('div', `${cssPrefix}-contextmenu`)
       .css('width', '160px')
       .children(...buildMenu.call(this))
@@ -59,19 +59,20 @@ class ContextMenu {
   hide() {
     const { el } = this;
     el.hide();
-    unbindClickoutside(el);
+    this.event.unbindClickoutside(el);
   }
 
   setOffset(offset) {
     const { el } = this;
     el.offset(offset);
     el.show();
-    bindClickoutside(el);
+    this.event.bindClickoutside(el);
   }
 }
 
 export default class Bottombar {
-  constructor(addFunc = () => {},
+  constructor(event,
+    addFunc = () => {},
     swapFunc = () => {},
     deleteFunc = () => {},
     updateFunc = () => {}) {
@@ -81,10 +82,10 @@ export default class Bottombar {
     this.activeEl = null;
     this.deleteEl = null;
     this.items = [];
-    this.moreEl = new DropdownMore((i) => {
+    this.moreEl = new DropdownMore(event, (i) => {
       this.clickSwap2(this.items[i]);
     });
-    this.contextMenu = new ContextMenu();
+    this.contextMenu = new ContextMenu(event);
     this.contextMenu.itemClick = deleteFunc;
     this.el = h('div', `${cssPrefix}-bottombar`).children(
       this.contextMenu.el,

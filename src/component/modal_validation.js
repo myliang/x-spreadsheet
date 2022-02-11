@@ -10,9 +10,9 @@ import { cssPrefix } from '../config';
 const fieldLabelWidth = 100;
 
 export default class ModalValidation extends Modal {
-  constructor() {
+  constructor(event) {
     const mf = new FormField(
-      new FormSelect('cell',
+      new FormSelect(event, 'cell',
         ['cell'], // cell|row|column
         '100%',
         it => t(`dataValidation.modeType.${it}`)),
@@ -25,7 +25,7 @@ export default class ModalValidation extends Modal {
       { required: true, pattern: /^([A-Z]{1,2}[1-9]\d*)(:[A-Z]{1,2}[1-9]\d*)?$/ },
     );
     const cf = new FormField(
-      new FormSelect('list',
+      new FormSelect(event, 'list',
         ['list', 'number', 'date', 'phone', 'email'],
         '100%',
         it => t(`dataValidation.type.${it}`),
@@ -37,7 +37,7 @@ export default class ModalValidation extends Modal {
 
     // operator
     const of = new FormField(
-      new FormSelect('be',
+      new FormSelect(event, 'be',
         ['be', 'nbe', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte'],
         '160px',
         it => t(`dataValidation.operator.${it}`),
@@ -63,7 +63,7 @@ export default class ModalValidation extends Modal {
       { required: true, type: 'number' },
     ).hide();
 
-    super(t('contextmenu.validation'), [
+    super(event, t('contextmenu.validation'), [
       h('div', `${cssPrefix}-form-fields`).children(
         mf.el,
         rf.el,

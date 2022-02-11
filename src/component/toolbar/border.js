@@ -2,11 +2,11 @@ import DropdownItem from './dropdown_item';
 import DropdownBorder from '../dropdown_border';
 
 export default class Border extends DropdownItem {
-  constructor() {
-    super('border');
+  constructor(event) {
+    super(event, 'border');
   }
 
   dropdown() {
-    return new DropdownBorder();
+    return new DropdownBorder(this.event);
   }
 }

@@ -1,9 +1,8 @@
 /* global document */
 import { h } from './element';
-import { bind } from './event';
 import { cssPrefix } from '../config';
 
-export default function tooltip(html, target) {
+export default function tooltip(event, html, target) {
   if (target.classList.contains('active')) {
     return;
   }
@@ -17,13 +16,13 @@ export default function tooltip(html, target) {
   el.css('left', `${left + (width / 2) - (elBox.width / 2)}px`)
     .css('top', `${top + height + 2}px`);
 
-  bind(target, 'mouseleave', () => {
+  event.bind(target, 'mouseleave', () => {
     if (document.body.contains(el.el)) {
       document.body.removeChild(el.el);
     }
   });
 
-  bind(target, 'click', () => {
+  event.bind(target, 'click', () => {
     if (document.body.contains(el.el)) {
       document.body.removeChild(el.el);
     }

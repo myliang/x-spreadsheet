@@ -27,7 +27,6 @@ import Item from './item';
 
 import { h } from '../element';
 import { cssPrefix } from '../../config';
-import { bind } from '../event';
 
 function buildDivider() {
   return h('div', `${cssPrefix}-toolbar-divider`);
@@ -82,7 +81,7 @@ function moreResize() {
 }
 
 function genBtn(it) {
-  const btn = new Item();
+  const btn = new Item(this.event);
   btn.el.on('click', () => {
     if (it.onClick) it.onClick(this.data.getData(), this.data);
   });
@@ -104,7 +103,8 @@ function genBtn(it) {
 }
 
 export default class Toolbar {
-  constructor(data, widthFn, isHide = false) {
+  constructor(event, data, widthFn, isHide = false) {
+    this.event = event;
     this.data = data;
     this.change = () => {};
     this.widthFn = widthFn;
@@ -112,46 +112,46 @@ export default class Toolbar {
     const style = data.defaultStyle();
     this.items = [
       [
-        this.undoEl = new Undo(),
-        this.redoEl = new Redo(),
-        new Print(),
-        this.paintformatEl = new Paintformat(),
-        this.clearformatEl = new Clearformat(),
+        this.undoEl = new Undo(event),
+        this.redoEl = new Redo(event),
+        new Print(event),
+        this.paintformatEl = new Paintformat(event),
+        this.clearformatEl = new Clearformat(event),
       ],
       buildDivider(),
       [
-        this.formatEl = new Format(),
+        this.formatEl = new Format(event),
       ],
       buildDivider(),
       [
-        this.fontEl = new Font(),
-        this.fontSizeEl = new FontSize(),
+        this.fontEl = new Font(event),
+        this.fontSizeEl = new FontSize(event),
       ],
       buildDivider(),
       [
-        this.boldEl = new Bold(),
-        this.italicEl = new Italic(),
-        this.underlineEl = new Underline(),
-        this.strikeEl = new Strike(),
-        this.textColorEl = new TextColor(style.color),
+        this.boldEl = new Bold(event),
+        this.italicEl = new Italic(event),
+        this.underlineEl = new Underline(event),
+        this.strikeEl = new Strike(event),
+        this.textColorEl = new TextColor(event, style.color),
       ],
       buildDivider(),
       [
-        this.fillColorEl = new FillColor(style.bgcolor),
-        this.borderEl = new Border(),
-        this.mergeEl = new Merge(),
+        this.fillColorEl = new FillColor(event, style.bgcolor),
+        this.borderEl = new Border(event),
+        this.mergeEl = new Merge(event),
       ],
       buildDivider(),
       [
-        this.alignEl = new Align(style.align),
-        this.valignEl = new Valign(style.valign),
-        this.textwrapEl = new Textwrap(),
+        this.alignEl = new Align(event, style.align),
+        this.valignEl = new Valign(event, style.valign),
+        this.textwrapEl = new Textwrap(event),
       ],
       buildDivider(),
       [
-        this.freezeEl = new Freeze(),
-        this.autofilterEl = new Autofilter(),
-        this.formulaEl = new Formula(),
+        this.freezeEl = new Freeze(event),
+        this.autofilterEl = new Autofilter(event),
+        this.formulaEl = new Formula(event),
       ],
     ];
 
@@ -169,7 +169,7 @@ export default class Toolbar {
       this.items.push(btns);
     }
 
-    this.items.push([this.moreEl = new More()]);
+    this.items.push([this.moreEl = new More(event)]);
 
     this.el = h('div', `${cssPrefix}-toolbar`);
     this.btns = h('div', `${cssPrefix}-toolbar-btns`);
@@ -196,7 +196,7 @@ export default class Toolbar {
         initBtns2.call(this);
         moreResize.call(this);
       }, 0);
-      bind(window, 'resize', () => {
+      event.bind(window, 'resize', () => {
         moreResize.call(this);
       });
     }

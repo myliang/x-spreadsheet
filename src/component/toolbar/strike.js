@@ -1,7 +1,7 @@
 import ToggleItem from './toggle_item';
 
 export default class Strike extends ToggleItem {
-  constructor() {
-    super('strike', 'Ctrl+U');
+  constructor(event) {
+    super(event, 'strike', 'Ctrl+U');
   }
 }
