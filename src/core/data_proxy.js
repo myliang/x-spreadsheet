@@ -134,7 +134,7 @@ function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
   if (what === 'all' || what === 'format') {
     if (
       this.clipboard.range.sri === this.selector.ri &&
-      this.clipboard.range.sci === this.selector.ci
+      this.clipboard.range.sci === this.selector.ci&&!autofill
     ) {
       return;
     }
