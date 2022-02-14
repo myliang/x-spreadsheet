@@ -333,28 +333,28 @@ export default class DataProxy {
       {
         align: 'left',
         border: {
-          top: ['thin', 'black'],
-          bottom: ['thin', 'black'],
-          right: ['thin', 'black'],
-          left: ['thin', 'black'],
+          top: ['thin', '#000'],
+          bottom: ['thin', '#000'],
+          right: ['thin', '#000'],
+          left: ['thin', '#000'],
         },
       },
       {
         align: 'center',
         border: {
-          top: ['thin', 'black'],
-          bottom: ['thin', 'black'],
-          right: ['thin', 'black'],
-          left: ['thin', 'black'],
+          top: ['thin', '#000'],
+          bottom: ['thin', '#000'],
+          right: ['thin', '#000'],
+          left: ['thin', '#000'],
         },
       },
       {
         align: 'right',
         border: {
-          top: ['thin', 'black'],
-          bottom: ['thin', 'black'],
-          right: ['thin', 'black'],
-          left: ['thin', 'black'],
+          top: ['thin', '#000'],
+          bottom: ['thin', '#000'],
+          right: ['thin', '#000'],
+          left: ['thin', '#000'],
         },
       },
       {
@@ -363,10 +363,10 @@ export default class DataProxy {
           bold: true,
         },
         border: {
-          top: ['thin', 'black'],
-          bottom: ['thin', 'black'],
-          right: ['thin', 'black'],
-          left: ['thin', 'black'],
+          top: ['thin', '#000'],
+          bottom: ['thin', '#000'],
+          right: ['thin', '#000'],
+          left: ['thin', '#000'],
         },
       },
       {
@@ -375,10 +375,10 @@ export default class DataProxy {
           bold: true,
         },
         border: {
-          top: ['thin', 'black'],
-          bottom: ['thin', 'black'],
-          right: ['thin', 'black'],
-          left: ['thin', 'black'],
+          top: ['thin', '#000'],
+          bottom: ['thin', '#000'],
+          right: ['thin', '#000'],
+          left: ['thin', '#000'],
         },
       },
       {
@@ -387,10 +387,10 @@ export default class DataProxy {
           bold: true,
         },
         border: {
-          top: ['thin', 'black'],
-          bottom: ['thin', 'black'],
-          right: ['thin', 'black'],
-          left: ['thin', 'black'],
+          top: ['thin', '#000'],
+          bottom: ['thin', '#000'],
+          right: ['thin', '#000'],
+          left: ['thin', '#000'],
         },
       },
     ]; // Array<Style>
