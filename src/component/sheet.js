@@ -339,8 +339,6 @@ function cut() {
 function paste(what, evt) {
   const { data } = this;
 
-  console.log(what)
-
   if (data.settings.mode === 'read') return;
 
   if (data.paste(what, msg => xtoast('Tip', msg))) {
