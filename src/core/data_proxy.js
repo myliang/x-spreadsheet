@@ -487,6 +487,8 @@ export default class DataProxy {
     // Adding \n and why not adding \r\n is to support online office and client MS office and WPS
     copyText = copyText.map(row => row.join('\t')).join('\n');
 
+    console.log(copyText)
+
     // why used this
     // cuz http protocol will be blocked request clipboard by browser
     if (evt) {

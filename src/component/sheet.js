@@ -339,6 +339,8 @@ function cut() {
 function paste(what, evt) {
   const { data } = this;
 
+  console.log(what)
+
   if (data.settings.mode === 'read') return;
 
   if (data.paste(what, msg => xtoast('Tip', msg))) {
@@ -348,8 +350,6 @@ function paste(what, evt) {
 
     const dataSri = data.clipboard.range.sri;
     const dataSci = data.clipboard.range.sci;
-
-    console.log(data.getCell(dataSri, dataSci));
 
     const rowsData = (eri - dataSri) + 1;
     const colsData = (eci - dataSci) + 1;
@@ -724,7 +724,8 @@ function sheetInitEvents() {
     } else if (type === 'cut') {
       cut.call(this);
     } else if (type === 'paste') {
-      paste.call(this, 'all');
+      paste.call(this, 'text');
+      paste.call(this, 'format');
     } else if (type === 'paste-value') {
       paste.call(this, 'text');
     } else if (type === 'paste-format') {
@@ -746,7 +747,9 @@ function sheetInitEvents() {
 
   bind(window, 'paste', (evt) => {
     if (!this.focusing) return;
-    paste.call(this, 'all', evt);
+
+    paste.call(this, 'text', evt);
+    paste.call(this, 'format', evt);
 
     const clipboardData = evt.clipboardData || window.clipboardData;
     const pastedData = clipboardData.getData('text/plain');
