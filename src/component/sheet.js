@@ -338,6 +338,14 @@ function cut() {
 
 function paste(what, evt) {
   const { data } = this;
+  const { sri } = this.selector.range;
+  const { sci } = this.selector.range;
+
+  const cell = data.getCell(sri, sci);
+
+  if (cell && cell.editable === false) {
+    return;
+  }
 
   if (data.settings.mode === 'read') return;
 
@@ -351,9 +359,6 @@ function paste(what, evt) {
 
     const rowsData = (eri - dataSri) + 1;
     const colsData = (eci - dataSci) + 1;
-
-    const { sri } = this.selector.range;
-    const { sci } = this.selector.range;
 
     const rowCount = rowsData - (data.rows.len - sri);
     const colCount = colsData - (data.cols.len - sci);
