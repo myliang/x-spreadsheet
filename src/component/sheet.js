@@ -338,8 +338,36 @@ function cut() {
 
 function paste(what, evt) {
   const { data } = this;
+
   if (data.settings.mode === 'read') return;
+
   if (data.paste(what, msg => xtoast('Tip', msg))) {
+    const {
+      eri, eci,
+    } = data.clipboard.range;
+
+    const dataSri = data.clipboard.range.sri;
+    const dataSci = data.clipboard.range.sci;
+
+    console.log(data.getCell(dataSri, dataSci));
+
+    const rowsData = (eri - dataSri) + 1;
+    const colsData = (eci - dataSci) + 1;
+
+    const { sri } = this.selector.range;
+    const { sci } = this.selector.range;
+
+    const rowCount = rowsData - (data.rows.len - sri);
+    const colCount = colsData - (data.cols.len - sci);
+
+    if (rowCount > 0) {
+      data.insertRowBelow(rowCount);
+    }
+
+    if (colCount > 0) {
+      data.insertColumnRight(colCount);
+    }
+
     sheetReset.call(this);
   } else if (evt) {
     const cdata = evt.clipboardData.getData('text/plain');
@@ -536,13 +564,13 @@ function insertDeleteRowColumn(type, num) {
     data.setSelectedCellAttr('editable', true);
   } else if (type === 'cell-non-editable') {
     data.setSelectedCellAttr('editable', false);
-  } else if (type === "autofit-cell-width") {
-    data.setAutoFit("width", "column");
-    data.setSelectedCellAttr("textwrap", false);
-  } else if (type === "autofit-cell-height") {
-    data.setAutoFit("height", "row");
-    data.setSelectedCellAttr("textwrap", true);
-}
+  } else if (type === 'autofit-cell-width') {
+    data.setAutoFit('width', 'column');
+    data.setSelectedCellAttr('textwrap', false);
+  } else if (type === 'autofit-cell-height') {
+    data.setAutoFit('height', 'row');
+    data.setSelectedCellAttr('textwrap', true);
+  }
   clearClipboard.call(this);
   sheetReset.call(this);
 }
