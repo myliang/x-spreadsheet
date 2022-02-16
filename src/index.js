@@ -110,10 +110,6 @@ class Spreadsheet {
     this.sheet.indexAt(str)
   }
 
-  expr2xy(src) {
-    this.sheet.expr2xy(src)
-  }
-
   xy2expr(x, y) {
     this.sheet.xy2expr(x, y)
   }

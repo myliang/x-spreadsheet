@@ -203,8 +203,6 @@ declare module 'poly-spreadsheet' {
 
     indexAt(str: string)
 
-    expr2xy(src)
-
     xy2expr(x, y)
 
     expr2expr(src, xn, yn, condition)
