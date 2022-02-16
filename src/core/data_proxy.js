@@ -557,68 +557,77 @@ export default class DataProxy {
   }
 
   // 'height' | 'width', 'row'| 'column' => 'column' && 'width' || 'row' && 'height'
-  setAutoFit(autoType = "height", sourceType = "row") {
-    const {
-      sri,
-      eri,
-      sci,
-      eci,
-    } = this.selector.range;
-
-    let biggestCell = { text: "" };
-
-    let cells = [];
-
+  setAutoFit(autoType = 'height', sourceType = 'row', sheetIndex = 0) {
+    const { sri, eri, sci, eci } = this.selector.range;
     const onlyLettersOrNum = /[^a-zA-ZА-Яа-яЁё0-9]/gi;
+    const sheets = this.getData();
 
-    if (sourceType === "column" && autoType === "width") {
-      for (let ci = sci; ci <= eci; ci += 1) {
-        cells = [];
-        biggestCell = { text: "" };
+    let biggestCell = { text: '' };
 
-        for (let ri = sri; ri <= eri; ri += 1) {
-          const cell = this.getCell(ri, ci);
-          if (cell && cell.text) {
-            cells.push({text: cell.text, style: this.getCellStyle(ri, ci)});
-          }
+    if (sourceType === 'column' && autoType === 'width') {
+      for (let ri = sri; ri <= eri; ri += 1) {
+        let keyAsNumber = Number(ri);
+        for (let ci = sci; ci <= eci; ci += 1) {
+          biggestCell = { text: '' };
+          if (sheets.rows[keyAsNumber]) {
+            let valueCell = sheets.rows[keyAsNumber].cells[ci];
 
-          cells.forEach((cellData) => {
-            const currentWord = cellData.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
-            const currentBiggestWord = biggestCell.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
-            if (currentWord.length > currentBiggestWord.length) {
-              biggestCell = cellData;
+            if (valueCell && valueCell.text) {
+              const currentWord = valueCell.text
+                .replace(onlyLettersOrNum, '')
+                .replace(/\s+/gi, ', ');
+              const currentBiggestWord = biggestCell.text
+                .replace(onlyLettersOrNum, '')
+                .replace(/\s+/gi, ', ');
+              if (
+                currentWord.length > currentBiggestWord.length
+              ) {
+                biggestCell = valueCell;
+              }
+
+              if (biggestCell) {
+                const width =
+                  this.getMaxCellWidth(biggestCell) <= 100
+                    ? 100
+                    : this.getMaxCellWidth(biggestCell);
+                this.setColWidth(ci, width);
+              }
             }
-          });
-
-          if (biggestCell) {
-            const width = this.getMaxCellWidth(biggestCell) <= 100 ? 100 : this.getMaxCellWidth(biggestCell);
-            this.setColWidth(ci, width);
           }
         }
       }
     }
 
-    if (sourceType === "row" && autoType === "height") {
+    if (sourceType === 'row' && autoType === 'height') {
       for (let ri = sri; ri <= eri; ri += 1) {
-        cells = [];
-        biggestCell = { text: "" };
+        let keyAsNumber = Number(ri);
         for (let ci = sci; ci <= eci; ci += 1) {
-          const cell = this.getCell(ri, ci);
-          if (cell && cell.text) {
-            cells.push({text: cell.text, style: this.getCellStyle(ri, ci)});
-          }
+          biggestCell = { text: '' };
 
-          cells.forEach((cellData) => {
-            const currentWord = cellData.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
-            const currentBiggestWord = biggestCell.text.replace(onlyLettersOrNum,'').replace(/\s+/gi,', ')
-            if (currentWord.length > currentBiggestWord.length) {
-              biggestCell = cellData;
+          if (sheets.rows[keyAsNumber]) {
+            let valueCell = sheets.rows[keyAsNumber].cells[ci];
+
+            if (valueCell && valueCell.text) {
+              const currentWord = valueCell.text
+                .replace(onlyLettersOrNum, '')
+                .replace(/\s+/gi, ', ');
+              const currentBiggestWord = biggestCell.text
+                .replace(onlyLettersOrNum, '')
+                .replace(/\s+/gi, ', ');
+              if (
+                currentWord.length > currentBiggestWord.length
+              ) {
+                biggestCell = valueCell;
+              }
+
+              if (biggestCell) {
+                this.setColWidth(ci, 100);
+                this.setRowHeight(
+                  ri,
+                  this.getMaxCellHeight(biggestCell),
+                );
+              }
             }
-          });
-
-          if (biggestCell) {
-            this.setColWidth(ci, 100);
-            this.setRowHeight(ri, this.getMaxCellHeight(biggestCell));
           }
         }
       }
@@ -649,7 +658,6 @@ export default class DataProxy {
 
     this.setCommonFakeCellsStyles(newDiv);
 
-
     if (cellData && cellData.style && cellData.style.font && cellData.style.font.bold) {
       newDiv.style.fontWeight = "bold";
     }
@@ -657,7 +665,6 @@ export default class DataProxy {
     newDiv.style.minHeight = "23px";
     newDiv.style.flexWrap = "wrap";
     newDiv.style.wordBreak = "break-all";
-
 
     newDiv.setAttribute("id", `${id}`);
 
@@ -1437,3 +1444,4 @@ export default class DataProxy {
     };
   }
 }
+
