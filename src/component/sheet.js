@@ -371,9 +371,11 @@ function paste(what, evt) {
         const { cells } = data.rows._[i];
 
         Object.entries(cells).forEach(([key, value]) => {
-          for (let k = key; k <= endDataSci - 1; k++) {
-            if (value.editable === false) {
-              editable = false;
+          if (key >= sci && key <= endDataSci - 1) {
+            for (let k = key; k <= endDataSci - 1; k++) {
+              if (value.editable === false) {
+                editable = false;
+              }
             }
           }
         });
