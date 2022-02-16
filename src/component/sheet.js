@@ -350,46 +350,48 @@ function paste(what, evt) {
 
   if (data.settings.mode === 'read') return;
 
-  const {
-    eri, eci,
-  } = data.clipboard.range;
+  if (data.clipboard.range) {
+    const {
+      eri, eci,
+    } = data.clipboard.range;
 
-  const dataSri = data.clipboard.range.sri;
-  const dataSci = data.clipboard.range.sci;
+    const dataSri = data.clipboard.range.sri;
+    const dataSci = data.clipboard.range.sci;
 
-  const rowsData = (eri - dataSri) + 1;
-  const colsData = (eci - dataSci) + 1;
+    const rowsData = (eri - dataSri) + 1;
+    const colsData = (eci - dataSci) + 1;
 
-  let editable = true;
+    let editable = true;
 
-  const endDataSri = sri + rowsData;
+    const endDataSri = sri + rowsData;
 
-  for (let i = sri; i <= endDataSri - 1; i++) {
-    if (data.rows._[i]) {
-      const { cells } = data.rows._[i];
+    for (let i = sri; i <= endDataSri - 1; i++) {
+      if (data.rows._[i]) {
+        const { cells } = data.rows._[i];
 
-      Object.entries(cells).forEach(([key, value]) => {
-        if (key >= sci && value.editable === false) {
-          editable = false;
-        }
-      });
+        Object.entries(cells).forEach(([key, value]) => {
+          if (key >= sci && value.editable === false) {
+            editable = false;
+          }
+        });
+      }
     }
-  }
 
-  if (editable === false) {
-    this.trigger('paste', false);
-    return;
-  }
+    if (editable === false) {
+      this.trigger('paste', false);
+      return;
+    }
 
-  const rowCount = rowsData - (data.rows.len - sri);
-  const colCount = colsData - (data.cols.len - sci);
+    const rowCount = rowsData - (data.rows.len - sri);
+    const colCount = colsData - (data.cols.len - sci);
 
-  if (rowCount > 0) {
-    data.insertRowBelow(rowCount);
-  }
+    if (rowCount > 0) {
+      data.insertRowBelow(rowCount);
+    }
 
-  if (colCount > 0) {
-    data.insertColumnRight(colCount);
+    if (colCount > 0) {
+      data.insertColumnRight(colCount);
+    }
   }
 
   if (data.paste(what, msg => xtoast('Tip', msg))) {
