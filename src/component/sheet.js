@@ -1091,6 +1091,22 @@ export default class Sheet {
     return expr2xy(src);
   }
 
+  indexAt(str) {
+    return indexAt(str);
+  }
+
+  xy2expr(x, y) {
+    return xy2expr(x, y);
+  }
+
+  getStringAt(index) {
+    return stringAt(index);
+  }
+
+  expr2expr(src, xn, yn, condition) {
+    return expr2expr(src, xn, yn, condition);
+  }
+
   selectCell(ri, ci) {
     selectorSet.call(this, false, ri, ci);
     scrollbarMove.call(this);
