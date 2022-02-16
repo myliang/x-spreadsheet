@@ -561,14 +561,14 @@ export default class DataProxy {
     const { sri, eri, sci, eci } = this.selector.range;
     const onlyLettersOrNum = /[^a-zA-ZА-Яа-яЁё0-9]/gi;
     const sheets = this.getData();
-
-    let biggestCell = { text: '' };
+    let maxWidthCell = { text: '' };
+    let maxHeightCell = { text: '' };
 
     if (sourceType === 'column' && autoType === 'width') {
       for (let ri = sri; ri <= eri; ri += 1) {
         let keyAsNumber = Number(ri);
+
         for (let ci = sci; ci <= eci; ci += 1) {
-          biggestCell = { text: '' };
           if (sheets.rows[keyAsNumber]) {
             let valueCell = sheets.rows[keyAsNumber].cells[ci];
 
@@ -576,20 +576,19 @@ export default class DataProxy {
               const currentWord = valueCell.text
                 .replace(onlyLettersOrNum, '')
                 .replace(/\s+/gi, ', ');
-              const currentBiggestWord = biggestCell.text
+              const currentBiggestWord = maxWidthCell.text
                 .replace(onlyLettersOrNum, '')
                 .replace(/\s+/gi, ', ');
               if (
                 currentWord.length > currentBiggestWord.length
               ) {
-                biggestCell = valueCell;
+                maxWidthCell = valueCell;
               }
-
-              if (biggestCell) {
+              if (maxWidthCell) {
                 const width =
-                  this.getMaxCellWidth(biggestCell) <= 100
+                  this.getMaxCellWidth(maxWidthCell) <= 100
                     ? 100
-                    : this.getMaxCellWidth(biggestCell);
+                    : this.getMaxCellWidth(maxWidthCell);
                 this.setColWidth(ci, width);
               }
             }
@@ -601,9 +600,8 @@ export default class DataProxy {
     if (sourceType === 'row' && autoType === 'height') {
       for (let ri = sri; ri <= eri; ri += 1) {
         let keyAsNumber = Number(ri);
-        for (let ci = sci; ci <= eci; ci += 1) {
-          biggestCell = { text: '' };
 
+        for (let ci = sci; ci <= eci; ci += 1) {
           if (sheets.rows[keyAsNumber]) {
             let valueCell = sheets.rows[keyAsNumber].cells[ci];
 
@@ -611,20 +609,20 @@ export default class DataProxy {
               const currentWord = valueCell.text
                 .replace(onlyLettersOrNum, '')
                 .replace(/\s+/gi, ', ');
-              const currentBiggestWord = biggestCell.text
+              const currentBiggestWord = maxHeightCell.text
                 .replace(onlyLettersOrNum, '')
                 .replace(/\s+/gi, ', ');
               if (
                 currentWord.length > currentBiggestWord.length
               ) {
-                biggestCell = valueCell;
+                maxHeightCell = valueCell;
               }
 
-              if (biggestCell) {
+              if (maxHeightCell) {
                 this.setColWidth(ci, 100);
                 this.setRowHeight(
                   ri,
-                  this.getMaxCellHeight(biggestCell),
+                  this.getMaxCellHeight(maxHeightCell),
                 );
               }
             }
