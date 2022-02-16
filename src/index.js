@@ -102,6 +102,26 @@ class Spreadsheet {
     return this.sheet.stringAt;
   }
 
+  getStringAt(index) {
+     this.sheet.getStringAt(index)
+  }
+
+  indexAt(str) {
+    this.sheet.indexAt(str)
+  }
+
+  expr2xy(src) {
+    this.sheet.expr2xy(src)
+  }
+
+  xy2expr(x, y) {
+    this.sheet.xy2expr(x, y)
+  }
+
+  expr2expr(src, xn, yn, condition) {
+    this.sheet.expr2expr(src, xn, yn, condition)
+  }
+
   insert(type, n) {
     this.sheet.insert(type, n);
   }
