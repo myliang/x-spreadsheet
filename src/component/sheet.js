@@ -338,7 +338,63 @@ function cut() {
 
 function paste(what, evt) {
   const { data } = this;
+  const { sri } = this.selector.range;
+  const { sci } = this.selector.range;
+
+  const cell = data.getCell(sri, sci);
+
+  if (cell && cell.editable === false) {
+    this.trigger('paste', false);
+    return;
+  }
+
   if (data.settings.mode === 'read') return;
+
+  if (data.clipboard.range) {
+    const {
+      eri, eci,
+    } = data.clipboard.range;
+
+    const dataSri = data.clipboard.range.sri;
+    const dataSci = data.clipboard.range.sci;
+
+    const rowsData = (eri - dataSri) + 1;
+    const colsData = (eci - dataSci) + 1;
+
+    let editable = true;
+
+    const endDataSri = sri + rowsData;
+    const endDataSci = sci + colsData;
+
+    for (let i = sri; i <= endDataSri - 1; i++) {
+      if (data.rows._[i]) {
+        const { cells } = data.rows._[i];
+
+        Object.entries(cells).forEach(([key, value]) => {
+          if (key >= sci && key <= endDataSci - 1 && value.editable === false) {
+            editable = false;
+          }
+        });
+      }
+    }
+
+    if (editable === false) {
+      this.trigger('paste', false);
+      return;
+    }
+
+    const rowCount = rowsData - (data.rows.len - sri);
+    const colCount = colsData - (data.cols.len - sci);
+
+    if (rowCount > 0) {
+      data.insertRowBelow(rowCount);
+    }
+
+    if (colCount > 0) {
+      data.insertColumnRight(colCount);
+    }
+  }
+
   if (data.paste(what, msg => xtoast('Tip', msg))) {
     sheetReset.call(this);
   } else if (evt) {
@@ -346,6 +402,8 @@ function paste(what, evt) {
     this.data.pasteFromText(cdata);
     sheetReset.call(this);
   }
+
+  this.trigger('paste', true);
 }
 
 function hideRowsOrCols() {
@@ -536,13 +594,13 @@ function insertDeleteRowColumn(type, num) {
     data.setSelectedCellAttr('editable', true);
   } else if (type === 'cell-non-editable') {
     data.setSelectedCellAttr('editable', false);
-  } else if (type === "autofit-cell-width") {
-    data.setAutoFit("width", "column");
-    data.setSelectedCellAttr("textwrap", false);
-  } else if (type === "autofit-cell-height") {
-    data.setAutoFit("height", "row");
-    data.setSelectedCellAttr("textwrap", true);
-}
+  } else if (type === 'autofit-cell-width') {
+    data.setAutoFit('width', 'column');
+    data.setSelectedCellAttr('textwrap', false);
+  } else if (type === 'autofit-cell-height') {
+    data.setAutoFit('height', 'row');
+    data.setSelectedCellAttr('textwrap', true);
+  }
   clearClipboard.call(this);
   sheetReset.call(this);
 }
@@ -696,7 +754,8 @@ function sheetInitEvents() {
     } else if (type === 'cut') {
       cut.call(this);
     } else if (type === 'paste') {
-      paste.call(this, 'all');
+      paste.call(this, 'text');
+      paste.call(this, 'format');
     } else if (type === 'paste-value') {
       paste.call(this, 'text');
     } else if (type === 'paste-format') {
@@ -718,7 +777,9 @@ function sheetInitEvents() {
 
   bind(window, 'paste', (evt) => {
     if (!this.focusing) return;
-    paste.call(this, 'all', evt);
+
+    paste.call(this, 'text', evt);
+    paste.call(this, 'format', evt);
 
     const clipboardData = evt.clipboardData || window.clipboardData;
     const pastedData = clipboardData.getData('text/plain');
