@@ -52,28 +52,33 @@ declare module 'poly-spreadsheet' {
   export type CELLS_SELECTED = 'cells-selected';
   export type CELL_EDITED = 'cell-edited';
   export type CHANGE_SHEET_INDEX = 'changeSheetIndex';
+  export type PASTE = 'paste';
 
   export type CellMerge = [number, number];
 
   export interface SpreadsheetEventHandler {
     (
-      envt: CELL_SELECTED,
+      event: CELL_SELECTED,
       callback: (cell: Cell, rowIndex: number, colIndex: number) => void
     ): void;
     (
-      envt: CELLS_SELECTED,
+      event: CELLS_SELECTED,
       callback: (
         cell: Cell,
         parameters: { sri: number; sci: number; eri: number; eci: number }
       ) => void
     ): void;
     (
-      evnt: CELL_EDITED,
+      event: CELL_EDITED,
       callback: (text: string, rowIndex: number, colIndex: number) => void
     ): void;
     (
-        evnt: CHANGE_SHEET_INDEX,
-        callback: (index: number) => void
+      event: CHANGE_SHEET_INDEX,
+      callback: (index: number) => void
+    ): void;
+    (
+      event: PASTE,
+      callback: (paste: boolean) => void
     ): void;
   }
 
