@@ -364,14 +364,17 @@ function paste(what, evt) {
     let editable = true;
 
     const endDataSri = sri + rowsData;
+    const endDataSci = sci + colsData;
 
     for (let i = sri; i <= endDataSri - 1; i++) {
       if (data.rows._[i]) {
         const { cells } = data.rows._[i];
 
         Object.entries(cells).forEach(([key, value]) => {
-          if (key >= sci && value.editable === false) {
-            editable = false;
+          for (let k = key; k <= endDataSci - 1; k++) {
+            if (value.editable === false) {
+              editable = false;
+            }
           }
         });
       }
