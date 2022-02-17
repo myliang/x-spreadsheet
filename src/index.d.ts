@@ -197,18 +197,6 @@ declare module 'poly-spreadsheet' {
      */
     loadData(json: Record<string, any>): this;
 
-    // alphabet
-
-    getStringAt(index: number)
-
-    indexAt(str: string)
-
-    xy2expr(x, y)
-
-    expr2expr(src, xn, yn, condition)
-
-    //
-
     /**
      * string at
      */
@@ -248,6 +236,13 @@ declare module 'poly-spreadsheet' {
      * expr2xy
      */
     expr2xy(str: string): any;
+
+    /**
+     * xy2expr
+     * @param x
+     * @param y
+     */
+    xy2expr(x, y): string
 
     /**
      * get data

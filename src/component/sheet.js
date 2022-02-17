@@ -19,7 +19,7 @@ import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
-import { expr2xy, xy2expr } from '../core/alphabet';
+import { xy2expr } from '../core/alphabet';
 
 /**
  * @desc throttle fn
@@ -1085,26 +1085,6 @@ export default class Sheet {
     this.data.insertColumnRight(n);
     this.reload();
     scrollbarMove.call(this);
-  }
-
-  expr2xy(src) {
-    return expr2xy(src);
-  }
-
-  indexAt(str) {
-    return indexAt(str);
-  }
-
-  xy2expr(x, y) {
-    return xy2expr(x, y);
-  }
-
-  getStringAt(index) {
-    return stringAt(index);
-  }
-
-  expr2expr(src, xn, yn, condition) {
-    return expr2expr(src, xn, yn, condition);
   }
 
   selectCell(ri, ci) {

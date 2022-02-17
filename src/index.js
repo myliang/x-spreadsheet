@@ -6,6 +6,7 @@ import Bottombar from './component/bottombar';
 import { cssPrefix } from './config';
 import { locale } from './locale/locale';
 import './index.less';
+import { expr2xy, xy2expr } from './core/alphabet';
 
 
 class Spreadsheet {
@@ -102,20 +103,12 @@ class Spreadsheet {
     return this.sheet.stringAt;
   }
 
-  getStringAt(index) {
-     this.sheet.getStringAt(index)
-  }
-
-  indexAt(str) {
-    this.sheet.indexAt(str)
+  expr2xy(src) {
+    return expr2xy(src);
   }
 
   xy2expr(x, y) {
-    this.sheet.xy2expr(x, y)
-  }
-
-  expr2expr(src, xn, yn, condition) {
-    this.sheet.expr2expr(src, xn, yn, condition)
+    return xy2expr(x, y);
   }
 
   insert(type, n) {
@@ -132,10 +125,6 @@ class Spreadsheet {
 
   selectCell(sri, sci) {
     this.sheet.selectCell(sri, sci);
-  }
-
-  expr2xy(str) {
-    return this.sheet.expr2xy(str);
   }
 
   getData() {
