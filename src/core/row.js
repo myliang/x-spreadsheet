@@ -22,6 +22,11 @@ class Rows {
   setHeight(ri, v) {
     const row = this.getOrNew(ri);
     row.height = v;
+    return ({
+      rows: {
+        [ri]: { height: v },
+      },
+    });
   }
 
   unhide(idx) {

@@ -253,7 +253,6 @@ export default class AutoFilter {
     this.ref = null;
     this.filters = [];
     this.sort = null;
-    console.log('clear');
   }
 
   active() {

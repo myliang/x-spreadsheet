@@ -2,8 +2,6 @@
 // import isEqual from 'lodash/isEqual';
 import cloneDeep from 'lodash/cloneDeep';
 import merge from 'lodash/merge';
-import mergeWith from 'lodash/mergeWith';
-import isEmpty from 'lodash/isEmpty';
 
 export default class History {
   constructor() {
@@ -20,7 +18,6 @@ export default class History {
       this.undoItems.length === 0 ? data
         : merge({}, this.undoItems.at(-1), data),
     );
-
     this.redoItems = [];
   }
 
@@ -32,7 +29,7 @@ export default class History {
     return this.redoItems.length > 0;
   }
 
-  undo(currentd, cb) {
+  undo(cb) {
     const { undoItems, redoItems } = this;
     if (this.canUndo()) {
       const currentState = undoItems.pop();
@@ -41,20 +38,13 @@ export default class History {
     }
   }
 
-  redo(currentd, cb) {
+  redo(cb) {
     const { undoItems, redoItems } = this;
     if (this.canRedo()) {
       const nextState = redoItems.pop();
       undoItems.push(nextState);
-      console.log('redo', nextState);
       cb(
         merge({}, this.initialState, nextState),
-        // mergeWith({}, this.initialState, nextState, (objValue, srcValue, key) => {
-        //   if (key === 'text' && srcValue === null) {
-        //     return null;
-        //   }
-        //   return undefined;
-        // }),
       );
     }
   }

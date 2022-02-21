@@ -168,3 +168,4 @@ instance.loadData([
     },
   },
 ]);
+window.ss = instance;

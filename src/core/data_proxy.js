@@ -408,7 +408,7 @@ export default class DataProxy {
   }
 
   undo() {
-    this.history.undo(this.getData(), (d) => {
+    this.history.undo((d) => {
       this.setData(d);
       // TODO save exceptRowSet, sortedRowMap in history
       // remove applied filters due to constraints in the history
@@ -419,7 +419,7 @@ export default class DataProxy {
   }
 
   redo() {
-    this.history.redo(this.getData(), (d) => {
+    this.history.redo((d) => {
       this.setData(d);
       // remove applied filters due to constraints in the history
       this.autoFilter.filters = [];
@@ -1128,7 +1128,7 @@ export default class DataProxy {
     }
     for (const [ci, properties] of colEntries) {
       for (const [key, value] of Object.entries(properties)) {
-        if (key !== 'excludeRows') {
+        if (['excludeRows', 'width'].every(k => k !== key)) {
           const {
             indices = [],
           } = properties.excludeRows.find(({ property }) => property === key) || {};
@@ -1210,17 +1210,11 @@ export default class DataProxy {
   }
 
   setRowHeight(ri, height) {
-    this.changeData(() => {
-      this.rows.setHeight(ri, height);
-      return null;
-    });
+    this.changeData(() => this.rows.setHeight(ri, height));
   }
 
   setColWidth(ci, width) {
-    this.changeData(() => {
-      this.cols.setWidth(ci, width);
-      return null;
-    });
+    this.changeData(() => this.cols.setWidth(ci, width));
   }
 
   viewHeight() {
