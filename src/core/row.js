@@ -1,4 +1,5 @@
 import helper from './helper';
+import { CellRange } from './cell_range';
 import { expr2expr } from './alphabet';
 
 class Rows {
@@ -106,7 +107,11 @@ class Rows {
 
   setCellText(ri, ci, text) {
     const cell = this.getCellOrNew(ri, ci);
-    if (cell.editable !== false) cell.text = text;
+    if (cell.editable !== false) {
+      cell.text = text;
+      return Rows.reduceAsRows([{ ri, ci, cell }]);
+    }
+    return null;
   }
 
   // what: all | format | text
@@ -121,6 +126,7 @@ class Rows {
     const [rn, cn] = srcCellRange.size();
     const [drn, dcn] = dstCellRange.size();
     // console.log(srcIndexes, dstIndexes);
+    const cellsToPaste = [];
     let isAdd = true;
     let dn = 0;
     if (deri < sri || deci < sci) {
@@ -173,7 +179,7 @@ class Rows {
                     return expr2expr(word, nci - sci, nri - sri);
                   });
                 }
-                this.setCell(nri, nci, ncell, what);
+                cellsToPaste.push({ ri: nri, ci: nci, cell: ncell });
                 cb(nri, nci, ncell);
               }
             }
@@ -181,39 +187,64 @@ class Rows {
         }
       }
     }
+    return Rows.reduceAsRows(cellsToPaste, (ri, ci, cell) => {
+      this.setCell(ri, ci, cell, what);
+    });
   }
 
   cutPaste(srcCellRange, dstCellRange) {
-    const ncellmm = {};
-    this.each((ri) => {
-      this.eachCells(ri, (ci) => {
-        let nri = parseInt(ri, 10);
-        let nci = parseInt(ci, 10);
-        if (srcCellRange.includes(ri, ci)) {
-          nri = dstCellRange.sri + (nri - srcCellRange.sri);
-          nci = dstCellRange.sci + (nci - srcCellRange.sci);
-        }
-        ncellmm[nri] = ncellmm[nri] || { cells: {} };
-        ncellmm[nri].cells[nci] = this._[ri].cells[ci];
-      });
+    const cutCellsWithDest = [];
+
+    const destination = new CellRange(
+      dstCellRange.sri,
+      dstCellRange.sci,
+      dstCellRange.sri + (srcCellRange.eri - srcCellRange.sri),
+      dstCellRange.sci + (srcCellRange.eci - srcCellRange.sci),
+    );
+
+    srcCellRange.each((ri, ci) => {
+      const cell = this.getCell(ri, ci);
+      const nri = dstCellRange.sri + (parseInt(ri, 10) - srcCellRange.sri);
+      const nci = dstCellRange.sci + (parseInt(ci, 10) - srcCellRange.sci);
+      cutCellsWithDest.push({ to: { ri: nri, ci: nci }, cell });
+      this._[ri].cells[ci] = {};
     });
-    this._ = ncellmm;
+
+    cutCellsWithDest.forEach(({ to, cell }) => {
+      this._[to.ri].cells[to.ci] = cell;
+    });
+
+    const changedCells = [];
+
+    srcCellRange.each((ri, ci) => {
+      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+    });
+
+    destination.each((ri, ci) => {
+      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) || {} });
+    });
+
+    return Rows.reduceAsRows(changedCells);
   }
 
   // src: Array<Array<String>>
   paste(src, dstCellRange) {
-    if (src.length <= 0) return;
+    if (src.length <= 0) return ({});
     const { sri, sci } = dstCellRange;
+    const changedCells = [];
     src.forEach((row, i) => {
       const ri = sri + i;
       row.forEach((cell, j) => {
         const ci = sci + j;
         this.setCellText(ri, ci, cell);
+        changedCells.push({ ri, ci, cell: this._[ri].cells[ci] || {} });
       });
     });
+    return Rows.reduceAsRows(changedCells);
   }
 
   insert(sri, n = 1) {
+    const changedCells = [];
     const ndata = {};
     this.each((ri, row) => {
       let nri = parseInt(ri, 10);
@@ -226,15 +257,28 @@ class Rows {
               word => expr2expr(word, 0, n, (x, y) => (y >= sri)),
             );
           }
+          changedCells.push({ ri: nri, ci, cell });
         });
       }
       ndata[nri] = row;
     });
+
     this._ = ndata;
     this.len += n;
+    // add cells from inserted row
+    this.eachCells(sri + 1, (ci) => {
+      changedCells.push({ ri: sri, ci, cell: { text: null } });
+    });
+    return ({
+      rows: {
+        ...Rows.reduceAsRows(changedCells).rows,
+        len: this.len,
+      },
+    });
   }
 
   delete(sri, eri) {
+    const changedCells = [];
     const n = eri - sri + 1;
     const ndata = {};
     this.each((ri, row) => {
@@ -250,14 +294,22 @@ class Rows {
               word => expr2expr(word, 0, -n, (x, y) => y > eri),
             );
           }
+          changedCells.push({ ri: nri - n, ci, cell });
         });
       }
     });
     this._ = ndata;
     this.len -= n;
+    return ({
+      rows: {
+        ...Rows.reduceAsRows(changedCells).rows,
+        len: this.len,
+      },
+    });
   }
 
   insertColumn(sci, n = 1) {
+    const changedCells = [];
     this.each((ri, row) => {
       const rndata = {};
       this.eachCells(ri, (ci, cell) => {
@@ -270,14 +322,23 @@ class Rows {
               word => expr2expr(word, n, 0, x => x >= sci),
             );
           }
+          changedCells.push({ ri: parseInt(ri, 10), ci: nci, cell });
         }
         rndata[nci] = cell;
       });
       row.cells = rndata;
+      // add cells for the inserted column
+      changedCells.push({
+        ri: parseInt(ri, 10),
+        ci: sci,
+        cell: { text: null },
+      });
     });
+    return Rows.reduceAsRows(changedCells);
   }
 
   deleteColumn(sci, eci) {
+    const changedCells = [];
     const n = eci - sci + 1;
     this.each((ri, row) => {
       const rndata = {};
@@ -293,17 +354,22 @@ class Rows {
               word => expr2expr(word, -n, 0, x => x > eci),
             );
           }
+          changedCells.push({ ri: parseInt(ri, 10), ci: nci - n, cell });
         }
       });
       row.cells = rndata;
     });
+    return Rows.reduceAsRows(changedCells);
   }
 
   // what: all | text | format | merge
   deleteCells(cellRange, what = 'all') {
-    cellRange.each((i, j) => {
-      this.deleteCell(i, j, what);
+    const changedCells = [];
+    cellRange.each((ri, ci) => {
+      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+      this.deleteCell(ri, ci, what);
     });
+    return Rows.reduceAsRows(changedCells);
   }
 
   // what: all | text | format | merge
@@ -365,6 +431,22 @@ class Rows {
   getData() {
     const { len } = this;
     return Object.assign({ len }, this._);
+  }
+
+  static reduceAsRows(iterable, cb = () => {}) {
+    const rows = {};
+    iterable.forEach(({ ri, ci, cell }) => {
+      cb(ri, ci, cell);
+      if (!rows[ri]) {
+        rows[ri] = { cells: {} };
+      }
+      if (ci !== undefined && cell) {
+        rows[ri].cells[ci] = cell;
+      }
+    });
+    return ({
+      rows,
+    });
   }
 }
 
