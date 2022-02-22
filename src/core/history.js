@@ -15,8 +15,7 @@ export default class History {
 
   add(data) {
     this.undoItems.push(
-      this.undoItems.length === 0 ? data
-        : merge({}, this.undoItems.at(-1), data),
+      merge({}, this.undoItems.at(-1) || {}, data),
     );
     this.redoItems = [];
   }
@@ -34,7 +33,9 @@ export default class History {
     if (this.canUndo()) {
       const currentState = undoItems.pop();
       redoItems.push(currentState);
-      cb(merge({}, this.initialState, this.undoItems.at(-1) || {}));
+      cb(
+        merge({}, this.initialState, this.undoItems.at(-1) || {}),
+      );
     }
   }
 
@@ -47,19 +48,5 @@ export default class History {
         merge({}, this.initialState, nextState),
       );
     }
-  }
-
-  merge(current, newState) {
-    const diff = cloneDeep(current);
-    Object.keys(newState).forEach((key) => {
-      if (!diff[key]) {
-        diff[key] = newState[key];
-        return;
-      }
-      if (typeof newState[key] === 'object') {
-        diff[key] = this.merge(diff[key], newState[key]);
-      }
-    });
-    return diff;
   }
 }
