@@ -507,7 +507,7 @@ function horizontalScrollbarMove(distance) {
 function rowResizerFinished(cRect, distance) {
   const { ri } = cRect;
   const { table, selector, data } = this;
-  data.rows.setHeight(ri, distance);
+  data.setRowHeight(ri, distance);
   table.render();
   selector.resetAreaOffset();
   verticalScrollbarSet.call(this);
@@ -517,7 +517,7 @@ function rowResizerFinished(cRect, distance) {
 function colResizerFinished(cRect, distance) {
   const { ci } = cRect;
   const { table, selector, data } = this;
-  data.cols.setWidth(ci, distance);
+  data.setColWidth(ci, distance);
   // console.log('data:', data);
   table.render();
   selector.resetAreaOffset();

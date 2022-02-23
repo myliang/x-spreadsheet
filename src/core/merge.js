@@ -55,6 +55,7 @@ class Merges {
 
   // type: row | column
   shift(type, index, n, cbWithin) {
+    let shifted = false;
     this._.forEach((cellRange) => {
       const {
         sri, sci, eri, eci,
@@ -77,10 +78,13 @@ class Merges {
           cbWithin(sri, sci, 0, n);
         }
       }
+      shifted = true;
     });
+    return shifted;
   }
 
   move(cellRange, rn, cn) {
+    let moved = false;
     this._.forEach((it1) => {
       const it = it1;
       if (it.within(cellRange)) {
@@ -88,8 +92,10 @@ class Merges {
         it.sri += rn;
         it.sci += cn;
         it.eci += cn;
+        moved = true;
       }
     });
+    return moved;
   }
 
   setData(merges) {

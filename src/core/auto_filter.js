@@ -63,13 +63,17 @@ export default class AutoFilter {
   }
 
   setData({ ref, filters, sort }) {
-    if (ref != null) {
-      this.ref = ref;
-      this.filters = filters.map(it => new Filter(it.ci, it.operator, it.value));
-      if (sort) {
-        this.sort = new Sort(sort.ci, sort.order);
-      }
+    // clear the filter if there's no reference
+    if (!ref) {
+      this.clear();
+      return false;
     }
+    this.ref = ref;
+    this.filters = filters ? filters.map(it => new Filter(it.ci, it.operator, it.value)) : [];
+    if (sort) {
+      this.sort = new Sort(sort.ci, sort.order);
+    }
+    return true;
   }
 
   getData() {
@@ -77,7 +81,7 @@ export default class AutoFilter {
       const { ref, filters, sort } = this;
       return { ref, filters: filters.map(it => it.getData()), sort };
     }
-    return {};
+    return { ref: null, filters: [], sort: null };
   }
 
   addFilter(ci, operator, value) {
@@ -116,6 +120,82 @@ export default class AutoFilter {
       }
     }
     return null;
+  }
+
+  // operator insert | delete
+  move(ref, ri, n = 1, operator = 'insert') {
+    if (!ref) {
+      return false;
+    }
+
+    const oldRef = this.ref;
+    const newRef = CellRange.valueOf(ref);
+
+    if (operator === 'insert') {
+      if (ri <= newRef.sri) {
+        newRef.sri += n;
+      }
+
+      if (ri <= newRef.eri) {
+        newRef.eri += n;
+      }
+    }
+
+    if (operator === 'delete') {
+      if (ri <= newRef.eri) {
+        newRef.eri -= n;
+        console.log('newRef.eri', newRef.eri);
+      }
+
+      if (ri === newRef.sri) {
+        this.clear();
+        return true;
+      }
+    }
+
+    this.ref = newRef.toString();
+    return oldRef !== this.ref;
+  }
+
+  // operator insert | delete
+  shift(ref, ci, n = 1, operator = 'insert') {
+    if (!ref) {
+      return false;
+    }
+
+    const oldRef = this.ref;
+    const newRef = CellRange.valueOf(ref);
+
+    if (operator === 'insert') {
+      if (ci <= newRef.sci) {
+        newRef.sci += n;
+      }
+
+      if (ci <= newRef.eci) {
+        newRef.eci += n;
+      }
+
+      this.filters.forEach((it) => {
+        if (it.ci >= ci) {
+          it.ci += n;
+        }
+      });
+    }
+
+    if (operator === 'delete') {
+      if (ci <= newRef.eci) {
+        newRef.eci -= n;
+      }
+
+      if (newRef.sci > newRef.eci) {
+        this.clear();
+        return true;
+      }
+    }
+
+    this.ref = newRef.toString();
+
+    return oldRef !== this.ref;
   }
 
   filteredRows(getCell) {

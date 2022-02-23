@@ -41,6 +41,11 @@ class Cols {
   setWidth(ci, width) {
     const col = this.getOrNew(ci);
     col.width = width;
+    return ({
+      cols: {
+        [ci]: { width },
+      },
+    });
   }
 
   unhide(idx) {

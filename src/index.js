@@ -76,9 +76,9 @@ class Spreadsheet {
     this.sheetIndex = 1; // reset sheet index
     if (ds.length > 0) {
       for (let i = 0; i < ds.length; i += 1) {
-        const it = ds[i]; // TODO: check whether lodash.deepClone ist fast enough to handle over 100000^n cells
+        const it = ds[i];
         const nd = this.addSheet(it.name, i === 0);
-        nd.setData(it);
+        nd.setData(it, true);
         if (i === 0) {
           this.sheet.resetData(nd, this.datas);
         }

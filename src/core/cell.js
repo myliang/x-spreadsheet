@@ -18,7 +18,7 @@ const infixExprToSuffixExpr = (src) => {
   const sheetRegex = /(?<=\(|;|,)(?:(?!;).)*(?<=!)/g;
   if (source.includes('!')) {
     const [exprContents] = source.match(/(?<=\()(.*?)(?=\))/); // get contents inside brackets
-    const arrayOfArgs = exprContents.replace(',', ';').split(';');
+    const arrayOfArgs = exprContents.replaceAll(',', ';').split(';');
     for (const elm of arrayOfArgs) {
       const elmRegex = /(?<=^)(.*?)(?=!)/g;
       const cellRegex = /(?<=!)(.*?)(?=\)|$)/g;
