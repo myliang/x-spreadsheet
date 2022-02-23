@@ -19,26 +19,29 @@ class Spreadsheet {
     }
     this.bottombar = this.options.showBottomBar ? new Bottombar(() => {
       if (this.options.mode === 'read') return;
-      const d = this.addSheet();
-      this.sheet.resetData(d, this.datas);
+      const sheetIdx = this.addSheet();
+      this.sheet.resetData(sheetIdx, this.datas);
     }, (index) => {
-      const d = this.datas[index];
-      this.sheet.resetData(d, this.datas);
+      this.sheet.resetData(index, this.datas);
     }, () => {
       this.deleteSheet();
     }, (index, value) => {
       this.datas[index].name = value;
       this.sheet.trigger('change');
     }) : null;
-    this.data = this.addSheet();
+    this.dataIndex = this.addSheet();
     const rootEl = h('div', `${cssPrefix}`)
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
     targetEl.appendChild(rootEl.el);
-    this.sheet = new Sheet(rootEl, this.data, this.datas);
+    this.sheet = new Sheet(rootEl, this.dataIndex, this.datas);
     if (this.bottombar !== null) {
       rootEl.child(this.bottombar.el);
     }
+  }
+
+  get data() {
+    return this.datas[this.dataIndex];
   }
 
   addSheet(name, active = true) {
@@ -48,12 +51,11 @@ class Spreadsheet {
       this.sheet.trigger('change', ...args);
     };
     this.datas.push(d);
-    // console.log('d:', n, d, this.datas);
     if (this.bottombar !== null) {
       this.bottombar.addItem(n, active, this.options);
     }
     this.sheetIndex += 1;
-    return d;
+    return this.datas.findIndex(({ name: dname }) => dname === n);
   }
 
   deleteSheet() {
@@ -77,10 +79,10 @@ class Spreadsheet {
     if (ds.length > 0) {
       for (let i = 0; i < ds.length; i += 1) {
         const it = ds[i];
-        const nd = this.addSheet(it.name, i === 0);
-        nd.setData(it, true);
+        const ndi = this.addSheet(it.name, i === 0);
+        this.datas[ndi].setData(it, true);
         if (i === 0) {
-          this.sheet.resetData(nd, this.datas);
+          this.sheet.resetData(ndi, this.datas);
         }
       }
     }

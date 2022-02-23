@@ -1,6 +1,8 @@
 import helper from './helper';
 import { CellRange } from './cell_range';
 import { expr2expr } from './alphabet';
+import _cell from './cell';
+import { formulam } from './formula';
 
 class Rows {
   constructor({ len, height }) {
@@ -120,7 +122,7 @@ class Rows {
   }
 
   // what: all | format | text
-  copyPaste(srcCellRange, dstCellRange, what, autofill = false, cb = () => {}) {
+  copyPaste(srcCellRange, dstCellRange, what, autofill = false, datas = [], cb = () => {}) {
     const {
       sri, sci, eri, eci,
     } = srcCellRange;
@@ -179,7 +181,16 @@ class Rows {
                 }
                 // paste expressions
                 if (ncell.text && !autofill && (ncell.text[0] === '=')) {
-                  ncell.text = ncell.text.replace(/\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g, (word) => {
+                  const txt = ncell.text;
+
+                  ncell.text = what === 'text' ? _cell.render(txt, formulam, (y, x, d) => {
+                    if (!d) return this.getCell(x, y).text || '';
+                    const xSheet = datas.find(({ name }) => name === d);
+                    if (xSheet) {
+                      return xSheet.getCellTextOrDefault(x, y);
+                    }
+                    return '#REF!';
+                  }) : ncell.text.replace(/\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g, (word) => {
                     if (/^\d+$/.test(word)) return word;
                     return expr2expr(word, nci - sci, nri - sri);
                   });

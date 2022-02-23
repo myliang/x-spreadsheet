@@ -128,22 +128,25 @@ function canPaste(src, dst, error = () => {}) {
   }
   return true;
 }
-function copyPaste(srcCellRange, dstCellRange, what, autofill = false) {
+function copyPaste(srcCellRange, dstCellRange, what, autofill = false, datas = []) {
   const { rows, merges } = this;
   // delete dest merge
   if (what === 'all' || what === 'format') {
     merges.deleteWithin(dstCellRange);
   }
   let changedMerges = false;
-  const changedRows = rows.copyPaste(srcCellRange, dstCellRange, what, autofill, (ri, ci, cell) => {
-    if (cell && cell.merge) {
-      // console.log('cell:', ri, ci, cell);
-      const [rn, cn] = cell.merge;
-      if (rn <= 0 && cn <= 0) return;
-      merges.add(new CellRange(ri, ci, ri + rn, ci + cn));
-      changedMerges = true;
-    }
-  });
+  const changedRows = rows.copyPaste(
+    srcCellRange, dstCellRange, what, autofill, datas,
+    (ri, ci, cell) => {
+      if (cell && cell.merge) {
+        // console.log('cell:', ri, ci, cell);
+        const [rn, cn] = cell.merge;
+        if (rn <= 0 && cn <= 0) return;
+        merges.add(new CellRange(ri, ci, ri + rn, ci + cn));
+        changedMerges = true;
+      }
+    },
+  );
   return ({
     ...changedRows,
     ...(changedMerges ? { merges: merges.getData() } : {}),
@@ -156,9 +159,11 @@ function cutPaste(srcCellRange, dstCellRange) {
     clipboard, rows, merges,
   } = this;
   const changedRows = rows.cutPaste(srcCellRange, dstCellRange);
-  const moved = merges.move(srcCellRange,
+  const moved = merges.move(
+    srcCellRange,
     dstCellRange.sri - srcCellRange.sri,
-    dstCellRange.sci - srcCellRange.sci);
+    dstCellRange.sci - srcCellRange.sci,
+  );
   setTimeout(() => {
     clipboard.clear();
   }, 1);
@@ -476,7 +481,7 @@ export default class DataProxy {
   }
 
   // what: all | text | format
-  paste(what = 'all', error = () => {}) {
+  paste(what = 'all', datas = [], error = () => {}) {
     // console.log('sIndexes:', sIndexes);
     const {
       clipboard, selector, rows, cols,
@@ -501,7 +506,7 @@ export default class DataProxy {
     this.changeData(() => {
       let res;
       if (clipboard.isCopy()) {
-        res = copyPaste.call(this, clipboard.range, selector.range, what);
+        res = copyPaste.call(this, clipboard.range, selector.range, what, false, datas);
       } else if (clipboard.isCut()) {
         res = cutPaste.call(this, clipboard.range, selector.range);
       }

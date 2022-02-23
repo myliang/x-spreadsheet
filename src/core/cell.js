@@ -155,7 +155,7 @@ const infixExprToSuffixExpr = (src) => {
   return { stack, xSheetMap };
 };
 
-const evalSubExpr = (subExpr, cellRender, xSheetMapping) => {
+const evalSubExpr = (subExpr, cellRender, xSheetMapping = {}) => {
   const [fl] = subExpr;
   let expr = subExpr;
   if (fl === '"') {
@@ -170,7 +170,7 @@ const evalSubExpr = (subExpr, cellRender, xSheetMapping) => {
     return ret * Number(expr);
   }
 
-  const { sheet } = xSheetMapping || {};
+  const { sheet } = xSheetMapping;
   const [x, y] = expr2xy(expr);
   const cellVal = cellRender(x, y, sheet);
 
@@ -251,7 +251,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList, xSheetMappin
       }
       const mapping = xSheetMapping.shift();
       stack.push(
-        evalSubExpr(expr, cellRender, mapping && (mapping.cell === expr) ? mapping : false),
+        evalSubExpr(expr, cellRender, mapping && (mapping.cell === expr) ? mapping : {}),
       );
       cellList.pop();
     }
