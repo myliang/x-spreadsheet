@@ -122,7 +122,7 @@ class Rows {
   }
 
   // what: all | format | text
-  copyPaste(srcCellRange, dstCellRange, what, autofill = false, datas = [], cb = () => {}) {
+  copyPaste(srcCellRange, dstCellRange, what, autofill = false, dataSet = [], cb = () => {}) {
     const {
       sri, sci, eri, eci,
     } = srcCellRange;
@@ -185,7 +185,7 @@ class Rows {
 
                   ncell.text = what === 'text' ? _cell.render(txt, formulam, (y, x, d) => {
                     if (!d) return this.getCell(x, y).text || '';
-                    const xSheet = datas.find(({ name }) => name === d);
+                    const xSheet = dataSet.find(({ name }) => name === d);
                     if (xSheet) {
                       return xSheet.getCellTextOrDefault(x, y);
                     }

@@ -349,11 +349,11 @@ function cut() {
 }
 
 function paste(what, evt) {
-  const { data, datas } = this;
+  const { data, dataSet } = this;
   let clen = 0;
   let rlen = 0;
   if (data.settings.mode === 'read') return;
-  if (data.paste(what, datas, msg => xtoast('Tip', msg))) {
+  if (data.paste(what, dataSet, msg => xtoast('Tip', msg))) {
     sheetReset.call(this);
   } else if (evt) {
     const cdata = evt.clipboardData.getData('text/plain');
@@ -1012,22 +1012,21 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
 }
 
 export default class Sheet {
-  // pass datas in the constructor to be able to acces data accross sheets
-  constructor(targetEl, idx, datas) {
+  constructor(targetEl, idx, dataSet) {
     this.container = targetEl;
     this.eventMap = createEventEmitter();
-    const { view, showToolbar, showContextmenu } = datas[idx].settings;
+    const { view, showToolbar, showContextmenu } = dataSet[idx].settings;
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(datas[idx], view.width, !showToolbar);
-    this.print = new Print(datas[idx]);
+    this.toolbar = new Toolbar(dataSet[idx], view.width, !showToolbar);
+    this.print = new Print(dataSet[idx]);
     this.container.children(this.toolbar.el, this.el, this.print.el);
     this.dataIndex = idx;
-    this.datas = datas;
+    this.dataSet = dataSet;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
-    this.rowResizer = new Resizer(false, datas[idx].rows.height);
-    this.colResizer = new Resizer(true, datas[idx].cols.minWidth);
+    this.rowResizer = new Resizer(false, dataSet[idx].rows.height);
+    this.colResizer = new Resizer(true, dataSet[idx].cols.minWidth);
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
@@ -1035,7 +1034,7 @@ export default class Sheet {
     this.editor = new Editor(
       formulas,
       () => this.getTableOffset(),
-      datas[idx].rows.height,
+      dataSet[idx].rows.height,
     );
     // data validation
     this.modalValidation = new ModalValidation();
@@ -1045,7 +1044,7 @@ export default class Sheet {
     // contextMenu
     this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
     // selector
-    this.selector = new Selector(datas[idx]);
+    this.selector = new Selector(dataSet[idx]);
     this.overlayerCEl = h('div', `${cssPrefix}-overlayer-content`)
       .children(
         this.editor.el,
@@ -1069,7 +1068,7 @@ export default class Sheet {
       this.modalFind.el,
     );
     // table
-    this.table = new Table(this.tableEl.el, idx, datas);
+    this.table = new Table(this.tableEl.el, idx, dataSet);
     sheetInitEvents.call(this);
     sheetReset.call(this);
     // init selector [0, 0]
@@ -1078,7 +1077,7 @@ export default class Sheet {
   }
 
   get data() {
-    return this.datas[this.dataIndex];
+    return this.dataSet[this.dataIndex];
   }
 
   on(eventName, func) {
@@ -1091,18 +1090,18 @@ export default class Sheet {
     eventMap.fire(eventName, args);
   }
 
-  resetData(idx, datas) {
+  resetData(idx, dataSet) {
     // before
     this.editor.clear();
     // after
     this.dataIndex = idx;
-    this.datas = datas;
+    this.dataSet = dataSet;
     verticalScrollbarSet.call(this);
     horizontalScrollbarSet.call(this);
-    this.toolbar.resetData(datas[idx]);
-    this.print.resetData(datas[idx]);
-    this.selector.resetData(datas[idx]);
-    this.table.resetData(idx, datas);
+    this.toolbar.resetData(dataSet[idx]);
+    this.print.resetData(dataSet[idx]);
+    this.selector.resetData(dataSet[idx]);
+    this.table.resetData(idx, dataSet);
   }
 
   loadData(data) {

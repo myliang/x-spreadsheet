@@ -128,7 +128,7 @@ function canPaste(src, dst, error = () => {}) {
   }
   return true;
 }
-function copyPaste(srcCellRange, dstCellRange, what, autofill = false, datas = []) {
+function copyPaste(srcCellRange, dstCellRange, what, autofill = false, dataSet = []) {
   const { rows, merges } = this;
   // delete dest merge
   if (what === 'all' || what === 'format') {
@@ -136,7 +136,7 @@ function copyPaste(srcCellRange, dstCellRange, what, autofill = false, datas = [
   }
   let changedMerges = false;
   const changedRows = rows.copyPaste(
-    srcCellRange, dstCellRange, what, autofill, datas,
+    srcCellRange, dstCellRange, what, autofill, dataSet,
     (ri, ci, cell) => {
       if (cell && cell.merge) {
         // console.log('cell:', ri, ci, cell);
@@ -481,7 +481,7 @@ export default class DataProxy {
   }
 
   // what: all | text | format
-  paste(what = 'all', datas = [], error = () => {}) {
+  paste(what = 'all', dataSet = [], error = () => {}) {
     // console.log('sIndexes:', sIndexes);
     const {
       clipboard, selector, rows, cols,
@@ -506,7 +506,7 @@ export default class DataProxy {
     this.changeData(() => {
       let res;
       if (clipboard.isCopy()) {
-        res = copyPaste.call(this, clipboard.range, selector.range, what, false, datas);
+        res = copyPaste.call(this, clipboard.range, selector.range, what, false, dataSet);
       } else if (clipboard.isCut()) {
         res = cutPaste.call(this, clipboard.range, selector.range);
       }
