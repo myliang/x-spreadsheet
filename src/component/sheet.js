@@ -1175,7 +1175,6 @@ export default class Sheet {
   }) {
     if ([sri, sci].every(v => v !== undefined)) {
       if ([eri, eci].every(v => v === undefined)) {
-        console.log({ sri, sci })
         this.selector.set(
           this.data.rows.len === sri ? sri - 1 : sri,
           this.data.cols.len === sci ? sci - 1 : sci,

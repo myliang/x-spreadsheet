@@ -40,7 +40,7 @@ export default class History {
       redoItems.push(currentState);
       const [state] = undoItems.at(-1) || [{}];
       cb(
-        [merge({}, this.initialState, state || {}), currentState[1]],
+        [merge({}, this.initialState, state), currentState[1]],
       );
     }
   }
