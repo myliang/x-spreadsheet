@@ -49,7 +49,7 @@ function renderCellBorders(bboxes, translateFunc) {
 }
 */
 
-export function renderCell(draw, data, rindex, cindex, yoffset = 0, datas = []) {
+export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []) {
   const { sortedRowMap, rows, cols } = data;
   if (rows.isHide(rindex) || cols.isHide(cindex)) return;
   let nrindex = rindex;
@@ -78,7 +78,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0, datas = []) 
     if (!data.settings.evalPaused) {
       cellText = _cell.render(cell.text === 0 ? 0 : cell.text || '', formulam, (y, x, d) => {
         if (!d) return (data.getCellTextOrDefault(x, y));
-        const xSheet = datas.find(({ name }) => name === d);
+        const xSheet = dataSet.find(({ name }) => name === d);
         if (xSheet) {
           return xSheet.getCellTextOrDefault(x, y);
         }
@@ -130,7 +130,7 @@ function renderAutofilter(viewRange) {
 }
 
 function renderContent(viewRange, fw, fh, tx, ty) {
-  const { draw, data, datas } = this;
+  const { draw, data, dataSet } = this;
   draw.save();
   draw.translate(fw, fh)
     .translate(tx, ty);
@@ -151,7 +151,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.save();
   draw.translate(0, -exceptRowTotalHeight);
   viewRange.each((ri, ci) => {
-    renderCell(draw, data, ri, ci, 0, datas);
+    renderCell(draw, data, ri, ci, 0, dataSet);
   }, ri => filteredTranslateFunc(ri));
   draw.restore();
 
@@ -162,7 +162,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.translate(0, -exceptRowTotalHeight);
   data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
     if (!exceptRowSet.has(sri)) {
-      renderCell(draw, data, sri, sci, 0, datas);
+      renderCell(draw, data, sri, sci, 0, dataSet);
     } else if (!rset.has(sri)) {
       rset.add(sri);
       const height = data.rows.sumHeight(sri, eri + 1);
@@ -307,18 +307,20 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
 
 /** end */
 class Table {
-  // pass datas in the constructor to be able to acces data accross sheets
-  // TODO refactor data to be index of datas
-  constructor(el, data, datas) {
+  constructor(el, idx, dataSet) {
     this.el = el;
-    this.draw = new Draw(el, data.viewWidth(), data.viewHeight());
-    this.data = data;
-    this.datas = datas;
+    this.draw = new Draw(el, dataSet[idx].viewWidth(), dataSet[idx].viewHeight());
+    this.dataIndex = idx;
+    this.dataSet = dataSet;
   }
 
-  resetData(data, datas) {
-    this.data = data;
-    this.datas = datas;
+  get data() {
+    return this.dataSet[this.dataIndex];
+  }
+
+  resetData(idx, dataSet) {
+    this.dataIndex = idx;
+    this.dataSet = dataSet;
     this.render();
   }
 
