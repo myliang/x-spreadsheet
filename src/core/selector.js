@@ -19,4 +19,13 @@ export default class Selector {
   size() {
     return this.range.size();
   }
+
+  get rangeObject() {
+    const {
+      sri, sci, eri, eci,
+    } = this.range;
+    return ({
+      sri, sci, eri, eci,
+    });
+  }
 }

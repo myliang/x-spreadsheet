@@ -157,6 +157,14 @@ class Spreadsheet {
     return eci;
   }
 
+  getChangedCells(sheetIndex = 0) {
+    return this.dataSet[sheetIndex].getChangedCells();
+  }
+
+  getCellsGroupedByRow(sheetIndex = 0) {
+    return this.dataSet[sheetIndex].getCellsGroupedByRow();
+  }
+
   on(eventName, func) {
     this.sheet.on(eventName, func);
     return this;
