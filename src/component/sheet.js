@@ -44,28 +44,38 @@ function throttle(func, wait) {
 
 function scrollbarMove() {
   const {
-    data, verticalScrollbar, horizontalScrollbar,
+    data, verticalScrollbar, horizontalScrollbar, selector,
   } = this;
   const {
     l, t, left, top, width, height,
   } = data.getSelectedRect();
   const tableOffset = this.getTableOffset();
   // console.log(',l:', l, ', left:', left, ', tOffset.left:', tableOffset.width);
-  if (Math.abs(left) + width > tableOffset.width) {
-    horizontalScrollbar.move({ left: l + width - tableOffset.width });
-  } else {
-    const fsw = data.freezeTotalWidth();
-    if (left < fsw) {
-      horizontalScrollbar.move({ left: l - 1 - fsw });
+  const {
+    sri, eri, sci, eci,
+  } = selector.range;
+
+  // do not scroll horizontally when the whole row is selected
+  if (!((sci === 0) && (eci === data.cols.len - 1))) {
+    if (Math.abs(left) + width > tableOffset.width) {
+      horizontalScrollbar.move({ left: l + width - tableOffset.width });
+    } else {
+      const fsw = data.freezeTotalWidth();
+      if (left < fsw) {
+        horizontalScrollbar.move({ left: l - 1 - fsw });
+      }
     }
   }
-  // console.log('top:', top, ', height:', height, ', tof.height:', tableOffset.height);
-  if (Math.abs(top) + height > tableOffset.height) {
-    verticalScrollbar.move({ top: t + height - tableOffset.height - 1 });
-  } else {
-    const fsh = data.freezeTotalHeight();
-    if (top < fsh) {
-      verticalScrollbar.move({ top: t - 1 - fsh });
+
+  // do not scroll vertically when the whole column is selected
+  if (!((sri === 0) && (eri === data.rows.len - 1))) {
+    if (Math.abs(top) + height > tableOffset.height) {
+      verticalScrollbar.move({ top: t + height - tableOffset.height - 1 });
+    } else {
+      const fsh = data.freezeTotalHeight();
+      if (top < fsh) {
+        verticalScrollbar.move({ top: t - 1 - fsh });
+      }
     }
   }
 }
@@ -539,18 +549,26 @@ function dataSetCellText(text, state = 'finished') {
 }
 
 function insertDeleteRowColumn(type) {
-  const { data } = this;
+  const { data, selector } = this;
   if (data.settings.mode === 'read') return;
   if (type === 'insert-row') { // insert row above
-    data.insert('row');
+    data.insert('row', 1, true, {}, (ri, ci) => {
+      selector.set(ri, ci);
+    });
   } else if (type === 'insert-row-below') {
-    data.insert('row', 1, false);
+    data.insert('row', 1, false, {}, (ri, ci) => {
+      selector.set(ri, ci);
+    });
   } else if (type === 'delete-row') {
     data.delete('row');
   } else if (type === 'insert-column') { // insert column left
-    data.insert('column');
+    data.insert('column', 1, true, {}, (ri, ci) => {
+      selector.set(ri, ci);
+    });
   } else if (type === 'insert-column-right') {
-    data.insert('column', 1, false);
+    data.insert('column', 1, false, {}, (ri, ci) => {
+      selector.set(ri, ci);
+    });
   } else if (type === 'delete-column') {
     data.delete('column');
   } else if (type === 'delete-cell') {
@@ -1119,12 +1137,16 @@ export default class Sheet {
   }
 
   undo() {
-    this.data.undo();
+    this.data.undo((range) => {
+      this.selectorSetAndScroll(range);
+    });
     sheetReset.call(this);
   }
 
   redo() {
-    this.data.redo();
+    this.data.redo((range) => {
+      this.selectorSetAndScroll(range);
+    });
     sheetReset.call(this);
   }
 
@@ -1147,5 +1169,23 @@ export default class Sheet {
       left: cols.indexWidth,
       top: rows.height,
     };
+  }
+
+  selectorSetAndScroll({
+    sri, sci, eri, eci,
+  }) {
+    if ([sri, sci].every(v => v !== undefined)) {
+      if ([eri, eci].every(v => v === undefined)) {
+        this.selector.set(
+          this.data.rows.len === sri ? sri - 1 : sri,
+          this.data.cols.len === sci ? sci - 1 : sci,
+        );
+      } else {
+        this.selector.setStartEnd(sri, sci, eri, eci);
+      }
+      setTimeout(() => {
+        scrollbarMove.call(this);
+      }, 1);
+    }
   }
 }

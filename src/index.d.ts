@@ -146,8 +146,8 @@ declare module '@bergfreunde/x-data-spreadsheet' {
 
   export class DataProxy {
     constructor(name: string, settings: Options);
-    undo(): void;
-    redo(): void;
+    undo(callback: () => unknown): void;
+    redo(callback: () => unknown): void;
     copy(): void;
     clearClipboard(): void;
     cut(): void;
@@ -158,7 +158,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     resetCellStyle(rowIndex: number, colIndex: number): void;
     setColStyle(columnIndex: number, style: CellStyle, excludeRows: number[]): void;
     setCellTextRaw(rowIndex: number, colIndex: number, text: string): void;
-    // TODO add type for missing methods in this class
+    getCellsGroupedByRow(): { ri: number, cells: { ci: number, value: string | number }[] }[];
   }
 
   export default class Spreadsheet {
@@ -324,6 +324,10 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * rerender sheet
      */
     reRender(): this;
+
+    getChangedCells(sheetIndex?: number): { ci: number, ri: number, value: string | number }[]
+    getCellsGroupedByRow(sheetIndex?: number): { ri: number, cells: { ci: number, value: string | number }[] }[];
+    resetHistory(sheetIndex?: number): void
 
     static getInstance(container: string | HTMLElement, opts?: Options): Spreadsheet;
 
