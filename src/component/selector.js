@@ -323,7 +323,12 @@ export default class Selector {
   // startRowIndex, startColumnIndex, endRowIndex, endColumnIndex, moveRowIndex, moveColumnIndex
   setStartEnd(sri, sci, eri, eci, mri, mci) {
     this.set(sri, sci);
-    this.setEnd(eri, eci);
+
+    this.lastri = eri;
+    this.lastci = eci;
+
+    this.range = this.data.calSelectedRangeByEnd(eri, eci);
+    setAllAreaOffset.call(this, this.data.getSelectedRect());
     this.moveIndexes = [mri || eri, mci || eci];
   }
 

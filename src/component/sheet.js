@@ -55,6 +55,7 @@ function scrollbarMove() {
     sri, eri, sci, eci,
   } = selector.range;
 
+  // do not scroll horizontally when the whole row is selected
   if (!((sci === 0) && (eci === data.cols.len - 1))) {
     if (Math.abs(left) + width > tableOffset.width) {
       horizontalScrollbar.move({ left: l + width - tableOffset.width });
@@ -66,7 +67,7 @@ function scrollbarMove() {
     }
   }
 
-  // console.log('top:', top, ', height:', height, ', tof.height:', tableOffset.height);
+  // do not scroll vertically when the whole column is selected
   if (!((sri === 0) && (eri === data.rows.len - 1))) {
     if (Math.abs(top) + height > tableOffset.height) {
       verticalScrollbar.move({ top: t + height - tableOffset.height - 1 });

@@ -193,9 +193,10 @@ function setStyleBorders({ mode, style, color }) {
   const multiple = !this.isSingleSelected();
   if (!multiple) {
     if (mode === 'inside' || mode === 'horizontal' || mode === 'vertical') {
-      return;
+      return null;
     }
   }
+  const changedCells = [];
   if (mode === 'outside' && !multiple) {
     setStyleBorder.call(this, sri, sci, {
       top: [style, color], bottom: [style, color], left: [style, color], right: [style, color],
@@ -210,6 +211,7 @@ function setStyleBorders({ mode, style, color }) {
         //   if (ns[prop]) delete ns[prop];
         // });
         cell.style = this.addStyle(ns);
+        changedCells.push({ ri, ci, cell });
       }
     });
   } else if (mode === 'all' || mode === 'inside' || mode === 'outside'
@@ -263,6 +265,7 @@ function setStyleBorders({ mode, style, color }) {
         }
         if (Object.keys(bss).length > 0) {
           setStyleBorder.call(this, ri, ci, bss);
+          changedCells.push({ ri, ci, cell });
         }
         ci += cn;
       }
@@ -277,6 +280,7 @@ function setStyleBorders({ mode, style, color }) {
         setStyleBorder.call(this, eri, ci, { bottom: [style, color] });
         ci += rows.getCellMerge(eri, ci)[1];
       }
+      changedCells.push({ ri: sri, ci, cell: rows.getCell(sri, ci) });
     }
   } else if (mode === 'left' || mode === 'right') {
     for (let ri = sri; ri <= eri; ri += 1) {
@@ -288,8 +292,16 @@ function setStyleBorders({ mode, style, color }) {
         setStyleBorder.call(this, ri, eci, { right: [style, color] });
         ri += rows.getCellMerge(ri, eci)[0];
       }
+      changedCells.push({ ri, ci: eci, cell: rows.getCell(ri, eci) });
     }
   }
+  return ([
+    {
+      ...Rows.reduceAsRows(changedCells),
+      styles,
+    },
+    selector.rangeObject,
+  ]);
 }
 
 function getCellRowByY(y, scrollOffsety) {
@@ -545,7 +557,12 @@ export default class DataProxy {
       }
       return [
         res,
-        selector.rangeObject,
+        {
+          sri: selector.range.sri,
+          sci: selector.range.sci,
+          eri: selector.range.sri + (clipboard.range.eri - clipboard.range.sri),
+          eci: selector.range.sci + (clipboard.range.eci - clipboard.range.sci),
+        },
       ];
     });
     return true;
@@ -904,10 +921,13 @@ export default class DataProxy {
       selector.range.each((ri, ci) => {
         changedCells.push({ ri, ci, cell: rows.getCellOrNew(ri, ci) });
       });
-      return ({
-        ...Rows.reduceAsRows(changedCells),
-        merges: merges.getData(),
-      });
+      return ([
+        {
+          ...Rows.reduceAsRows(changedCells),
+          merges: merges.getData(),
+        },
+        selector.rangeObject,
+      ]);
     }
     return null;
   }
@@ -922,10 +942,13 @@ export default class DataProxy {
     selector.range.each((ri, ci) => {
       changedCells.push({ ri, ci, cell: rows.getCellOrNew(ri, ci) });
     });
-    return ({
-      ...Rows.reduceAsRows(changedCells),
-      merges: merges.getData(),
-    });
+    return ([
+      {
+        ...Rows.reduceAsRows(changedCells),
+        merges: merges.getData(),
+      },
+      selector.rangeObject,
+    ]);
   }
 
   canAutofilter() {
@@ -1454,8 +1477,10 @@ export default class DataProxy {
 
   changeData(cb) {
     const changed = cb();
-    this.change(this.getData());
-    this.history.add(changed);
+    if (changed) {
+      this.change(this.getData());
+      this.history.add(changed);
+    }
   }
 
   setData(d, init = false) {
