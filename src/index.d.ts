@@ -158,7 +158,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     resetCellStyle(rowIndex: number, colIndex: number): void;
     setColStyle(columnIndex: number, style: CellStyle, excludeRows: number[]): void;
     setCellTextRaw(rowIndex: number, colIndex: number, text: string): void;
-    getChangedCells(): { ci: number, ri: number, value: string | number }[]
     getCellsGroupedByRow(): { ri: number, cells: { ci: number, value: string | number }[] }[];
   }
 
@@ -326,8 +325,9 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      */
     reRender(): this;
 
-    getChangedCells(): { ci: number, ri: number, value: string | number }[]
-    getCellsGroupedByRow(): { ri: number, cells: { ci: number, value: string | number }[] }[];
+    getChangedCells(sheetIndex?: number): { ci: number, ri: number, value: string | number }[]
+    getCellsGroupedByRow(sheetIndex?: number): { ri: number, cells: { ci: number, value: string | number }[] }[];
+    resetHistory(sheetIndex?: number): void
 
     static getInstance(container: string | HTMLElement, opts?: Options): Spreadsheet;
 

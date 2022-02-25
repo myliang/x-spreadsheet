@@ -449,10 +449,6 @@ export default class DataProxy {
     });
   }
 
-  getChangedCells() {
-    return this.history.getChangedCellValues();
-  }
-
   getCellsGroupedByRow() {
     const { rows, cols } = this;
     const colData = cols.getData();

@@ -158,11 +158,15 @@ class Spreadsheet {
   }
 
   getChangedCells(sheetIndex = 0) {
-    return this.dataSet[sheetIndex].getChangedCells();
+    return this.dataSet[sheetIndex].history.getChangedCellValues();
   }
 
   getCellsGroupedByRow(sheetIndex = 0) {
     return this.dataSet[sheetIndex].getCellsGroupedByRow();
+  }
+
+  resetHistory(sheetIndex = 0) {
+    this.dataSet[sheetIndex].history.init();
   }
 
   on(eventName, func) {
