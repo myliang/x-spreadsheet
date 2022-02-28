@@ -1,7 +1,4 @@
-// import helper from '../helper';
-// import isEqual from 'lodash/isEqual';
-import cloneDeep from 'lodash/cloneDeep';
-import merge from 'lodash/merge';
+import helper from './helper';
 
 export default class History {
   constructor() {
@@ -11,7 +8,7 @@ export default class History {
 
   init(data) {
     if (data) {
-      this.initialState = cloneDeep(data);
+      this.initialState = JSON.stringify(data);
     }
     this.undoItems = [];
     this.redoItems = [];
@@ -20,7 +17,7 @@ export default class History {
   add([data, selector]) {
     const [state] = this.undoItems.at(-1) || [{}];
     this.undoItems.push(
-      [merge({}, state, data), selector],
+      [this.merge(data, state), selector],
     );
     this.redoItems = [];
   }
@@ -40,7 +37,7 @@ export default class History {
       redoItems.push(currentState);
       const [state] = undoItems.at(-1) || [{}];
       cb(
-        [merge({}, this.initialState, state), currentState[1]],
+        [this.merge(state), currentState[1]],
       );
     }
   }
@@ -51,7 +48,7 @@ export default class History {
       const [state, selector] = redoItems.pop();
       undoItems.push([state, selector]);
       cb(
-        [merge({}, this.initialState, state), selector],
+        [this.merge(state), selector],
       );
     }
   }
@@ -87,5 +84,10 @@ export default class History {
       return set;
     }
     return [];
+  }
+
+  merge(newState, oldState) {
+    const initial = oldState || JSON.parse(this.initialState);
+    return helper.merge(initial, newState);
   }
 }

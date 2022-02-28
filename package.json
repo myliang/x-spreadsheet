@@ -67,7 +67,6 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
-    "lodash": "^4.17.21",
     "opencollective": "^1.0.3",
     "opencollective-postinstall": "^2.0.2"
   },
