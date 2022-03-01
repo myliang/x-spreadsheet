@@ -1,6 +1,6 @@
 {
   "name": "@bergfreunde/x-data-spreadsheet",
-  "version": "2.0.41",
+  "version": "2.0.42",
   "description": "a javascript xpreadsheet",
   "types": "src/index.d.ts",
   "main": "src/index.js",
@@ -67,7 +67,6 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
-    "lodash": "^4.17.21",
     "opencollective": "^1.0.3",
     "opencollective-postinstall": "^2.0.2"
   },
