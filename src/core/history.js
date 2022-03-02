@@ -8,10 +8,14 @@ export default class History {
 
   init(data) {
     if (data) {
-      this.initialState = JSON.stringify(data);
+      this.initial = JSON.stringify(data);
     }
     this.undoItems = [];
     this.redoItems = [];
+  }
+
+  get initialState() {
+    return JSON.parse(this.initial);
   }
 
   add([data, selector]) {
@@ -60,11 +64,11 @@ export default class History {
       let val;
       if (rows[ri].cells[ci]
         && rows[ri].cells[ci].text
-          && ((this.initialState[ri]
-            && this.initialState[ri].cells[ci]
-              && (this.initialState[ri].cells[ci].text !== rows[ri].cells[ci].text))
-              || !this.initialState[ri]
-              || !this.initialState[ri].cells[ci])) {
+          && ((this.initial[ri]
+            && this.initial[ri].cells[ci]
+              && (this.initial[ri].cells[ci].text !== rows[ri].cells[ci].text))
+              || !this.initial[ri]
+              || !this.initial[ri].cells[ci])) {
         val = rows[ri].cells[ci].text;
       }
       return val;
@@ -87,7 +91,7 @@ export default class History {
   }
 
   merge(newState, oldState) {
-    const initial = oldState || JSON.parse(this.initialState);
+    const initial = oldState || JSON.parse(this.initial);
     return helper.merge(initial, newState);
   }
 }

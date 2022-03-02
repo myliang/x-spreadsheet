@@ -169,6 +169,11 @@ class Spreadsheet {
     this.dataSet[sheetIndex].history.init();
   }
 
+  getHistoryInitialState(sheetIndex = 0) {
+    const { rows, cols } = this.dataSet[sheetIndex].history.initialState;
+    return ({ rows, cols });
+  }
+
   on(eventName, func) {
     this.sheet.on(eventName, func);
     return this;
