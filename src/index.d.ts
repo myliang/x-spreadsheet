@@ -271,7 +271,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      */
     getLastUsedRowIndex(
       sheetIndex?: number,
-    ): Number;
+    ): number;
 
     /**
      * get last column index
@@ -279,7 +279,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      */
     getLastUsedColumnIndex(
       sheetIndex?: number,
-    ): Number;
+    ): number;
 
     /**
      * add new sheet
@@ -328,6 +328,10 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     getChangedCells(sheetIndex?: number): { ci: number, ri: number, value: string | number }[]
     getCellsGroupedByRow(sheetIndex?: number): { ri: number, cells: { ci: number, value: string | number }[] }[];
     resetHistory(sheetIndex?: number): void
+    getHistoryInitialState(sheetIndex?: number): {
+      rows: { [key: number]: RowData, len: number },
+      cols: { [key: number]: Record<string, any>, len: number }
+    }
 
     static getInstance(container: string | HTMLElement, opts?: Options): Spreadsheet;
 
