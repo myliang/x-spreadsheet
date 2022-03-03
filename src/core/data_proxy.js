@@ -460,6 +460,39 @@ export default class DataProxy {
     return true;
   }
 
+  pasteFromSystemClipboard(resetSheet, eventTrigger) {
+    const { selector } = this;
+    navigator.clipboard.readText().then((content) => {
+      const contentToPaste = this.parseClipboardContent(content);
+      let startRow = selector.ri;
+      contentToPaste.forEach((row) => {
+        let startColumn = selector.ci;
+        row.forEach((cellContent) => {
+          this.setCellText(startRow, startColumn, cellContent, 'input');
+          startColumn += 1;
+        });
+        startRow += 1;
+      });
+      resetSheet();
+      eventTrigger(this.rows.getData());
+    });
+  }
+
+  parseClipboardContent(clipboardContent) {
+    const parsedData = [];
+
+    // first we need to figure out how many rows we need to paste
+    const rows = clipboardContent.split('\n');
+
+    // for each row parse cell data
+    let i = 0;
+    rows.forEach((row) => {
+      parsedData[i] = row.split('\t');
+      i += 1;
+    });
+    return parsedData;
+  }
+
   pasteFromText(txt) {
     let lines = [];
 
