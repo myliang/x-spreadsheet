@@ -20,7 +20,9 @@ const menuItems = [
   { key: 'delete-column', title: tf('contextmenu.deleteColumn') },
   { key: 'hide-column', title: tf('contextmenu.hideColumn') },
   { key: 'divider-column' },
+  // { key: 'delete-cell', title: tf('contextmenu.deleteCell') }, // stays unactive
   { key: 'delete-cell-text', title: tf('contextmenu.deleteCellText') },
+  { key: 'delete-cell-format', title: tf('contextmenu.deleteCellFormat') },
   { key: 'divider' },
   { key: 'validation', title: tf('contextmenu.validation') },
   { key: 'divider' },
@@ -65,13 +67,29 @@ export default class ContextMenu {
   // row: all cells in a row
   // col: all cells in a col
   // range: select range
-  setMode(mode) {
-    const rowItems = menuItems
-      .map(({ key }, index) => ({ key, index }))
+  setMode(mode, insertAtEnd = false, isLast = { row: false, col: false }) {
+    const items = menuItems.map(({ key }, index) => ({ key, index }));
+    let rowItems = items
       .filter(({ key }) => key.includes('row'));
-    const colItems = menuItems
-      .map(({ key }, index) => ({ key, index }))
+    let colItems = items
       .filter(({ key }) => key.includes('column'));
+
+    if (insertAtEnd) {
+      for (const { index } of [...colItems, ...rowItems]) {
+        this.menuItems[index].hide();
+      }
+      const omittedColItems = ['insert-column', 'insert-column-right', 'delete-column'];
+      const omittedRowItems = ['insert-row', 'insert-row-below', 'delete-row'];
+      if (isLast.col) {
+        omittedColItems.splice(1, 2);
+      }
+      if (isLast.row) {
+        omittedRowItems.splice(1, 2);
+      }
+      colItems = colItems.filter(({ key }) => omittedColItems.every(elm => elm !== key));
+      rowItems = rowItems.filter(({ key }) => omittedRowItems.every(elm => elm !== key));
+    }
+
     if (['row', 'col'].includes(mode)) {
       if (mode === 'col') {
         for (const { index } of colItems) {
@@ -93,7 +111,9 @@ export default class ContextMenu {
     if (['range-single', 'range-multiple'].includes(mode)) {
       if (mode === 'range-single') {
         for (const { index, key } of [...colItems, ...rowItems]) {
-          if (key.includes('hide')) {
+          if (key.includes('hide')
+            || (insertAtEnd && ((key.includes('divider-column') && !isLast.col)
+            || (key.includes('divider-row') && !isLast.row)))) {
             this.menuItems[index].hide();
           } else {
             this.menuItems[index].show();
@@ -101,10 +121,7 @@ export default class ContextMenu {
         }
       }
       if (mode === 'range-multiple') {
-        for (const { index } of colItems) {
-          this.menuItems[index].hide();
-        }
-        for (const { index } of rowItems) {
+        for (const { index } of [...colItems, ...rowItems]) {
           this.menuItems[index].hide();
         }
       }

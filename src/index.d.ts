@@ -45,6 +45,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
         italic: false;
       };
     };
+    insertAtEnd?: boolean;
   }
 
   export type CELL_SELECTED = 'cell-selected';

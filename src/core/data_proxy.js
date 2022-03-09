@@ -1012,8 +1012,11 @@ export default class DataProxy {
     const { selector } = this;
     this.changeData(() => {
       const deletedCells = this.rows.deleteCells(selector.range, what);
+      if (!deletedCells) {
+        return null;
+      }
       let mergesChanged = false;
-      if (what === 'all' || what === 'format') {
+      if (what === 'all') {
         this.merges.deleteWithin(selector.range);
         mergesChanged = true;
       }

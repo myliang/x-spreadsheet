@@ -42,6 +42,7 @@ export default {
     deleteColumn: 'Delete column',
     deleteCell: 'Delete cell',
     deleteCellText: 'Delete cell text',
+    deleteCellFormat: 'Delete cell format',
     validation: 'Data validations',
     cellprintable: 'Enable export',
     cellnonprintable: 'Disable export',
