@@ -1,4 +1,4 @@
-/* global window, document */
+/* global document */
 import { h } from './component/element';
 import DataProxy from './core/data_proxy';
 import Sheet from './component/sheet';
@@ -34,7 +34,7 @@ class Spreadsheet {
       .on('contextmenu', evt => evt.preventDefault());
     // create canvas element
     targetEl.appendChild(rootEl.el);
-    this.sheet = new Sheet(rootEl, this.dataIndex, this.dataSet);
+    this.sheet = new Sheet(rootEl, this.dataIndex, this.dataSet, this.options.insertAtEnd);
     if (this.bottombar !== null) {
       rootEl.child(this.bottombar.el);
     }

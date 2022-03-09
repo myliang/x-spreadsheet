@@ -195,17 +195,16 @@ class Rows {
                     return expr2expr(word, nci - sci, nri - sri);
                   });
                 }
-                cellsToPaste.push({ ri: nri, ci: nci, cell: ncell });
+                this.setCell(nri, nci, ncell, what);
                 cb(nri, nci, ncell);
+                cellsToPaste.push({ ri: nri, ci: nci, cell: this.getCell(nri, nci) });
               }
             }
           }
         }
       }
     }
-    return Rows.reduceAsRows(cellsToPaste, (ri, ci, cell) => {
-      this.setCell(ri, ci, cell, what);
-    });
+    return Rows.reduceAsRows(cellsToPaste);
   }
 
   cutPaste(srcCellRange, dstCellRange) {
@@ -253,7 +252,7 @@ class Rows {
       row.forEach((cell, j) => {
         const ci = sci + j;
         this.setCellText(ri, ci, cell);
-        changedCells.push({ ri, ci, cell: this._[ri].cells[ci] || {} });
+        changedCells.push({ ri, ci, cell: this.getCell(ri, ci) || {} });
       });
     });
     return Rows.reduceAsRows(changedCells);
@@ -378,35 +377,37 @@ class Rows {
     return Rows.reduceAsRows(changedCells);
   }
 
-  // what: all | text | format | merge
+  // what: all | text | format
   deleteCells(cellRange, what = 'all') {
     const changedCells = [];
     cellRange.each((ri, ci) => {
-      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
-      this.deleteCell(ri, ci, what);
+      if (this.deleteCell(ri, ci, what)) {
+        changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+      }
     });
-    return Rows.reduceAsRows(changedCells);
+    return changedCells.length > 0 ? Rows.reduceAsRows(changedCells) : null;
   }
 
-  // what: all | text | format | merge
+  // what: all | text | format
   deleteCell(ri, ci, what = 'all') {
     const row = this.get(ri);
     if (row !== null) {
       const cell = this.getCell(ri, ci);
       if (cell !== null && cell.editable !== false) {
         if (what === 'all') {
-          delete row.cells[ci];
+          if ((cell.text === null || cell.text === '') && cell.style === undefined && !cell.merge) return false;
+          row.cells[ci] = { text: null, merge: undefined, style: undefined };
         } else if (what === 'text') {
-          if (cell.text === 0 || cell.text) delete cell.text;
-          if (cell.value) delete cell.value;
+          if (cell.text === null || cell.text === '') return false;
+          cell.text = null;
         } else if (what === 'format') {
-          if (cell.style !== undefined) delete cell.style;
-          if (cell.merge) delete cell.merge;
-        } else if (what === 'merge') {
-          if (cell.merge) delete cell.merge;
+          if (cell.style === undefined) return false;
+          cell.style = undefined;
         }
+        return true;
       }
     }
+    return false;
   }
 
   maxCell() {

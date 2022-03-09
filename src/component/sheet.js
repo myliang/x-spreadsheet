@@ -1,4 +1,3 @@
-/* global window */
 /* eslint-env browser */
 import { h } from './element';
 import {
@@ -85,7 +84,7 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   if (ri === -1 && ci === -1) return;
   const {
     table, selector, toolbar, data,
-    contextMenu,
+    contextMenu, insertAtEnd,
   } = this;
   const cell = data.getCell(ri, ci);
   if (multiple) {
@@ -109,11 +108,22 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   if (ri === -1 || (sci === eci && sri !== eri)) {
     mode = 'col';
   }
+
   if (ci === -1 || (sri === eri && sci !== eci)) {
     mode = 'row';
   }
 
-  contextMenu.setMode(mode);
+  const isLast = { row: false, col: false };
+
+  if (sci === data.cols.len - 1) {
+    isLast.col = true;
+  }
+
+  if (sri === data.rows.len - 1) {
+    isLast.row = true;
+  }
+
+  contextMenu.setMode(mode, insertAtEnd, isLast);
   toolbar.reset();
   table.render();
 }
@@ -1030,7 +1040,8 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
 }
 
 export default class Sheet {
-  constructor(targetEl, idx, dataSet) {
+  constructor(targetEl, idx, dataSet, insertAtEnd = false) {
+    this.insertAtEnd = insertAtEnd;
     this.container = targetEl;
     this.eventMap = createEventEmitter();
     const { view, showToolbar, showContextmenu } = dataSet[idx].settings;
