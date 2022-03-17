@@ -1,4 +1,5 @@
 import { CellRange } from './cell_range';
+import { t } from '../locale/locale';
 // operator: all|eq|neq|gt|gte|lt|lte|in|be
 // value:
 //   in => []
@@ -208,7 +209,7 @@ export default class AutoFilter {
         for (let i = 0; i < filters.length; i += 1) {
           const filter = filters[i];
           const cell = getCell(ri, filter.ci);
-          const ctext = cell ? cell.text : '';
+          const ctext = cell.text === null ? t('filter.empty') : cell.text;
           if (!filter.includes(String(ctext))) {
             rset.add(ri);
             break;
@@ -227,13 +228,9 @@ export default class AutoFilter {
       const { sri, eri } = this.range();
       for (let ri = sri + 1; ri <= eri; ri += 1) {
         const cell = getCell(ri, ci);
-        if (cell !== null && !/^\s*$/.test(cell.text)) {
-          const key = cell.text;
-          const cnt = (m[key] || 0) + 1;
-          m[key] = cnt;
-        } else {
-          m[''] = (m[''] || 0) + 1;
-        }
+        const key = cell.text === null ? t('filter.empty') : cell.text;
+        const cnt = (m[key] || 0) + 1;
+        m[key] = cnt;
       }
     }
     return m;

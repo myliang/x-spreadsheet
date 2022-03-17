@@ -80,7 +80,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
    * Data for representing a cell
    */
   export interface CellData {
-    text: string;
+    text: string | number | null;
     style?: number;
     merge?: CellMerge;
   }
@@ -138,9 +138,8 @@ declare module '@bergfreunde/x-data-spreadsheet' {
 
   export interface Row {}
   export interface Table {}
-  export interface Cell {
-    text: string;
-    style: number;
+  export interface Cell extends CellData {
+    editable?: boolean;
   }
 
   export interface Sheet {}
@@ -150,7 +149,6 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     undo(callback: () => unknown): void;
     redo(callback: () => unknown): void;
     copy(): void;
-    clearClipboard(): void;
     cut(): void;
     paste(mode: 'all' | 'text' | 'format', cb?: () => void): void;
     pasteFromText(text: string): { rlen: number, clen: number };
@@ -158,7 +156,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     setCellStyle(rowIndex: number, colIndex: number, style: CellStyle): void;
     resetCellStyle(rowIndex: number, colIndex: number): void;
     setColStyle(columnIndex: number, style: CellStyle, excludeRows: number[]): void;
-    setCellTextRaw(rowIndex: number, colIndex: number, text: string): void;
+    setCellTextRaw(rowIndex: number, colIndex: number, text: string, force: boolean): void;
     getCellsGroupedByRow(): { ri: number, cells: { ci: number, value: string | number }[] }[];
   }
 
@@ -245,6 +243,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       rowIndex: number,
       colIndex: number,
       text: string,
+      force?: boolean,
       sheetIndex?: number
     ): this;
 
@@ -262,8 +261,9 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       startColIndex: number,
       endRowIndex: number,
       endColIndex: number,
+      force?: boolean,
+      reRender?: boolean,
       sheetIndex?: number,
-      reRender?: boolean
     ): void;
 
     /**
@@ -279,6 +279,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param sheetIndex
      */
     getLastUsedColumnIndex(
+      offset?: number,
       sheetIndex?: number,
     ): number;
 

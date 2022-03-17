@@ -94,4 +94,13 @@ export default class History {
     const initial = oldState || JSON.parse(this.initial);
     return helper.merge(initial, newState);
   }
+
+  updateUndoItemCellText(ri, ci, text, stateIndex = -1) {
+    const { undoItems } = this;
+    if (undoItems.length === 0) return;
+    const [item] = undoItems.at(stateIndex);
+    if (item.rows[ri].cells[ci].text !== text) {
+      item.rows[ri].cells[ci].text = text;
+    }
+  }
 }

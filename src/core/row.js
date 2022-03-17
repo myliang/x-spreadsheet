@@ -80,9 +80,12 @@ class Rows {
   getCell(ri, ci) {
     const row = this.get(ri);
     if (row !== undefined && row.cells !== undefined && row.cells[ci] !== undefined) {
+      if (row.cells[ci].text === undefined || row.cells[ci].text === '') {
+        row.cells[ci].text = null;
+      }
       return row.cells[ci];
     }
-    return null;
+    return ({ text: null });
   }
 
   getCellMerge(ri, ci) {
@@ -112,13 +115,18 @@ class Rows {
     }
   }
 
-  setCellText(ri, ci, text) {
+  setCellText(ri, ci, text, force = false) {
     const cell = this.getCellOrNew(ri, ci);
-    if (cell.editable !== false) {
-      cell.text = text;
-      return Rows.reduceAsRows([{ ri, ci, cell }]);
+
+    if (cell.editable === false && !force) return null;
+
+    let txt = text;
+    if (typeof text === 'string') {
+      txt = text.trim();
     }
-    return null;
+    cell.text = txt === '' ? null : txt;
+
+    return Rows.reduceAsRows([{ ri, ci, cell }]);
   }
 
   // what: all | format | text
@@ -181,30 +189,31 @@ class Rows {
                 }
                 // paste expressions
                 if (ncell.text && !autofill && (ncell.text[0] === '=')) {
-                  const txt = ncell.text;
-
-                  ncell.text = what === 'text' ? _cell.render(txt, formulam, (y, x, d) => {
-                    if (!d) return this.getCell(x, y).text || '';
+                  const { text } = ncell;
+                  ncell.text = what === 'text' ? _cell.render(text, formulam, (y, x, d) => {
+                    if (!d) return this.getCell(x, y).text;
                     const xSheet = dataSet.find(({ name }) => name === d);
                     if (xSheet) {
                       return xSheet.getCellTextOrDefault(x, y);
                     }
                     return '#REF!';
-                  }) : ncell.text.replace(/\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g, (word) => {
+                  }) : text.replace(/\$?[a-zA-Z]{1,3}\$?\d+(?!!)/g, (word) => {
                     if (/^\d+$/.test(word)) return word;
                     return expr2expr(word, nci - sci, nri - sri);
                   });
                 }
-                this.setCell(nri, nci, ncell, what);
                 cb(nri, nci, ncell);
-                cellsToPaste.push({ ri: nri, ci: nci, cell: this.getCell(nri, nci) });
+                cellsToPaste.push({ ri: nri, ci: nci, cell: ncell });
               }
             }
           }
         }
       }
     }
-    return Rows.reduceAsRows(cellsToPaste);
+    cellsToPaste.forEach(({ ri, ci, cell }) => {
+      this.setCell(ri, ci, cell, what);
+    });
+    return Rows.reduceAsRows(cellsToPaste, this.len);
   }
 
   cutPaste(srcCellRange, dstCellRange) {
@@ -236,10 +245,10 @@ class Rows {
     });
 
     destination.each((ri, ci) => {
-      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) || {} });
+      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
     });
 
-    return Rows.reduceAsRows(changedCells);
+    return Rows.reduceAsRows(changedCells, this.len);
   }
 
   // src: Array<Array<String>>
@@ -252,10 +261,10 @@ class Rows {
       row.forEach((cell, j) => {
         const ci = sci + j;
         this.setCellText(ri, ci, cell);
-        changedCells.push({ ri, ci, cell: this.getCell(ri, ci) || {} });
+        changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
       });
     });
-    return Rows.reduceAsRows(changedCells);
+    return Rows.reduceAsRows(changedCells, this.len);
   }
 
   insert(sri, n = 1) {
@@ -282,14 +291,9 @@ class Rows {
     this.len += n;
     // add cells from inserted row
     this.eachCells(sri + 1, (ci) => {
-      changedCells.push({ ri: sri, ci, cell: { text: null } });
+      changedCells.push({ ri: sri, ci: parseInt(ci, 10), cell: { text: null } });
     });
-    return ({
-      rows: {
-        ...Rows.reduceAsRows(changedCells).rows,
-        len: this.len,
-      },
-    });
+    return Rows.reduceAsRows(changedCells, this.len);
   }
 
   delete(sri, eri) {
@@ -315,12 +319,7 @@ class Rows {
     });
     this._ = ndata;
     this.len -= n;
-    return ({
-      rows: {
-        ...Rows.reduceAsRows(changedCells).rows,
-        len: this.len,
-      },
-    });
+    return Rows.reduceAsRows(changedCells, this.len);
   }
 
   insertColumn(sci, n = 1) {
@@ -391,23 +390,29 @@ class Rows {
   // what: all | text | format
   deleteCell(ri, ci, what = 'all') {
     const row = this.get(ri);
-    if (row !== null) {
-      const cell = this.getCell(ri, ci);
-      if (cell !== null && cell.editable !== false) {
-        if (what === 'all') {
-          if ((cell.text === null || cell.text === '') && cell.style === undefined && !cell.merge) return false;
-          row.cells[ci] = { text: null, merge: undefined, style: undefined };
-        } else if (what === 'text') {
-          if (cell.text === null || cell.text === '') return false;
-          cell.text = null;
-        } else if (what === 'format') {
-          if (cell.style === undefined) return false;
-          cell.style = undefined;
-        }
-        return true;
-      }
+
+    if (!row) return false;
+
+    const cell = this.getCell(ri, ci);
+
+    if (cell.editable) return false;
+
+    if (what === 'all') {
+      if (cell.text === null && cell.style === undefined && !cell.merge) return false;
+      row.cells[ci] = { text: null, merge: undefined, style: undefined };
     }
-    return false;
+
+    if (what === 'text') {
+      if (cell.text === null) return false;
+      cell.text = null;
+    }
+
+    if (what === 'format') {
+      if (cell.style === undefined) return false;
+      cell.style = undefined;
+    }
+
+    return true;
   }
 
   maxCell() {
@@ -450,10 +455,11 @@ class Rows {
     return Object.assign({ len }, this._);
   }
 
-  static reduceAsRows(iterable, cb = () => {}) {
-    const rows = {};
+  static reduceAsRows(iterable, len) {
+    const rows = {
+      ...(len ? { len } : {}),
+    };
     iterable.forEach(({ ri, ci, cell }) => {
-      cb(ri, ci, cell);
       if (!rows[ri]) {
         rows[ri] = { cells: {} };
       }

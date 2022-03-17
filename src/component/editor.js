@@ -55,6 +55,10 @@ function keydownEventHandler(evt) {
     insertText.call(this, evt, '\n');
     evt.stopPropagation();
   }
+  if (keyCode === 27) {
+    this.setText(this.initial);
+    this.clear(true);
+  }
   if (keyCode === 13 && !altKey) evt.preventDefault();
 }
 
@@ -203,13 +207,17 @@ export default class Editor {
     this.freeze.h = height;
   }
 
-  clear() {
+  clear(abort = false) {
     // const { cell } = this;
     // const cellText = (cell && cell.text) || '';
-    if (this.inputText !== '') {
+    if (abort) {
+      this.change('aborted', this.initial);
+    } else if (this.inputText !== '') {
       this.change('finished', this.inputText);
     }
+
     this.cell = null;
+    this.initial = '';
     this.areaOffset = null;
     this.inputText = '';
     this.el.hide();
@@ -256,8 +264,8 @@ export default class Editor {
     const { el, datepicker, suggest } = this;
     el.show();
     this.cell = cell;
-    const { text } = cell || {};
-    this.setText(text === 0 ? 0 : text || '');
+    const { text } = cell;
+    this.setText(text === null ? '' : text);
 
     this.validator = validator;
     if (validator) {
@@ -280,5 +288,10 @@ export default class Editor {
     // console.log('text>>:', text);
     setText.call(this, text, text.length);
     resetTextareaSize.call(this);
+  }
+
+  setInitialValue(cell) {
+    const { text } = cell;
+    this.initial = text === null ? '' : text;
   }
 }

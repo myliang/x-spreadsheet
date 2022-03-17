@@ -93,15 +93,15 @@ class Spreadsheet {
     return this.dataSet.map(it => it.getData());
   }
 
-  cellText(ri, ci, text, sheetIndex = 0) {
-    this.dataSet[sheetIndex].setCellTextRaw(ri, ci, text);
+  cellText(ri, ci, text, force = false, sheetIndex = 0) {
+    this.dataSet[sheetIndex].setCellTextRaw(ri, ci, text, force);
     return this;
   }
 
-  resetCellText(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
+  resetCellText(sri, sci, eri, eci, force = false, reRender = true, sheetIndex = 0) {
     const cr = new Cr(sri, sci, eri, eci);
     cr.each((ri, ci) => {
-      this.dataSet[sheetIndex].setCellTextRaw(ri, ci);
+      this.dataSet[sheetIndex].setCellTextRaw(ri, ci, null, force);
     });
     if (reRender) {
       this.reRender();
@@ -148,13 +148,37 @@ class Spreadsheet {
   }
 
   getLastUsedRowIndex(sheetIndex = 0) {
-    const { eri } = this.dataSet[sheetIndex].contentRange();
-    return eri;
+    const { rows } = this.dataSet[sheetIndex];
+    for (let ri = rows.len - 1; ri >= 0; ri -= 1) {
+      const row = rows.get(ri);
+      if (!row || !row.cells) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+      for (const [, cell] of Object.entries(row.cells)) {
+        if (cell.text !== null) {
+          return ri;
+        }
+      }
+    }
+    return -1;
   }
 
-  getLastUsedColumnIndex(sheetIndex = 0) {
-    const { eci } = this.dataSet[sheetIndex].contentRange();
-    return eci;
+  getLastUsedColumnIndex(offset = 0, sheetIndex = 0) {
+    const { rows, cols } = this.dataSet[sheetIndex];
+    for (let ci = cols.len - 1; ci >= 0; ci -= 1) {
+      for (let ri = 0; ri <= rows.len - 1; ri += 1) {
+        if (offset - 1 === ri) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+        const { text } = rows.getCell(ri, ci);
+        if (text !== null || text) {
+          return ci;
+        }
+      }
+    }
+    return -1;
   }
 
   getChangedCells(sheetIndex = 0) {

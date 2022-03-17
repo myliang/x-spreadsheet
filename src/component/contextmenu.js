@@ -67,25 +67,40 @@ export default class ContextMenu {
   // row: all cells in a row
   // col: all cells in a col
   // range: select range
-  setMode(mode, insertAtEnd = false, isLast = { row: false, col: false }) {
+  setMode(mode, insertAtEnd) {
     const items = menuItems.map(({ key }, index) => ({ key, index }));
     let rowItems = items
       .filter(({ key }) => key.includes('row'));
     let colItems = items
       .filter(({ key }) => key.includes('column'));
 
+    let { cols, rows } = {};
     if (insertAtEnd) {
+      ({ cols, rows } = insertAtEnd);
+
       for (const { index } of [...colItems, ...rowItems]) {
         this.menuItems[index].hide();
       }
-      const omittedColItems = ['insert-column', 'insert-column-right', 'delete-column'];
-      const omittedRowItems = ['insert-row', 'insert-row-below', 'delete-row'];
-      if (isLast.col) {
-        omittedColItems.splice(1, 2);
+
+      const omittedColItems = ['insert-column', 'delete-column', 'insert-column-right'];
+      const omittedRowItems = ['insert-row', 'delete-row', 'insert-row-below'];
+
+      if (cols.current === cols.len) {
+        omittedColItems.splice(2, 2);
       }
-      if (isLast.row) {
-        omittedRowItems.splice(1, 2);
+
+      if (cols.current > cols.len) {
+        omittedColItems.splice(0, 3);
       }
+
+      if (rows.current === rows.len) {
+        omittedRowItems.splice(2, 2);
+      }
+
+      if (rows.current > rows.len) {
+        omittedRowItems.splice(0, 3);
+      }
+
       colItems = colItems.filter(({ key }) => omittedColItems.every(elm => elm !== key));
       rowItems = rowItems.filter(({ key }) => omittedRowItems.every(elm => elm !== key));
     }
@@ -112,8 +127,8 @@ export default class ContextMenu {
       if (mode === 'range-single') {
         for (const { index, key } of [...colItems, ...rowItems]) {
           if (key.includes('hide')
-            || (insertAtEnd && ((key.includes('divider-column') && !isLast.col)
-            || (key.includes('divider-row') && !isLast.row)))) {
+            || (insertAtEnd && ((key.includes('divider-column') && (cols.current < cols.len))
+            || (key.includes('divider-row') && rows.current < rows.len)))) {
             this.menuItems[index].hide();
           } else {
             this.menuItems[index].show();
