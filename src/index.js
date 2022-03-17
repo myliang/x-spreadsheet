@@ -155,8 +155,9 @@ class Spreadsheet {
         // eslint-disable-next-line no-continue
         continue;
       }
-      for (const [, cell] of Object.entries(row.cells)) {
-        if (cell.text !== null) {
+      for (const ci of Object.keys(row.cells)) {
+        const { text } = rows.getCell(ri, parseInt(ci, 10));
+        if (text !== null) {
           return ri;
         }
       }
@@ -173,7 +174,7 @@ class Spreadsheet {
           continue;
         }
         const { text } = rows.getCell(ri, ci);
-        if (text !== null || text) {
+        if (text !== null) {
           return ci;
         }
       }
