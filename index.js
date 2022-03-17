@@ -160,6 +160,7 @@ instance.loadData([
       len: initialCols.length,
       0: { style: numberFormat, editable: false, excludeRows },
       3: { style: numberFormat, excludeRows },
+      7: { width: 250 },
     },
     rows: {
       len: rowLength + 1,

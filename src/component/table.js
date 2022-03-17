@@ -58,8 +58,9 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []
   }
 
   const cell = data.getCell(nrindex, cindex);
-  if (cell === null) return;
+
   let frozen = false;
+
   if ('editable' in cell && cell.editable === false) {
     frozen = true;
   }
@@ -76,7 +77,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []
     // render text
     let cellText = '';
     if (!data.settings.evalPaused) {
-      cellText = _cell.render(cell.text === 0 ? 0 : cell.text || '', formulam, (y, x, d) => {
+      cellText = _cell.render(cell.text === null ? '' : cell.text, formulam, (y, x, d) => {
         if (!d) return (data.getCellTextOrDefault(x, y));
         const xSheet = dataSet.find(({ name }) => name === d);
         if (xSheet) {
@@ -85,11 +86,13 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []
         return '#REF!';
       });
     } else {
-      cellText = cell.text === 0 ? 0 : cell.text || '';
+      cellText = cell.text === null ? '' : cell.text;
     }
     if (style.format) {
-      // console.log(data.formatm, '>>', cell.format);
-      cellText = formatm[style.format].render(cellText);
+      cellText = formatm[style.format].render(
+        cellText,
+        style.format === 'date' ? (n) => { cell.text = n; } : undefined,
+      );
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);

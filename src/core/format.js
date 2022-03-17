@@ -90,12 +90,22 @@ const baseFormats = [
     key: 'date',
     title: tf('format.date'),
     type: 'date',
-    label: '26.09.2008',
-    render: (v) => {
+    label: '2008.09.26',
+    render: (v, cb) => {
       if (!v) {
         return '';
       }
-      return (new Date(v)).toLocaleDateString('de-DE');
+      try {
+        const date = new Date(v);
+        const [res] = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T');
+        if (cb) {
+          cb(res);
+        }
+
+        return (new Date(res)).toLocaleDateString('de-DE', { timeZone: 'UTC' });
+      } catch (err) {
+        return 'Invalid Date';
+      }
     },
   },
   {

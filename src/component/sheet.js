@@ -113,17 +113,14 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     mode = 'row';
   }
 
-  const isLast = { row: false, col: false };
+  const { initialState } = data.history;
 
-  if (sci === data.cols.len - 1) {
-    isLast.col = true;
-  }
+  const insertInfo = {
+    cols: { len: initialState.cols.len - 1, current: sci },
+    rows: { len: initialState.rows.len - 1, current: sri },
+  };
 
-  if (sri === data.rows.len - 1) {
-    isLast.row = true;
-  }
-
-  contextMenu.setMode(mode, insertAtEnd, isLast);
+  contextMenu.setMode(mode, insertAtEnd ? insertInfo : null);
   toolbar.reset();
   table.render();
 }
@@ -361,11 +358,21 @@ function copy(evt) {
   selector.showClipboard();
 }
 
-function cut() {
+function cut(evt) {
   const { data, selector } = this;
   if (data.settings.mode === 'read') return;
   data.cut();
+  data.copyToSystemClipboard(evt);
   selector.showClipboard();
+}
+
+function getLinesFromSystemClipboard(txt) {
+  let lines = [];
+
+  if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
+  else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
+
+  return lines;
 }
 
 function paste(what, evt) {
@@ -373,16 +380,56 @@ function paste(what, evt) {
   let clen = 0;
   let rlen = 0;
   if (data.settings.mode === 'read') return;
-  if (data.paste(what, dataSet, msg => xtoast('Tip', msg))) {
-    sheetReset.call(this);
-  } else if (evt) {
-    const cdata = evt.clipboardData.getData('text/plain');
-    ({ clen, rlen } = this.data.pasteFromText(cdata));
-    sheetReset.call(this);
+
+  const [height, width] = data.clipboard.range.size();
+
+  const lines = getLinesFromSystemClipboard(evt.clipboardData.getData('text/plain'));
+
+  // always prefer the system clipboard
+  let useSystemClipboard = false;
+  if (height !== lines.length || width !== lines[0].length) {
+    useSystemClipboard = true;
+  } else {
+    // compare system clipboard with internal clipboard
+    // convert lines to one dimensional array
+    const linesAry = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      for (let j = 0; j < line.length; j += 1) {
+        linesAry.push(line[j]);
+      }
+    }
+    let linesAryIdx = 0;
+    let shouldBreak = false;
+    const {
+      sri, sci, eri, eci,
+    } = data.clipboard.range;
+    for (let ri = sri; ri <= eri; ri += 1) {
+      if (shouldBreak) break;
+      for (let ci = sci; ci <= eci; ci += 1) {
+        const { text } = data.rows.getCell(ri, ci);
+        if (String(text) !== linesAry[linesAryIdx]) {
+          useSystemClipboard = true;
+          shouldBreak = true;
+          break;
+        }
+        linesAryIdx += 1;
+      }
+    }
   }
+  let cdiff = 0;
+  let rdiff = 0;
+  if (!useSystemClipboard && data.paste(what, dataSet, msg => xtoast('Tip', msg))) {
+    cdiff = data.clipboard.range.eci - data.clipboard.range.sci;
+    rdiff = data.clipboard.range.eri - data.clipboard.range.sri;
+  } else {
+    ({ clen, rlen } = this.data.pasteFromText(lines));
+    cdiff = clen;
+    rdiff = rlen;
+  }
+  sheetReset.call(this);
+
   const { sri, sci } = this.selector.range;
-  const cdiff = data.clipboard.range ? data.clipboard.range.eci - data.clipboard.range.sci : clen;
-  const rdiff = data.clipboard.range ? data.clipboard.range.eri - data.clipboard.range.sri : rlen;
   this.selector.hideClipboard();
   this.selector.moveIndexes = [sri + rdiff, sci + cdiff];
   selectorSet.call(this, true, sri + rdiff, sci + cdiff, true);
@@ -552,7 +599,13 @@ function dataSetCellText(text, state = 'finished') {
   data.setSelectedCellText(text, state);
   const { ri, ci } = data.selector;
   if (state === 'finished') {
+    const style = data.getCellStyle(ri, ci);
     table.render();
+    if (style && 'format' in style) {
+      // preserve history's integrity by updating the cell value after rendering
+      // thus allowing formatter to mutate the cell value
+      data.updateSelectedCellsInHistory();
+    }
   } else {
     this.trigger('cell-edited', text, ri, ci);
   }
@@ -644,6 +697,10 @@ function toolbarChange(type, value) {
       editorSet.call(this);
     }
     sheetReset.call(this);
+    // preserve history's integrity by updating the cell value after rendering
+    if (type === 'format') {
+      data.updateSelectedCellsInHistory();
+    }
   }
 }
 
@@ -669,6 +726,8 @@ function sheetInitEvents() {
     modalValidation,
     sortFilter,
   } = this;
+
+  const pasteEvent = new Event('paste');
 
   const handleSelectAll = (evt) => {
     const keyCode = evt.keyCode || evt.which;
@@ -712,8 +771,12 @@ function sheetInitEvents() {
       overlayerMousemove.call(this, evt);
     })
     .on('mousedown', (evt) => {
-      editor.clear();
       contextMenu.hide();
+      editor.clear();
+      setTimeout(() => {
+        editor.setInitialValue(this.data.getSelectedCell());
+      }, 1);
+
       // the left mouse button: mousedown → mouseup → click
       // the right mouse button: mousedown → contenxtmenu → mouseup
       if (evt.buttons === 2) {
@@ -803,7 +866,7 @@ function sheetInitEvents() {
     } else if (type === 'cut') {
       cut.call(this);
     } else if (type === 'paste') {
-      paste.call(this, 'all');
+      window.dispatchEvent(pasteEvent);
     } else if (type === 'paste-value') {
       paste.call(this, 'text');
     } else if (type === 'paste-format') {
@@ -832,6 +895,12 @@ function sheetInitEvents() {
   bind(window, 'copy', (evt) => {
     if (!this.focusing) return;
     copy.call(this, evt);
+    evt.preventDefault();
+  });
+
+  bind(window, 'cut', (evt) => {
+    if (!this.focusing) return;
+    cut.call(this, evt);
     evt.preventDefault();
   });
 
@@ -1148,15 +1217,29 @@ export default class Sheet {
   }
 
   undo() {
-    this.data.undo((range) => {
-      this.selectorSetAndScroll(range);
+    this.data.undo(({
+      sri, sci, eri, eci,
+    }) => {
+      this.selectorSetAndScroll({
+        sri,
+        sci,
+        eri: eri >= this.data.rows.len ? sri : eri,
+        eci: eci >= this.data.cols.len ? sci : eci,
+      });
     });
     sheetReset.call(this);
   }
 
   redo() {
-    this.data.redo((range) => {
-      this.selectorSetAndScroll(range);
+    this.data.redo(({
+      sri, sci, eri, eci,
+    }) => {
+      this.selectorSetAndScroll({
+        sri,
+        sci,
+        eri: eri >= this.data.rows.len ? sri : eri,
+        eci: eci >= this.data.cols.len ? sci : eci,
+      });
     });
     sheetReset.call(this);
   }

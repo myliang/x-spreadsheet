@@ -297,7 +297,7 @@ function setStyleBorders({ mode, style, color }) {
   }
   return ([
     {
-      ...Rows.reduceAsRows(changedCells),
+      ...Rows.reduceAsRows(changedCells, this.rows.len),
       styles,
     },
     selector.rangeObject,
@@ -372,6 +372,10 @@ export default class DataProxy {
     this.selector = new Selector();
     this.scroll = new Scroll();
     this.history = new History();
+    this.history.init({
+      rows: { len: this.rows.len },
+      cols: { len: this.cols.len },
+    });
     this.clipboard = new Clipboard();
     this.autoFilter = new AutoFilter();
     this.change = () => {};
@@ -540,11 +544,13 @@ export default class DataProxy {
     const rowsDiff = rows.len - sri;
     const clipboardColsLen = ceci - csci + 1;
     const colsDiff = cols.len - sci;
+    let colInserted = false;
     if (rowsDiff < clipboardRowsLen) {
-      this.insert('row', clipboardRowsLen - rowsDiff, false, { sri: rows.len - 1 });
+      this.insert('row', clipboardRowsLen - rowsDiff, false, { sri: rows.len - 1 }, () => null);
     }
     if (colsDiff < clipboardColsLen) {
-      this.insert('column', clipboardColsLen - colsDiff, false, { sci: cols.len - 1 });
+      this.insert('column', clipboardColsLen - colsDiff, false, { sci: cols.len - 1 }, () => null);
+      colInserted = true;
     }
     if (!canPaste.call(this, clipboard.range, selector.range, error)) return false;
 
@@ -556,7 +562,10 @@ export default class DataProxy {
         res = cutPaste.call(this, clipboard.range, selector.range);
       }
       return [
-        res,
+        {
+          ...res,
+          ...(colInserted ? { cols: { len: this.cols.len } } : {}),
+        },
         {
           sri: selector.range.sri,
           sci: selector.range.sci,
@@ -568,28 +577,34 @@ export default class DataProxy {
     return true;
   }
 
-  pasteFromText(txt) {
-    let lines = [];
-
-    if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
-    else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
+  pasteFromText(lines) {
     if (lines.length) {
       const { rows, selector, cols } = this;
       const { sri, sci } = selector.range;
       const rowsDiff = rows.len - sri;
       const colsDiff = cols.len - sci;
+      let colInserted = false;
 
       if (rowsDiff < lines.length) {
-        this.insert('row', lines.length - rowsDiff, false, { sri: rows.len - 1 });
+        this.insert('row', lines.length - rowsDiff, false, { sri: rows.len - 1 }, () => null);
       }
 
       if (colsDiff < lines[0].length) {
-        this.insert('column', lines[0].length - colsDiff, false, { sci: cols.len - 1 });
+        this.insert('column', lines[0].length - colsDiff, false, { sci: cols.len - 1 }, () => null);
+        colInserted = true;
       }
 
       this.changeData(() => [
-        rows.paste(lines, selector.range),
-        selector.rangeObject,
+        {
+          ...rows.paste(lines, selector.range),
+          ...(colInserted ? { cols: { len: this.cols.len } } : {}),
+        },
+        {
+          sri: selector.range.sri,
+          sci: selector.range.sci,
+          eri: selector.range.sri + (lines.length - 1),
+          eci: selector.range.sci + (lines[0].length - 1),
+        },
       ]);
     }
     const [first] = lines;
@@ -681,6 +696,16 @@ export default class DataProxy {
     return cellRange;
   }
 
+  updateSelectedCellsInHistory() {
+    const { selector, rows, history } = this;
+    selector.range.each((ri, ci) => {
+      setTimeout(() => {
+        const { text } = rows.getCell(ri, ci);
+        history.updateUndoItemCellText(ri, ci, text);
+      }, 1);
+    });
+  }
+
   setSelectedCellAttr(property, value) {
     this.changeData(() => {
       const { selector, styles, rows } = this;
@@ -763,8 +788,8 @@ export default class DataProxy {
     if (this.sortedRowMap.has(ri)) {
       nri = this.sortedRowMap.get(ri);
     }
-    const oldCell = rows.getCell(nri, ci);
-    const oldText = oldCell ? oldCell.text : '';
+    const { text: txt } = rows.getCell(nri, ci);
+    const oldText = txt === null ? '' : txt;
     this.setCellText(nri, ci, text, state);
     // replace filter.value
     if (autoFilter.active()) {
@@ -1031,7 +1056,7 @@ export default class DataProxy {
   }
 
   // type: row | column
-  insert(type, n = 1, aboveOrLeft = true, at = {}, cb) {
+  insert(type, n = 1, aboveOrLeft = true, at = {}, cb = () => {}) {
     this.changeData(() => {
       let res = {};
       let autoFilterChanged = false;
@@ -1067,9 +1092,11 @@ export default class DataProxy {
         cell.merge[0] += rn;
         cell.merge[1] += cn;
       });
-      if (cb) {
-        cb(type === 'row' ? ri : -1, type === 'column' ? ci : -1);
+
+      if (cb(type === 'row' ? ri : -1, type === 'column' ? ci : -1) === null) {
+        return null;
       }
+
       return ([
         {
           ...res,
@@ -1200,16 +1227,13 @@ export default class DataProxy {
 
   getCellTextOrDefault(ri, ci) {
     const cell = this.getCell(ri, ci);
-    if (!cell) {
-      return '';
-    }
 
-    return cell.text === 0 ? 0 : cell.text || '';
+    return cell.text === null ? '' : cell.text;
   }
 
   getCellStyle(ri, ci) {
     const cell = this.getCell(ri, ci);
-    if (cell && cell.style !== undefined) {
+    if (cell.style !== undefined) {
       return this.styles[cell.style];
     }
     return null;
@@ -1273,9 +1297,9 @@ export default class DataProxy {
     return this.getCellStyleOrDefault(ri, ci);
   }
 
-  setCellTextRaw(ri, ci, text) {
+  setCellTextRaw(ri, ci, text, force) {
     const { rows } = this;
-    rows.setCellText(ri, ci, text);
+    rows.setCellText(ri, ci, text, force);
   }
 
   // state: input | finished
@@ -1283,9 +1307,11 @@ export default class DataProxy {
     const {
       rows, history, validations, selector,
     } = this;
-    if (state === 'finished') {
+    if (['finished', 'aborted'].includes(state)) {
       const changedCell = rows.setCellText(ri, ci, text);
-      history.add([changedCell, selector.rangeObject]);
+      if (state === 'finished' && changedCell) {
+        history.add([changedCell, selector.rangeObject]);
+      }
     } else {
       rows.setCellText(ri, ci, text);
       this.change(this.getData());
