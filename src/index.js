@@ -121,18 +121,18 @@ class Spreadsheet {
     return this;
   }
 
-  setCellStyle(ri, ci, style, sheetIndex = 0, reRender = true) {
+  setCellStyle(ri, ci, style, reRender = true, sheetIndex = 0) {
     this.dataSet[sheetIndex].setCellStyle(ri, ci, style);
     if (reRender) {
       this.reRender();
     }
   }
 
-  highlightCell(ri, ci, { error = false, color = '#ffff01' } = {}, sheetIndex = 0, reRender = true) {
+  highlightCell(ri, ci, { error = false, color = '#ffff01' } = {}, reRender = true, sheetIndex = 0) {
     this.setCellStyle(ri, ci, { bgcolor: error ? '#fe0000' : color }, sheetIndex, reRender);
   }
 
-  resetCellStyle(sri, sci, eri, eci, sheetIndex = 0, reRender = true) {
+  resetCellStyle(sri, sci, eri, eci, reRender = true, sheetIndex = 0) {
     const cr = new Cr(sri, sci, eri, eci);
     const rows = new Set();
     const cols = new Set();

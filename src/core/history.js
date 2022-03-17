@@ -99,6 +99,7 @@ export default class History {
     const { undoItems } = this;
     if (undoItems.length === 0) return;
     const [item] = undoItems.at(stateIndex);
+    if (!item.rows[ri] || !item.rows[ri].cells || !item.rows[ri].cells[ci]) return;
     if (item.rows[ri].cells[ci].text !== text) {
       item.rows[ri].cells[ci].text = text;
     }

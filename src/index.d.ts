@@ -187,15 +187,15 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param rowIndex
      * @param colIndex
      * @param style
-     * @param sheetIndex
      * @param reRender
+     * @param sheetIndex
      */
      setCellStyle(
       rowIndex: number,
       colIndex: number,
       style: CellStyle,
+      reRender?: boolean,
       sheetIndex?: number,
-      reRender?: boolean
     ): void;
 
     /**
@@ -212,8 +212,8 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       startColIndex: number,
       endRowIndex: number,
       endColIndex: number,
+      reRender?: boolean,
       sheetIndex?: number,
-      reRender?: boolean
     ): void;
 
     /**
@@ -228,8 +228,8 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       rowIndex: number,
       colIndex: number,
       options?: { error: boolean, color?: never } | { color: string, error?: never },
+      reRender?: boolean,
       sheetIndex?: number,
-      reRender?: boolean
     ): void;
 
     /**
