@@ -129,7 +129,7 @@ class Spreadsheet {
   }
 
   highlightCell(ri, ci, { error = false, color = '#ffff01' } = {}, reRender = true, sheetIndex = 0) {
-    this.setCellStyle(ri, ci, { bgcolor: error ? '#fe0000' : color }, sheetIndex, reRender);
+    this.setCellStyle(ri, ci, { bgcolor: error ? '#fe0000' : color }, reRender, sheetIndex);
   }
 
   resetCellStyle(sri, sci, eri, eci, reRender = true, sheetIndex = 0) {
