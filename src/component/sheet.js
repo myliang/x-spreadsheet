@@ -381,7 +381,7 @@ function paste(what, evt) {
   let rlen = 0;
   if (data.settings.mode === 'read') return;
 
-  const [height, width] = data.clipboard.range.size();
+  const [height, width] = (data.clipboard.range && data.clipboard.range.size()) || [0, 0];
 
   const lines = getLinesFromSystemClipboard(evt.clipboardData.getData('text/plain'));
 
@@ -593,10 +593,14 @@ function colResizerFinished(cRect, distance) {
 }
 
 function dataSetCellText(text, state = 'finished') {
-  const { data, table } = this;
+  const { data, table, editor } = this;
   // const [ri, ci] = selector.indexes;
   if (data.settings.mode === 'read') return;
-  data.setSelectedCellText(text, state);
+  const unalteredCell = editor.initial === text;
+  data.setSelectedCellText(
+    unalteredCell ? editor.initial : text,
+    unalteredCell ? 'aborted' : state,
+  );
   const { ri, ci } = data.selector;
   if (state === 'finished') {
     const style = data.getCellStyle(ri, ci);
