@@ -395,7 +395,7 @@ class Rows {
 
     const cell = this.getCell(ri, ci);
 
-    if (cell.editable) return false;
+    if ('editable' in cell && !cell.editable) return false;
 
     if (what === 'all') {
       if (cell.text === null && cell.style === undefined && !cell.merge) return false;

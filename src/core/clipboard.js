@@ -11,7 +11,6 @@ export default class Clipboard {
   }
 
   cut(cellRange) {
-    console.trace();
     this.range = cellRange;
     this.state = 'cut';
     return this;
