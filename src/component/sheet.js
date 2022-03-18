@@ -115,12 +115,12 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
 
   const { initialState } = data.history;
 
-  const insertInfo = {
+  const options = {
     cols: { len: initialState.cols.len - 1, current: sci },
     rows: { len: initialState.rows.len - 1, current: sri },
   };
 
-  contextMenu.setMode(mode, insertAtEnd ? insertInfo : null);
+  contextMenu.setMode(mode, insertAtEnd ? options : null);
   toolbar.reset();
   table.render();
 }
