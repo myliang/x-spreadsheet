@@ -67,7 +67,7 @@ export default class ContextMenu {
   // row: all cells in a row
   // col: all cells in a col
   // range: select range
-  setMode(mode, insertAtEnd) {
+  setMode(mode, options) {
     const items = menuItems.map(({ key }, index) => ({ key, index }));
     let rowItems = items
       .filter(({ key }) => key.includes('row'));
@@ -75,8 +75,8 @@ export default class ContextMenu {
       .filter(({ key }) => key.includes('column'));
 
     let { cols, rows } = {};
-    if (insertAtEnd) {
-      ({ cols, rows } = insertAtEnd);
+    if (options) {
+      ({ cols, rows } = options);
 
       for (const { index } of [...colItems, ...rowItems]) {
         this.menuItems[index].hide();
@@ -127,7 +127,7 @@ export default class ContextMenu {
       if (mode === 'range-single') {
         for (const { index, key } of [...colItems, ...rowItems]) {
           if (key.includes('hide')
-            || (insertAtEnd && ((key.includes('divider-column') && (cols.current < cols.len))
+            || (options && ((key.includes('divider-column') && (cols.current < cols.len))
             || (key.includes('divider-row') && rows.current < rows.len)))) {
             this.menuItems[index].hide();
           } else {
