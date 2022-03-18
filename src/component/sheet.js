@@ -408,7 +408,7 @@ function paste(what) {
         if (shouldBreak) break;
         for (let ci = sci; ci <= eci; ci += 1) {
           const { text } = data.rows.getCell(ri, ci);
-          if (String(text) !== linesAry[linesAryIdx]) {
+          if (String(text === null ? '' : text) !== linesAry[linesAryIdx]) {
             useSystemClipboard = true;
             shouldBreak = true;
             break;

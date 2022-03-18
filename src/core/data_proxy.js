@@ -1257,7 +1257,7 @@ export default class DataProxy {
         if (['excludeRows', 'width'].every(k => k !== key)) {
           const {
             indices = [],
-          } = properties.excludeRows.find(({ property }) => property === key) || {};
+          } = (properties.excludeRows || []).find(({ property }) => property === key) || {};
           const cells = [...r];
           if (!cells.length) {
             for (let ri = 0; ri < rows.len; ri += 1) {
