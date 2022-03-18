@@ -375,7 +375,7 @@ function getLinesFromSystemClipboard(txt) {
   return lines;
 }
 
-function paste(what, evt) {
+function paste(what) {
   const { data, dataSet } = this;
   let clen = 0;
   let rlen = 0;
@@ -383,56 +383,59 @@ function paste(what, evt) {
 
   const [height, width] = (data.clipboard.range && data.clipboard.range.size()) || [0, 0];
 
-  const lines = getLinesFromSystemClipboard(evt.clipboardData.getData('text/plain'));
-
-  // always prefer the system clipboard
-  let useSystemClipboard = false;
-  if (height !== lines.length || width !== lines[0].length) {
-    useSystemClipboard = true;
-  } else {
-    // compare system clipboard with internal clipboard
-    // convert lines to one dimensional array
-    const linesAry = [];
-    for (let i = 0; i < lines.length; i += 1) {
-      const line = lines[i];
-      for (let j = 0; j < line.length; j += 1) {
-        linesAry.push(line[j]);
-      }
-    }
-    let linesAryIdx = 0;
-    let shouldBreak = false;
-    const {
-      sri, sci, eri, eci,
-    } = data.clipboard.range;
-    for (let ri = sri; ri <= eri; ri += 1) {
-      if (shouldBreak) break;
-      for (let ci = sci; ci <= eci; ci += 1) {
-        const { text } = data.rows.getCell(ri, ci);
-        if (String(text) !== linesAry[linesAryIdx]) {
-          useSystemClipboard = true;
-          shouldBreak = true;
-          break;
+  navigator.clipboard.readText().then((txt) => {
+    const lines = getLinesFromSystemClipboard(txt);
+    // always prefer the system clipboard
+    let useSystemClipboard = false;
+    if (height !== lines.length || width !== lines[0].length) {
+      useSystemClipboard = true;
+    } else {
+      // compare system clipboard with internal clipboard
+      // convert lines to one dimensional array
+      const linesAry = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        const line = lines[i];
+        for (let j = 0; j < line.length; j += 1) {
+          linesAry.push(line[j]);
         }
-        linesAryIdx += 1;
+      }
+      let linesAryIdx = 0;
+      let shouldBreak = false;
+      const {
+        sri, sci, eri, eci,
+      } = data.clipboard.range;
+      for (let ri = sri; ri <= eri; ri += 1) {
+        if (shouldBreak) break;
+        for (let ci = sci; ci <= eci; ci += 1) {
+          const { text } = data.rows.getCell(ri, ci);
+          if (String(text) !== linesAry[linesAryIdx]) {
+            useSystemClipboard = true;
+            shouldBreak = true;
+            break;
+          }
+          linesAryIdx += 1;
+        }
       }
     }
-  }
-  let cdiff = 0;
-  let rdiff = 0;
-  if (!useSystemClipboard && data.paste(what, dataSet, msg => xtoast('Tip', msg))) {
-    cdiff = data.clipboard.range.eci - data.clipboard.range.sci;
-    rdiff = data.clipboard.range.eri - data.clipboard.range.sri;
-  } else {
-    ({ clen, rlen } = this.data.pasteFromText(lines));
-    cdiff = clen;
-    rdiff = rlen;
-  }
-  sheetReset.call(this);
+    let cdiff = 0;
+    let rdiff = 0;
+    if (!useSystemClipboard && data.paste(what, dataSet, msg => xtoast('Tip', msg))) {
+      cdiff = data.clipboard.range.eci - data.clipboard.range.sci;
+      rdiff = data.clipboard.range.eri - data.clipboard.range.sri;
+    } else {
+      ({ clen, rlen } = this.data.pasteFromText(lines));
+      cdiff = clen;
+      rdiff = rlen;
+    }
+    sheetReset.call(this);
 
-  const { sri, sci } = this.selector.range;
-  this.selector.hideClipboard();
-  this.selector.moveIndexes = [sri + rdiff, sci + cdiff];
-  selectorSet.call(this, true, sri + rdiff, sci + cdiff, true);
+    const { sri, sci } = this.selector.range;
+    this.selector.hideClipboard();
+    this.selector.moveIndexes = [sri + rdiff, sci + cdiff];
+    selectorSet.call(this, true, sri + rdiff, sci + cdiff, true);
+  }).catch((err) => {
+    xtoast('Tip', err);
+  });
 }
 
 function hideRowsOrCols() {
@@ -731,8 +734,6 @@ function sheetInitEvents() {
     sortFilter,
   } = this;
 
-  const pasteEvent = new Event('paste');
-
   const handleSelectAll = (evt) => {
     const keyCode = evt.keyCode || evt.which;
     const {
@@ -870,7 +871,7 @@ function sheetInitEvents() {
     } else if (type === 'cut') {
       cut.call(this);
     } else if (type === 'paste') {
-      window.dispatchEvent(pasteEvent);
+      paste.call(this, 'all');
     } else if (type === 'paste-value') {
       paste.call(this, 'text');
     } else if (type === 'paste-format') {
@@ -890,10 +891,9 @@ function sheetInitEvents() {
     this.focusing = overlayerEl.contains(evt.target);
   });
 
-  bind(window, 'paste', (evt) => {
+  bind(window, 'paste', () => {
     if (!this.focusing) return;
-    paste.call(this, 'all', evt);
-    evt.preventDefault();
+    paste.call(this, 'all');
   });
 
   bind(window, 'copy', (evt) => {

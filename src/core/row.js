@@ -157,6 +157,10 @@ class Rows {
               for (let jj = dsci; jj <= deci; jj += cn) {
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
+                if ('editable' in this._[nri].cells[nci] && !this._[nri].cells[nci].editable) {
+                  // eslint-disable-next-line no-continue
+                  continue;
+                }
                 const ncell = helper.cloneDeep(this._[i].cells[j]);
                 // ncell.text
                 if (autofill && ncell && ncell.text && ncell.text.length > 0) {
@@ -230,22 +234,34 @@ class Rows {
       const cell = this.getCell(ri, ci);
       const nri = dstCellRange.sri + (parseInt(ri, 10) - srcCellRange.sri);
       const nci = dstCellRange.sci + (parseInt(ci, 10) - srcCellRange.sci);
-      cutCellsWithDest.push({ to: { ri: nri, ci: nci }, cell });
-      this._[ri].cells[ci] = {};
+      if (!('editable' in cell) || cell.editable) {
+        cutCellsWithDest.push({ to: { ri: nri, ci: nci }, cell });
+        this._[ri].cells[ci] = { text: null };
+      }
     });
 
     cutCellsWithDest.forEach(({ to, cell }) => {
-      this._[to.ri].cells[to.ci] = cell;
+      const { ri, ci } = to;
+      const { editable } = this.getCell(ri, ci);
+      if (editable !== false) {
+        this._[ri].cells[ci] = cell;
+      }
     });
 
     const changedCells = [];
 
     srcCellRange.each((ri, ci) => {
-      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+      const cell = this.getCell(ri, ci);
+      if (!('editable' in cell) || cell.editable) {
+        changedCells.push({ ri, ci, cell });
+      }
     });
 
     destination.each((ri, ci) => {
-      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+      const cell = this.getCell(ri, ci);
+      if (!('editable' in cell) || cell.editable) {
+        changedCells.push({ ri, ci, cell });
+      }
     });
 
     return Rows.reduceAsRows(changedCells, this.len);
