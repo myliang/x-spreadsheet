@@ -145,7 +145,6 @@ export default class AutoFilter {
     if (operator === 'delete') {
       if (ri <= newRef.eri) {
         newRef.eri -= n;
-        console.log('newRef.eri', newRef.eri);
       }
 
       if (ri === newRef.sri) {

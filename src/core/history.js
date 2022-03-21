@@ -104,4 +104,10 @@ export default class History {
       item.rows[ri].cells[ci].text = text;
     }
   }
+
+  destroy() {
+    delete this.initial;
+    delete this.undoItems;
+    delete this.redoItems;
+  }
 }

@@ -80,10 +80,10 @@ class Rows {
   getCell(ri, ci) {
     const row = this.get(ri);
     if (row !== undefined && row.cells !== undefined && row.cells[ci] !== undefined) {
-      if (row.cells[ci].text === undefined || row.cells[ci].text === '') {
-        row.cells[ci].text = null;
-      }
-      return row.cells[ci];
+      return {
+        ...row.cells[ci],
+        ...((row.cells[ci].text === undefined || row.cells[ci].text === '') ? { text: null } : {}),
+      };
     }
     return ({ text: null });
   }
@@ -469,6 +469,12 @@ class Rows {
   getData() {
     const { len } = this;
     return Object.assign({ len }, this._);
+  }
+
+  destroy() {
+    delete this._;
+    delete this.len;
+    delete this.height;
   }
 
   static reduceAsRows(iterable, len) {
