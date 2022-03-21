@@ -1551,4 +1551,10 @@ export default class DataProxy {
       autofilter: autoFilter.getData(),
     };
   }
+
+  destroyMembers() {
+    this.history.destroy();
+    this.rows.destroy();
+    this.cols.destroy();
+  }
 }

@@ -214,18 +214,17 @@ class Spreadsheet {
     return this;
   }
 
-  static locale(lang, message) {
-    locale(lang, message);
+  destroyMembers() {
+    for (const d of this.dataSet) {
+      d.destroyMembers();
+    }
+    for (const m of Object.keys(this)) {
+      delete this[m];
+    }
   }
 
-  static getInstance(selectors, options = {}) {
-    if (!Spreadsheet.instance || Spreadsheet.instance.selectors !== selectors) {
-      delete Spreadsheet.instance; // clean up old instance if any
-      Spreadsheet.instance = new Spreadsheet(selectors, options);
-    }
-    Spreadsheet.instance.options = { ...this.options, ...options };
-    Spreadsheet.instance.reRender();
-    return Spreadsheet.instance;
+  static locale(lang, message) {
+    locale(lang, message);
   }
 }
 

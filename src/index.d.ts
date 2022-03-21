@@ -335,7 +335,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       cols: { [key: number]: Record<string, any>, len: number }
     }
 
-    static getInstance(container: string | HTMLElement, opts?: Options): Spreadsheet;
+    destroyMembers(): void;
 
     /**
      * set locale

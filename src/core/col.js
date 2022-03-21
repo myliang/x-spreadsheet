@@ -81,6 +81,14 @@ class Cols {
   totalWidth() {
     return this.sumWidth(0, this.len);
   }
+
+  destroy() {
+    delete this._;
+    delete this.len;
+    delete this.width;
+    delete this.indexWidth;
+    delete this.minWidth;
+  }
 }
 
 export default {};

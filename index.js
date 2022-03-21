@@ -149,7 +149,7 @@ const rows = new Array(rowLength)
     ...curr,
   }), {});
 
-const instance = Spreadsheet.getInstance('#x-spreadsheet-demo');
+const instance = new Spreadsheet('#x-spreadsheet-demo');
 
 const numberFormat = { format: 'number' };
 const excludeRows = [{ property: 'style', indices: [0] }];
