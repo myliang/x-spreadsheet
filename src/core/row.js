@@ -157,7 +157,7 @@ class Rows {
               for (let jj = dsci; jj <= deci; jj += cn) {
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
-                if ('editable' in this._[nri].cells[nci] && !this._[nri].cells[nci].editable) {
+                if (this._[nri].cells[nci] && 'editable' in this._[nri].cells[nci] && !this._[nri].cells[nci].editable) {
                   // eslint-disable-next-line no-continue
                   continue;
                 }
