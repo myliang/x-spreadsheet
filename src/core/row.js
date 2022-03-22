@@ -415,17 +415,25 @@ class Rows {
 
     if (what === 'all') {
       if (cell.text === null && cell.style === undefined && !cell.merge) return false;
-      row.cells[ci] = { text: null, merge: undefined, style: undefined };
+      this.setCell(ri, ci, { text: null, merge: undefined, style: undefined });
     }
 
     if (what === 'text') {
       if (cell.text === null) return false;
-      cell.text = null;
+      this.setCellText(ri, ci, null);
     }
 
     if (what === 'format') {
       if (cell.style === undefined) return false;
-      cell.style = undefined;
+      this.setCell(
+        ri,
+        ci,
+        {
+          ...cell,
+          style: undefined,
+        },
+        what,
+      );
     }
 
     return true;

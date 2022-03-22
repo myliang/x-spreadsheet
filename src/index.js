@@ -214,7 +214,8 @@ class Spreadsheet {
     return this;
   }
 
-  destroyMembers() {
+  cleanup() {
+    this.sheet.cleanupEvents();
     for (const d of this.dataSet) {
       d.destroyMembers();
     }

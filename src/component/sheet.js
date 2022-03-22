@@ -883,33 +883,42 @@ function sheetInitEvents() {
     }
   };
 
-  bind(window, 'resize', () => {
+  const resizeHandler = () => {
     this.reload();
-  });
+  };
 
-  bind(window, 'click', (evt) => {
+  bind(window, 'resize', resizeHandler);
+
+  const clickHandler = (evt) => {
     this.focusing = overlayerEl.contains(evt.target);
-  });
+  };
 
-  bind(window, 'paste', () => {
+  bind(window, 'click', clickHandler);
+
+  const pasteHandler = () => {
     if (!this.focusing) return;
     paste.call(this, 'all');
-  });
+  };
 
-  bind(window, 'copy', (evt) => {
+  bind(window, 'paste', pasteHandler);
+
+  const copyHandler = (evt) => {
     if (!this.focusing) return;
     copy.call(this, evt);
     evt.preventDefault();
-  });
+  };
 
-  bind(window, 'cut', (evt) => {
+  bind(window, 'copy', copyHandler);
+
+  const cutHandler = (evt) => {
     if (!this.focusing) return;
     cut.call(this, evt);
     evt.preventDefault();
-  });
+  };
 
-  // for selector
-  bind(window, 'keydown', (evt) => {
+  bind(window, 'cut', cutHandler);
+
+  const keydownHandler = (evt) => {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
     const {
@@ -1068,7 +1077,19 @@ function sheetInitEvents() {
         editorSet.call(this);
       }
     }
-  });
+  };
+
+  // for selector
+  bind(window, 'keydown', keydownHandler);
+
+  this.eventHandlers = [
+    ['resize', resizeHandler],
+    ['click', clickHandler],
+    ['paste', pasteHandler],
+    ['copy', copyHandler],
+    ['cut', cutHandler],
+    ['keydown', keydownHandler],
+  ];
 }
 
 function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellContents = false) {
@@ -1171,6 +1192,7 @@ export default class Sheet {
     );
     // table
     this.table = new Table(this.tableEl.el, idx, dataSet);
+    this.eventHandlers = [];
     sheetInitEvents.call(this);
     sheetReset.call(this);
     // init selector [0, 0]
@@ -1285,5 +1307,15 @@ export default class Sheet {
         scrollbarMove.call(this);
       }, 1);
     }
+  }
+
+  cleanupEvents() {
+    for (const [name, handler] of this.eventHandlers) {
+      unbind(window, name, handler);
+    }
+    unbind(window, 'keydown', window.xkeydownEsc);
+    delete window.xkeydownEsc;
+
+    unbind(window, 'resize', this.toolbar.resizeHandler);
   }
 }
