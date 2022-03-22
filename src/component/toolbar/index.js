@@ -193,6 +193,11 @@ export default class Toolbar {
     });
 
     this.el.child(this.btns);
+
+    this.resizeHandler = () => {
+      moreResize.call(this);
+    };
+
     if (isHide) {
       this.el.hide();
     } else {
@@ -201,9 +206,7 @@ export default class Toolbar {
         initBtns2.call(this);
         moreResize.call(this);
       }, 0);
-      bind(window, 'resize', () => {
-        moreResize.call(this);
-      });
+      bind(window, 'resize', this.resizeHandler);
     }
   }
 

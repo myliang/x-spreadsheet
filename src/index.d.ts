@@ -335,7 +335,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       cols: { [key: number]: Record<string, any>, len: number }
     }
 
-    destroyMembers(): void;
+    cleanup(): void;
 
     /**
      * set locale
