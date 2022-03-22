@@ -21,6 +21,7 @@ import SortFilter from './sort_filter';
 import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
+import { Rows } from '../core/row';
 
 /**
  * @desc throttle fn
@@ -1103,7 +1104,7 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
       const condition = matchCellContents
         ? txt === val : txt.includes(soughtValue);
       if (condition) {
-        foundCells.push({ ri, ci, text });
+        foundCells.push({ ri: parseInt(ri, 10), ci: parseInt(ci, 10), text });
         if (replace === 'all') {
           data.setCellTextRaw(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
         }
@@ -1116,6 +1117,10 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
   }
 
   if (replace === 'all') {
+    data.history.add([
+      Rows.reduceAsRows(foundCells.map(({ ri, ci }) => ({ ri, ci, cell: data.getCell(ri, ci) }))),
+      data.selector.rangeObject,
+    ]);
     table.render();
     return foundCells.length;
   }
@@ -1123,7 +1128,7 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
   let { ri, ci } = foundCells[idx];
   const { text } = foundCells[idx];
   if (replace === 'current') {
-    data.setCellText(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
+    data.setCellText(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith), 'finished');
     ({ ri, ci } = foundCells[(idx + 1 === foundCells.length) ? 0 : idx + 1]);
   }
 

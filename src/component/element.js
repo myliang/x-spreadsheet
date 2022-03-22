@@ -274,6 +274,11 @@ class Element {
     this.css('display', 'none');
     return this;
   }
+
+  click() {
+    const { el } = this;
+    el.click();
+  }
 }
 
 const h = (tag, className = '') => new Element(tag, className);

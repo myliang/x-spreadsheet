@@ -143,4 +143,10 @@ export default class ModalFind extends Modal {
     this.idx = 0;
     this.messageContainer.hide();
   }
+
+  show() {
+    super.show();
+    this.findField.input.input.click();
+    this.findField.input.input.focus();
+  }
 }
