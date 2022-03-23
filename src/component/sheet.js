@@ -632,6 +632,9 @@ function insertDeleteRowColumn(type) {
     });
   } else if (type === 'delete-row') {
     data.delete('row');
+    if (selector.range.eri > data.rows.len - 1) {
+      selector.set(data.rows.len - 1, -1);
+    }
   } else if (type === 'insert-column') { // insert column left
     data.insert('column', 1, true, {}, (ri, ci) => {
       selector.set(ri, ci);
@@ -642,6 +645,9 @@ function insertDeleteRowColumn(type) {
     });
   } else if (type === 'delete-column') {
     data.delete('column');
+    if (selector.range.eci > data.cols.len - 1) {
+      selector.set(-1, data.cols.len - 1);
+    }
   } else if (type === 'delete-cell') {
     data.deleteCell();
   } else if (type === 'delete-cell-format') {

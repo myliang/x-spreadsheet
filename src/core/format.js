@@ -102,7 +102,7 @@ const baseFormats = [
           cb(res);
         }
 
-        return (new Date(res)).toLocaleDateString('de-DE', { timeZone: 'UTC' });
+        return res;
       } catch (err) {
         return 'Invalid Date';
       }
