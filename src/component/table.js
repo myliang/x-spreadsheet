@@ -91,7 +91,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []
     if (style.format) {
       cellText = formatm[style.format].render(
         cellText,
-        style.format === 'date' ? (n) => { cell.text = n; } : undefined,
+        style.format === 'date' ? (n) => { rows.setCellText(nrindex, cindex, n); } : undefined,
       );
     }
     const font = Object.assign({}, style.font);
