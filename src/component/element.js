@@ -136,6 +136,9 @@ class Element {
   */
 
   child(arg) {
+    if (!arg) {
+      return this;
+    }
     let ele = arg;
     if (typeof arg === 'string') {
       ele = document.createTextNode(arg);

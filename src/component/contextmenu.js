@@ -44,8 +44,9 @@ function buildMenuItem(item) {
     })
     .children(
       item.title(),
-      h('div', 'label').child(item.label || ''),
-    ).attr('data-title', item.title());
+      item.label ? h('div', 'label').child(item.label) : null,
+    )
+    .attr('data-title', item.title());
 }
 
 function buildMenu() {
@@ -68,15 +69,33 @@ export default class ContextMenu {
   // col: all cells in a col
   // range: select range
   setMode(mode, options = {}) {
-    const items = menuItems.map(({ key }, index) => ({ key, index }));
-    let rowItems = items
-      .filter(({ key }) => key.includes('row'));
-    let colItems = items
-      .filter(({ key }) => key.includes('column'));
-
     const {
       cols, rows, width, height,
     } = options;
+
+    const items = menuItems.map(({ key }, index) => ({ key, index }));
+    let rowItems = items.filter(({ key }) => key.includes('row'));
+    let colItems = items.filter(({ key }) => key.includes('column'));
+
+    // replace placeholders {a}, {b} (number of cols) in string
+    for (const { index } of colItems) {
+      const attr = this.menuItems[index].attr('data-title');
+      if (attr) {
+        this.menuItems[index].html(
+          attr.replace('{a}', width).replace('{b}', width > 1 ? 's' : ''),
+        );
+      }
+    }
+
+    // replace placeholders {a}, {b} (number of rows) in string
+    for (const { index } of rowItems) {
+      const attr = this.menuItems[index].attr('data-title');
+      if (attr) {
+        this.menuItems[index].html(
+          attr.replace('{a}', height).replace('{b}', height > 1 ? 's' : ''),
+        );
+      }
+    }
 
     if (cols || rows) {
       for (const { index } of [...colItems, ...rowItems]) {
@@ -109,12 +128,6 @@ export default class ContextMenu {
     if (['row', 'col'].includes(mode)) {
       if (mode === 'col') {
         for (const { index } of colItems) {
-          const attr = this.menuItems[index].attr('data-title');
-          if (attr) {
-            this.menuItems[index].html(
-              attr.replace('{a}', width).replace('{b}', width > 1 ? 's' : ''),
-            );
-          }
           this.menuItems[index].show();
         }
         for (const { index } of rowItems) {
@@ -123,12 +136,6 @@ export default class ContextMenu {
       }
       if (mode === 'row') {
         for (const { index } of rowItems) {
-          const attr = this.menuItems[index].attr('data-title');
-          if (attr) {
-            this.menuItems[index].html(
-              attr.replace('{a}', height).replace('{b}', height > 1 ? 's' : ''),
-            );
-          }
           this.menuItems[index].show();
         }
         for (const { index } of colItems) {
