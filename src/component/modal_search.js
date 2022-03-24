@@ -76,6 +76,13 @@ export default class ModalFind extends Modal {
       false,
       true,
     );
+
+    this.el.on('keydown', (evt) => {
+      if (evt.keyCode === 13) {
+        this.btnClick('find');
+      }
+    });
+
     this.findField = findField;
     this.replaceWithField = replaceWithField;
     this.ddOptions = ddOptions;
@@ -111,6 +118,9 @@ export default class ModalFind extends Modal {
     if (action === 'find') {
       this.findInSheet('none');
       this.idx += 1;
+      setTimeout(() => {
+        this.findField.input.input.focus();
+      }, 1);
     }
     if (action === 'replace') {
       this.idx = this.idx === 0 ? 0 : this.idx - 1;

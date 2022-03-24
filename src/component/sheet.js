@@ -1008,9 +1008,9 @@ function sheetInitEvents() {
           break;
         case 70: {
           // ctrl + f
-          evt.preventDefault();
           this.modalFind.setRange(selector.range);
           this.modalFind.show();
+          evt.preventDefault();
           break;
         }
         case 67: // ctrl + c
@@ -1116,7 +1116,6 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
   const soughtValue = matchCase ? val : val.toLowerCase();
 
   const populateCells = (ri, ci, text) => {
-    console.log('populateCells: ', ri, ci, text);
     const txt = matchCase ? `${text}` : `${text}`.toLowerCase();
     const condition = matchCellContents
       ? txt === val : txt.includes(soughtValue);
@@ -1154,7 +1153,12 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
     return foundCells.length;
   }
 
-  let { ri, ci } = foundCells[idx];
+  let { ri, ci } = foundCells[idx] || {};
+
+  if (!ri || !ci) {
+    return 0;
+  }
+
   const { text } = foundCells[idx];
   if (replace === 'current') {
     data.setCellText(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith), 'finished');
