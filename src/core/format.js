@@ -97,12 +97,12 @@ const baseFormats = [
       }
       try {
         const date = new Date(v);
-        const [res] = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T');
+        const [yyyymmdd, rest] = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T');
+        const [hhmmss] = rest.split('.');
         if (cb) {
-          cb(res);
+          cb(`${yyyymmdd} ${hhmmss}`);
         }
-
-        return res;
+        return yyyymmdd;
       } catch (err) {
         return 'Invalid Date';
       }

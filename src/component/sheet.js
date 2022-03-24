@@ -120,8 +120,8 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     height,
     width,
     ...(insertAtEnd ? {
-      cols: { len: initialState.cols.len - 1, current: eci },
-      rows: { len: initialState.rows.len - 1, current: eri },
+      cols: { len: initialState.cols.len - 1, eci },
+      rows: { len: initialState.rows.len - 1, eri },
     } : {}),
   };
 
@@ -1116,6 +1116,7 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
   const soughtValue = matchCase ? val : val.toLowerCase();
 
   const populateCells = (ri, ci, text) => {
+    console.log('populateCells: ', ri, ci, text);
     const txt = matchCase ? `${text}` : `${text}`.toLowerCase();
     const condition = matchCellContents
       ? txt === val : txt.includes(soughtValue);
@@ -1130,12 +1131,12 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
   if (modalFind.selected === 'range') {
     modalFind.range.each((ri, ci) => {
       const { text } = data.getCell(ri, ci);
-      populateCells(ri, ci, text);
+      populateCells(ri, ci, `${text}`);
     });
   } else {
     rows.each((ri) => {
       rows.eachCells(ri, (ci, { text }) => {
-        populateCells(ri, ci, text);
+        populateCells(ri, ci, `${text}`);
       });
     });
   }

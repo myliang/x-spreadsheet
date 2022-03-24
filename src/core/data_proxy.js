@@ -1075,7 +1075,7 @@ export default class DataProxy {
         res = rows.insert(ri, n);
         const rowsToUpdateProps = [];
         for (let i = sri; i < sri + n; i += 1) {
-          rowsToUpdateProps.push(aboveOrLeft ? i : i + 1);
+          rowsToUpdateProps.push(aboveOrLeft ? i : i + n);
         }
         this.setColProperties(rowsToUpdateProps);
       } else if (type === 'column') {

@@ -170,7 +170,7 @@ export default class ModalFind extends Modal {
 
   show() {
     const [width, height] = this.range ? this.range.size() : [1, 1];
-    if (width !== 1 && height !== 1) {
+    if (width !== 1 || height !== 1) {
       this.ddOptions.setTitle('Selected range');
       this.ddOptions.change({ key: 'range' });
     } else {

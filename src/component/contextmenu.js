@@ -105,19 +105,21 @@ export default class ContextMenu {
       const omittedColItems = ['insert-column', 'delete-column', 'insert-column-right'];
       const omittedRowItems = ['insert-row', 'delete-row', 'insert-row-below'];
 
-      if (cols.current === cols.len) {
+      const vOffset = cols.eci - cols.len;
+      if (cols.eci === cols.len || (vOffset < width && vOffset >= 0)) {
         omittedColItems.splice(2, 2);
       }
 
-      if (cols.current > cols.len) {
+      if (vOffset >= width) {
         omittedColItems.splice(0, 3);
       }
 
-      if (rows.current === rows.len) {
+      const hOffset = rows.eri - rows.len;
+      if (rows.eri === rows.len || (hOffset < height && hOffset >= 0)) {
         omittedRowItems.splice(2, 2);
       }
 
-      if (rows.current > rows.len) {
+      if (hOffset >= height) {
         omittedRowItems.splice(0, 3);
       }
 
@@ -147,8 +149,8 @@ export default class ContextMenu {
       if (mode === 'range-single') {
         for (const { index, key } of [...colItems, ...rowItems]) {
           if (key.includes('hide')
-            || (key.includes('divider-column') && cols && (cols.current < cols.len))
-            || (key.includes('divider-row') && rows && rows.current < rows.len)) {
+            || (key.includes('divider-column') && cols && (cols.eci < cols.len))
+            || (key.includes('divider-row') && rows && rows.eri < rows.len)) {
             this.menuItems[index].hide();
           } else {
             this.menuItems[index].show();
