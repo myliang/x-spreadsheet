@@ -1105,8 +1105,10 @@ export default class DataProxy {
           ...(mergesShifted ? { merges: merges.getData() } : {}),
         },
         {
-          sri: type === 'row' ? ri : -1,
-          sci: type === 'column' ? ci : -1,
+          sri: ri,
+          sci: ci,
+          eri: ri + (this.selector.range.eri - this.selector.range.sri),
+          eci: ci + (this.selector.range.eci - this.selector.range.sci),
         },
       ]);
     });

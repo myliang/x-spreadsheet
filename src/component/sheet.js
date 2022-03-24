@@ -115,13 +115,17 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
   }
 
   const { initialState } = data.history;
-
+  const [height, width] = selector.range.size();
   const options = {
-    cols: { len: initialState.cols.len - 1, current: sci },
-    rows: { len: initialState.rows.len - 1, current: sri },
+    height,
+    width,
+    ...(insertAtEnd ? {
+      cols: { len: initialState.cols.len - 1, current: eci },
+      rows: { len: initialState.rows.len - 1, current: eri },
+    } : {}),
   };
 
-  contextMenu.setMode(mode, insertAtEnd ? options : null);
+  contextMenu.setMode(mode, options);
   toolbar.reset();
   table.render();
 }
@@ -622,13 +626,18 @@ function dataSetCellText(text, state = 'finished') {
 function insertDeleteRowColumn(type) {
   const { data, selector } = this;
   if (data.settings.mode === 'read') return;
+  const [hi, wi] = selector.range.size();
   if (type === 'insert-row') { // insert row above
-    data.insert('row', 1, true, {}, (ri, ci) => {
-      selector.set(ri, ci);
+    data.insert('row', hi, true, {}, (ri, ci) => {
+      setTimeout(() => {
+        selector.setStartEnd(ri, ci, ri + hi - 1, ci);
+      }, 1);
     });
   } else if (type === 'insert-row-below') {
-    data.insert('row', 1, false, {}, (ri, ci) => {
-      selector.set(ri, ci);
+    data.insert('row', hi, false, {}, (ri, ci) => {
+      setTimeout(() => {
+        selector.setStartEnd(ri + hi - 1, ci, ri, ci);
+      }, 1);
     });
   } else if (type === 'delete-row') {
     data.delete('row');
@@ -636,12 +645,16 @@ function insertDeleteRowColumn(type) {
       selector.set(data.rows.len - 1, -1);
     }
   } else if (type === 'insert-column') { // insert column left
-    data.insert('column', 1, true, {}, (ri, ci) => {
-      selector.set(ri, ci);
+    data.insert('column', wi, true, {}, (ri, ci) => {
+      setTimeout(() => {
+        selector.setStartEnd(ri, ci, ri, ci + wi - 1);
+      }, 1);
     });
   } else if (type === 'insert-column-right') {
-    data.insert('column', 1, false, {}, (ri, ci) => {
-      selector.set(ri, ci);
+    data.insert('column', wi, false, {}, (ri, ci) => {
+      setTimeout(() => {
+        selector.setStartEnd(ri, ci + wi - 1, ri, ci);
+      }, 1);
     });
   } else if (type === 'delete-column') {
     data.delete('column');
@@ -792,12 +805,7 @@ function sheetInitEvents() {
       // the left mouse button: mousedown → mouseup → click
       // the right mouse button: mousedown → contenxtmenu → mouseup
       if (evt.buttons === 2) {
-        if (this.data.xyInSelectedRect(evt.offsetX, evt.offsetY)) {
-          contextMenu.setPosition(evt.offsetX, evt.offsetY);
-        } else {
-          overlayerMousedown.call(this, evt);
-          contextMenu.setPosition(evt.offsetX, evt.offsetY);
-        }
+        contextMenu.setPosition(evt.offsetX, evt.offsetY);
         evt.stopPropagation();
       } else if (evt.detail === 2) {
         editorSet.call(this);
@@ -998,11 +1006,13 @@ function sheetInitEvents() {
           // ctrl + I
           toolbar.trigger('italic');
           break;
-        case 70:
+        case 70: {
           // ctrl + f
           evt.preventDefault();
+          this.modalFind.setRange(selector.range);
           this.modalFind.show();
           break;
+        }
         case 67: // ctrl + c
         case 86: // ctrl + v
         default:
@@ -1100,23 +1110,35 @@ function sheetInitEvents() {
 }
 
 function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellContents = false) {
-  const { data, table } = this;
+  const { data, table, modalFind } = this;
   const { rows } = data;
   const foundCells = [];
   const soughtValue = matchCase ? val : val.toLowerCase();
-  rows.each((ri) => {
-    rows.eachCells(ri, (ci, { text }) => {
-      const txt = matchCase ? `${text}` : `${text}`.toLowerCase();
-      const condition = matchCellContents
-        ? txt === val : txt.includes(soughtValue);
-      if (condition) {
-        foundCells.push({ ri: parseInt(ri, 10), ci: parseInt(ci, 10), text });
-        if (replace === 'all') {
-          data.setCellTextRaw(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
-        }
+
+  const populateCells = (ri, ci, text) => {
+    const txt = matchCase ? `${text}` : `${text}`.toLowerCase();
+    const condition = matchCellContents
+      ? txt === val : txt.includes(soughtValue);
+    if (condition) {
+      foundCells.push({ ri, ci, text });
+      if (replace === 'all') {
+        data.setCellTextRaw(ri, ci, text.replace(new RegExp(soughtValue, 'i'), replaceWith));
       }
+    }
+  };
+
+  if (modalFind.selected === 'range') {
+    modalFind.range.each((ri, ci) => {
+      const { text } = data.getCell(ri, ci);
+      populateCells(ri, ci, text);
     });
-  });
+  } else {
+    rows.each((ri) => {
+      rows.eachCells(ri, (ci, { text }) => {
+        populateCells(ri, ci, text);
+      });
+    });
+  }
 
   if (!foundCells.length) {
     return -1;
@@ -1306,14 +1328,12 @@ export default class Sheet {
     sri, sci, eri, eci,
   }) {
     if ([sri, sci].every(v => v !== undefined)) {
-      if ([eri, eci].every(v => v === undefined)) {
-        this.selector.set(
-          this.data.rows.len === sri ? sri - 1 : sri,
-          this.data.cols.len === sci ? sci - 1 : sci,
-        );
-      } else {
-        this.selector.setStartEnd(sri, sci, eri, eci);
-      }
+      this.selector.setStartEnd(
+        sri > this.data.rows.len - 1 ? this.data.rows.len - 1 : sri,
+        sci > this.data.cols.len - 1 ? this.data.cols.len - 1 : sci,
+        sri > this.data.rows.len - 1 ? this.data.rows.len - 1 : eri,
+        sci > this.data.cols.len - 1 ? this.data.cols.len - 1 : eci,
+      );
       setTimeout(() => {
         scrollbarMove.call(this);
       }, 1);

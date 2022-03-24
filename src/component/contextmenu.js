@@ -45,7 +45,7 @@ function buildMenuItem(item) {
     .children(
       item.title(),
       h('div', 'label').child(item.label || ''),
-    );
+    ).attr('data-title', item.title());
 }
 
 function buildMenu() {
@@ -67,17 +67,18 @@ export default class ContextMenu {
   // row: all cells in a row
   // col: all cells in a col
   // range: select range
-  setMode(mode, options) {
+  setMode(mode, options = {}) {
     const items = menuItems.map(({ key }, index) => ({ key, index }));
     let rowItems = items
       .filter(({ key }) => key.includes('row'));
     let colItems = items
       .filter(({ key }) => key.includes('column'));
 
-    let { cols, rows } = {};
-    if (options) {
-      ({ cols, rows } = options);
+    const {
+      cols, rows, width, height,
+    } = options;
 
+    if (cols || rows) {
       for (const { index } of [...colItems, ...rowItems]) {
         this.menuItems[index].hide();
       }
@@ -108,6 +109,12 @@ export default class ContextMenu {
     if (['row', 'col'].includes(mode)) {
       if (mode === 'col') {
         for (const { index } of colItems) {
+          const attr = this.menuItems[index].attr('data-title');
+          if (attr) {
+            this.menuItems[index].html(
+              attr.replace('{a}', width).replace('{b}', width > 1 ? 's' : ''),
+            );
+          }
           this.menuItems[index].show();
         }
         for (const { index } of rowItems) {
@@ -116,6 +123,12 @@ export default class ContextMenu {
       }
       if (mode === 'row') {
         for (const { index } of rowItems) {
+          const attr = this.menuItems[index].attr('data-title');
+          if (attr) {
+            this.menuItems[index].html(
+              attr.replace('{a}', height).replace('{b}', height > 1 ? 's' : ''),
+            );
+          }
           this.menuItems[index].show();
         }
         for (const { index } of colItems) {
@@ -127,8 +140,8 @@ export default class ContextMenu {
       if (mode === 'range-single') {
         for (const { index, key } of [...colItems, ...rowItems]) {
           if (key.includes('hide')
-            || (options && ((key.includes('divider-column') && (cols.current < cols.len))
-            || (key.includes('divider-row') && rows.current < rows.len)))) {
+            || (key.includes('divider-column') && cols && (cols.current < cols.len))
+            || (key.includes('divider-row') && rows && rows.current < rows.len)) {
             this.menuItems[index].hide();
           } else {
             this.menuItems[index].show();
