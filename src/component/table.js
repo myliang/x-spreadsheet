@@ -49,7 +49,9 @@ function renderCellBorders(bboxes, translateFunc) {
 }
 */
 
-export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []) {
+export function renderCell(
+  draw, data, { ri: rindex, i: dboxRowIdx }, cindex, yoffset = 0, dataSet = [],
+) {
   const { sortedRowMap, rows, cols } = data;
   if (rows.isHide(rindex) || cols.isHide(cindex)) return;
   let nrindex = rindex;
@@ -66,7 +68,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0, dataSet = []
   }
 
   const style = data.getCellStyleOrDefault(nrindex, cindex);
-  const dbox = getDrawBox(data, rindex, cindex, yoffset);
+  const dbox = getDrawBox(data, dboxRowIdx || nrindex, cindex, yoffset);
   dbox.bgcolor = style.bgcolor;
   if (style.border !== undefined) {
     dbox.setBorders(style.border);
@@ -140,32 +142,25 @@ function renderContent(viewRange, fw, fh, tx, ty) {
 
   const { exceptRowSet } = data;
   // const exceptRows = Array.from(exceptRowSet);
-  const filteredTranslateFunc = (ri) => {
-    const ret = exceptRowSet.has(ri);
-    if (ret) {
-      const height = data.rows.getHeight(ri);
-      draw.translate(0, -height);
-    }
-    return !ret;
-  };
 
-  const exceptRowTotalHeight = data.exceptRowTotalHeight(viewRange.sri, viewRange.eri);
   // 1 render cell
   draw.save();
-  draw.translate(0, -exceptRowTotalHeight);
-  viewRange.each((ri, ci) => {
-    renderCell(draw, data, ri, ci, 0, dataSet);
-  }, ri => filteredTranslateFunc(ri));
-  draw.restore();
 
+  viewRange.each((i, ci) => {
+    const ri = data.rowMap.get(i);
+    renderCell(draw, data, { ri, i }, ci, 0, dataSet);
+  }, i => data.rowMap.has(i));
+
+  draw.restore();
 
   // 2 render mergeCell
   const rset = new Set();
+
   draw.save();
-  draw.translate(0, -exceptRowTotalHeight);
+
   data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
     if (!exceptRowSet.has(sri)) {
-      renderCell(draw, data, sri, sci, 0, dataSet);
+      renderCell(draw, data, { ri: sri }, sci, 0, dataSet);
     } else if (!rset.has(sri)) {
       rset.add(sri);
       const height = data.rows.sumHeight(sri, eri + 1);
@@ -216,21 +211,21 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   draw.attr(tableFixedHeaderStyle());
   // y-header-text
   if (type === 'all' || type === 'left') {
-    data.rowEach(viewRange.sri, viewRange.eri, (i, y1, rowHeight) => {
+    data.rowEach(viewRange.sri, viewRange.eri, ({ ri }, y1, rowHeight) => {
       const y = nty + y1;
-      const ii = i;
       draw.line([0, y], [w, y]);
-      if (sri <= ii && ii < eri + 1) {
+      if (sri <= ri && ri < eri + 1) {
         renderSelectedHeaderCell.call(this, 0, y, w, rowHeight);
       }
-      draw.fillText(ii + 1, w / 2, y + (rowHeight / 2));
-      if (i > 0 && data.rows.isHide(i - 1)) {
+      draw.fillText(ri + 1, w / 2, y + (rowHeight / 2));
+      if (ri > 0 && data.rows.isHide(ri - 1)) {
         draw.save();
         draw.attr({ strokeStyle: '#c6c6c6' });
         draw.line([5, y + 5], [w - 5, y + 5]);
         draw.restore();
       }
     });
+
     draw.line([0, sumHeight + nty], [w, sumHeight + nty]);
     draw.line([w, nty], [w, sumHeight + nty]);
   }
@@ -284,10 +279,10 @@ function renderContentGrid({
     return;
   }
   // console.log('rowStart:', rowStart, ', rowLen:', rowLen);
-  data.rowEach(sri, eri, (i, y, ch) => {
+  data.rowEach(sri, eri, ({ i }, y, ch) => {
     // console.log('y:', y);
     if (i !== sri) draw.line([0, y], [w, y]);
-    if (i === eri) draw.line([0, y + ch], [w, y + ch]);
+    if (i === data.rowMap.size - 1) draw.line([0, y + ch], [w, y + ch]);
   });
   data.colEach(sci, eci, (i, x, cw) => {
     if (i !== sci) draw.line([x, 0], [x, h]);

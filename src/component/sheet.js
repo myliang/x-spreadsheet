@@ -424,7 +424,7 @@ function paste(what) {
     }
     let cdiff = 0;
     let rdiff = 0;
-    if (!useSystemClipboard && data.paste(what, dataSet, msg => xtoast('Tip', msg))) {
+    if (!useSystemClipboard && data.paste(what, dataSet, msg => xtoast('Error', msg))) {
       cdiff = data.clipboard.range.eci - data.clipboard.range.sci;
       rdiff = data.clipboard.range.eri - data.clipboard.range.sri;
     } else {
@@ -439,7 +439,7 @@ function paste(what) {
     this.selector.moveIndexes = [sri + rdiff, sci + cdiff];
     selectorSet.call(this, true, sri + rdiff, sci + cdiff, true);
   }).catch((err) => {
-    xtoast('Tip', err);
+    xtoast('Caught error', err);
   });
 }
 
@@ -628,13 +628,13 @@ function insertDeleteRowColumn(type) {
   if (data.settings.mode === 'read') return;
   const [hi, wi] = selector.range.size();
   if (type === 'insert-row') { // insert row above
-    data.insert('row', hi, true, {}, (ri, ci) => {
+    data.insert('row', hi, true, (ri, ci) => {
       setTimeout(() => {
         selector.setStartEnd(ri, ci, ri + hi - 1, ci);
       }, 1);
     });
   } else if (type === 'insert-row-below') {
-    data.insert('row', hi, false, {}, (ri, ci) => {
+    data.insert('row', hi, false, (ri, ci) => {
       setTimeout(() => {
         selector.setStartEnd(ri + hi - 1, ci, ri, ci);
       }, 1);
@@ -645,13 +645,13 @@ function insertDeleteRowColumn(type) {
       selector.set(data.rows.len - 1, -1);
     }
   } else if (type === 'insert-column') { // insert column left
-    data.insert('column', wi, true, {}, (ri, ci) => {
+    data.insert('column', wi, true, (ri, ci) => {
       setTimeout(() => {
         selector.setStartEnd(ri, ci, ri, ci + wi - 1);
       }, 1);
     });
   } else if (type === 'insert-column-right') {
-    data.insert('column', wi, false, {}, (ri, ci) => {
+    data.insert('column', wi, false, (ri, ci) => {
       setTimeout(() => {
         selector.setStartEnd(ri, ci + wi - 1, ri, ci);
       }, 1);
@@ -1118,7 +1118,7 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
   const populateCells = (ri, ci, text) => {
     const txt = matchCase ? `${text}` : `${text}`.toLowerCase();
     const condition = matchCellContents
-      ? txt === val : txt.includes(soughtValue);
+      ? txt === soughtValue : txt.includes(soughtValue);
     if (condition) {
       foundCells.push({ ri, ci, text });
       if (replace === 'all') {

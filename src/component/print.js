@@ -145,7 +145,7 @@ export default class Print {
         th += rh;
         if (th < iheight) {
           for (let ci = 0; ci <= cr.eci; ci += 1) {
-            renderCell(draw, data, ri, ci, yoffset);
+            renderCell(draw, data, { ri }, ci, yoffset);
             mViewRange.eci = ci;
           }
         } else {
@@ -161,7 +161,7 @@ export default class Print {
       if (scale < 1) draw.scale(scale, scale);
       const yof = yoffset;
       data.eachMergesInView(mViewRange, ({ sri, sci }) => {
-        renderCell(draw, data, sri, sci, yof);
+        renderCell(draw, data, { ri: sri }, sci, yof);
       });
       draw.restore();
 
