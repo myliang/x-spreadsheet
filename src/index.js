@@ -141,7 +141,7 @@ class Spreadsheet {
       rows.add(ri);
       cols.add(ci);
     });
-    this.dataSet[sheetIndex].setColProperties(Array.from(rows), Array.from(cols));
+    this.dataSet[sheetIndex].setColProperties(sri);
     if (reRender) {
       this.reRender();
     }
