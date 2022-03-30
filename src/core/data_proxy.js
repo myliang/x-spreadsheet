@@ -381,6 +381,7 @@ export default class DataProxy {
     this.change = () => {};
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
+    this.rowMap = new Map();
   }
 
   addValidation(mode, ref, validator) {
@@ -546,10 +547,10 @@ export default class DataProxy {
     const colsDiff = cols.len - sci;
     let colInserted = false;
     if (rowsDiff < clipboardRowsLen) {
-      this.insert('row', clipboardRowsLen - rowsDiff, false, { sri: rows.len - 1 }, () => null);
+      this.insert('row', clipboardRowsLen - rowsDiff, false, () => null);
     }
     if (colsDiff < clipboardColsLen) {
-      this.insert('column', clipboardColsLen - colsDiff, false, { sci: cols.len - 1 }, () => null);
+      this.insert('column', clipboardColsLen - colsDiff, false, () => null);
       colInserted = true;
     }
     if (!canPaste.call(this, clipboard.range, selector.range, error)) return false;
@@ -586,11 +587,11 @@ export default class DataProxy {
       let colInserted = false;
 
       if (rowsDiff < lines.length) {
-        this.insert('row', lines.length - rowsDiff, false, { sri: rows.len - 1 }, () => null);
+        this.insert('row', lines.length - rowsDiff, false, () => null);
       }
 
       if (colsDiff < lines[0].length) {
-        this.insert('column', lines[0].length - colsDiff, false, { sci: cols.len - 1 }, () => null);
+        this.insert('column', lines[0].length - colsDiff, false, () => null);
         colInserted = true;
       }
 
@@ -1027,10 +1028,24 @@ export default class DataProxy {
       });
     }
     this.exceptRowSet = new Set(rset);
+    this.setRowMap();
     this.sortedRowMap = new Map();
     fary.forEach((it, index) => {
       this.sortedRowMap.set(oldAry[index], it);
     });
+  }
+
+  setRowMap() {
+    const { exceptRowSet, rows } = this;
+    this.rowMap = new Map();
+    let incr = 0;
+    for (let i = 0; i < rows.len; i += 1) {
+      if (!exceptRowSet.has(i)) {
+        this.rowMap.set(incr, i);
+        incr += 1;
+      }
+    }
+    return this.rowMap;
   }
 
   deleteCell(what = 'all') {
@@ -1056,12 +1071,11 @@ export default class DataProxy {
   }
 
   // type: row | column
-  insert(type, n = 1, aboveOrLeft = true, at = {}, cb = () => {}) {
+  insert(type, n = 1, aboveOrLeft = true, cb = () => {}) {
     this.changeData(() => {
       let res = {};
       let autoFilterChanged = false;
-      const sri = at.sri || this.selector.range.sri;
-      const sci = at.sci || this.selector.range.sci;
+      const { sri, sci, eri } = this.selector.range;
       let ri = sri;
       let ci = sci;
       const { rows, merges, cols } = this;
@@ -1073,11 +1087,7 @@ export default class DataProxy {
         }
         autoFilterChanged = this.autoFilter.move(ref, ri, n);
         res = rows.insert(ri, n);
-        const rowsToUpdateProps = [];
-        for (let i = sri; i < sri + n; i += 1) {
-          rowsToUpdateProps.push(aboveOrLeft ? i : i + n);
-        }
-        this.setColProperties(rowsToUpdateProps);
+        this.setColProperties(aboveOrLeft ? ri : eri);
       } else if (type === 'column') {
         if (!aboveOrLeft) {
           ci += n;
@@ -1248,25 +1258,18 @@ export default class DataProxy {
     cell.style = this.addStyle(cstyle);
   }
 
-  setColProperties(r = [], c = []) {
+  setColProperties(sri = 0) {
     const { rows, cols } = this;
-    let colEntries = Object.entries(cols._);
-    if (c.length > 0) {
-      colEntries = colEntries.filter(([ci]) => c.includes(parseInt(ci, 10)));
-    }
+    const colEntries = Object.entries(cols._);
+
     for (const [ci, properties] of colEntries) {
       for (const [key, value] of Object.entries(properties)) {
         if (['excludeRows', 'width'].every(k => k !== key)) {
           const {
             indices = [],
           } = (properties.excludeRows || []).find(({ property }) => property === key) || {};
-          const cells = [...r];
-          if (!cells.length) {
-            for (let ri = 0; ri < rows.len; ri += 1) {
-              cells.push(ri);
-            }
-          }
-          for (const ri of cells) {
+
+          for (let ri = sri; ri < rows.len; ri += 1) {
             if (!indices.includes(ri)) {
               if (key === 'style') {
                 this.setCellStyle(ri, ci, value);
@@ -1408,10 +1411,16 @@ export default class DataProxy {
 
     let [x, y] = [0, 0];
     let [eri, eci] = [rows.len, cols.len];
+
+    let incr = 0;
     for (let i = ri; i < rows.len; i += 1) {
-      eri = i;
       if (!exceptRowSet.has(i)) {
+        rows.unlock(i);
         y += rows.getHeight(i);
+        eri = ri + incr;
+        incr += 1;
+      } else {
+        rows.lock(i);
       }
       if (y > this.viewHeight()) break;
     }
@@ -1420,7 +1429,6 @@ export default class DataProxy {
       eci = j;
       if (x > this.viewWidth()) break;
     }
-    // console.log(ri, ci, eri, eci, x, y);
     return new CellRange(ri, ci, eri, eci, x, y);
   }
 
@@ -1455,22 +1463,13 @@ export default class DataProxy {
   rowEach(min, max, cb) {
     let y = 0;
     const { rows } = this;
-    const frset = new Set(this.exceptRowSet);
-    const frary = Array.from(frset);
-    let offset = 0;
-    for (let i = 0; i < frary.length; i += 1) {
-      if (frary[i] < min) {
-        offset += 1;
-      }
-    }
-    // console.log('min:', min, ', max:', max, ', scroll:', scroll);
-    for (let i = min + offset; i <= max + offset; i += 1) {
-      if (frset.has(i)) {
-        offset += 1;
-      } else {
-        const rowHeight = rows.getHeight(i);
+
+    for (let i = min; i <= max; i += 1) {
+      if (this.rowMap.has(i)) {
+        const ri = this.rowMap.get(i);
+        const rowHeight = rows.getHeight(ri);
         if (rowHeight > 0) {
-          cb(i, y, rowHeight);
+          cb({ ri, i }, y, rowHeight);
           y += rowHeight;
           if (y > this.viewHeight()) break;
         }
@@ -1509,6 +1508,7 @@ export default class DataProxy {
   changeData(cb) {
     const changed = cb();
     if (changed) {
+      this.setRowMap();
       this.change(this.getData());
       this.history.add(changed);
     }
@@ -1535,6 +1535,8 @@ export default class DataProxy {
     if (init) {
       this.history.init(this.getData());
     }
+
+    this.setRowMap();
     return this;
   }
 

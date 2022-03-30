@@ -141,7 +141,7 @@ class Spreadsheet {
       rows.add(ri);
       cols.add(ci);
     });
-    this.dataSet[sheetIndex].setColProperties(Array.from(rows), Array.from(cols));
+    this.dataSet[sheetIndex].setColProperties(sri);
     if (reRender) {
       this.reRender();
     }
@@ -192,6 +192,13 @@ class Spreadsheet {
 
   resetHistory(sheetIndex = 0) {
     this.dataSet[sheetIndex].history.init();
+    this.sheet.toolbar.undoEl.el.addClass('disabled');
+  }
+
+  removeFilter(sheetIndex = 0) {
+    if (this.dataSet[sheetIndex].autoFilter.active()) {
+      this.sheet.toolbar.trigger('autofilter');
+    }
   }
 
   getHistoryInitialState(sheetIndex = 0) {

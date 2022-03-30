@@ -8,6 +8,7 @@ export default class History {
 
   init(data) {
     if (data) {
+      this.initialLength = { rows: data.rows.length, cols: data.cols.length };
       this.initial = JSON.stringify(data);
     }
     this.undoItems = [];
@@ -16,6 +17,10 @@ export default class History {
 
   get initialState() {
     return JSON.parse(this.initial);
+  }
+
+  get initialLen() {
+    return this.initialLength;
   }
 
   add([data, selector]) {

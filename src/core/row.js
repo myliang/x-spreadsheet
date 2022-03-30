@@ -72,6 +72,18 @@ class Rows {
     return this._[ri];
   }
 
+  lock(ri) {
+    const row = this.get(ri);
+    if (!row) return;
+    row.locked = true;
+  }
+
+  unlock(ri) {
+    const row = this.get(ri);
+    if (!row) return;
+    delete row.locked;
+  }
+
   getOrNew(ri) {
     this._[ri] = this._[ri] || { cells: {} };
     return this._[ri];
@@ -116,9 +128,10 @@ class Rows {
   }
 
   setCellText(ri, ci, text, force = false) {
+    const { locked } = this.get(ri);
     const cell = this.getCellOrNew(ri, ci);
 
-    if (cell.editable === false && !force) return null;
+    if ((cell.editable === false && !force) || locked) return null;
 
     let txt = text;
     if (typeof text === 'string') {
@@ -157,7 +170,11 @@ class Rows {
               for (let jj = dsci; jj <= deci; jj += cn) {
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
-                if (this._[nri].cells[nci] && 'editable' in this._[nri].cells[nci] && !this._[nri].cells[nci].editable) {
+                if ('locked' in this._[nri]
+                  || (this._[nri]
+                  && this._[nri].cells[nci]
+                  && 'editable' in this._[nri].cells[nci]
+                  && !this._[nri].cells[nci].editable)) {
                   // eslint-disable-next-line no-continue
                   continue;
                 }
@@ -231,10 +248,11 @@ class Rows {
     );
 
     srcCellRange.each((ri, ci) => {
+      const { locked } = this.get(ri);
       const cell = this.getCell(ri, ci);
       const nri = dstCellRange.sri + (parseInt(ri, 10) - srcCellRange.sri);
       const nci = dstCellRange.sci + (parseInt(ci, 10) - srcCellRange.sci);
-      if (!('editable' in cell) || cell.editable) {
+      if (!('editable' in cell) || cell.editable || !locked) {
         cutCellsWithDest.push({ to: { ri: nri, ci: nci }, cell });
         this._[ri].cells[ci] = { text: null };
       }
@@ -242,8 +260,9 @@ class Rows {
 
     cutCellsWithDest.forEach(({ to, cell }) => {
       const { ri, ci } = to;
+      const { locked } = this.get(ri);
       const { editable } = this.getCell(ri, ci);
-      if (editable !== false) {
+      if (editable !== false || !locked) {
         this._[ri].cells[ci] = cell;
       }
     });
@@ -251,15 +270,17 @@ class Rows {
     const changedCells = [];
 
     srcCellRange.each((ri, ci) => {
+      const { locked } = this.get(ri);
       const cell = this.getCell(ri, ci);
-      if (!('editable' in cell) || cell.editable) {
+      if (!('editable' in cell) || cell.editable || !locked) {
         changedCells.push({ ri, ci, cell });
       }
     });
 
     destination.each((ri, ci) => {
+      const { locked } = this.get(ri);
       const cell = this.getCell(ri, ci);
-      if (!('editable' in cell) || cell.editable) {
+      if (!('editable' in cell) || cell.editable || !locked) {
         changedCells.push({ ri, ci, cell });
       }
     });
