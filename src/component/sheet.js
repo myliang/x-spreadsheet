@@ -114,14 +114,14 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
     mode = 'row';
   }
 
-  const { initialState } = data.history;
+  const { initialLen } = data.history;
   const [height, width] = selector.range.size();
   const options = {
     height,
     width,
     ...(insertAtEnd ? {
-      cols: { len: initialState.cols.len - 1, eci },
-      rows: { len: initialState.rows.len - 1, eri },
+      cols: { len: initialLen.cols - 1, eci },
+      rows: { len: initialLen.rows - 1, eri },
     } : {}),
   };
 

@@ -192,6 +192,13 @@ class Spreadsheet {
 
   resetHistory(sheetIndex = 0) {
     this.dataSet[sheetIndex].history.init();
+    this.sheet.toolbar.undoEl.el.addClass('disabled');
+  }
+
+  removeFilter(sheetIndex = 0) {
+    if (this.dataSet[sheetIndex].autoFilter.active()) {
+      this.sheet.toolbar.trigger('autofilter');
+    }
   }
 
   getHistoryInitialState(sheetIndex = 0) {

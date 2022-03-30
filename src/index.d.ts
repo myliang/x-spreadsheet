@@ -330,6 +330,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     getChangedCells(sheetIndex?: number): { ci: number, ri: number, value: string | number }[]
     getCellsGroupedByRow(sheetIndex?: number): { ri: number, cells: { ci: number, value: string | number }[] }[];
     resetHistory(sheetIndex?: number): void
+    removeFilter(): void
     getHistoryInitialState(sheetIndex?: number): {
       rows: { [key: number]: RowData, len: number },
       cols: { [key: number]: Record<string, any>, len: number }
