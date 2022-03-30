@@ -22,7 +22,10 @@ function buildFilterBody(items) {
     const active = filterValues.includes(it) ? 'checked' : '';
     filterbEl.child(h('div', `${cssPrefix}-item state ${active}`)
       .on('click.stop', () => this.filterClick(index, it))
-      .children(it === '' ? t('filter.empty') : it, h('div', 'label').html(`(${cnt})`)));
+      .children(
+        h('div', 'wrapped-text').html(it).attr('title', it),
+        h('div', 'label').html(`(${cnt})`),
+      ));
   });
 }
 

@@ -79,7 +79,7 @@ const initialCols = [
 
 const cells = initialCols.reduce((acc, cur, i) => ({
   ...acc,
-  [i]: { text: cur },
+  [i]: { text: cur, style: 0 },
 }), {});
 
 const obj = {
@@ -156,12 +156,21 @@ const excludeRows = [{ property: 'style', indices: [0] }];
 
 instance.loadData([
   {
+    freeze: 'A2',
     cols: {
       len: initialCols.length,
       0: { style: numberFormat, editable: false, excludeRows },
       3: { style: numberFormat, excludeRows },
       7: { width: 250 },
     },
+    styles: [
+      {
+        font: { bold: true },
+        border: {
+          bottom: ['medium', '#000'],
+        },
+      },
+    ],
     rows: {
       len: rowLength + 1,
       0: { cells },
