@@ -8,7 +8,7 @@ export default class History {
 
   init(data) {
     if (data) {
-      this.initialLength = { rows: data.rows.length, cols: data.cols.length };
+      this.initialLength = { rows: data.rows.len, cols: data.cols.len };
       this.initial = JSON.stringify(data);
     }
     this.undoItems = [];
