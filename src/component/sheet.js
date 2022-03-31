@@ -454,8 +454,9 @@ function unhideRowsOrCols(type, index) {
 }
 
 function autofilter() {
-  const { data } = this;
+  const { data, selector } = this;
   data.autofilter();
+  this.selectorSetAndScroll(selector.range);
   sheetReset.call(this);
 }
 
@@ -732,9 +733,9 @@ function toolbarChange(type, value) {
 }
 
 function sortFilterChange(ci, order, operator, value) {
-  // console.log('sort:', sortDesc, operator, value);
-  const { data } = this;
+  const { data, selector } = this;
   data.setAutoFilter(ci, order, operator, value);
+  this.selectorSetAndScroll(selector.range);
   sheetReset.call(this);
 }
 

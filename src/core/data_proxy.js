@@ -1041,8 +1041,11 @@ export default class DataProxy {
     let incr = 0;
     for (let i = 0; i < rows.len; i += 1) {
       if (!exceptRowSet.has(i)) {
+        rows.unlock(i);
         this.rowMap.set(incr, i);
         incr += 1;
+      } else {
+        rows.lock(i);
       }
     }
     return this.rowMap;
@@ -1415,12 +1418,9 @@ export default class DataProxy {
     let incr = 0;
     for (let i = ri; i < rows.len; i += 1) {
       if (!exceptRowSet.has(i)) {
-        rows.unlock(i);
         y += rows.getHeight(i);
         eri = ri + incr;
         incr += 1;
-      } else {
-        rows.lock(i);
       }
       if (y > this.viewHeight()) break;
     }
