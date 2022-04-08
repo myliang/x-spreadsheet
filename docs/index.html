@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>x-spreadsheet</title>
-    
 <link href="xspreadsheet.css" rel="stylesheet"></head>
 <body onload="load()">
   <div style="position: fixed; right: 0; top: .3em;">
@@ -78,10 +77,12 @@
         });
 
       xs.on('cell-selected', (cell, ri, ci) => {
-          console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
-        }).on('cell-edited', (text, ri, ci) => {
-          console.log('text:', text, ', ri: ', ri, ', ci:', ci);
-        });
+        console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
+      }).on('cell-edited', (text, ri, ci) => {
+        console.log('text:', text, ', ri: ', ri, ', ci:', ci);
+      }).on('pasted-clipboard', (data) => {
+        console.log('>>>>>data is ', data);
+      });
 
       setTimeout(() => {
         // xs.loadData([{ rows }]);
