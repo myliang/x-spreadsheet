@@ -64,7 +64,7 @@ class Spreadsheet {
     const [oldIndex, nindex] = this.bottombar.deleteItem();
     if (oldIndex >= 0) {
       this.dataSet.splice(oldIndex, 1);
-      if (nindex >= 0) this.sheet.resetData(this.dataSet[nindex]);
+      if (nindex >= 0) this.sheet.resetData(nindex, this.dataSet);
       this.sheet.trigger('change');
     }
   }
