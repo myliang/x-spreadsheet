@@ -381,7 +381,7 @@ export default class DataProxy {
     this.change = () => {};
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
-    this.rowMap = new Map();
+    this.setRowMap();
   }
 
   addValidation(mode, ref, validator) {
