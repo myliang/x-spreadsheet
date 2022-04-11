@@ -169,11 +169,10 @@ class Rows {
               for (let jj = dsci; jj <= deci; jj += cn) {
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
-                const { locked } = this.getOrNew(nri);
-                if (locked === true || (this._[nri]
-                  && this._[nri].cells[nci]
-                  && 'editable' in this._[nri].cells[nci]
-                  && !this._[nri].cells[nci].editable)) {
+                const { locked, cells } = this.getOrNew(nri);
+                if (locked === true || (cells[nci]
+                  && 'editable' in cells[nci]
+                  && !cells[nci].editable)) {
                   // eslint-disable-next-line no-continue
                   continue;
                 }
