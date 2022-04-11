@@ -24,7 +24,6 @@ class Spreadsheet {
     }, (index) => {
       this.sheet.resetData(index, this.dataSet);
     }, () => {
-      console.log('DEBUG', 'delete');
       this.deleteSheet();
     }, (index, value) => {
       this.dataSet[index].name = value;
