@@ -22,7 +22,7 @@ import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
 import { Rows } from '../core/row';
-import CellRange from '../core/cell_range';
+import { CellRange } from '../core/cell_range';
 
 /**
  * @desc throttle fn
