@@ -142,14 +142,15 @@ class Rows {
   }
 
   // what: all | format | text
-  copyPaste(srcCellRange, dstCellRange, what, autofill = false, dataSet = [], cb = () => {}) {
+  copyPaste(
+    srcCellRange, dstCellRange, what, sortedRowMap, autofill = false, dataSet = [], cb = () => {},
+  ) {
     const {
-      sri, sci, eri, eci,
+      sri, eri, sci, eci,
     } = srcCellRange;
-    const dsri = dstCellRange.sri;
-    const dsci = dstCellRange.sci;
-    const deri = dstCellRange.eri;
-    const deci = dstCellRange.eci;
+    const {
+      sri: dsri, eri: deri, sci: dsci, eci: deci,
+    } = dstCellRange;
     const [rn, cn] = srcCellRange.size();
     const [drn, dcn] = dstCellRange.size();
     // console.log(srcIndexes, dstIndexes);
@@ -169,14 +170,17 @@ class Rows {
               for (let jj = dsci; jj <= deci; jj += cn) {
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
-                const { locked, cells } = this.getOrNew(nri);
+                const sortedRi = sortedRowMap.has(nri) ? sortedRowMap.get(nri) : nri;
+                const { locked, cells } = this.getOrNew(sortedRi);
                 if (locked === true || (cells[nci]
                   && 'editable' in cells[nci]
                   && !cells[nci].editable)) {
                   // eslint-disable-next-line no-continue
                   continue;
                 }
-                const ncell = helper.cloneDeep(this._[i].cells[j]);
+                const ncell = helper.cloneDeep(
+                  this._[sortedRowMap.has(i) ? sortedRowMap.get(i) : i].cells[j],
+                );
                 // ncell.text
                 if (autofill && ncell && ncell.text && ncell.text.length > 0) {
                   const { text } = ncell;
@@ -221,8 +225,8 @@ class Rows {
                     return expr2expr(word, nci - sci, nri - sri);
                   });
                 }
-                cb(nri, nci, ncell);
-                cellsToPaste.push({ ri: nri, ci: nci, cell: ncell });
+                cb(sortedRi, nci, ncell);
+                cellsToPaste.push({ ri: sortedRi, ci: nci, cell: ncell });
               }
             }
           }
@@ -235,7 +239,7 @@ class Rows {
     return Rows.reduceAsRows(cellsToPaste, this.len);
   }
 
-  cutPaste(srcCellRange, dstCellRange) {
+  cutPaste(srcCellRange, dstCellRange, sortedRowMap) {
     const cutCellsWithDest = [];
 
     const destination = new CellRange(
@@ -247,12 +251,16 @@ class Rows {
 
     srcCellRange.each((ri, ci) => {
       const { locked } = this.getOrNew(ri);
-      const cell = this.getCell(ri, ci);
+      const sortedRi = sortedRowMap.has(ri) ? sortedRowMap.get(ri) : ri;
+      const cell = this.getCell(sortedRi, ci);
       const nri = dstCellRange.sri + (parseInt(ri, 10) - srcCellRange.sri);
       const nci = dstCellRange.sci + (parseInt(ci, 10) - srcCellRange.sci);
       if (!('editable' in cell) || cell.editable || !locked) {
-        cutCellsWithDest.push({ to: { ri: nri, ci: nci }, cell });
-        this._[ri].cells[ci] = { text: null };
+        cutCellsWithDest.push({
+          to: { ri: sortedRowMap.has(nri) ? sortedRowMap.get(nri) : nri, ci: nci },
+          cell,
+        });
+        this._[sortedRi].cells[ci] = { text: null };
       }
     });
 
@@ -287,7 +295,7 @@ class Rows {
   }
 
   // src: Array<Array<String>>
-  paste(src, dstCellRange) {
+  paste(src, dstCellRange, sortedRowMap) {
     if (src.length <= 0) return ({});
     const { sri, sci } = dstCellRange;
     const changedCells = [];
@@ -295,8 +303,9 @@ class Rows {
       const ri = sri + i;
       row.forEach((cell, j) => {
         const ci = sci + j;
-        this.setCellText(ri, ci, cell);
-        changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+        const sortedRi = sortedRowMap.has(ri) ? sortedRowMap.get(ri) : ri;
+        this.setCellText(sortedRi, ci, cell);
+        changedCells.push({ ri: sortedRi, ci, cell: this.getCell(sortedRi, ci) });
       });
     });
     return Rows.reduceAsRows(changedCells, this.len);
@@ -417,40 +426,42 @@ class Rows {
   }
 
   // what: all | text | format
-  deleteCells(cellRange, what = 'all') {
+  deleteCells(cellRange, sortedRowMap, what = 'all') {
     const changedCells = [];
     cellRange.each((ri, ci) => {
-      if (this.deleteCell(ri, ci, what)) {
-        changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+      if (this.deleteCell(ri, ci, sortedRowMap, what)) {
+        const sortedRi = sortedRowMap.has(ri) ? sortedRowMap.get(ri) : ri;
+        changedCells.push({ ri: sortedRi, ci, cell: this.getCell(sortedRi, ci) });
       }
     });
     return changedCells.length > 0 ? Rows.reduceAsRows(changedCells) : null;
   }
 
   // what: all | text | format
-  deleteCell(ri, ci, what = 'all') {
-    const row = this.get(ri);
+  deleteCell(ri, ci, sortedRowMap, what = 'all') {
+    const sortedRi = sortedRowMap.has(ri) ? sortedRowMap.get(ri) : ri;
+    const row = this.get(sortedRi);
 
     if (!row) return false;
 
-    const cell = this.getCell(ri, ci);
+    const cell = this.getCell(sortedRi, ci);
 
     if ('editable' in cell && !cell.editable) return false;
 
     if (what === 'all') {
       if (cell.text === null && cell.style === undefined && !cell.merge) return false;
-      this.setCell(ri, ci, { text: null, merge: undefined, style: undefined });
+      this.setCell(sortedRi, ci, { text: null, merge: undefined, style: undefined });
     }
 
     if (what === 'text') {
       if (cell.text === null) return false;
-      this.setCellText(ri, ci, null);
+      this.setCellText(sortedRi, ci, null);
     }
 
     if (what === 'format') {
       if (cell.style === undefined) return false;
       this.setCell(
-        ri,
+        sortedRi,
         ci,
         {
           ...cell,

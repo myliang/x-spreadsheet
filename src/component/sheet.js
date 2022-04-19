@@ -22,6 +22,7 @@ import { xtoast } from './message';
 import { cssPrefix } from '../config';
 import { formulas } from '../core/formula';
 import { Rows } from '../core/row';
+import { CellRange } from '../core/cell_range';
 
 /**
  * @desc throttle fn
@@ -112,7 +113,11 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
 
   if (ci === -1 || (sri === eri && sci !== eci)) {
     mode = 'row';
+    if (data.autoFilter.sort) {
+      mode = 'row-no-insert';
+    }
   }
+
 
   const { initialLen } = data.history;
   const [height, width] = selector.range.size();
@@ -1112,7 +1117,7 @@ function sheetInitEvents() {
 
 function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellContents = false) {
   const { data, table, modalFind } = this;
-  const { rows } = data;
+  const { rows, cols } = data;
   const foundCells = [];
   const soughtValue = matchCase ? val : val.toLowerCase();
 
@@ -1130,14 +1135,22 @@ function find(val, idx, replace, replaceWith = '', matchCase = false, matchCellC
 
   if (modalFind.selected === 'range') {
     modalFind.range.each((ri, ci) => {
-      const { text } = data.getCell(ri, ci);
+      let nri = ri;
+      if (data.sortedRowMap.has(ri)) {
+        nri = data.sortedRowMap.get(ri);
+      }
+      const { text } = data.getCell(nri, ci);
       populateCells(ri, ci, `${text}`);
     });
   } else {
-    rows.each((ri) => {
-      rows.eachCells(ri, (ci, { text }) => {
-        populateCells(ri, ci, `${text}`);
-      });
+    const allContentRange = new CellRange(0, 0, rows.len - 1, cols.len - 1);
+    allContentRange.each((ri, ci) => {
+      let nri = ri;
+      if (data.sortedRowMap.has(ri)) {
+        nri = data.sortedRowMap.get(ri);
+      }
+      const { text } = data.getCell(nri, ci);
+      populateCells(ri, ci, `${text}`);
     });
   }
 

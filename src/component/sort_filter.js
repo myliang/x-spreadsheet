@@ -1,5 +1,6 @@
 import { h } from './element';
 import Button from './button';
+import FormInput from './form_input';
 import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 import { t } from '../locale/locale';
@@ -39,9 +40,23 @@ export default class SortFilter {
   constructor() {
     this.filterbEl = h('div', `${cssPrefix}-body`);
     this.filterhEl = h('div', `${cssPrefix}-header state`).on('click.stop', () => this.filterClick(0, 'all'));
+    this.findField = new FormInput('100px', '');
+    this.findField.el.css({ padding: '10px', width: 'calc(100% - 20px)' });
+
+    this.findField.vchange = ({ target }) => {
+      Array.from(this.filterbEl.children()).forEach((elm) => {
+        const innerText = elm.innerText.toLowerCase();
+        if (innerText.includes(target.value.toLowerCase())) {
+          elm.style.display = 'flex';
+        } else {
+          elm.style.display = 'none';
+        }
+      });
+    };
     this.el = h('div', `${cssPrefix}-sort-filter`).children(
       this.sortAscEl = buildSortItem.call(this, 'asc'),
       this.sortDescEl = buildSortItem.call(this, 'desc'),
+      this.findField.el,
       buildMenu('divider'),
       h('div', `${cssPrefix}-filter`).children(
         this.filterhEl,
@@ -54,7 +69,6 @@ export default class SortFilter {
     ).hide();
     // this.setFilters(['test1', 'test2', 'text3']);
     this.ci = null;
-    this.sortDesc = null;
     this.values = null;
     this.filterValues = [];
   }
@@ -111,7 +125,7 @@ export default class SortFilter {
       sortAscEl.checked(sort.asc());
       sortDescEl.checked(sort.desc());
     } else {
-      this.sortDesc = null;
+      this.sort = null;
       sortAscEl.checked(false);
       sortDescEl.checked(false);
     }
@@ -139,6 +153,7 @@ export default class SortFilter {
 
   hide() {
     this.el.hide();
+    this.findField.val('');
     unbindClickoutside(this.el);
   }
 }

@@ -127,7 +127,7 @@ export default class ContextMenu {
       rowItems = rowItems.filter(({ key }) => omittedRowItems.every(elm => elm !== key));
     }
 
-    if (['row', 'col'].includes(mode)) {
+    if (['row', 'col', 'row-no-insert'].includes(mode)) {
       if (mode === 'col') {
         for (const { index } of colItems) {
           this.menuItems[index].show();
@@ -141,6 +141,11 @@ export default class ContextMenu {
           this.menuItems[index].show();
         }
         for (const { index } of colItems) {
+          this.menuItems[index].hide();
+        }
+      }
+      if (mode === 'row-no-insert') {
+        for (const { index } of [...rowItems, ...colItems]) {
           this.menuItems[index].hide();
         }
       }

@@ -129,14 +129,14 @@ function canPaste(src, dst, error = () => {}) {
   return true;
 }
 function copyPaste(srcCellRange, dstCellRange, what, autofill = false, dataSet = []) {
-  const { rows, merges } = this;
+  const { rows, merges, sortedRowMap } = this;
   // delete dest merge
   if (what === 'all' || what === 'format') {
     merges.deleteWithin(dstCellRange);
   }
   let changedMerges = false;
   const changedRows = rows.copyPaste(
-    srcCellRange, dstCellRange, what, autofill, dataSet,
+    srcCellRange, dstCellRange, what, sortedRowMap, autofill, dataSet,
     (ri, ci, cell) => {
       if (cell && cell.merge) {
         // console.log('cell:', ri, ci, cell);
@@ -156,9 +156,9 @@ function copyPaste(srcCellRange, dstCellRange, what, autofill = false, dataSet =
 function cutPaste(srcCellRange, dstCellRange) {
   // console.trace();
   const {
-    clipboard, rows, merges,
+    clipboard, rows, merges, sortedRowMap,
   } = this;
-  const changedRows = rows.cutPaste(srcCellRange, dstCellRange);
+  const changedRows = rows.cutPaste(srcCellRange, dstCellRange, sortedRowMap);
   const moved = merges.move(
     srcCellRange,
     dstCellRange.sri - srcCellRange.sri,
@@ -580,7 +580,9 @@ export default class DataProxy {
 
   pasteFromText(lines) {
     if (lines.length) {
-      const { rows, selector, cols } = this;
+      const {
+        rows, selector, cols, sortedRowMap,
+      } = this;
       const { sri, sci } = selector.range;
       const rowsDiff = rows.len - sri;
       const colsDiff = cols.len - sci;
@@ -597,7 +599,7 @@ export default class DataProxy {
 
       this.changeData(() => [
         {
-          ...rows.paste(lines, selector.range),
+          ...rows.paste(lines, selector.range, sortedRowMap),
           ...(colInserted ? { cols: { len: this.cols.len } } : {}),
         },
         {
@@ -930,7 +932,9 @@ export default class DataProxy {
   }
 
   merge() {
-    const { selector, rows, merges } = this;
+    const {
+      selector, rows, merges, sortedRowMap,
+    } = this;
     if (this.isSingleSelected()) return null;
     const [rn, cn] = selector.size();
     // console.log('merge:', rn, cn);
@@ -940,7 +944,7 @@ export default class DataProxy {
       cell.merge = [rn - 1, cn - 1];
       merges.add(selector.range);
       // delete merge cells
-      rows.deleteCells(selector.range);
+      rows.deleteCells(selector.range, sortedRowMap);
       // console.log('cell:', cell, this.d);
       rows.setCell(sri, sci, cell);
       const changedCells = [];
@@ -959,10 +963,12 @@ export default class DataProxy {
   }
 
   unmerge() {
-    const { selector, rows, merges } = this;
+    const {
+      selector, rows, merges, sortedRowMap,
+    } = this;
     if (!this.isSingleSelected()) return null;
     const { sri, sci } = selector.range;
-    rows.deleteCell(sri, sci, 'merge');
+    rows.deleteCell(sri, sci, sortedRowMap, 'merge');
     merges.deleteWithin(selector.range);
     const changedCells = [];
     selector.range.each((ri, ci) => {
@@ -1052,9 +1058,9 @@ export default class DataProxy {
   }
 
   deleteCell(what = 'all') {
-    const { selector } = this;
+    const { selector, sortedRowMap } = this;
     this.changeData(() => {
-      const deletedCells = this.rows.deleteCells(selector.range, what);
+      const deletedCells = this.rows.deleteCells(selector.range, sortedRowMap, what);
       if (!deletedCells) {
         return null;
       }
