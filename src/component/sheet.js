@@ -113,7 +113,11 @@ function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
 
   if (ci === -1 || (sri === eri && sci !== eci)) {
     mode = 'row';
+    if (data.autoFilter.sort) {
+      mode = 'row-no-insert';
+    }
   }
+
 
   const { initialLen } = data.history;
   const [height, width] = selector.range.size();

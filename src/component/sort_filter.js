@@ -69,7 +69,6 @@ export default class SortFilter {
     ).hide();
     // this.setFilters(['test1', 'test2', 'text3']);
     this.ci = null;
-    this.sortDesc = null;
     this.values = null;
     this.filterValues = [];
   }
@@ -126,7 +125,7 @@ export default class SortFilter {
       sortAscEl.checked(sort.asc());
       sortDescEl.checked(sort.desc());
     } else {
-      this.sortDesc = null;
+      this.sort = null;
       sortAscEl.checked(false);
       sortDescEl.checked(false);
     }
