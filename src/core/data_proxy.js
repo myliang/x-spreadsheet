@@ -580,6 +580,9 @@ export default class DataProxy {
 
   pasteFromText(lines) {
     if (lines.length) {
+      // remove last line if empty to avoid changes in the line order
+      if (lines[lines.length - 1][0] === '') lines.pop();
+
       const {
         rows, selector, cols, sortedRowMap,
       } = this;
