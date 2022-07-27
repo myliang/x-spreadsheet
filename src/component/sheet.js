@@ -382,6 +382,9 @@ function getLinesFromSystemClipboard(txt) {
   if (/\r\n/.test(txt)) lines = txt.split('\r\n').map(it => it.replace(/"/g, '').split('\t'));
   else lines = txt.split('\n').map(it => it.replace(/"/g, '').split('\t'));
 
+  // remove last line if empty to avoid changes in the line order
+  if (lines.at(-1)[0] === '') lines.pop();
+
   return lines;
 }
 
