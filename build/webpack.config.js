@@ -9,6 +9,10 @@ module.exports = {
       './src/index.scss',
     ]
   },
+  output: {
+    path: resolve('dist'),
+    publicPath: '/',
+  },
   module: {
     rules: [
       {
@@ -20,6 +24,10 @@ module.exports = {
           }
         },
         include: [resolve('src'), resolve('test')],
+      },
+      {
+        test: /\.(png|svg|jpg|gif)$/,
+        type: 'asset/inline',
       },
       {
         test: /\.css$/,
@@ -35,12 +43,6 @@ module.exports = {
           MiniCssExtractPlugin.loader,
           'css-loader',
           'sass-loader',
-        ],
-      },
-      {
-        test: /\.(png|svg|jpg|gif)$/,
-        use: [
-          'base64-inline-loader',
         ],
       },
       {
