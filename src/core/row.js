@@ -136,6 +136,8 @@ class Rows {
               for (let jj = dsci; jj <= deci; jj += cn) {
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
+                if(this._[nri] && this._[nri].cells && this._[nri].cells[nci] && this._[nri].cells[nci].editable === false)
+                  continue;
                 const ncell = helper.cloneDeep(this._[i].cells[j]);
                 // ncell.text
                 if (autofill && ncell && ncell.text && ncell.text.length > 0) {
