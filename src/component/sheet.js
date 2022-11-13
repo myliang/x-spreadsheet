@@ -68,7 +68,7 @@ function scrollbarMove() {
 }
 
 function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
-  if (ri === -1 && ci === -1) return;
+  if (ri === -1 && ci === -1) {};
   const {
     table, selector, toolbar, data,
     contextMenu,
@@ -128,6 +128,7 @@ function selectorMove(multiple, direction) {
 
 // private methods
 function overlayerMousemove(evt) {
+
   // console.log('x:', evt.offsetX, ', y:', evt.offsetY);
   if (evt.buttons !== 0) return;
   if (evt.target.className === `${cssPrefix}-resizer-hover`) return;
@@ -742,7 +743,13 @@ function sheetInitEvents() {
     const {
       key, ctrlKey, shiftKey, metaKey,
     } = evt;
-    // console.log('keydown.evt: ', keyCode);
+
+    // add ctrl A
+    if(ctrlKey && key === 'a'){
+      selector.set(-1, -1, true);
+      return;
+    }
+
     if (ctrlKey || metaKey) {
       // const { sIndexes, eIndexes } = selector;
       // let what = 'all';
