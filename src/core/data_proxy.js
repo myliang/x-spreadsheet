@@ -663,11 +663,33 @@ export default class DataProxy {
     const {
       left, top, width, height,
     } = this.getSelectedRect();
+
+    const { cols, rows } = this;
+    const [rowSize, colSize] = this.selector.size();
+
+    const y1 = y - this.rows.height
     const x1 = x - this.cols.indexWidth;
-    const y1 = y - this.rows.height;
-    // console.log('x:', x, ',y:', y, 'left:', left, 'top:', top);
-    return x1 > left && x1 < (left + width)
-      && y1 > top && y1 < (top + height);
+
+    //  select whole column || select whole row
+
+    let xyInSelected = false;
+    if (cols.len === colSize) {
+      if ((x < this.cols.indexWidth || x > left + width) && ((y1 > top && y1 < top + height))) {
+        xyInSelected = true;
+      }
+    }
+
+    if (rows.len === rowSize) {
+      if ((y < this.rows.height || y > top + height) && ((x1 > left && x1 < width + left))) {
+        xyInSelected = true;
+      }
+    }
+
+    if (xyInSelected) {
+      return true;
+    }
+
+    return x1 > left && x1 < (left + width) && y1 > top && y1 < (top + height);
   }
 
   getSelectedRect() {
