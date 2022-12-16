@@ -203,10 +203,10 @@ export default class Selector {
     const { autoFocus } = data.settings;
     this.inputChange = () => {};
     this.data = data;
-    this.br = new SelectorElement(true, autoFocus);
-    this.t = new SelectorElement();
-    this.l = new SelectorElement();
-    this.tl = new SelectorElement();
+    this.br = new SelectorElement(autoFocus, true);
+    this.t = new SelectorElement(autoFocus);
+    this.l = new SelectorElement(autoFocus);
+    this.tl = new SelectorElement(autoFocus);
     this.br.inputChange = (v) => {
       this.inputChange(v);
     };
