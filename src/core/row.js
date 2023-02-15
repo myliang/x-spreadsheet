@@ -310,16 +310,29 @@ class Rows {
   }
 
   maxCell() {
+    let maxCol = 0;
+    let maxRow = 0;
     const keys = Object.keys(this._);
-    const ri = keys[keys.length - 1];
-    const col = this._[ri];
-    if (col) {
+    maxRow = keys.at(-1);
+    for (const item of keys) {
+      const col = this._[item];
       const { cells } = col;
-      const ks = Object.keys(cells);
-      const ci = ks[ks.length - 1];
-      return [parseInt(ri, 10), parseInt(ci, 10)];
+      if (Object.keys(cells).length) {
+        const last = Object.keys(cells).at(-1);
+        maxCol = Math.max(maxCol, last);
+      }
     }
-    return [0, 0];
+    return [parseInt(maxRow, 10), parseInt(maxCol, 10)];
+    // const ri = keys[keys.length - 1];
+
+    // const col = this._[ri];
+    // if (col) {
+    //   const { cells } = col;
+    //   const ks = Object.keys(cells);
+    //   const ci = ks[ks.length - 1];
+    //   return [parseInt(ri, 10), parseInt(ci, 10)];
+    // }
+    // return [0, 0];
   }
 
   each(cb) {

@@ -332,7 +332,13 @@ function cut() {
 function paste(what, evt) {
   const { data } = this;
   if (data.settings.mode === 'read') return;
-  if (data.clipboard.isClear()) {
+  if (evt) {
+    const cdata = evt.clipboardData.getData('text/plain');
+    this.data.pasteFromText(cdata);
+    sheetReset.call(this);
+  } else if (data.paste(what, msg => xtoast('Tip', msg))) {
+    sheetReset.call(this);
+  } else if (data.clipboard.isClear()) {
     const resetSheet = () => sheetReset.call(this);
     const eventTrigger = (rows) => {
       this.trigger('pasted-clipboard', rows);
@@ -340,12 +346,6 @@ function paste(what, evt) {
     // pastFromSystemClipboard is async operation, need to tell it how to reset sheet and trigger event after it finishes
     // pasting content from system clipboard
     data.pasteFromSystemClipboard(resetSheet, eventTrigger);
-  } else if (data.paste(what, msg => xtoast('Tip', msg))) {
-    sheetReset.call(this);
-  } else if (evt) {
-    const cdata = evt.clipboardData.getData('text/plain');
-    this.data.pasteFromText(cdata);
-    sheetReset.call(this);
   }
 }
 
@@ -485,7 +485,7 @@ function rowResizerFinished(cRect, distance) {
   } else {
     data.rows.setHeight(ri, distance);
   }
-
+  data.getPage();
   table.render();
   selector.resetAreaOffset();
   verticalScrollbarSet.call(this);
@@ -503,7 +503,7 @@ function colResizerFinished(cRect, distance) {
   } else {
     data.cols.setWidth(ci, distance);
   }
-
+  data.getPage();
   table.render();
   selector.resetAreaOffset();
   horizontalScrollbarSet.call(this);
@@ -552,7 +552,7 @@ function insertDeleteRowColumn(type) {
   clearClipboard.call(this);
   sheetReset.call(this);
 }
-
+// ppap
 function toolbarChange(type, value) {
   const { data } = this;
   if (type === 'undo') {

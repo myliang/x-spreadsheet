@@ -26,11 +26,11 @@ function tableFixedHeaderStyle() {
   };
 }
 
-function getDrawBox(data, rindex, cindex, yoffset = 0) {
+function getDrawBox(data, rindex, cindex, yoffset = 0, xoffset = 0) {
   const {
     left, top, width, height,
   } = data.cellRect(rindex, cindex);
-  return new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
+  return new DrawBox(left + xoffset, top + yoffset, width, height, cellPaddingWidth);
 }
 /*
 function renderCellBorders(bboxes, translateFunc) {
@@ -49,7 +49,7 @@ function renderCellBorders(bboxes, translateFunc) {
 }
 */
 
-export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
+export function renderCell(draw, data, rindex, cindex, yoffset = 0, xoffset = 0) {
   const { sortedRowMap, rows, cols } = data;
   if (rows.isHide(rindex) || cols.isHide(cindex)) return;
   let nrindex = rindex;
@@ -65,7 +65,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
   }
 
   const style = data.getCellStyleOrDefault(nrindex, cindex);
-  const dbox = getDrawBox(data, rindex, cindex, yoffset);
+  const dbox = getDrawBox(data, rindex, cindex, yoffset, xoffset);
   dbox.bgcolor = style.bgcolor;
   if (style.border !== undefined) {
     dbox.setBorders(style.border);
@@ -80,6 +80,8 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     } else {
       cellText = cell.text || '';
     }
+    // ppap
+    cell.result = cellText;
     if (style.format) {
       // console.log(data.formatm, '>>', cell.format);
       cellText = formatm[style.format].render(cellText);
@@ -146,6 +148,27 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   viewRange.each((ri, ci) => {
     renderCell(draw, data, ri, ci);
   }, ri => filteredTranslateFunc(ri));
+  // lupin
+  if (data.seePageShow) {
+    const {
+      rowPageSplit,
+      colPageSplit,
+      lastc,
+      lastr,
+    } = data.seePage;
+    for (const item of rowPageSplit) {
+      draw
+        .attr({ strokeStyle: 'rgba(255, 0, 0, .6)' });
+      const rpage = data.cols.sumWidth(0, item);
+      draw.line([rpage, 0], [rpage, lastr]);
+    }
+
+    for (const item of colPageSplit) {
+      const cpage = data.rows.sumHeight(0, item);
+      draw.line([0, cpage], [lastc, cpage]);
+    }
+  }
+  // lupin end
   draw.restore();
 
 

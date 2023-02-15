@@ -43,7 +43,7 @@ const baseFormulas = [
   {
     key: 'AND',
     title: tf('formula.and'),
-    render: ary => ary.every(it => it),
+    render: ary => ary.every(it => Number(it)),
   },
   {
     key: 'OR',
@@ -54,6 +54,21 @@ const baseFormulas = [
     key: 'CONCAT',
     title: tf('formula.concat'),
     render: ary => ary.join(''),
+  },
+  {
+    key: 'POWER',
+    title: tf('formula.power'),
+    render: ([b, t]) => Math.pow(b, t),
+  },
+  {
+    key: 'SQRT',
+    title: tf('formula.sqrt'),
+    render: ary => Math.sqrt(...ary.map(v => Number(v))),
+  },
+  {
+    key: 'EXP',
+    title: tf('formula.exp'),
+    render: ary => Math.exp(...ary.map(v => Number(v))),
   },
   /* support:  1 + A1 + B2 * 3
   {

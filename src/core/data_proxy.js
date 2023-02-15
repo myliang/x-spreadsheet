@@ -111,7 +111,7 @@ const bottombarHeight = 41;
 
 // src: cellRange
 // dst: cellRange
-function canPaste(src, dst, error = () => {}) {
+function canPaste(src, dst, error = () => { }) {
   const { merges } = this;
   const cellRange = dst.clone();
   const [srn, scn] = src.size();
@@ -167,6 +167,7 @@ function setStyleBorder(ri, ci, bss) {
 }
 
 function setStyleBorders({ mode, style, color }) {
+  // console.log("no more bugs", { mode, style, color })
   const { styles, selector, rows } = this;
   const {
     sri, sci, eri, eci,
@@ -343,10 +344,82 @@ export default class DataProxy {
     this.history = new History();
     this.clipboard = new Clipboard();
     this.autoFilter = new AutoFilter();
-    this.change = () => {};
+    this.change = () => { };
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
     this.unsortedRowMap = new Map();
+
+    // lupin
+    this.seePage = {};
+    this.seePageShow = false;
+  }
+
+  // 显示页面布局
+  togglePageShow() {
+    this.seePageShow = !this.seePageShow;
+  }
+
+  // 找a4范围
+  getPage() {
+    const { cols, rows } = this;
+    const cr = this.contentRange();
+    if (cr.eri > 0 && cr.eci > 0) {
+      const A4w = 648;
+      const A4h = 930;
+      // 单位变成字符和磅
+      // let A4w = 870
+      // let A4h = 842
+      // 横向分页
+      let start = cr.sri;
+      const rowPageSplit = [];
+      while (cols.sumWidth(0, rowPageSplit.at(-1)) < cr.w) {
+        for (let i = start + 1; ; i += 1) {
+          // console.log("lupin 横向分页3", start, i, cols.sumWidth(start, i))
+          if (cols.sumWidth(start, i) > A4w) {
+            // 更新下一页的起点
+            if ((i - start) !== 1) {
+              start = i - 1;
+            }
+            rowPageSplit.push(start);
+            break;
+          }
+        }
+      }
+
+
+      // 纵向分页
+      start = cr.sci;
+      const colPageSplit = [];
+      while (rows.sumHeight(0, colPageSplit.at(-1)) < cr.h) {
+        for (let i = start + 1; ; i += 1) {
+          // console.log("lupin 纵向分页3", start, i, rows.sumHeight(start, i))
+          if (rows.sumHeight(start, i) > A4h) {
+            // 更新下一页的起点
+            if ((i - start) !== 1) {
+              start = i - 1;
+            }
+            colPageSplit.push(start);
+            break;
+          }
+        }
+      }
+      const lastc = cols.sumWidth(0, rowPageSplit.at(-1));
+      const lastr = rows.sumHeight(0, colPageSplit.at(-1));
+      this.seePage = {
+        rowPageSplit,
+        colPageSplit,
+        lastc,
+        lastr,
+      };
+      // console.log("getPage被调用了",{
+      //   rowPageSplit,
+      //   colPageSplit,
+      //   lastc,
+      //   lastr
+      // })
+      return rowPageSplit;
+    }
+    return undefined;
   }
 
   addValidation(mode, ref, validator) {
@@ -433,7 +506,7 @@ export default class DataProxy {
     // this need https protocol
     /* global navigator */
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(copyText).then(() => {}, (err) => {
+      navigator.clipboard.writeText(copyText).then(() => { }, (err) => {
         console.log('text copy to the system clipboard error  ', copyText, err);
       });
     }
@@ -444,7 +517,7 @@ export default class DataProxy {
   }
 
   // what: all | text | format
-  paste(what = 'all', error = () => {}) {
+  paste(what = 'all', error = () => { }) {
     // console.log('sIndexes:', sIndexes);
     const { clipboard, selector } = this;
     if (clipboard.isClear()) return false;
@@ -508,7 +581,7 @@ export default class DataProxy {
     }
   }
 
-  autofill(cellRange, what, error = () => {}) {
+  autofill(cellRange, what, error = () => { }) {
     const srcRange = this.selector.range;
     if (!canPaste.call(this, srcRange, cellRange, error)) return false;
     this.changeData(() => {
@@ -594,8 +667,10 @@ export default class DataProxy {
         } else {
           const cell = rows.getCellOrNew(ri, ci);
           cell.text = `=${value}()`;
+          // console.log("selector1",selector)
         }
       } else {
+        // console.log("selector2",selector)
         selector.range.each((ri, ci) => {
           const cell = rows.getCellOrNew(ri, ci);
           let cstyle = {};
@@ -671,6 +746,7 @@ export default class DataProxy {
   }
 
   getSelectedRect() {
+    // console.log('选择')
     return this.getRect(this.selector.range);
   }
 
@@ -1078,6 +1154,9 @@ export default class DataProxy {
     const h = rows.sumHeight(0, ri + 1);
     const w = cols.sumWidth(0, ci + 1);
     return new CellRange(0, 0, ri, ci, w, h);
+    // const h = rows.sumHeight(1, ri + 1);
+    // const w = cols.sumWidth(1, ci + 1);
+    // return new CellRange(1, 1, ri, ci, w, h);
   }
 
   exceptRowTotalHeight(sri, eri) {

@@ -134,7 +134,10 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  return ret * cellRender(x, y);
+  if (ret === -1) {
+    return ret * cellRender(x, y);
+  }
+  return cellRender(x, y);
 };
 
 // evaluate the suffix expression
@@ -143,6 +146,7 @@ const evalSubExpr = (subExpr, cellRender) => {
 // cellRender: (x, y) => {}
 const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   const stack = [];
+  // console.log('stack0:', stack);
   // console.log(':::::formulaMap:', formulaMap);
   for (let i = 0; i < srcStack.length; i += 1) {
     // console.log(':::>>>', srcStack[i]);
@@ -164,6 +168,25 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     } else if (expr === '/') {
       const top = stack.pop();
       stack.push(numberCalc('/', stack.pop(), top));
+    } else if (expr === 'SQRT') {
+      // console.log('stack1:', stack);
+      const top = stack.pop();
+      if (Number.isNaN(top)) {
+        stack.push(`${`SQRT(`}${top})`);
+      } else {
+        stack.push(Math.sqrt(top));
+      }
+
+      // console.log('stack2:', stack);
+    } else if (expr === 'EXP') {
+      // console.log('stack1:', stack);
+      const top = stack.pop();
+      if (Number.isNaN(top)) {
+        stack.push(`${`EXP(`}${top})`);
+      } else {
+        stack.push(Math.exp(top));
+      }
+      // console.log('stack2:', stack);
     } else if (fc === '=' || fc === '>' || fc === '<') {
       let top = stack.pop();
       if (!Number.isNaN(top)) top = Number(top);
@@ -185,10 +208,27 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     } else if (Array.isArray(expr)) {
       const [formula, len] = expr;
       const params = [];
+      let flag = false;
+      // console.log('stack1:', stack);
       for (let j = 0; j < len; j += 1) {
-        params.push(stack.pop());
+        // console.log('stack2:', stack);
+        const top = stack.pop();
+        params.push(top);
+        // console.log('top',top)
+        // console.log('params',top)
+        // console.log('srcStack',srcStack)
+        // console.log(':::::formulaMap:', formulaMap);
+        // console.log('cellList',cellList)
+        if (String(top).indexOf('##') === 0) {
+          flag = true;
+        }
       }
-      stack.push(formulaMap[formula].render(params.reverse()));
+      // stack.push(formulaMap[formula].render(params.reverse()));
+      if (!flag) {
+        stack.push(formulaMap[formula].render(params.reverse()));
+      } else {
+        stack.push(`${formula}(${params.reverse()})`);
+      }
     } else {
       if (cellList.includes(expr)) {
         return 0;
@@ -196,10 +236,13 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
       if ((fc >= 'a' && fc <= 'z') || (fc >= 'A' && fc <= 'Z')) {
         cellList.push(expr);
       }
+      // console.log('stack4:', stack);
       stack.push(evalSubExpr(expr, cellRender));
+      // console.log('stack5:', stack);
+      // console.log('expr',expr)
       cellList.pop();
     }
-    // console.log('stack:', stack);
+    // console.log('stack3:', stack);
   }
   return stack[0];
 };
