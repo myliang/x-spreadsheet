@@ -37,7 +37,7 @@ function equals(obj1, obj2) {
       for (let ai = 0; ai < v1.length; ai += 1) {
         if (!equals(v1[ai], v2[ai])) return false;
       }
-    } else if (typeof v1 !== 'function' && !Array.isArray(v1) && v1 instanceof Object) {
+    } else if (typeof v1 !== 'function' && !Array.isArray(v1) && typeof v1 === 'object' && v1 !== null) {
       if (!equals(v1, v2)) return false;
     }
   }
