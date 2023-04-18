@@ -90,15 +90,18 @@ class Spreadsheet {
   }
 
   getData() {
-    return this.dataSet.map(it => it.getData());
+    this.sheet.clearEditor();
+    return this.dataSet.map((it) => it.getData());
   }
 
   cellText(ri, ci, text, force = false, sheetIndex = 0) {
+    this.sheet.clearEditor();
     this.dataSet[sheetIndex].setCellTextRaw(ri, ci, text, force);
     return this;
   }
 
   resetCellText(sri, sci, eri, eci, force = false, reRender = true, sheetIndex = 0) {
+    this.sheet.clearEditor();
     const cr = new Cr(sri, sci, eri, eci);
     cr.each((ri, ci) => {
       this.dataSet[sheetIndex].setCellTextRaw(ri, ci, null, force);
@@ -109,6 +112,7 @@ class Spreadsheet {
   }
 
   cell(ri, ci, sheetIndex = 0) {
+    this.sheet.clearEditor();
     return this.dataSet[sheetIndex].getCell(ri, ci);
   }
 
@@ -117,6 +121,7 @@ class Spreadsheet {
   }
 
   reRender() {
+    this.sheet.clearEditor();
     this.sheet.table.render();
     return this;
   }
@@ -148,6 +153,7 @@ class Spreadsheet {
   }
 
   getLastUsedRowIndex(sheetIndex = 0) {
+    this.sheet.clearEditor();
     const { rows } = this.dataSet[sheetIndex];
     for (let ri = rows.len - 1; ri >= 0; ri -= 1) {
       const row = rows.get(ri);
@@ -166,6 +172,7 @@ class Spreadsheet {
   }
 
   getLastUsedColumnIndex(offset = 0, sheetIndex = 0) {
+    this.sheet.clearEditor();
     const { rows, cols } = this.dataSet[sheetIndex];
     for (let ci = cols.len - 1; ci >= 0; ci -= 1) {
       for (let ri = 0; ri <= rows.len - 1; ri += 1) {
@@ -183,10 +190,12 @@ class Spreadsheet {
   }
 
   getChangedCells(sheetIndex = 0) {
+    this.sheet.clearEditor();
     return this.dataSet[sheetIndex].history.getChangedCellValues();
   }
 
   getCellsGroupedByRow(sheetIndex = 0) {
+    this.sheet.clearEditor();
     return this.dataSet[sheetIndex].getCellsGroupedByRow();
   }
 

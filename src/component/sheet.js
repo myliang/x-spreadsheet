@@ -1371,4 +1371,9 @@ export default class Sheet {
 
     unbind(window, 'resize', this.toolbar.resizeHandler);
   }
+
+  // commit open cell changes and close editor
+  clearEditor() {
+    this.editor.clear();
+  }
 }
