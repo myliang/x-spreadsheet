@@ -1,6 +1,7 @@
+import dateParser from 'any-date-parser';
 import { tf } from '../locale/locale';
 
-const formatStringRender = v => v;
+const formatStringRender = (v) => v;
 
 const formatNumberRender = (v) => {
   if (!v) {
@@ -70,39 +71,36 @@ const baseFormats = [
     title: tf('format.rmb'),
     type: 'number',
     label: '￥10.00',
-    render: v => `￥${formatNumberRender(v)}`,
+    render: (v) => `￥${formatNumberRender(v)}`,
   },
   {
     key: 'usd',
     title: tf('format.usd'),
     type: 'number',
     label: '$10.00',
-    render: v => `$${formatNumberRender(v)}`,
+    render: (v) => `$${formatNumberRender(v)}`,
   },
   {
     key: 'eur',
     title: tf('format.eur'),
     type: 'number',
     label: '€10.00',
-    render: v => `€${formatNumberRender(v)}`,
+    render: (v) => `€${formatNumberRender(v)}`,
   },
   {
     key: 'date',
     title: tf('format.date'),
     type: 'date',
     label: '2008.09.26',
-    render: (v, cb) => {
+    render: (v) => {
       if (!v) {
         return '';
       }
+
       try {
-        const date = new Date(v);
-        const [yyyymmdd, rest] = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T');
-        const [hhmmss] = rest.split('.');
-        if (cb) {
-          cb(`${yyyymmdd} ${hhmmss}`);
-        }
-        return yyyymmdd;
+        const date = dateParser.fromString(v);
+        const [yyyymmdd] = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split('T');
+        return `${yyyymmdd}`;
       } catch (err) {
         return 'Invalid Date';
       }

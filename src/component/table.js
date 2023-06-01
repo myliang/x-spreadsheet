@@ -93,7 +93,6 @@ export function renderCell(
     if (style.format) {
       cellText = formatm[style.format].render(
         cellText,
-        style.format === 'date' ? (n) => { rows.setCellText(nrindex, cindex, n); } : undefined,
       );
     }
     const font = Object.assign({}, style.font);

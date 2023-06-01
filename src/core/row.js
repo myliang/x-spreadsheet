@@ -90,13 +90,14 @@ class Rows {
 
   getCell(ri, ci) {
     const row = this.get(ri);
-    if (row !== undefined && row.cells !== undefined && row.cells[ci] !== undefined) {
-      return {
-        ...row.cells[ci],
-        ...((row.cells[ci].text === undefined || row.cells[ci].text === '') ? { text: null } : {}),
-      };
+    if (row && row.cells && row.cells[ci]) {
+      const cell = row.cells[ci];
+      if (!cell.text) {
+        cell.text = null;
+      }
+      return cell;
     }
-    return ({ text: null });
+    return { text: null };
   }
 
   getCellMerge(ri, ci) {

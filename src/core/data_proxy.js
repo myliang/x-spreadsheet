@@ -13,6 +13,7 @@ import { Validations } from './validation';
 import { CellRange } from './cell_range';
 import { expr2xy, xy2expr } from './alphabet';
 import { t } from '../locale/locale';
+import { formatm } from './format';
 
 // private methods
 /*
@@ -1306,6 +1307,13 @@ export default class DataProxy {
     return helper.merge(this.defaultStyle(), cellStyle);
   }
 
+  getCellStyleFormat(ri, ci) {
+    const { styles, rows } = this;
+    const cell = rows.getCell(ri, ci);
+    const cellStyle = (cell && cell.style !== undefined) ? styles[cell.style] : {};
+    return cellStyle.format;
+  }
+
   getSelectedCellStyle() {
     const { ri, ci } = this.selector;
     return this.getCellStyleOrDefault(ri, ci);
@@ -1511,9 +1519,27 @@ export default class DataProxy {
     return styles.length - 1;
   }
 
+  initSpecialFormats(rows) {
+    if (!rows) {
+      return;
+    }
+    Object.entries(rows).forEach(([ri, val]) => {
+      if (!val || !val.cells) {
+        return;
+      }
+      Object.entries(val.cells).forEach(([ci, cell]) => {
+        const format = this.getCellStyleFormat(ri, ci);
+        if (format === 'date' && cell.text) {
+          cell.text = formatm[format].render(cell.text);
+        }
+      });
+    });
+  }
+
   changeData(cb) {
     const changed = cb();
     if (changed) {
+      this.initSpecialFormats(changed[0].rows);
       this.setRowMap();
       this.change(this.getData());
       this.history.add(changed);
@@ -1537,6 +1563,7 @@ export default class DataProxy {
     if (d.cols) {
       this.setColProperties();
     }
+    this.initSpecialFormats(this.getData().rows);
     // initialise history
     if (init) {
       this.history.init(this.getData());
