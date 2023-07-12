@@ -39,7 +39,7 @@ declare module 'x-data-spreadsheet' {
       underline: boolean;
       color: string;
       font: {
-        name: 'Helvetica';
+        name: 'Helvetica' | string;
         size: number;
         bold: boolean;
         italic: false;

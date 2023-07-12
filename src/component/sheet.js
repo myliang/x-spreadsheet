@@ -1010,4 +1010,8 @@ export default class Sheet {
       top: rows.height,
     };
   }
+
+  autoScroll() {
+    scrollbarMove.call(this);
+  }
 }
