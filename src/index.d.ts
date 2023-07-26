@@ -244,6 +244,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       colIndex: number,
       text: string | null,
       force?: boolean,
+      saveHistory?: boolean,
       sheetIndex?: number
     ): this;
 

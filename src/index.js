@@ -94,9 +94,15 @@ class Spreadsheet {
     return this.dataSet.map((it) => it.getData());
   }
 
-  cellText(ri, ci, text, force = false, sheetIndex = 0) {
+  cellText(ri, ci, text, force = false, saveHistory = true, sheetIndex = 0) {
     this.sheet.clearEditor();
-    this.dataSet[sheetIndex].setCellTextRaw(ri, ci, text, force);
+
+    if (saveHistory) {
+      this.dataSet[sheetIndex].setCellText(ri, ci, text, 'finished');
+    } else {
+      this.dataSet[sheetIndex].setCellTextRaw(ri, ci, text, force);
+    }
+
     return this;
   }
 
