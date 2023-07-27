@@ -163,7 +163,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
   export interface CellTextData {
     ri: number;
     ci: number;
-    text: string;
+    text: string|null;
   }
 
   export default class Spreadsheet {
