@@ -160,6 +160,12 @@ declare module '@bergfreunde/x-data-spreadsheet' {
     getCellsGroupedByRow(): { ri: number, cells: { ci: number, value: string | number }[] }[];
   }
 
+  export interface CellTextData {
+    ri: number;
+    ci: number;
+    text: string;
+  }
+
   export default class Spreadsheet {
     constructor(container: string | HTMLElement, opts?: Options);
     on: SpreadsheetEventHandler;
@@ -237,6 +243,7 @@ declare module '@bergfreunde/x-data-spreadsheet' {
      * @param rowIndex
      * @param colIndex
      * @param text
+     * @param force
      * @param sheetIndex
      */
     cellText(
@@ -244,7 +251,20 @@ declare module '@bergfreunde/x-data-spreadsheet' {
       colIndex: number,
       text: string | null,
       force?: boolean,
-      saveHistory?: boolean,
+      sheetIndex?: number
+    ): this;
+
+    /**
+     * get/set cell texts
+     * @param cellTexts
+     * @param saveHistory
+     * @param force
+     * @param sheetIndex
+     */
+    cellTexts(
+      cellTexts: CellTextData[],
+      saveHistory: boolean,
+      force: boolean,
       sheetIndex?: number
     ): this;
 

@@ -1342,6 +1342,22 @@ export default class DataProxy {
     validations.validate(ri, ci, text);
   }
 
+  setCellTexts(cellTextArray) {
+    const {
+      rows, history, validations, selector,
+    } = this;
+    const changedCells = [];
+    for (const cellData of cellTextArray) {
+      const { ri, ci, text } = cellData;
+      rows.setCellText(ri, ci, text);
+      changedCells.push({ ri, ci, cell: this.getCell(ri, ci) });
+      // validator
+      validations.validate(ri, ci, text);
+    }
+    const mergedCells = Rows.reduceAsRows(changedCells, this.len);
+    history.add([mergedCells, selector.rangeObject]);
+  }
+
   freezeIsActive() {
     const [ri, ci] = this.freeze;
     return ri > 0 || ci > 0;
