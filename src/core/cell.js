@@ -12,13 +12,17 @@ const infixExprToSuffixExpr = (src) => {
   let fnArgOperator = '';
   let fnArgsLen = 1; // A1,A2,A3...
   let oldc = '';
+  let locked = false;
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
     if (c !== ' ') {
-      if (c >= 'a' && c <= 'z') {
-        subStrs.push(c.toUpperCase());
+      // skip '$' for now
+      if(c === '$') {
+        locked = true;
+      } else if (c >= 'a' && c <= 'z') {
+        subStrs.push((locked ? "$":"") + c.toUpperCase());
       } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c === '.') {
-        subStrs.push(c);
+        subStrs.push((locked ? "$":"") + c);
       } else if (c === '"') {
         i += 1;
         while (src.charAt(i) !== '"') {

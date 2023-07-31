@@ -45,14 +45,20 @@ export function indexAt(str) {
 export function expr2xy(src) {
   let x = '';
   let y = '';
+  let xlock = false;
+  let ylock = false;
   for (let i = 0; i < src.length; i += 1) {
-    if (src.charAt(i) >= '0' && src.charAt(i) <= '9') {
+    if(src.charAt(i) === '$') {
+      if(x.length > 0) ylock = true
+      else xlock = true
+    } else  if (src.charAt(i) >= '0' && src.charAt(i) <= '9') {
       y += src.charAt(i);
     } else {
       x += src.charAt(i);
     }
   }
-  return [indexAt(x), parseInt(y, 10) - 1];
+
+  return [indexAt(x), parseInt(y, 10) - 1, xlock, ylock];
 }
 
 /** translate XY-tag to A1-tag
