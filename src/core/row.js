@@ -147,6 +147,10 @@ class Rows {
                   if (text[0] === '=') {
                     ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
+                      // TODO: handle more cases
+                      // copy paste with more than 1 apart
+                      // dragging selecyion should still work
+                      // we should consider locking ($A$1)
                       if (sri === dsri) {
                         // was
                         xn = n - 1;
