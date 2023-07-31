@@ -149,12 +149,12 @@ class Rows {
                       let [xn, yn] = [0, 0];
                       if (sri === dsri) {
                         // was
-                        // xn = n - 1;
-                        xn = dsci - sci;
+                        xn = n - 1;
+                        // xn = dsci - sci;
                         // if (isAdd) xn -= 1;
                       } else {
-                        // yn = n - 1;
-                        yn = dsri - sri;
+                        yn = n - 1;
+                        // yn = dsri - sri;
                       }
                       if (/^\d+$/.test(word)) return word;
                       return expr2expr(word, xn, yn);
