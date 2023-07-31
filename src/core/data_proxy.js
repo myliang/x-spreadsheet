@@ -78,6 +78,7 @@ const defaultSettings = {
   showToolbar: true,
   showContextmenu: true,
   showBottomBar: true,
+  autoFillOnCopy: false,
   row: {
     len: 100,
     height: 25,
@@ -452,7 +453,7 @@ export default class DataProxy {
 
     this.changeData(() => {
       if (clipboard.isCopy()) {
-        copyPaste.call(this, clipboard.range, selector.range, what);
+        copyPaste.call(this, clipboard.range, selector.range, what, this.settings.autoFillOnCopy);
       } else if (clipboard.isCut()) {
         cutPaste.call(this, clipboard.range, selector.range);
       }

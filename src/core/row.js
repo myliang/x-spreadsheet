@@ -148,10 +148,13 @@ class Rows {
                     ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
                       if (sri === dsri) {
-                        xn = n - 1;
+                        // was
+                        // xn = n - 1;
+                        xn = dsci - sci;
                         // if (isAdd) xn -= 1;
                       } else {
-                        yn = n - 1;
+                        // yn = n - 1;
+                        yn = dsri - sri;
                       }
                       if (/^\d+$/.test(word)) return word;
                       return expr2expr(word, xn, yn);
