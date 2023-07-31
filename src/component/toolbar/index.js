@@ -114,10 +114,10 @@ export default class Toolbar {
       [
         this.undoEl = new Undo(),
         this.redoEl = new Redo(),
-        // new Print(),
+        this.data.settings.showPrint && new Print(),
         this.paintformatEl = new Paintformat(),
         this.clearformatEl = new Clearformat(),
-      ],
+      ].filter(e=>!!e),
       buildDivider(),
       [
         this.formatEl = new Format(),

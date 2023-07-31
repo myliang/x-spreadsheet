@@ -11,7 +11,7 @@ import './index.less';
 class Spreadsheet {
   constructor(selectors, options = {}) {
     let targetEl = selectors;
-    this.options = { showBottomBar: true, ...options };
+    this.options = { showBottomBar: true, showPrint: true, showValidation: true, ...options };
     this.sheetIndex = 1;
     this.datas = [];
     if (typeof selectors === 'string') {
