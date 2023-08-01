@@ -77,7 +77,9 @@ export default {
     power: 'Power',
     ceiling: 'Ceiling',
     floor: 'Floor',
-    len: 'Length'
+    len: 'Length',
+    replace: 'Replace',
+    substitute: 'Substitute'
   },
   validation: {
     required: 'it must be required',

@@ -93,7 +93,35 @@ const baseFormulas = [
   {
     key: 'LEN',
     title: tf('formula.len'),
-    render: ([a]) => String(a).length,
+    render: ([a]) => String(a).length
+  },
+  {
+    key: 'REPLACE',
+    title: tf('formula.replace'),
+    render: ([oldText, startNum, numChars, newText]) => {
+      // Adjust the startNum from 1-based index to 0-based index for JavaScript
+      const zstart = startNum - 1;
+
+      // Get the parts of the old text to keep
+      const beginning = oldText.slice(0, zstart);
+      const ending = oldText.slice(zstart + numChars);
+
+      // Build and return the final string
+      return beginning + newText + ending;
+    }
+  },
+  {
+    key: 'SUBSTITUTE',
+    title: tf('formula.substitute'),
+    render: ([text, oldText, newText]) => String(text).replaceAll(oldText, newText)
+  },
+  {
+    key: 'VLOOKUP',
+    title: tf('formula.vlookup'),
+    render: ([lookupValue, table, colIndex, rangeLookup]) => {
+      console.log(arguments);
+    }
+    
   }
   /* support:  1 + A1 + B2 * 3
   {
