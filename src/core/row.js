@@ -120,6 +120,11 @@ class Rows {
     const deci = dstCellRange.eci;
     const [rn, cn] = srcCellRange.size();
     const [drn, dcn] = dstCellRange.size();
+
+    console.log(`sri:${sri} sci:${sci} eri:${eri} eci:${eci}`);
+    console.log(`dsri:${dsri} dsci:${dsci} deri:${deri} deci:${deci}`);
+    console.log(`rn: ${rn} cn: ${cn}`);
+    console.log(`drn: ${drn} dcn: ${dcn}`);
     // console.log(srcIndexes, dstIndexes);
     let isAdd = true;
     let dn = 0;
@@ -128,14 +133,23 @@ class Rows {
       if (deri < sri) dn = drn;
       else dn = dcn;
     }
+
+    console.log(`isAdd: ${isAdd} dn: ${dn}`);
+
     for (let i = sri; i <= eri; i += 1) {
       if (this._[i]) {
         for (let j = sci; j <= eci; j += 1) {
           if (this._[i].cells && this._[i].cells[j]) {
             for (let ii = dsri; ii <= deri; ii += rn) {
               for (let jj = dsci; jj <= deci; jj += cn) {
+
+                console.log(`i: ${i} j: ${j}`);
+                console.log(`ii: ${ii} jj: ${jj}`);
+
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
+                console.log(`nri: ${nri} nci: ${nci}`);
+
                 const ncell = helper.cloneDeep(this._[i].cells[j]);
                 // ncell.text
                 if (autofill && ncell && ncell.text && ncell.text.length > 0) {
@@ -144,6 +158,9 @@ class Rows {
                   if (!isAdd) {
                     n -= dn + 1;
                   }
+
+                  console.log(`n: ${n}`);
+
                   if (text[0] === '=') {
                     ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
