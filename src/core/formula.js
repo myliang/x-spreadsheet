@@ -13,6 +13,11 @@
 import { tf } from '../locale/locale';
 import { numberCalc } from './helper';
 
+function isNumber(str) {
+  return !isNaN(parseFloat(str)) && isFinite(str);
+}
+
+
 /** @type {Formula[]} */
 const baseFormulas = [
   {
@@ -55,6 +60,16 @@ const baseFormulas = [
     title: tf('formula.concat'),
     render: ary => ary.join(''),
   },
+  {
+    key: 'PRODUCT',
+    title: tf('formula.product'),
+    render: ary => ary.reduce((a, b) => Number(a) * Number(b),1),
+  },
+  {
+    key: 'COUNT',
+    title: tf('formula.count'),
+    render: ary => {console.log(ary);  return ary.filter(isNumber).length},
+  }
   /* support:  1 + A1 + B2 * 3
   {
     key: 'DIVIDE',
