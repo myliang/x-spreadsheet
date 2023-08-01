@@ -23,7 +23,7 @@ const baseFormulas = [
   {
     key: 'SUM',
     title: tf('formula.sum'),
-    render: ary => ary.reduce((a, b) => numberCalc('+', a, b), 0),
+    render: ([ary]) => ary.reduce((a, b) => numberCalc('+', a, b), 0),
   },
   {
     key: 'AVERAGE',

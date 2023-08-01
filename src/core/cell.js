@@ -1,4 +1,5 @@
 import { expr2xy, xy2expr } from './alphabet';
+import font from './font';
 import { numberCalc } from './helper';
 
 // Converting infix expression to a suffix expression
@@ -47,13 +48,16 @@ const infixExprToSuffixExpr = (src) => {
               const [sx, sy] = expr2xy(stack.pop());
               // console.log('::', sx, sy, ex, ey);
               let rangelen = 0;
+              let items = [];
               for (let x = sx; x <= ex; x += 1) {
                 for (let y = sy; y <= ey; y += 1) {
-                  stack.push(xy2expr(x, y));
+                  items.push(xy2expr(x, y));
                   rangelen += 1;
                 }
               }
-              stack.push([c1, rangelen]);
+              stack.push(items);
+              // TODO: do not use array for formula calls
+              stack.push({f:c1, len:fnArgsLen});
             } catch (e) {
               // console.log(e);
             }
@@ -82,6 +86,7 @@ const infixExprToSuffixExpr = (src) => {
         } else if (c === ':') {
           fnArgType = 2;
         } else if (c === ',') {
+          // TODO: here if the previous parameter is a range, we should colllect it
           if (fnArgType === 3) {
             stack.push(fnArgOperator);
           }
@@ -124,6 +129,12 @@ const infixExprToSuffixExpr = (src) => {
 };
 
 const evalSubExpr = (subExpr, cellRender) => {
+
+  if(Array.isArray(subExpr)) {
+    const ret = subExpr.map(e => evalSubExpr(e, cellRender));
+    return ret;
+  }
+
   const [fl] = subExpr;
   let expr = subExpr;
   if (fl === '"') {
@@ -188,14 +199,25 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
         ret = (left <= top);
       }
       stack.push(ret);
-    } else if (Array.isArray(expr)) {
-      const [formula, len] = expr;
+    } 
+    // by gcannata
+    // else if (Array.isArray(expr)) {
+    //   const [formula, len] = expr;
+    //   const params = [];
+    //   for (let j = 0; j < len; j += 1) {
+    //     params.push(stack.pop());
+    //   }
+    //   stack.push(formulaMap[formula].render(params.reverse()));
+    // } 
+    else if (expr.f) {
+      const {f, len} = expr;
       const params = [];
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      stack.push(formulaMap[formula].render(params.reverse()));
-    } else if (formulaMap[expr]) { // try to support unary operators
+      stack.push(formulaMap[f].render(params.reverse()));
+    } 
+    else if (formulaMap[expr]) { // try to support unary operators
       const params = [];
       params.push(stack.pop());
       stack.push(formulaMap[expr].render(params));
