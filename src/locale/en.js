@@ -73,6 +73,10 @@ export default {
     concat: 'Concat',
     product: 'Product',
     count: 'Count',
+    mod: 'Mod',
+    power: 'Power',
+    ceiling: 'Ceiling',
+    floor: 'Floor'
   },
   validation: {
     required: 'it must be required',

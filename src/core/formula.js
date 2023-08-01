@@ -14,7 +14,7 @@ import { tf } from '../locale/locale';
 import { numberCalc } from './helper';
 
 function isNumber(str) {
-  return !isNaN(parseFloat(str)) && isFinite(str);
+  return !Number.isNaN(parseFloat(str)) && Number.isFinite(str);
 }
 
 
@@ -68,7 +68,27 @@ const baseFormulas = [
   {
     key: 'COUNT',
     title: tf('formula.count'),
-    render: ary => {console.log(ary);  return ary.filter(isNumber).length},
+    render: ary => ary.filter(isNumber).length,
+  },
+  {
+    key: 'MOD',
+    title: tf('formula.mod'),
+    render: ([a,b]) => a % b,
+  },
+  {
+    key: 'POWER',
+    title: tf('formula.power'),
+    render: ([a,b]) => a ** b,
+  },
+  {
+    key: 'CEILING',
+    title: tf('formula.ceiling'),
+    render: ([a]) => Math.ceil(a),
+  },
+  {
+    key: 'FLOOR',
+    title: tf('formula.floor'),
+    render: ([a]) => Math.floor(a),
   }
   /* support:  1 + A1 + B2 * 3
   {

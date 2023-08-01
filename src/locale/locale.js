@@ -42,7 +42,7 @@ function t(key) {
   if (!v && window && window.x_spreadsheet && window.x_spreadsheet.$messages) {
     v = translate(key, window.x_spreadsheet.$messages);
   }
-  return v || '';
+  return v || key;
 }
 
 function tf(key) {
