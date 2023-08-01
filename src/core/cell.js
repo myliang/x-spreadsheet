@@ -138,7 +138,9 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  return ret * cellRender(x, y);
+  // changed by gcannata
+  // return ret * cellRender(x, y);
+  return cellRender(x, y);
 };
 
 // evaluate the suffix expression
@@ -193,7 +195,7 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
         params.push(stack.pop());
       }
       stack.push(formulaMap[formula].render(params.reverse()));
-    } else if (formulaMap[expr]) {
+    } else if (formulaMap[expr]) { // try to support unary operators
       const params = [];
       params.push(stack.pop());
       stack.push(formulaMap[expr].render(params));
@@ -209,7 +211,9 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     }
     // console.log('stack:', stack);
   }
-  return stack[0];
+  // by gcanata
+  // return stack[0];
+  return stack[0] || 0;
 };
 
 const cellRender = (src, formulaMap, getCellText, cellList = []) => {

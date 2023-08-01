@@ -76,7 +76,8 @@ export default {
     mod: 'Mod',
     power: 'Power',
     ceiling: 'Ceiling',
-    floor: 'Floor'
+    floor: 'Floor',
+    len: 'Length'
   },
   validation: {
     required: 'it must be required',

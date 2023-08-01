@@ -84,11 +84,16 @@ const baseFormulas = [
     key: 'CEILING',
     title: tf('formula.ceiling'),
     render: ([a]) => Math.ceil(a),
-  },
+  }, 
   {
     key: 'FLOOR',
     title: tf('formula.floor'),
     render: ([a]) => Math.floor(a),
+  },
+  {
+    key: 'LEN',
+    title: tf('formula.len'),
+    render: ([a]) => String(a).length,
   }
   /* support:  1 + A1 + B2 * 3
   {
