@@ -14,8 +14,11 @@ import { tf } from '../locale/locale';
 import { numberCalc } from './helper';
 
 function isNumber(str) {
-  return !Number.isNaN(parseFloat(str)) && Number.isFinite(str);
+  // eslint-disable-next-line no-restricted-globals
+  return !Number.isNaN(parseFloat(str)) && isFinite(str);
 }
+
+
 
 
 /** @type {Formula[]} */
@@ -23,22 +26,22 @@ const baseFormulas = [
   {
     key: 'SUM',
     title: tf('formula.sum'),
-    render: ([ary]) => ary.reduce((a, b) => numberCalc('+', a, b), 0),
+    render: ([...ary]) => ary.flat().filter(isNumber).reduce((a, b) => numberCalc('+', a, b), 0),
   },
   {
     key: 'AVERAGE',
     title: tf('formula.average'),
-    render: ([ary]) => ary.reduce((a, b) => Number(a) + Number(b), 0) / ary.length,
+    render: ([...ary]) => ary.flat().filter(isNumber).reduce((a, b) => Number(a) + Number(b), 0) / ary.flat().length,
   },
   {
     key: 'MAX',
     title: tf('formula.max'),
-    render: ([ary]) => Math.max(...ary.map(v => Number(v))),
+    render: ([...ary]) => Math.max(...ary.flat().filter(isNumber).map(v => Number(v))),
   },
   {
     key: 'MIN',
     title: tf('formula.min'),
-    render: ([ary]) => Math.min(...ary.map(v => Number(v))),
+    render: ([...ary]) => Math.min(...ary.flat().filter(isNumber).map(v => Number(v))),
   },
   {
     key: 'IF',
@@ -48,52 +51,52 @@ const baseFormulas = [
   {
     key: 'AND',
     title: tf('formula.and'),
-    render: ([ary]) => ary.every(it => it),
+    render: ([...ary]) => ary.flat().every(it => it),
   },
   {
     key: 'OR',
     title: tf('formula.or'),
-    render: ([ary]) => ary.some(it => it),
+    render: ([...ary]) => ary.flat().some(it => it),
   },
   {
     key: 'CONCAT',
     title: tf('formula.concat'),
-    render: ary => ary.join(''),
+    render: ([...ary]) => ary.flat().join(''),
   },
   {
     key: 'PRODUCT',
     title: tf('formula.product'),
-    render: ary => ary.reduce((a, b) => Number(a) * Number(b),1),
+    render: ([...ary]) => ary.flat().filter(isNumber).reduce((a, b) => Number(a) * Number(b),1),
   },
   {
     key: 'COUNT',
     title: tf('formula.count'),
-    render: ary => ary.filter(isNumber).length,
+    render: ary => ary.flat().filter(isNumber).length,
   },
   {
     key: 'MOD',
     title: tf('formula.mod'),
-    render: ([a,b]) => a % b,
+    render: ([a,b]) => Number(a) % Number(b),
   },
   {
     key: 'POWER',
     title: tf('formula.power'),
-    render: ([a,b]) => a ** b,
+    render: ([a,b]) => Number(a) ** Number(b),
   },
   {
     key: 'CEILING',
     title: tf('formula.ceiling'),
-    render: ([a]) => Math.ceil(a),
+    render: ([a, significance]) => Math.ceil(Number(a)),
   }, 
   {
     key: 'FLOOR',
     title: tf('formula.floor'),
-    render: ([a]) => Math.floor(a),
+    render: ([a]) => Math.floor(Number(a)),
   },
   {
     key: 'LEN',
     title: tf('formula.len'),
-    render: ([a]) => String(a).length
+    render: ([a]) => String(a).length,
   },
   {
     key: 'REPLACE',
