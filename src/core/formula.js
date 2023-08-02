@@ -48,12 +48,12 @@ const baseFormulas = [
   {
     key: 'AND',
     title: tf('formula.and'),
-    render: ary => ary.every(it => it),
+    render: ([ary]) => ary.every(it => it),
   },
   {
     key: 'OR',
     title: tf('formula.or'),
-    render: ary => ary.some(it => it),
+    render: ([ary]) => ary.some(it => it),
   },
   {
     key: 'CONCAT',
