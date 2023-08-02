@@ -28,17 +28,17 @@ const baseFormulas = [
   {
     key: 'AVERAGE',
     title: tf('formula.average'),
-    render: ary => ary.reduce((a, b) => Number(a) + Number(b), 0) / ary.length,
+    render: ([ary]) => ary.reduce((a, b) => Number(a) + Number(b), 0) / ary.length,
   },
   {
     key: 'MAX',
     title: tf('formula.max'),
-    render: ary => Math.max(...ary.map(v => Number(v))),
+    render: ([ary]) => Math.max(...ary.map(v => Number(v))),
   },
   {
     key: 'MIN',
     title: tf('formula.min'),
-    render: ary => Math.min(...ary.map(v => Number(v))),
+    render: ([ary]) => Math.min(...ary.map(v => Number(v))),
   },
   {
     key: 'IF',

@@ -39,9 +39,9 @@ const infixExprToSuffixExpr = (src) => {
         if (c !== '(' && subStrs.length > 0) {
           stack.push(subStrs.join(''));
         }
-        if (c === ')') {
-          let c1 = operatorStack.pop();
-          if (fnArgType === 2) {
+        if (c === ')' || c === ',') {
+          // let c1 = operatorStack.pop();
+          if (fnArgType === 2) { // encountered a :
             // fn argument range => A1:B5
             try {
               const [ex, ey] = expr2xy(stack.pop());
@@ -49,6 +49,7 @@ const infixExprToSuffixExpr = (src) => {
               // console.log('::', sx, sy, ex, ey);
               let rangelen = 0;
               let items = [];
+              // TODO: what about rectangular selection
               for (let x = sx; x <= ex; x += 1) {
                 for (let y = sy; y <= ey; y += 1) {
                   items.push(xy2expr(x, y));
@@ -56,25 +57,46 @@ const infixExprToSuffixExpr = (src) => {
                 }
               }
               stack.push(items);
-              // TODO: do not use array for formula calls
-              stack.push({f:c1, len:fnArgsLen});
+              // it will be actually incremented lated
+              if(c === ')') {
+                let c1 = operatorStack.pop();
+                stack.push({ f: c1, len: fnArgsLen});
+              } else {
+                fnArgType = 1;
+                fnArgsLen += 1;
+              }
             } catch (e) {
               // console.log(e);
             }
           } else if (fnArgType === 1 || fnArgType === 3) {
-            if (fnArgType === 3) stack.push(fnArgOperator);
-            // fn argument => A1,A2,B5
-            stack.push([c1, fnArgsLen]);
-            fnArgsLen = 1;
+            if (fnArgType === 3) {
+              stack.push(fnArgOperator);
+              fnArgOperator = '';
+            }
+              // if (fnArgType === 1) stack.push({ f: c1, len: fnArgsLen});
+            if (c === ')') {
+              let c1 = operatorStack.pop();
+              
+              // fn argument => A1,A2,B5
+              stack.push({f: c1, len: fnArgsLen});
+              fnArgsLen = 1;
+            } else {
+              fnArgType = 1;
+              fnArgsLen+=1;
+            }
+
           } else {
             // console.log('c1:', c1, fnArgType, stack, operatorStack);
+            let c1 = operatorStack.pop();
             while (c1 !== '(') {
               stack.push(c1);
               if (operatorStack.length <= 0) break;
               c1 = operatorStack.pop();
             }
           }
-          fnArgType = 0;
+          if(c === ')') {
+            fnArgType = 0;
+          }
         } else if (c === '=' || c === '>' || c === '<') {
           const nc = src.charAt(i + 1);
           fnArgOperator = c;
@@ -124,6 +146,9 @@ const infixExprToSuffixExpr = (src) => {
   }
   while (operatorStack.length > 0) {
     stack.push(operatorStack.pop());
+  }
+  if(fnArgOperator.length>0) {
+    stack.push(fnArgOperator);
   }
   return stack;
 };
