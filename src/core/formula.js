@@ -26,22 +26,22 @@ const baseFormulas = [
   {
     key: 'SUM',
     title: tf('formula.sum'),
-    render: ([...ary]) => ary.flat().filter(isNumber).reduce((a, b) => numberCalc('+', a, b), 0),
+    render: ary => ary.flat().flat().filter(isNumber).reduce((a, b) => numberCalc('+', a, b), 0),
   },
   {
     key: 'AVERAGE',
     title: tf('formula.average'),
-    render: ([...ary]) => ary.flat().filter(isNumber).reduce((a, b) => Number(a) + Number(b), 0) / ary.flat().length,
+    render: ([...ary]) => ary.flat().flat().filter(isNumber).reduce((a, b) => Number(a) + Number(b), 0) / ary.flat().length,
   },
   {
     key: 'MAX',
     title: tf('formula.max'),
-    render: ([...ary]) => Math.max(...ary.flat().filter(isNumber).map(v => Number(v))),
+    render: ([...ary]) => Math.max(...ary.flat().flat().filter(isNumber).map(v => Number(v))),
   },
   {
     key: 'MIN',
     title: tf('formula.min'),
-    render: ([...ary]) => Math.min(...ary.flat().filter(isNumber).map(v => Number(v))),
+    render: ([...ary]) => Math.min(...ary.flat().flat().filter(isNumber).map(v => Number(v))),
   },
   {
     key: 'IF',
@@ -51,27 +51,27 @@ const baseFormulas = [
   {
     key: 'AND',
     title: tf('formula.and'),
-    render: ([...ary]) => ary.flat().every(it => it),
+    render: ([...ary]) => ary.flat().flat().every(it => it),
   },
   {
     key: 'OR',
     title: tf('formula.or'),
-    render: ([...ary]) => ary.flat().some(it => it),
+    render: ([...ary]) => ary.flat().flat().some(it => it),
   },
   {
     key: 'CONCAT',
     title: tf('formula.concat'),
-    render: ([...ary]) => ary.flat().join(''),
+    render: ([...ary]) => ary.flat().flat().join(''),
   },
   {
     key: 'PRODUCT',
     title: tf('formula.product'),
-    render: ([...ary]) => ary.flat().filter(isNumber).reduce((a, b) => Number(a) * Number(b),1),
+    render: ([...ary]) => ary.flat().flat().filter(isNumber).reduce((a, b) => Number(a) * Number(b),1),
   },
   {
     key: 'COUNT',
     title: tf('formula.count'),
-    render: ary => ary.flat().filter(isNumber).length,
+    render: ary => ary.flat().flat().filter(isNumber).length,
   },
   {
     key: 'MOD',
@@ -122,9 +122,16 @@ const baseFormulas = [
     key: 'VLOOKUP',
     title: tf('formula.vlookup'),
     render: ([lookupValue, table, colIndex, rangeLookup]) => {
-      console.log(arguments);
-    }
-    
+      console.log(lookupValue, table, colIndex, rangeLookup);
+      const index = table[0].findIndex(s => s == lookupValue);
+      if(index >= 0 && colIndex <= table.length) {
+        const lookup = table[colIndex-1];
+        const value = lookup[index];
+        return value;
+      }
+      return "#N/A";
+    },
+
   }
   /* support:  1 + A1 + B2 * 3
   {

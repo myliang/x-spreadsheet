@@ -7,6 +7,7 @@ function buildRange(stack) {
   const [sx,sy] = expr2xy(stack.pop());
   // console.log('::', sx, sy, ex, ey);
   // let rangelen = 0;
+  const rows = [];
   let items = [];
   // TODO: what about rectangular selection
   for (let x = sx; x <= ex; x += 1) {
@@ -14,8 +15,11 @@ function buildRange(stack) {
       items.push(xy2expr(x,y));
       // rangelen += 1;
     }
+    rows.push(items);
+    items = [];
   }
-  return items;
+  
+  return rows;
 }
 
 // Converting infix expression to a suffix expression

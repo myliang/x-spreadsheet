@@ -30,22 +30,28 @@
         0: {
           cells: {
             0: { text: '1' },
-            1: { text: "=A1"}
+            1: { text: "One"}
           },
         },
         1: {
           cells: {
             0: { text: '2' },
+            1: { text: "Two"}
+
           }
         },
         2: {
           cells: {
             0: { text: '3' },
+            1: { text: "Three"}
+
           }
         },
         3: {
           cells: {
             0: { text: '4' },
+            1: { text: "Four"}
+
           }
         }
       };
@@ -118,12 +124,12 @@
           console.log('>>>> data is ', data);
         });
 
-      setTimeout(() => {
-        // xs.loadData([{ rows }]);
-        xs.cellText(14, 3, 'cell-text').reRender();
-        console.log('cell(8, 8):', xs.cell(8, 8));
-        console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
-      }, 5000);
+      // setTimeout(() => {
+      //   // xs.loadData([{ rows }]);
+      //   xs.cellText(14, 3, 'cell-text').reRender();
+      //   console.log('cell(8, 8):', xs.cell(8, 8));
+      //   console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
+      // }, 5000);
     }
   </script>
   <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->
