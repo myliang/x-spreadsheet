@@ -169,12 +169,12 @@ class Rows {
                       // dragging selecyion should still work
                       // we should consider locking ($A$1)
                       if (sri === dsri) {
-                        // was
-                        xn = n - 1;
+                        // was xn = n - 1 
+                        xn = n - 1 + (dsci-sci)-1;
                         // xn = dsci - sci;
                         // if (isAdd) xn -= 1;
                       } else {
-                        yn = n - 1;
+                        yn = n - 1 + (dsri-sri)-1;
                         // yn = dsri - sri;
                       }
                       if (/^\d+$/.test(word)) return word;
