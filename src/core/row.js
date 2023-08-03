@@ -162,7 +162,7 @@ class Rows {
                   console.log(`n: ${n}`);
 
                   if (text[0] === '=') {
-                    ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
+                    ncell.text = text.replace(/\$?[a-zA-Z]{1,3}\$?\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
                       // TODO: handle more cases
                       // copy paste with more than 1 apart

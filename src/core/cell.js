@@ -41,9 +41,11 @@ const infixExprToSuffixExpr = (src) => {
       if (c === '$') {
         locked = true;
       } else if (c >= 'a' && c <= 'z') {
-        subStrs.push((locked ? "$" : "") + c.toUpperCase());
+        subStrs.push((locked ? '$' : '') + c.toUpperCase());
+        locked  = false;
       } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c === '.') {
-        subStrs.push((locked ? "$" : "") + c);
+        subStrs.push((locked ? '$' : '') + c);
+        locked = false;
       } else if (c === '"') {
         i += 1;
         while (src.charAt(i) !== '"') {

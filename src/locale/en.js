@@ -79,7 +79,8 @@ export default {
     floor: 'Floor',
     len: 'Length',
     replace: 'Replace',
-    substitute: 'Substitute'
+    substitute: 'Substitute',
+    vlookup: 'Vertical Lookup',
   },
   validation: {
     required: 'it must be required',
