@@ -72,6 +72,7 @@ class Spreadsheet {
     if (this.bottombar !== null) {
       this.bottombar.clear();
     }
+    this.sheetIndex = 1;
     this.datas = [];
     if (ds.length > 0) {
       for (let i = 0; i < ds.length; i += 1) {
