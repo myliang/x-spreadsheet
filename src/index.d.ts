@@ -106,6 +106,7 @@ declare module 'x-data-spreadsheet' {
       [key: number]: ColProperties;
     };
     rows?: {
+      len?: number;
       [key: number]: RowData
     };
   }
@@ -138,6 +139,7 @@ declare module 'x-data-spreadsheet' {
       bottom?: string[];
       left?: string[];
     };
+    format?: string;
   }
   export interface Editor {}
   export interface Element {}

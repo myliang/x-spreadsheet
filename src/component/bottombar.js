@@ -114,6 +114,7 @@ export default class Bottombar {
       const v = item.html();
       const input = new FormInput('auto', '');
       input.val(v);
+      // TODO: support ENTER key
       input.input.on('blur', ({ target }) => {
         const { value } = target;
         const nindex = this.dataNames.findIndex(it => it === v);
