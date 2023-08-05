@@ -89,7 +89,8 @@ declare module 'x-data-spreadsheet' {
   export interface RowData {
     cells: {
       [key: number]: CellData;
-    }
+    },
+    hidden?: boolean; // not used
   }
 
   /**
@@ -121,7 +122,13 @@ declare module 'x-data-spreadsheet' {
     valign?: 'top' | 'middle' | 'bottom';
     font?: {
       bold?: boolean;
+      italic?: boolean;
+      name?: string;
+      family?: number; // not yet used
+      size?: number;
     }
+    strike?: boolean;
+    underline?: boolean;
     bgcolor?: string;
     textwrap?: boolean;
     color?: string;

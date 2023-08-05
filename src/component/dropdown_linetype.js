@@ -28,6 +28,6 @@ export default class DropdownLineType extends Dropdown {
         h('div', `${cssPrefix}-line-type`).html(it[1]),
       ));
 
-    super(icon, 'auto', false, 'bottom-left', ...lineTypeEls);
+    super(icon, 'auto', false, 'bottom-right', ...lineTypeEls);
   }
 }
