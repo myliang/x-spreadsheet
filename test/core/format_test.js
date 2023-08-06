@@ -8,8 +8,8 @@ import {
 const gformats = formatm;
 describe('formatm', () => {
   describe('#render()', () => {
-    it('normal: should return AC when the value is AC', () => {
-      assert.equal(gformats.normal.render('AC'), 'AC');
+    it('general: should return AC when the value is AC', () => {
+      assert.equal(gformats.general.render('AC'), 'AC');
     });
     it('text: should return abc when the value is abc', () => {
       assert.equal(gformats.text.render('abc'), 'abc');

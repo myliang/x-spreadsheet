@@ -121,10 +121,6 @@ class Rows {
     const [rn, cn] = srcCellRange.size();
     const [drn, dcn] = dstCellRange.size();
 
-    console.log(`sri:${sri} sci:${sci} eri:${eri} eci:${eci}`);
-    console.log(`dsri:${dsri} dsci:${dsci} deri:${deri} deci:${deci}`);
-    console.log(`rn: ${rn} cn: ${cn}`);
-    console.log(`drn: ${drn} dcn: ${dcn}`);
     // console.log(srcIndexes, dstIndexes);
     let isAdd = true;
     let dn = 0;
@@ -134,7 +130,6 @@ class Rows {
       else dn = dcn;
     }
 
-    console.log(`isAdd: ${isAdd} dn: ${dn}`);
 
     for (let i = sri; i <= eri; i += 1) {
       if (this._[i]) {
@@ -143,12 +138,9 @@ class Rows {
             for (let ii = dsri; ii <= deri; ii += rn) {
               for (let jj = dsci; jj <= deci; jj += cn) {
 
-                console.log(`i: ${i} j: ${j}`);
-                console.log(`ii: ${ii} jj: ${jj}`);
 
                 const nri = ii + (i - sri);
                 const nci = jj + (j - sci);
-                console.log(`nri: ${nri} nci: ${nci}`);
 
                 const ncell = helper.cloneDeep(this._[i].cells[j]);
                 // ncell.text

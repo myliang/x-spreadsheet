@@ -50,7 +50,7 @@ export default {
     orientations: ['Landscape', 'Portrait'],
   },
   format: {
-    normal: 'Normal',
+    general: 'General',
     text: 'Plain Text',
     number: 'Number',
     percent: 'Percent',
@@ -61,6 +61,7 @@ export default {
     time: 'Time',
     datetime: 'Date time',
     duration: 'Duration',
+    longdate: 'Long Date'
   },
   formula: {
     sum: 'Sum',

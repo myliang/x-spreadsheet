@@ -1,3 +1,4 @@
+import numfmt from 'numfmt';
 import { stringAt } from '../core/alphabet';
 import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
@@ -7,6 +8,7 @@ import { formatm } from '../core/format';
 import {
   Draw, DrawBox, thinLineWidth, npx,
 } from '../canvas/draw';
+
 // gobal var
 const cellPaddingWidth = 5;
 const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
@@ -81,8 +83,13 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
       cellText = cell.text || '';
     }
     if (style.format) {
-      // console.log(data.formatm, '>>', cell.format);
-      cellText = formatm[style.format].render(cellText);
+      const p = numfmt.parseValue(cellText);
+      if(p){
+        const {v} = p;
+        // console.log(data.formatm, '>>', cell.format);
+        cellText = formatm[style.format].render(v);
+      }
+
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
