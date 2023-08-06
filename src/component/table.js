@@ -1,4 +1,3 @@
-import numfmt from 'numfmt';
 import { stringAt } from '../core/alphabet';
 import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
@@ -83,13 +82,13 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
       cellText = cell.text || '';
     }
     if (style.format) {
-      const p = numfmt.parseValue(cellText);
-      if(p){
-        const {v} = p;
-        // console.log(data.formatm, '>>', cell.format);
-        cellText = formatm[style.format].render(v);
-      }
-
+      // const p = numfmt.parseValue(cellText);
+      // if (p) {
+      //   const { v } = p;
+      //   // console.log(data.formatm, '>>', cell.format);
+      //   cellText = formatm[style.format].render(v);
+      // }
+      cellText = formatm.render(style.format, cellText);
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);

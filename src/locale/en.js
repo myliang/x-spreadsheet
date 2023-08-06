@@ -61,7 +61,8 @@ export default {
     time: 'Time',
     datetime: 'Date time',
     duration: 'Duration',
-    longdate: 'Long Date'
+    longdate: 'Long Date',
+    dateformat: 'mm/dd/yyyy',
   },
   formula: {
     sum: 'Sum',
