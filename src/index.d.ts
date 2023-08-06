@@ -116,6 +116,10 @@ declare module 'x-data-spreadsheet' {
    */
   export interface SpreadsheetData {
     [index: number]: SheetData;
+    state?: {
+      sheetName?: string;
+      selector?: any
+    }
   }
 
   export interface CellStyle {
