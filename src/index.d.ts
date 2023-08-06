@@ -109,6 +109,15 @@ declare module 'x-data-spreadsheet' {
       len?: number;
       [key: number]: RowData
     };
+    autofilter?: {
+      ref: string;
+      filters?: {
+        ci: number,
+        operator: string,
+        value: string[]
+      }[];
+      sort?: any
+    }
   }
 
   /**
