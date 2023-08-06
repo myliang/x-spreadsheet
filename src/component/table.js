@@ -81,13 +81,8 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     } else {
       cellText = cell.text || '';
     }
-    if (style.format) {
-      // const p = numfmt.parseValue(cellText);
-      // if (p) {
-      //   const { v } = p;
-      //   // console.log(data.formatm, '>>', cell.format);
-      //   cellText = formatm[style.format].render(v);
-      // }
+    if (style.format !== undefined) {
+
       cellText = formatm.render(style.format, cellText);
     }
     const font = Object.assign({}, style.font);
