@@ -15,7 +15,7 @@ export default class DropdownAlign extends Dropdown {
         this.setTitle(it);
         this.change(it);
       }));
-    super(icon, 'auto', true, 'bottom-left', ...naligns);
+    super(icon, 'auto', true, 'bottom-left','dd-align', ...naligns);
   }
 
   setTitle(align) {

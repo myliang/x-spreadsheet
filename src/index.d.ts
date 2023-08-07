@@ -129,6 +129,19 @@ declare module 'x-data-spreadsheet' {
       sheetName?: string;
       selector?: any
     }
+    metadata?: {
+      creator?: string,
+      category?: string,
+      company?: string,
+      created?: Date,
+      creator?: string,
+      keywords?: string,
+      lastModifiedBy?: string,
+      manager?: string,
+      modified?: Date,
+      subject?: string,
+      title?: string,
+    }
   }
 
   export interface CellStyle {

@@ -3,8 +3,8 @@ import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 export default class Dropdown extends Element {
-  constructor(title, width, showArrow, placement, ...children) {
-    super('div', `${cssPrefix}-dropdown ${placement}`);
+  constructor(title, width, showArrow, placement, classname, ...children) {
+    super('div', `${cssPrefix}-dropdown ${placement} ${classname||''}`);
     this.title = title;
     this.change = () => {};
     this.headerClick = () => {};

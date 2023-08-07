@@ -11,7 +11,7 @@ import { tf } from '../locale/locale';
 class DropdownMore extends Dropdown {
   constructor(click) {
     const icon = new Icon('ellipsis');
-    super(icon, 'auto', false, 'top-left');
+    super(icon, 'auto', false, 'top-left', 'dd-more');
     this.contentClick = click;
   }
 

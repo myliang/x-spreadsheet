@@ -81,8 +81,9 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     } else {
       cellText = cell.text || '';
     }
-    if (style.format !== undefined) {
-
+    if (typeof (style.format) !== undefined
+      && (typeof (cellText) === 'string') || (typeof (cellText) === 'number')
+    ) {
       cellText = formatm.render(style.format, cellText);
     }
     const font = Object.assign({}, style.font);

@@ -22,7 +22,7 @@ export default class DropdownFormat extends Dropdown {
       }
       return item;
     });
-    super('General', '220px', true, 'bottom-left', ...nformats);
+    super('General', '220px', true, 'bottom-left','dd-format', ...nformats);
   }
 
   setTitle(key) {
