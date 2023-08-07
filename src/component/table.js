@@ -179,7 +179,7 @@ function renderSelectedHeaderCell(x, y, w, h) {
   
   draw.save();
   draw
-    .attr({ fillStyle: `${color}14` })
+    .attr({ fillStyle: `${color}` })
     // .attr({ fillStyle: 'rgba(75, 137, 255, 0.08)' })
     .fillRect(x, y, w, h);
   draw.restore();
@@ -301,7 +301,7 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
 
   draw.save()
     .translate(fw, fh)
-    .attr({ strokeStyle: `${color}99` })
+    .attr({ strokeStyle: `${color}` })
     // .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' })
     ;
   draw.line([0, fth], [twidth, fth]);
