@@ -174,8 +174,13 @@ function renderContent(viewRange, fw, fh, tx, ty) {
 
 function renderSelectedHeaderCell(x, y, w, h) {
   const { draw } = this;
+  // const {canvas} = draw.context;
+  const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-color') || '#4b89ff';
+  
   draw.save();
-  draw.attr({ fillStyle: 'rgba(75, 137, 255, 0.08)' })
+  draw
+    .attr({ fillStyle: `${color}14` })
+    // .attr({ fillStyle: 'rgba(75, 137, 255, 0.08)' })
     .fillRect(x, y, w, h);
   draw.restore();
 }
@@ -292,9 +297,13 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const { draw, data } = this;
   const twidth = data.viewWidth() - fw;
   const theight = data.viewHeight() - fh;
+  const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-color') || '#4b89ff';
+
   draw.save()
     .translate(fw, fh)
-    .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' });
+    .attr({ strokeStyle: `${color}99` })
+    // .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' })
+    ;
   draw.line([0, fth], [twidth, fth]);
   draw.line([ftw, 0], [ftw, theight]);
   draw.restore();
