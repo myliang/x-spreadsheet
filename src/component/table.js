@@ -175,7 +175,7 @@ function renderContent(viewRange, fw, fh, tx, ty) {
 function renderSelectedHeaderCell(x, y, w, h) {
   const { draw } = this;
   // const {canvas} = draw.context;
-  const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-color') || '#4b89ff';
+  const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-fill') || '#4b89ff19';
   
   draw.save();
   draw
@@ -297,7 +297,7 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const { draw, data } = this;
   const twidth = data.viewWidth() - fw;
   const theight = data.viewHeight() - fh;
-  const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-color') || '#4b89ff';
+  const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-stroke') || '#4b89ff99';
 
   draw.save()
     .translate(fw, fh)
