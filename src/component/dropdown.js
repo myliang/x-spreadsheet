@@ -1,6 +1,7 @@
 import { Element, h } from './element';
 import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
+import { buildImg } from './icon';
 
 export default class Dropdown extends Element {
   constructor(title, width, showArrow, placement, classname, ...children) {
@@ -29,7 +30,8 @@ export default class Dropdown extends Element {
     }).children(
       this.title,
       showArrow ? h('div', `${cssPrefix}-icon arrow-right`).child(
-        h('div', `${cssPrefix}-icon-img arrow-down`),
+        // h('div', `${cssPrefix}-icon-img arrow-down`),
+        buildImg('arrow-down') 
       ) : '',
     );
     this.children(this.headerEl, this.contentEl);
