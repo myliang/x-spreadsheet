@@ -24,7 +24,28 @@ const alignbottom = require('../../assets/align-bottom.svg');
 const textwrap = require('../../assets/textwrap.svg');
 const filter = require('../../assets/filter.svg');
 const formula = require('../../assets/formulas.svg');
-const downArrow = require('../../assets/down-arrow.svg');
+const arrowDown = require('../../assets/arrow-down.svg');
+const arrowRight = require('../../assets/arrow-right.svg');
+const link = require('../../assets/link.svg');
+const graph = require('../../assets/graph.svg');
+const freeze = require('../../assets/freeze.svg');
+const ellipsis = require('../../assets/ellipsis.svg');
+const add = require('../../assets/add.svg');
+const borderall = require('../../assets/border-all.svg');
+const borderinside = require('../../assets/border-inside.svg');
+const borderhorizontal = require('../../assets/border-horizontal.svg');
+const bordervertical = require('../../assets/border-vertical.svg');
+const borderoutside = require('../../assets/border-outside.svg');
+const borderleft = require('../../assets/border-left.svg');
+const bordertop = require('../../assets/border-top.svg');
+const borderright = require('../../assets/border-right.svg');
+const borderbottom = require('../../assets/border-bottom.svg');
+const bordernone = require('../../assets/border-none.svg');
+const linecolor = require('../../assets/line-color.svg');
+const linetype = require('../../assets/line-type.svg');
+const chevronleft = require('../../assets/chevron-left.svg');
+const chevronright = require('../../assets/chevron-right.svg');
+const close = require('../../assets/close.svg');
 
 const icons = {
   undo,
@@ -48,10 +69,30 @@ const icons = {
   textwrap,
   autofilter: filter,
   formula,
-  'arrow-down': downArrow,
+  'arrow-down': arrowDown,
+  'arrow-right': arrowRight,
+  link,
+  graph,
+  freeze,
+  ellipsis,
+  add,
+  'border-all': borderall,
+  'border-inside': borderinside,
+  'border-horizontal': borderhorizontal,
+  'border-vertical': bordervertical,
+  'border-outside': borderoutside,
+  'border-left': borderleft,
+  'border-top': bordertop,
+  'border-right': borderright,
+  'border-bottom': borderbottom,
+  'border-none': bordernone,
+  'line-color': linecolor,
+  'line-type': linetype,
+  'chevron-left': chevronleft,
+  'chevron-right': chevronright,
+  close,
 };
 
-console.log(icons);
 
 export const buildImg = (name) => {
   const icon = h('img');
