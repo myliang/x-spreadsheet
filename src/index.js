@@ -8,7 +8,7 @@ import { locale } from './locale/locale';
 import './index.less';
 
 
-class Spreadsheet {
+export default class Spreadsheet {
   constructor(selectors, options = {}) {
     let targetEl = selectors;
     this.options = { showBottomBar: true, showPrint: true, showValidation: true, ...options };
@@ -136,7 +136,10 @@ if (window) {
   window.x_spreadsheet.locale = (lang, message) => locale(lang, message);
 }
 
-export default Spreadsheet;
-export {
-  spreadsheet,
-};
+// export default Spreadsheet;
+// export {
+//   spreadsheet,
+// };
+// exports.Spreadsheet = Spreadsheet;
+exports.Spreadsheet = Spreadsheet;
+
