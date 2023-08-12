@@ -2,6 +2,7 @@ body {
   margin: 0;
 }
 .x-spreadsheet {
+  --test: #666;
   --accent-color: #4b89ff;
   --canvas-header-fill: rgba(75, 137, 255, 0.08);
   --canvas-header-stroke: rgba(75, 137, 255, 0.6);
