@@ -6,13 +6,19 @@ body {
   --canvas-header-fill: rgba(75, 137, 255, 0.08);
   --canvas-header-stroke: rgba(75, 137, 255, 0.6);
   --accent-color-halffaded: rgba(75, 137, 255, 0.6);
+  --primary-color: #2185D0;
+  --primary-hover-color: #1678c2;
+  --border-color: #e9e9e9;
+  --background: #fff;
+  --tooltip-background: #000000;
+  --tooltip-color: #33f;
   font-size: 13px;
   line-height: normal;
   user-select: none;
   -moz-user-select: none;
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: content-box;
-  background: #fff;
+  background: var(--background);
   -webkit-font-smoothing: antialiased;
 }
 .x-spreadsheet textarea {
@@ -29,9 +35,9 @@ body {
   font-family: inherit;
   position: absolute;
   padding: 5px 10px;
-  color: #fff;
+  color: var(--tooltip-color);
   border-radius: 1px;
-  background: #000000;
+  background: var(--tooltip-background);
   font-size: 12px;
   z-index: 201;
 }

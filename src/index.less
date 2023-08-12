@@ -66,8 +66,13 @@ body {
   --accent-color: @accent-color;
   --canvas-header-fill: fade(@accent-color, 8%);
   --canvas-header-stroke: fade(@accent-color, 60%);
-
   --accent-color-halffaded: fade(@accent-color, 60%);
+  --primary-color: @primary-color;
+  --primary-hover-color: @primary-hover-color;
+  --border-color: @border-color;
+  --background: #fff;
+  --tooltip-background: rgba(0, 0, 0, 1);
+  --tooltip-color: #33f;
 
   font-size: 13px;
   line-height: normal;
@@ -75,7 +80,7 @@ body {
   -moz-user-select: none;
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: content-box;
-  background: #fff;
+  background: var(--background);
   -webkit-font-smoothing: antialiased;
 
   textarea {
@@ -99,9 +104,9 @@ body {
   font-family: inherit;
   position: absolute;
   padding: 5px 10px;
-  color: #fff;
+  color: var(--tooltip-color);
   border-radius: 1px;
-  background: rgba(0, 0, 0, 1);
+  background: var(--tooltip-background);
   font-size: 12px;
   z-index: 201;
 
