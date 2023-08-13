@@ -49,13 +49,13 @@
 
 // method
 .type-primary() {
-  color: #fff;
-  background-color: @primary-color;
+  color: var(--background);
+  background-color: var(--text-color);
 
   &:hover,
   &.active {
-    color: #fff;
-    background-color: @primary-hover-color;
+    color: var(--background);
+    background-color: var(--item-hover);
   }
 }
 
@@ -85,17 +85,17 @@ body {
 
   --tooltip-background: hsl(var(--text-color-hsl) ~"/" 1.0);
   --tooltip-color: hsl(var(--background-hsl));
-  --box-shadow-1: hsl(var(--text-color-hsl), 0.14);
-  --box-shadow-2: hsl(var(--text-color-hsl), 0.12);
-  --box-shadow-3: hsl(var(--text-color-hsl), 0.20);
-  --box-shadow: hsl(var(--text-color-hsl), .3);
-  --dropdown-shadow: hsl(var(--text-color-hsl), 0.07);
+  --box-shadow-1: hsl(var(--text-color-hsl) ~"/" 0.14);
+  --box-shadow-2: hsl(var(--text-color-hsl) ~"/" 0.12);
+  --box-shadow-3: hsl(var(--text-color-hsl) ~"/" 0.20);
+  --box-shadow: hsl(var(--text-color-hsl) ~"/" .3);
+  --dropdown-shadow: hsl(var(--text-color-hsl) ~"/" 0.07);
 
   --scrollbar-bgcolor: #f4f5f8; 
   --scollbar-color: rgb(from var(--accent-color) h s calc(l + 5%));
-  --item-hover: rgba(var(--text-color), .05);
-  --divider: rgba(var(--text-color), .1);
-  --menu-divider: #e8eaed;
+  --item-hover: hsl(var(--text-color-hsl) ~"/" .05);
+  --divider: hsl(var(--text-color-hsl) ~"/" .10);
+  --menu-divider: hsl(var(--text-color-hsl) ~"/" .10);
   --toolbar-bg-active: hsl(var(--text-color-hsl) ~"/" 0.15);
 
 }
@@ -827,7 +827,7 @@ body {
 
 .@{css-prefix}-calendar {
   color: rgba(0, 0, 0, .65);
-  background: #ffffff;
+  background: var(--background);
   user-select: none;
 
   .calendar-header {
@@ -836,7 +836,7 @@ body {
     text-align: center;
     width: 100%;
     float: left;
-    background: #f9fafb;
+    background: var(--background-secondary);
 
     .calendar-header-left {
       padding-left: 5px;
@@ -853,7 +853,7 @@ body {
       }
 
       a:hover {
-        background: rgba(0, 0, 0, .08);
+        background: var(--item-hover);
       }
     }
   }
@@ -894,7 +894,7 @@ body {
 }
 
 .@{css-prefix}-datepicker {
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, .2);
+  box-shadow: 2px 2px 5px var(--box-shadow);
   position: absolute;
   left: 0;
   top: calc(100% + 5px);
@@ -922,8 +922,8 @@ body {
   font-size: 1em;
   font-weight: 700;
   padding: .75em 1em;
-  color: rgba(0, 0, 0, .6);
-  background: #E0E1E2;
+  color: var(--text-color-muted);
+  background: var(--background-secondary);
   text-decoration: none;
   font-family: "Lato", "proxima-nova", "Helvetica Neue", Arial, sans-serif;
   //box-shadow: 0px 1px 2px -1px rgba(255,255,255,0.5) inset, 0px -2px 0px 0px rgba(0,0,0,0.1) inset;
@@ -936,8 +936,8 @@ body {
 
   &.active,
   &:hover {
-    background-color: #C0C1C2;
-    color: rgba(0, 0, 0, .8);
+    background-color: var(--item-hover);
+    color: var(--text-color);
   }
 
   &.primary {
