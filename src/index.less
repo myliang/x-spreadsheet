@@ -79,11 +79,15 @@ body {
  
   --text-color-hsl: 0deg 100% 100%;
   --background-hsl: 220deg 50% 15%;
+  --background-alt-hsl: 220deg 50% 35%;
+
+  --background-secondary-hsl: 220deg 60% 25%;
+  --background-secondary-alt-hsl: 220deg 60% 45%;
 
   --background: hsl(var(--background-hsl));
-  --background-secondary: hsl(var(--background-hsl) ~"/" 0.95);
-  --background-alt: hsl(var(--background-hsl) ~"/" 0.65);
-  --background-secondary-alt: hsl(var(--background-hsl) ~"/" 0.85);
+  --background-secondary: hsl(var(--background-secondary-hsl));
+  --background-alt: hsl(var(--background-alt-hsl));
+  --background-secondary-alt: hsl(var(--background-secondary-alt-hsl));
 
   // --canvas-header-fill: hsl(var(--accent-color-hsl) ~"/" 0.08);
   // --canvas-header-stroke: hsl(var(--accent-color-hsl) ~"/" 0.6);
@@ -254,7 +258,7 @@ body {
   .@{css-prefix}-dropdown-content {
     position: absolute;
     z-index: 200;
-    background: var(--background);
+    background: var(--background-secondary);
     box-shadow: 1px 2px 5px 2px var(--dropdown-shadow);
 
 
