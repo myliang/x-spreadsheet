@@ -30,7 +30,7 @@
 @black-hover-color: #27292a;
 
 // base
-@border-style: 1px solid @border-color;
+// @border-style: 1px solid @border-color;
 @icon-size: 18px;
 @line-height: 1.25em;
 @border-color: #e9e9e9;
@@ -72,12 +72,14 @@ body {
   --text-color-hsl: 359deg 100% 0%;
   --background-hsl: 0deg 100% 100%;
   --background: hsl(var(--background-hsl));
+  --background-secondary: hsl(var(--background-hsl) ~"/" 0.95);
+  --background-alt: hsl(var(--background-hsl) ~"/" 0.65);
+  --background-secondary-alt: hsl(var(--background-hsl) ~"/" 0.85);
 
   // --canvas-header-fill: hsl(var(--accent-color-hsl) ~"/" 0.08);
   // --canvas-header-stroke: hsl(var(--accent-color-hsl) ~"/" 0.6);
   --accent-color-muted: hsl(var(--accent-color-hsl) ~"/" 0.6);
 
-  --background-secondary: hsl(var(--background-hsl) ~"/" 0.95);
 
 
   --text-color: hsl(var(--text-color-hsl));
@@ -97,7 +99,8 @@ body {
   --divider: hsl(var(--text-color-hsl) ~"/" .10);
   --menu-divider: hsl(var(--text-color-hsl) ~"/" .10);
   --toolbar-bg-active: hsl(var(--text-color-hsl) ~"/" 0.15);
-
+  --form-input: hsl(var(--background-hsl) ~"/" 0.87);
+  --form-error: @red-color;
 }
 .@{css-prefix} {
   font-size: 13px;
@@ -964,11 +967,11 @@ body {
     line-height: @form-field-height;
     height: @form-field-height;
     padding: 0 8px;
-    background: #fff;
-    border: 1px solid #e9e9e9;
+    background: var(--background);
+    border: 1px solid var(--border-color);
     border-radius: 3px;
     transition: box-shadow .1s ease, border-color .1s ease;
-    box-shadow: inset 0 1px 2px hsla(0, 0%, 4%, .06);
+    box-shadow: inset 0 1px 2px var(--box-shadow);
 
     &:focus {
       border-color: var(--accent-color);
@@ -980,13 +983,13 @@ body {
 .@{css-prefix}-form-select {
   position: relative;
   display: inline-block;
-  background: #fff;
+  background: var(--background);
   border: @input-border;
   border-radius: 2px;
   cursor: pointer;
-  color: rgba(0, 0, 0, .87);
+  color: var(--text-color-muted);
   user-select: none;
-  box-shadow: inset 0 1px 2px hsla(0, 0%, 4%, .06);
+  box-shadow: inset 0 1px 2px var(--box-shadow);
 
   .input-text {
     text-overflow: ellipsis;
@@ -1028,7 +1031,7 @@ body {
 
     .@{css-prefix}-form-select,
     input {
-      border-color: #f04134;
+      border-color: var(--form-error);
     }
   }
 
@@ -1048,7 +1051,7 @@ body {
   height: 100%;
   text-align: center;
   vertical-align: middle;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--background-alt);
   opacity: 0;
   -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
@@ -1071,15 +1074,15 @@ form fieldset {
     display: block;
     margin-bottom: .5em;
     font-size: 1em;
-    color: #666;
+    color: var(--text-color-muted);
   }
 
   select {
     font-size: 1.1em;
     width: 100%;
-    background-color: #fff;
+    background-color: var(--background);
     border: none;
-    border-bottom: 2px solid #ddd;
+    border-bottom: 2px solid var(--border-color);
     padding: .5em .85em;
     border-radius: 2px;
   }
@@ -1096,22 +1099,22 @@ form fieldset {
   color: rgba(0, 0, 0, .87);
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, .1);
-  background-color: #fff;
+  border: 1px solid var(--border-color);
+  background-color: var(--background);
   background-clip: padding-box;
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 8px;
+  box-shadow: var(--box-shadow-1) 0px 2px 8px;
 }
 
 .@{css-prefix}-toast {
-  background-color: rgba(255, 255, 255, .85);
+  background-color: var(--background-secondary);
 }
 
 .@{css-prefix}-modal-header,
 .@{css-prefix}-toast-header {
   font-weight: 600;
   background-clip: padding-box;
-  background-color: rgba(255, 255, 255, .85);
-  border-bottom: 1px solid rgba(0, 0, 0, .05);
+  background-color:var(--background-secondary-alt);
+  border-bottom: 1px solid var(--border-color);
   border-radius: 4px 4px 0 0;
 
   .@{css-prefix}-icon {
@@ -1122,18 +1125,18 @@ form fieldset {
 
     &:hover {
       opacity: 1;
-      background: rgba(0, 0, 0, 0.08);
+      background: var(--item-hover);
     }
   }
 }
 
 .@{css-prefix}-toast-header {
-  color: @orange-color;
+  color: var(--accent-color-muted);
 }
 
 .@{css-prefix}-modal-header {
-  border-bottom: @border-style;
-  background: rgba(0, 0, 0, .08);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--text-color-muted);
   font-size: 1.0785em;
 }
 
