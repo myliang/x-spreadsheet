@@ -35,6 +35,17 @@ function getDrawBox(data, rindex, cindex, yoffset = 0) {
   } = data.cellRect(rindex, cindex);
   return new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
 }
+
+function getFillStyle(draw) {
+  return global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-header') || '#f4f5f8';
+}
+
+function getStrokeStyle(draw) {
+  return global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-stroke') || '#e6e6e6';
+}
+
 /*
 function renderCellBorders(bboxes, translateFunc) {
   const { draw } = this;
@@ -206,11 +217,10 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
 
   draw.save();
   // draw rect background
-  const color = global.getComputedStyle(draw.ctx.canvas)
-    .getPropertyValue('--table-header') || '#f4f5f8';
+  const fillStyle = getFillStyle(draw);
 
   // draw.attr(tableFixedHeaderCleanStyle);
-  draw.attr({ fillStyle: `${color}` });
+  draw.attr({ fillStyle });
   if (type === 'all' || type === 'left') draw.fillRect(0, nty, w, sumHeight);
   if (type === 'all' || type === 'top') draw.fillRect(ntx, 0, sumWidth, h);
 
@@ -220,7 +230,15 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   // console.log(data.selectIndexes);
   // draw text
   // text font, align...
-  draw.attr(tableFixedHeaderStyle());
+  const style = tableFixedHeaderStyle();
+ 
+
+  const strokeStyle = getStrokeStyle(draw);
+
+  if (fillStyle) (style.fillStyle = fillStyle);
+  if (strokeStyle) (style.strokeStyle = strokeStyle);
+
+  draw.attr(style);
   // y-header-text
   if (type === 'all' || type === 'left') {
     data.rowEach(viewRange.sri, viewRange.eri, (i, y1, rowHeight) => {
@@ -233,7 +251,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
       draw.fillText(ii + 1, w / 2, y + (rowHeight / 2));
       if (i > 0 && data.rows.isHide(i - 1)) {
         draw.save();
-        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.attr({ strokeStyle });
         draw.line([5, y + 5], [w - 5, y + 5]);
         draw.restore();
       }
@@ -253,7 +271,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
       draw.fillText(stringAt(ii), x + (colWidth / 2), h / 2);
       if (i > 0 && data.cols.isHide(i - 1)) {
         draw.save();
-        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.attr({ strokeStyle });
         draw.line([x + 5, 5], [x + 5, h - 5]);
         draw.restore();
       }
@@ -264,11 +282,15 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   draw.restore();
 }
 
+
+
 function renderFixedLeftTopCell(fw, fh) {
+
   const { draw } = this;
+  const fillStyle = getFillStyle(draw);
   draw.save();
   // left-top-cell
-  draw.attr({ fillStyle: '#f4f5f8' })
+  draw.attr({ fillStyle })
     .fillRect(0, 0, fw, fh);
   draw.restore();
 }
@@ -279,12 +301,10 @@ function renderContentGrid({
   const { draw, data } = this;
   const { settings } = data;
 
-  const fillStyle = global.getComputedStyle(draw.ctx.canvas)
-      .getPropertyValue('--table-header') || '#f4f5f8';
+  const fillStyle = getFillStyle(draw);
 
-const strokeStyle = global.getComputedStyle(draw.ctx.canvas)
-      .getPropertyValue('--table-stroke') || '#e6e6e6';
-    
+  const strokeStyle = getStrokeStyle(draw);
+
   draw.save();
   draw.attr({
     fillStyle,
@@ -313,6 +333,8 @@ const strokeStyle = global.getComputedStyle(draw.ctx.canvas)
   draw.restore();
 }
 
+
+
 function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const { draw, data } = this;
   const twidth = data.viewWidth() - fw;
@@ -322,9 +344,9 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-s');
   const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-l');
 
-  let color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 60%)`;
+  const color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 60%)`;
 
-  color = '#4b89ff99';
+  // color = '#4b89ff99';
   // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-stroke') || '#4b89ff99';
 
   draw.save()
