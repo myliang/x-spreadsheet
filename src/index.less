@@ -74,6 +74,8 @@ body {
 
   // --accent-color-hsl: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
   --accent-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  --accent-color-hsl: var(--accent-h) var(--accent-s) var(--accent-l);
+
   // --text-color-hsl: 359deg 100% 0%;
   // --background-hsl: 0deg 100% 100%;
  
@@ -91,7 +93,7 @@ body {
   --border-color: hsl(220deg 60% 75%);
   // --canvas-header-fill: hsl(var(--accent-color-hsl) ~"/" 0.08);
   // --canvas-header-stroke: hsl(var(--accent-color-hsl) ~"/" 0.6);
-  --accent-color-muted: hsl(var(--accent-color-hsl) ~"/" 0.6);
+  // --accent-color-muted: hsl(var(--accent-color-hsl) ~"/" 0.6);
 
 
 
@@ -459,7 +461,7 @@ body {
   }
 
   .@{css-prefix}-selector-autofill {
-    border: 1px dashed rgba(var(--text-color) .45); // #606060; // rgba(0, 0, 0, .2);
+    border: 2px dashed hsl(var(--accent-color-hsl) ~"/" .45); // #606060; // rgba(0, 0, 0, .2);
   }
 
   .@{css-prefix}-selector-corner {
@@ -496,7 +498,8 @@ body {
       text-align: start;
       overflow-y: hidden;
       font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
-      color: inherit;
+      color: var(--text-color);
+      background: var(--background-alt);
       white-space: normal;
       word-wrap: break-word;
       line-height: 22px;
