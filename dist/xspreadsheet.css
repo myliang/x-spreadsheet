@@ -2,41 +2,41 @@ body {
   margin: 0;
 }
 .x-spreadsheet {
-  --accent-h: 118;
-  --accent-s: 80%;
-  --accent-l: 80%;
-  --accent-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
-  --accent-color-hsl: var(--accent-h) var(--accent-s) var(--accent-l);
-  --text-color-hsl: 0deg 100% 100%;
-  --background-hsl: 220deg 50% 15%;
-  --background-alt-hsl: 220deg 50% 35%;
-  --background-secondary-hsl: 220deg 60% 25%;
-  --background-secondary-alt-hsl: 220deg 60% 45%;
-  --background: hsl(var(--background-hsl));
-  --background-secondary: hsl(var(--background-secondary-hsl));
-  --background-alt: hsl(var(--background-alt-hsl));
-  --background-secondary-alt: hsl(var(--background-secondary-alt-hsl));
-  --border-color: hsl(220deg 60% 75%);
-  --text-color: hsl(var(--text-color-hsl));
-  --text-color-muted: hsl(var(--text-color-hsl) / 0.6);
-  --tooltip-background: hsl(var(--text-color-hsl) / 1);
-  --tooltip-color: hsl(var(--background-hsl));
-  --box-shadow-1: hsl(var(--text-color-hsl) / 0.14);
-  --box-shadow-2: hsl(var(--text-color-hsl) / 0.12);
-  --box-shadow-3: hsl(var(--text-color-hsl) / 0.2);
-  --box-shadow: hsl(var(--text-color-hsl) / 0.3);
-  --dropdown-shadow: hsl(var(--text-color-hsl) / 0.07);
+  --ss-accent-h: 118;
+  --ss-accent-s: 80%;
+  --ss-accent-l: 80%;
+  --ss-accent-color: hsl(var(--ss-accent-h), var(--ss-accent-s), var(--ss-accent-l));
+  --ss-accent-color-hsl: var(--ss-accent-h) var(--ss-accent-s) var(--ss-accent-l);
+  --ss-text-color-hsl: 0deg 100% 100%;
+  --ss-background-hsl: 220deg 50% 15%;
+  --ss-background-alt-hsl: 220deg 50% 35%;
+  --ss-background-secondary-hsl: 220deg 60% 25%;
+  --ss-background-secondary-alt-hsl: 220deg 60% 45%;
+  --ss-background: hsl(var(--ss-background-hsl));
+  --ss-background-secondary: hsl(var(--ss-background-secondary-hsl));
+  --ss-background-alt: hsl(var(--ss-background-alt-hsl));
+  --ss-background-secondary-alt: hsl(var(--ss-background-secondary-alt-hsl));
+  --ss-border-color: hsl(220deg 60% 75%);
+  --ss-text-color: hsl(var(--ss-text-color-hsl));
+  --ss-text-color-muted: hsl(var(--ss-text-color-hsl) / 0.6);
+  --tooltip-background: hsl(var(--ss-text-color-hsl) / 1);
+  --tooltip-color: hsl(var(--ss-background-hsl));
+  --box-shadow-1: hsl(var(--ss-text-color-hsl) / 0.14);
+  --box-shadow-2: hsl(var(--ss-text-color-hsl) / 0.12);
+  --box-shadow-3: hsl(var(--ss-text-color-hsl) / 0.2);
+  --box-shadow: hsl(var(--ss-text-color-hsl) / 0.3);
+  --dropdown-shadow: hsl(var(--ss-text-color-hsl) / 0.07);
   --scrollbar-bgcolor: #f4f5f8;
-  --scollbar-color: rgb(from var(--accent-color) h s calc(l + 5%));
-  --item-hover: hsl(var(--text-color-hsl) / 0.05);
-  --divider: hsl(var(--text-color-hsl) / 0.1);
-  --menu-divider: hsl(var(--text-color-hsl) / 0.1);
-  --toolbar-bg-active: hsl(var(--text-color-hsl) / 0.15);
-  --form-input: hsl(var(--background-hsl) / 0.87);
+  --scollbar-color: rgb(from var(--ss-accent-color) h s calc(l + 5%));
+  --item-hover: hsl(var(--ss-text-color-hsl) / 0.05);
+  --divider: hsl(var(--ss-text-color-hsl) / 0.1);
+  --menu-divider: hsl(var(--ss-text-color-hsl) / 0.1);
+  --toolbar-bg-active: hsl(var(--ss-text-color-hsl) / 0.15);
+  --form-input: hsl(var(--ss-background-hsl) / 0.87);
   --form-error: #DB2828;
-  --table-header: var(--background-secondary-alt);
-  --table-stroke: var(--border-color);
-  --table-header-text: var(--text-color-muted);
+  --table-header: var(--ss-background-secondary-alt);
+  --table-stroke: var(--ss-border-color);
+  --table-header-text: var(--ss-text-color-muted);
 }
 .x-spreadsheet {
   font-size: 13px;
@@ -45,8 +45,8 @@ body {
   -moz-user-select: none;
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: content-box;
-  background: var(--background);
-  color: var(--text-color-muted);
+  background: var(--ss-background);
+  color: var(--ss-text-color-muted);
   -webkit-font-smoothing: antialiased;
 }
 .x-spreadsheet textarea {
@@ -91,7 +91,7 @@ body {
   padding: 0;
   border-collapse: separate;
   border-spacing: 2;
-  background: var(--background);
+  background: var(--ss-background);
 }
 .x-spreadsheet-color-palette table td {
   margin: 0;
@@ -99,7 +99,7 @@ body {
   border: 1px solid transparent;
 }
 .x-spreadsheet-color-palette table td:hover {
-  border-color: var(--border-color-hover);
+  border-color: var(--ss-border-color-hover);
 }
 .x-spreadsheet-color-palette table td .x-spreadsheet-color-palette-cell {
   width: 16px;
@@ -113,14 +113,14 @@ body {
   padding: 0;
   border-collapse: separate;
   border-spacing: 0;
-  background: var(--background);
+  background: var(--ss-background);
   table-layout: fixed;
 }
 .x-spreadsheet-border-palette table td {
   margin: 0;
 }
 .x-spreadsheet-border-palette .x-spreadsheet-border-palette-left {
-  border-right: 1px solid var(--border-color-hover);
+  border-right: 1px solid var(--ss-border-color-hover);
   padding-right: 6px;
 }
 .x-spreadsheet-border-palette .x-spreadsheet-border-palette-left .x-spreadsheet-border-palette-cell {
@@ -133,7 +133,7 @@ body {
   opacity: 0.8;
 }
 .x-spreadsheet-border-palette .x-spreadsheet-border-palette-left .x-spreadsheet-border-palette-cell:hover {
-  background-color: var(--border-color-hover);
+  background-color: var(--ss-border-color-hover);
 }
 .x-spreadsheet-border-palette .x-spreadsheet-border-palette-right {
   padding-left: 6px;
@@ -153,7 +153,7 @@ body {
 .x-spreadsheet-dropdown .x-spreadsheet-dropdown-content {
   position: absolute;
   z-index: 200;
-  background: var(--background-secondary);
+  background: var(--ss-background-secondary);
   box-shadow: 1px 2px 5px 2px var(--dropdown-shadow);
 }
 .x-spreadsheet-dropdown.bottom-left .x-spreadsheet-dropdown-content {
@@ -181,7 +181,7 @@ body {
   display: inline-block;
 }
 .x-spreadsheet-dropdown-header {
-  fill: var(--text-color-muted);
+  fill: var(--ss-text-color-muted);
 }
 .x-spreadsheet-dropdown-header .x-spreadsheet-icon.arrow-left {
   margin-left: 4px;
@@ -199,7 +199,7 @@ body {
   z-index: 11;
 }
 .x-spreadsheet-resizer .x-spreadsheet-resizer-hover {
-  background-color: rgba(var(--accent-color), 0.25);
+  background-color: rgba(var(--ss-accent-color), 0.25);
 }
 .x-spreadsheet-resizer .x-spreadsheet-resizer-line {
   position: absolute;
@@ -208,7 +208,7 @@ body {
   cursor: row-resize;
 }
 .x-spreadsheet-resizer.horizontal .x-spreadsheet-resizer-line {
-  border-bottom: 2px dashed var(--accent-color);
+  border-bottom: 2px dashed var(--ss-accent-color);
   left: 0;
   bottom: 0;
 }
@@ -216,7 +216,7 @@ body {
   cursor: col-resize;
 }
 .x-spreadsheet-resizer.vertical .x-spreadsheet-resizer-line {
-  border-right: 2px dashed var(--accent-color);
+  border-right: 2px dashed var(--ss-accent-color);
   top: 0;
   right: 0;
 }
@@ -236,7 +236,7 @@ body {
 }
 .x-spreadsheet-scrollbar.horizontal > div {
   height: 1px;
-  background: var(--border-color-hover);
+  background: var(--ss-border-color-hover);
 }
 .x-spreadsheet-scrollbar.vertical {
   bottom: 15px;
@@ -284,8 +284,8 @@ body {
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-area {
   position: absolute;
-  border: 2px solid var(--accent-color);
-  background: rgba(var(--accent-color), 0.1);
+  border: 2px solid var(--ss-accent-color);
+  background: rgba(var(--ss-accent-color), 0.1);
   z-index: 5;
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-clipboard,
@@ -295,10 +295,10 @@ body {
   z-index: 100;
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-clipboard {
-  border: 2px dashed var(--accent-color);
+  border: 2px dashed var(--ss-accent-color);
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-autofill {
-  border: 2px dashed hsl(var(--accent-color-hsl) / 0.45);
+  border: 2px dashed hsl(var(--ss-accent-color-hsl) / 0.45);
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-corner {
   pointer-events: auto;
@@ -309,8 +309,8 @@ body {
   width: 5px;
   right: -5px;
   bottom: -5px;
-  border: 2px solid var(--background);
-  background: var(--accent-color);
+  border: 2px solid var(--ss-background);
+  background: var(--ss-accent-color);
 }
 .x-spreadsheet-editor {
   z-index: 20;
@@ -318,7 +318,7 @@ body {
 .x-spreadsheet-editor .x-spreadsheet-editor-area {
   position: absolute;
   text-align: left;
-  border: 2px solid var(--accent-color);
+  border: 2px solid var(--ss-accent-color);
   line-height: 0;
   z-index: 100;
   pointer-events: auto;
@@ -332,8 +332,8 @@ body {
   text-align: start;
   overflow-y: hidden;
   font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
-  color: var(--text-color);
-  background: var(--background-alt);
+  color: var(--ss-text-color);
+  background: var(--ss-background-alt);
   white-space: normal;
   word-wrap: break-word;
   line-height: 22px;
@@ -352,7 +352,7 @@ body {
   border: 1px solid transparent;
   outline: none;
   height: 26px;
-  color: var(--text-color-muted);
+  color: var(--ss-text-color-muted);
   line-height: 26px;
   list-style: none;
   padding: 2px 10px;
@@ -398,7 +398,7 @@ body {
 }
 .x-spreadsheet-item.state.checked:before,
 .x-spreadsheet-header.state.checked:before {
-  background: var(--accent-color);
+  background: var(--ss-accent-color);
 }
 .x-spreadsheet-checkbox {
   position: relative;
@@ -423,7 +423,7 @@ body {
 .x-spreadsheet-sort-filter {
   position: absolute;
   box-shadow: 1px 2px 5px 2px var(--dropdown-shadow);
-  background: var(--background);
+  background: var(--ss-background);
   z-index: 100;
   width: 260px;
   pointer-events: auto;
@@ -433,14 +433,14 @@ body {
   width: 200px;
 }
 .x-spreadsheet-filter {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--ss-border-color);
   font-size: 12px;
   margin: 10px;
 }
 .x-spreadsheet-filter .x-spreadsheet-header {
   padding: 0.5em 0.75em;
-  background: var(--background-secondary);
-  border-bottom: 1px solid var(--border-color);
+  background: var(--ss-background-secondary);
+  border-bottom: 1px solid var(--ss-border-color);
   border-left: 1px solid transparent;
 }
 .x-spreadsheet-filter .x-spreadsheet-body {
@@ -459,12 +459,12 @@ body {
   height: 40px;
   padding: 0 30px;
   text-align: left;
-  background: var(--background-secondary);
+  background: var(--ss-background-secondary);
   display: flex;
 }
 .x-spreadsheet-bottombar {
   position: relative;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--ss-border-color);
 }
 .x-spreadsheet-bottombar .x-spreadsheet-menu > li {
   line-height: 40px;
@@ -488,15 +488,18 @@ body {
   vertical-align: middle;
   text-align: left;
   font-weight: 400;
-  color: var(--text-color-muted);
+  color: var(--ss-text-color-muted);
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: bold;
 }
+.x-spreadsheet-menu > li textarea {
+  color: var(--ss-text-color);
+}
 .x-spreadsheet-menu > li.active {
-  background-color: var(--background);
-  color: var(--text-color);
+  background-color: var(--ss-background);
+  color: var(--ss-text-color);
 }
 .x-spreadsheet-menu > li .x-spreadsheet-icon {
   margin: 0 6px;
@@ -508,7 +511,7 @@ body {
   display: inline-block;
 }
 .x-spreadsheet-toolbar {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--ss-border-color);
 }
 .x-spreadsheet-toolbar .x-spreadsheet-toolbar-btns {
   display: inline-flex;
@@ -546,7 +549,7 @@ body {
 }
 .x-spreadsheet-toolbar-divider {
   display: inline-block;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--ss-border-color);
   width: 0;
   vertical-align: middle;
   height: 18px;
@@ -601,7 +604,7 @@ body {
   margin: 40px 20px;
 }
 .x-spreadsheet-canvas-card {
-  background: var(--background);
+  background: var(--ss-background);
   margin: auto;
   page-break-before: auto;
   page-break-after: always;
@@ -609,7 +612,7 @@ body {
 }
 .x-spreadsheet-calendar {
   color: rgba(0, 0, 0, 0.65);
-  background: var(--background);
+  background: var(--ss-background);
   user-select: none;
 }
 .x-spreadsheet-calendar .calendar-header {
@@ -618,7 +621,7 @@ body {
   text-align: center;
   width: 100%;
   float: left;
-  background: var(--background-secondary);
+  background: var(--ss-background-secondary);
 }
 .x-spreadsheet-calendar .calendar-header .calendar-header-left {
   padding-left: 5px;
@@ -686,8 +689,8 @@ body {
   font-size: 1em;
   font-weight: 700;
   padding: 0.75em 1em;
-  color: var(--text-color-muted);
-  background: var(--background-secondary);
+  color: var(--ss-text-color-muted);
+  background: var(--ss-background-secondary);
   text-decoration: none;
   font-family: "Lato", "proxima-nova", "Helvetica Neue", Arial, sans-serif;
   outline: none;
@@ -699,15 +702,15 @@ body {
 .x-spreadsheet-button.active,
 .x-spreadsheet-button:hover {
   background-color: var(--item-hover);
-  color: var(--text-color);
+  color: var(--ss-text-color);
 }
 .x-spreadsheet-button.primary {
-  color: var(--background);
-  background-color: var(--text-color);
+  color: var(--ss-background);
+  background-color: var(--ss-text-color);
 }
 .x-spreadsheet-button.primary:hover,
 .x-spreadsheet-button.primary.active {
-  color: var(--background);
+  color: var(--ss-background);
   background-color: var(--item-hover);
 }
 .x-spreadsheet-form-input {
@@ -728,24 +731,26 @@ body {
   line-height: 30px;
   height: 30px;
   padding: 0 8px;
-  background: var(--background);
-  border: 1px solid var(--border-color);
+  background: var(--ss-background);
+  border: 1px solid var(--ss-border-color);
+  color: var(--ss-text-color);
+  font-weight: bold;
   border-radius: 3px;
   transition: box-shadow 0.1s ease, border-color 0.1s ease;
   box-shadow: inset 0 1px 2px var(--box-shadow);
 }
 .x-spreadsheet-form-input input:focus {
-  border-color: var(--accent-color);
-  box-shadow: inset 0 1px 2px rgba(var(--accent-color), 0.2);
+  border-color: var(--ss-accent-color);
+  box-shadow: inset 0 1px 2px rgba(var(--ss-accent-color), 0.2);
 }
 .x-spreadsheet-form-select {
   position: relative;
   display: inline-block;
-  background: var(--background);
+  background: var(--ss-background);
   border: 1px solid #e9e9e9;
   border-radius: 2px;
   cursor: pointer;
-  color: var(--text-color-muted);
+  color: var(--ss-text-color-muted);
   user-select: none;
   box-shadow: inset 0 1px 2px var(--box-shadow);
 }
@@ -796,7 +801,7 @@ body {
   height: 100%;
   text-align: center;
   vertical-align: middle;
-  background-color: var(--background-alt);
+  background-color: var(--ss-background-alt);
   opacity: 0;
   -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
@@ -817,14 +822,14 @@ form fieldset label {
   display: block;
   margin-bottom: 0.5em;
   font-size: 1em;
-  color: var(--text-color-muted);
+  color: var(--ss-text-color-muted);
 }
 form fieldset select {
   font-size: 1.1em;
   width: 100%;
-  background-color: var(--background);
+  background-color: var(--ss-background);
   border: none;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--ss-border-color);
   padding: 0.5em 0.85em;
   border-radius: 2px;
 }
@@ -839,20 +844,20 @@ form fieldset select {
   color: rgba(0, 0, 0, 0.87);
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   border-radius: 4px;
-  border: 1px solid var(--border-color);
-  background-color: var(--background);
+  border: 1px solid var(--ss-border-color);
+  background-color: var(--ss-background);
   background-clip: padding-box;
   box-shadow: var(--box-shadow-1) 0px 2px 8px;
 }
 .x-spreadsheet-toast {
-  background-color: var(--background-secondary);
+  background-color: var(--ss-background-secondary);
 }
 .x-spreadsheet-modal-header,
 .x-spreadsheet-toast-header {
   font-weight: 600;
   background-clip: padding-box;
-  background-color: var(--background-secondary-alt);
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--ss-background-secondary-alt);
+  border-bottom: 1px solid var(--ss-border-color);
   border-radius: 4px 4px 0 0;
 }
 .x-spreadsheet-modal-header .x-spreadsheet-icon,
@@ -868,11 +873,11 @@ form fieldset select {
   background: var(--item-hover);
 }
 .x-spreadsheet-toast-header {
-  color: var(--accent-color-muted);
+  color: var(--ss-accent-color-muted);
 }
 .x-spreadsheet-modal-header {
-  border-bottom: 1px solid var(--border-color);
-  background: var(--text-color-muted);
+  border-bottom: 1px solid var(--ss-border-color);
+  background: var(--ss-text-color-muted);
   font-size: 1.0785em;
 }
 .x-spreadsheet-modal-header,
@@ -897,7 +902,7 @@ form fieldset select {
   position: relative;
   display: inline-block;
   line-height: 0;
-  fill: var(--text-color-muted);
+  fill: var(--ss-text-color-muted);
 }
 
 

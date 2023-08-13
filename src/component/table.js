@@ -196,9 +196,9 @@ function renderSelectedHeaderCell(x, y, w, h) {
   const { draw } = this;
   // const {canvas} = draw.context;
   // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-fill') || '#4b89ff19';
-  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-h');
-  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-s');
-  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-l');
+  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-h');
+  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-s');
+  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-l');
 
   const color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 8%)`;
   draw.save();
@@ -347,9 +347,9 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const twidth = data.viewWidth() - fw;
   const theight = data.viewHeight() - fh;
 
-  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-h');
-  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-s');
-  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-l');
+  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-h');
+  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-s');
+  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-l');
 
   const color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 60%)`;
 
