@@ -64,13 +64,22 @@ body {
 }
 
 .@{css-prefix} {
-  --accent-h: 218;
-  --accent-s: 100%;
-  --accent-l: 65%;
+  // --accent-h: 218;
+  // --accent-s: 100%;
+  // --accent-l: 65%;
+
+  --accent-h: 118;
+  --accent-s: 80%;
+  --accent-l: 80%;
+
   // --accent-color-hsl: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
   --accent-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
-  --text-color-hsl: 359deg 100% 0%;
-  --background-hsl: 0deg 100% 100%;
+  // --text-color-hsl: 359deg 100% 0%;
+  // --background-hsl: 0deg 100% 100%;
+ 
+  --text-color-hsl: 0deg 100% 100%;
+  --background-hsl: 220deg 50% 15%;
+
   --background: hsl(var(--background-hsl));
   --background-secondary: hsl(var(--background-hsl) ~"/" 0.95);
   --background-alt: hsl(var(--background-hsl) ~"/" 0.65);
@@ -110,7 +119,10 @@ body {
   font-family: 'Lato', 'Source Sans Pro', Roboto, Helvetica, Arial, sans-serif;
   box-sizing: content-box;
   background: var(--background);
+  color: var(--text-color-muted);
   -webkit-font-smoothing: antialiased;
+
+
 
   textarea {
     font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
@@ -292,6 +304,8 @@ body {
 }
 
 .@{css-prefix}-dropdown-header {
+  fill: var(--text-color-muted);
+
   .@{css-prefix}-icon.arrow-left {
     margin-left: 4px;
   }
@@ -693,7 +707,8 @@ body {
 
   .@{css-prefix}-icon {
     margin: 0 6px;
-
+    
+    
     .@{css-prefix}-icon-img {
       &:hover {
         opacity: .85;
@@ -1164,7 +1179,7 @@ form fieldset {
   position: relative;
   display: inline-block;
   line-height: 0;
-
+fill: var(--text-color-muted);
   // .@{css-prefix}-icon-img {
   //   background-image: url('../assets/sprite.svg');
   //   position: absolute;
