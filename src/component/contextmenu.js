@@ -42,13 +42,19 @@ function buildMenuItem(item) {
     );
 }
 
-function buildMenu() {
-  return menuItems.map(it => buildMenuItem.call(this, it));
+function buildMenu(settings) {
+  let bi = menuItems;
+  if(!settings.showValidation) {
+    const valIndex = menuItems.findIndex(el => el.key === 'validation');
+    bi = menuItems.slice()
+    bi.splice(valIndex,2);
+  }
+  return bi.map(it => buildMenuItem.call(this, it));
 }
 
 export default class ContextMenu {
-  constructor(viewFn, isHide = false) {
-    this.menuItems = buildMenu.call(this);
+  constructor(viewFn, isHide = false, settings = {}) {
+    this.menuItems = buildMenu.call(this, settings);
     this.el = h('div', `${cssPrefix}-contextmenu`)
       .children(...this.menuItems)
       .hide();
