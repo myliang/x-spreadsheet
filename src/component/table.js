@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { stringAt } from '../core/alphabet';
 import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
@@ -10,12 +11,13 @@ import {
 
 // gobal var
 const cellPaddingWidth = 5;
-const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
-const tableGridStyle = {
-  fillStyle: '#fff',
-  lineWidth: thinLineWidth,
-  strokeStyle: '#e6e6e6',
-};
+// const tableFixedHeaderCleanStyle= { fillStyle: '#f4f5f8'  };
+// const tableGridStyle = {
+//   fillStyle: '#fff',
+//   lineWidth: thinLineWidth,
+//   strokeStyle: '#e6e6e6',
+// };
+
 function tableFixedHeaderStyle() {
   return {
     textAlign: 'center',
@@ -81,8 +83,8 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     } else {
       cellText = cell.text || '';
     }
-    if (typeof (style.format) !== undefined
-      && (typeof (cellText) === 'string') || (typeof (cellText) === 'number')
+    if ((typeof (style.format) !== 'undefined')
+      && ((typeof (cellText) === 'string') || (typeof (cellText) === 'number'))
     ) {
       cellText = formatm.render(style.format, cellText);
     }
@@ -180,7 +182,7 @@ function renderSelectedHeaderCell(x, y, w, h) {
   const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-s');
   const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-l');
 
-  let color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 8%)`;
+  const color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 8%)`;
   draw.save();
   draw
     .attr({ fillStyle: `${color}` })
@@ -204,7 +206,11 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
 
   draw.save();
   // draw rect background
-  draw.attr(tableFixedHeaderCleanStyle);
+  const color = global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-header') || '#f4f5f8';
+
+  // draw.attr(tableFixedHeaderCleanStyle);
+  draw.attr({ fillStyle: `${color}` });
   if (type === 'all' || type === 'left') draw.fillRect(0, nty, w, sumHeight);
   if (type === 'all' || type === 'top') draw.fillRect(ntx, 0, sumWidth, h);
 
@@ -273,8 +279,18 @@ function renderContentGrid({
   const { draw, data } = this;
   const { settings } = data;
 
+  const fillStyle = global.getComputedStyle(draw.ctx.canvas)
+      .getPropertyValue('--table-header') || '#f4f5f8';
+
+const strokeStyle = global.getComputedStyle(draw.ctx.canvas)
+      .getPropertyValue('--table-stroke') || '#e6e6e6';
+    
   draw.save();
-  draw.attr(tableGridStyle)
+  draw.attr({
+    fillStyle,
+    lineWidth: thinLineWidth,
+    strokeStyle,
+  })
     .translate(fw + tx, fh + ty);
   // const sumWidth = cols.sumWidth(sci, eci + 1);
   // const sumHeight = rows.sumHeight(sri, eri + 1);
@@ -301,7 +317,7 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const { draw, data } = this;
   const twidth = data.viewWidth() - fw;
   const theight = data.viewHeight() - fh;
-  
+
   const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-h');
   const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-s');
   const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--accent-l');
@@ -315,7 +331,7 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
     .translate(fw, fh)
     .attr({ strokeStyle: `${color}` })
     // .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' })
-    ;
+  ;
   draw.line([0, fth], [twidth, fth]);
   draw.line([ftw, 0], [ftw, theight]);
   draw.restore();
