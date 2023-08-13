@@ -41,6 +41,15 @@ export default class Spreadsheet {
     if (this.bottombar !== null) {
       rootEl.child(this.bottombar.el);
     }
+    if(!this.options.style || !this.options.style.bgcolor){
+      this.options.style = this.options.style || {};
+      const bgColor = global.getComputedStyle(rootEl.el)
+        .getPropertyValue('--background') || '#fff';
+        this.options.style.bgcolor = bgColor;
+      const color = global.getComputedStyle(rootEl.el)
+        .getPropertyValue('--text-color') || '#000';
+        this.options.style.color = color;
+    }
   }
 
   addSheet(name, active = true) {
