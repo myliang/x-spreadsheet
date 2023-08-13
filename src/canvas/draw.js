@@ -343,7 +343,7 @@ class Draw {
     ctx.lineTo(npx(sx + 8), npx(sy));
     ctx.lineTo(npx(sx + 4), npx(sy + 6));
     ctx.closePath();
-    ctx.fillStyle = 'rgba(0, 0, 0, .45)';
+    ctx.fillStyle = box.color || 'rgba(0, 0, 0, .45)';
     ctx.fill();
     ctx.restore();
   }

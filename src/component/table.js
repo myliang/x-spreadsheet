@@ -33,7 +33,9 @@ function getDrawBox(data, rindex, cindex, yoffset = 0) {
   const {
     left, top, width, height,
   } = data.cellRect(rindex, cindex);
-  return new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
+  const dbox = new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
+  
+  return dbox;
 }
 
 function getFillStyle(draw) {
@@ -46,6 +48,10 @@ function getStrokeStyle(draw) {
     .getPropertyValue('--table-stroke') || '#e6e6e6';
 }
 
+function getTextStyle(draw) {
+  return global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-header-text') || '#666';
+}
 /*
 function renderCellBorders(bboxes, translateFunc) {
   const { draw } = this;
@@ -131,6 +137,7 @@ function renderAutofilter(viewRange) {
     if (viewRange.intersects(afRange)) {
       afRange.each((ri, ci) => {
         const dbox = getDrawBox(data, ri, ci);
+        dbox.color = getTextStyle(draw);
         draw.dropdown(dbox);
       });
     }
@@ -232,10 +239,10 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   // text font, align...
   const style = tableFixedHeaderStyle();
  
-
+  const textColor = getTextStyle(draw);
   const strokeStyle = getStrokeStyle(draw);
 
-  if (fillStyle) (style.fillStyle = fillStyle);
+  if (textColor) (style.fillStyle = textColor);
   if (strokeStyle) (style.strokeStyle = strokeStyle);
 
   draw.attr(style);
