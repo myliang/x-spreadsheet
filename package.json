@@ -1,7 +1,8 @@
 {
   "name": "x-data-spreadsheet",
-  "version": "1.0.14",
+  "version": "1.1.8",
   "description": "a javascript xpreadsheet",
+  "types": "src/index.d.ts",
   "main": "src/index.js",
   "files": [
     "assets",
@@ -17,7 +18,8 @@
   "nyc": {
     "all": true,
     "include": [
-      "src/core/*.js"
+      "src/core/*.js",
+      "src/locale/locale.js"
     ],
     "exclude": [
       "**/*.spec.js"
@@ -28,8 +30,9 @@
     "build": "webpack --config build/webpack.prod.js",
     "build-locale": "webpack --config build/webpack.locale.js",
     "lint": "./node_modules/eslint/bin/eslint.js src",
-    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register test/*",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd"
+    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register --recursive test",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd",
+    "postinstall": "opencollective-postinstall"
   },
   "keywords": [
     "javascript",
@@ -38,13 +41,14 @@
   ],
   "devDependencies": {
     "@babel/core": "^7.3.4",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
     "babel-loader": "^8.0.5",
     "clean-webpack-plugin": "^0.1.19",
     "codecov": "^3.3.0",
     "css-loader": "^1.0.0",
-    "eslint": "^5.5.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.14.0",
     "file-loader": "^2.0.0",
@@ -57,8 +61,15 @@
     "style-loader": "^0.23.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.0",
-    "webpack-dev-server": "^3.1.14",
+    "webpack-dev-server": "^3.10.2",
     "webpack-merge": "^4.1.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "opencollective": "^1.0.3",
+    "opencollective-postinstall": "^2.0.2"
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/x-spreadsheet"
+  }
 }

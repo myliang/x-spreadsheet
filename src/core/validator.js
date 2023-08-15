@@ -61,6 +61,7 @@ export default class Validator {
     if (required && /^\s*$/.test(v)) {
       return returnMessage(false, 'required');
     }
+    if (/^\s*$/.test(v)) return [true];
     if (rules[type] && !rules[type].test(v)) {
       return returnMessage(false, 'notMatch');
     }

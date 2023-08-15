@@ -41,7 +41,7 @@ class Merges {
   union(cellRange) {
     let cr = cellRange;
     this._.forEach((it) => {
-      if (it.intersects(cellRange)) {
+      if (it.intersects(cr)) {
         cr = it.union(cr);
       }
     });

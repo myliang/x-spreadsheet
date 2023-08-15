@@ -31,9 +31,11 @@ class Element {
         const k = oen[i];
         if (k === 'left' && evt.button !== 0) {
           return;
-        } if (k === 'right' && evt.button !== 2) {
+        }
+        if (k === 'right' && evt.button !== 2) {
           return;
-        } if (k === 'stop') {
+        }
+        if (k === 'stop') {
           evt.stopPropagation();
         }
       }
@@ -86,6 +88,10 @@ class Element {
     }
     eles.forEach(ele => this.child(ele));
     return this;
+  }
+
+  removeChild(el) {
+    this.el.removeChild(el);
   }
 
   /*
@@ -165,9 +171,14 @@ class Element {
     return this.el.classList.toggle(name);
   }
 
-  active(flag = true) {
-    if (flag) this.addClass('active');
-    else this.removeClass('active');
+  active(flag = true, cls = 'active') {
+    if (flag) this.addClass(cls);
+    else this.removeClass(cls);
+    return this;
+  }
+
+  checked(flag = true) {
+    this.active(flag, 'checked');
     return this;
   }
 
@@ -213,6 +224,10 @@ class Element {
       return this;
     }
     return this.el.value;
+  }
+
+  focus() {
+    this.el.focus();
   }
 
   cssRemoveKeys(...keys) {

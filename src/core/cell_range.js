@@ -26,7 +26,7 @@ class CellRange {
   includes(...args) {
     let [ri, ci] = [0, 0];
     if (args.length === 1) {
-      [ri, ci] = expr2xy(args[0]);
+      [ci, ri] = expr2xy(args[0]);
     } else if (args.length === 2) {
       [ri, ci] = args;
     }
@@ -36,15 +36,24 @@ class CellRange {
     return sri <= ri && ri <= eri && sci <= ci && ci <= eci;
   }
 
-  each(cb) {
+  each(cb, rowFilter = () => true) {
     const {
       sri, sci, eri, eci,
     } = this;
     for (let i = sri; i <= eri; i += 1) {
-      for (let j = sci; j <= eci; j += 1) {
-        cb(i, j);
+      if (rowFilter(i)) {
+        for (let j = sci; j <= eci; j += 1) {
+          cb(i, j);
+        }
       }
     }
+  }
+
+  contains(other) {
+    return this.sri <= other.sri
+      && this.sci <= other.sci
+      && this.eri >= other.eri
+      && this.eci >= other.eci;
   }
 
   // within

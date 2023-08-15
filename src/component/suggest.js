@@ -91,7 +91,7 @@ export default class Suggest {
 
   setItems(items) {
     this.items = items;
-    this.search('');
+    // this.search('');
   }
 
   search(word) {

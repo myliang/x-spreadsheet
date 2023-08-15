@@ -157,8 +157,8 @@ export default class Toolbar {
       buildDivider(),
       // this.linkEl = buildButtonWithIcon('Insert link', 'link'),
       // this.chartEl = buildButtonWithIcon('Insert chart', 'chart'),
-      // this.autofilterEl = buildButtonWithIcon('Filter', 'autofilter'),
       this.freezeEl = buildButtonWithIcon(`${t('toolbar.freeze')}`, 'freeze', () => toggleChange.call(this, 'freeze')),
+      this.autofilterEl = buildButtonWithIcon(`${t('toolbar.autofilter')}`, 'autofilter', () => toggleChange.call(this, 'autofilter')),
       buildButton(`${t('toolbar.formula')}`).child(this.ddFormula.el),
       // buildDivider(),
       this.moreEl = buildButton(`${t('toolbar.more')}`).child(this.ddMore.el).hide(),
@@ -199,6 +199,7 @@ export default class Toolbar {
     this.redoEl.disabled(!data.canRedo());
     this.mergeEl.active(data.canUnmerge())
       .disabled(!data.selector.multiple());
+    this.autofilterEl.active(!data.canAutofilter());
     // this.mergeEl.disabled();
     // console.log('selectedCell:', style, cell);
     const { font } = style;

@@ -99,6 +99,40 @@ function arrayEquals(a1, a2) {
   return true;
 }
 
+function digits(a) {
+  const v = `${a}`;
+  let ret = 0;
+  let flag = false;
+  for (let i = 0; i < v.length; i += 1) {
+    if (flag === true) ret += 1;
+    if (v.charAt(i) === '.') flag = true;
+  }
+  return ret;
+}
+
+export function numberCalc(type, a1, a2) {
+  if (Number.isNaN(a1) || Number.isNaN(a2)) {
+    return a1 + type + a2;
+  }
+  const al1 = digits(a1);
+  const al2 = digits(a2);
+  const num1 = Number(a1);
+  const num2 = Number(a2);
+  let ret = 0;
+  if (type === '-') {
+    ret = num1 - num2;
+  } else if (type === '+') {
+    ret = num1 + num2;
+  } else if (type === '*') {
+    ret = num1 * num2;
+  } else if (type === '/') {
+    ret = num1 / num2;
+    if (digits(ret) > 5) return ret.toFixed(2);
+    return ret;
+  }
+  return ret.toFixed(Math.max(al1, al2));
+}
+
 export default {
   cloneDeep,
   merge: (...sources) => mergeDeep({}, ...sources),
@@ -109,4 +143,5 @@ export default {
   rangeSum,
   rangeReduceIf,
   deleteProperty,
+  numberCalc,
 };

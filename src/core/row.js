@@ -10,6 +10,7 @@ class Rows {
   }
 
   getHeight(ri) {
+    if (this.isHide(ri)) return 0;
     const row = this.get(ri);
     if (row && row.height) {
       return row.height;
@@ -22,13 +23,37 @@ class Rows {
     row.height = v;
   }
 
+  unhide(idx) {
+    let index = idx;
+    while (index > 0) {
+      index -= 1;
+      if (this.isHide(index)) {
+        this.setHide(index, false);
+      } else break;
+    }
+  }
+
+  isHide(ri) {
+    const row = this.get(ri);
+    return row && row.hide;
+  }
+
+  setHide(ri, v) {
+    const row = this.getOrNew(ri);
+    if (v === true) row.hide = true;
+    else delete row.hide;
+  }
+
   setStyle(ri, style) {
     const row = this.getOrNew(ri);
     row.style = style;
   }
 
-  sumHeight(min, max) {
-    return helper.rangeSum(min, max, i => this.getHeight(i));
+  sumHeight(min, max, exceptSet) {
+    return helper.rangeSum(min, max, (i) => {
+      if (exceptSet && exceptSet.has(i)) return 0;
+      return this.getHeight(i);
+    });
   }
 
   totalHeight() {
@@ -81,7 +106,7 @@ class Rows {
 
   setCellText(ri, ci, text) {
     const cell = this.getCellOrNew(ri, ci);
-    cell.text = text;
+    if (cell.editable !== false) cell.text = text;
   }
 
   // what: all | format | text
@@ -103,7 +128,6 @@ class Rows {
       if (deri < sri) dn = drn;
       else dn = dcn;
     }
-    // console.log('drn:', drn, ', dcn:', dcn);
     for (let i = sri; i <= eri; i += 1) {
       if (this._[i]) {
         for (let j = sci; j <= eci; j += 1) {
@@ -116,32 +140,33 @@ class Rows {
                 // ncell.text
                 if (autofill && ncell && ncell.text && ncell.text.length > 0) {
                   const { text } = ncell;
-                  let n = (jj - dsci) + (ii - dsri) + 1;
-                  // console.log('n:', n);
+                  let n = (jj - dsci) + (ii - dsri) + 2;
                   if (!isAdd) {
                     n -= dn + 1;
                   }
                   if (text[0] === '=') {
-                    ncell.text = text.replace(/\w{1,3}\d/g, (word) => {
+                    ncell.text = text.replace(/[a-zA-Z]{1,3}\d+/g, (word) => {
                       let [xn, yn] = [0, 0];
                       if (sri === dsri) {
-                        xn = n;
+                        xn = n - 1;
+                        // if (isAdd) xn -= 1;
                       } else {
-                        yn = n;
+                        yn = n - 1;
                       }
-                      // console.log('xn:', xn, ', yn:', yn, expr2expr(word, xn, yn));
+                      if (/^\d+$/.test(word)) return word;
                       return expr2expr(word, xn, yn);
                     });
-                  } else {
+                  } else if ((rn <= 1 && cn > 1 && (dsri > eri || deri < sri))
+                    || (cn <= 1 && rn > 1 && (dsci > eci || deci < sci))
+                    || (rn <= 1 && cn <= 1)) {
                     const result = /[\\.\d]+$/.exec(text);
                     // console.log('result:', result);
                     if (result !== null) {
-                      const index = Number(result[0]) + n;
+                      const index = Number(result[0]) + n - 1;
                       ncell.text = text.substring(0, result.index) + index;
                     }
                   }
                 }
-                // console.log('ncell:', nri, nci, ncell);
                 this.setCell(nri, nci, ncell, what);
                 cb(nri, nci, ncell);
               }
@@ -169,12 +194,30 @@ class Rows {
     this._ = ncellmm;
   }
 
+  // src: Array<Array<String>>
+  paste(src, dstCellRange) {
+    if (src.length <= 0) return;
+    const { sri, sci } = dstCellRange;
+    src.forEach((row, i) => {
+      const ri = sri + i;
+      row.forEach((cell, j) => {
+        const ci = sci + j;
+        this.setCellText(ri, ci, cell);
+      });
+    });
+  }
+
   insert(sri, n = 1) {
     const ndata = {};
     this.each((ri, row) => {
       let nri = parseInt(ri, 10);
       if (nri >= sri) {
         nri += n;
+        this.eachCells(ri, (ci, cell) => {
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, n, (x, y) => y >= sri));
+          }
+        });
       }
       ndata[nri] = row;
     });
@@ -191,6 +234,11 @@ class Rows {
         ndata[nri] = row;
       } else if (ri > eri) {
         ndata[nri - n] = row;
+        this.eachCells(ri, (ci, cell) => {
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, 0, -n, (x, y) => y > eri));
+          }
+        });
       }
     });
     this._ = ndata;
@@ -204,6 +252,9 @@ class Rows {
         let nci = parseInt(ci, 10);
         if (nci >= sci) {
           nci += n;
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, n, 0, x => x >= sci));
+          }
         }
         rndata[nci] = cell;
       });
@@ -221,6 +272,9 @@ class Rows {
           rndata[nci] = cell;
         } else if (nci > eci) {
           rndata[nci - n] = cell;
+          if (cell.text && cell.text[0] === '=') {
+            cell.text = cell.text.replace(/[a-zA-Z]{1,3}\d+/g, word => expr2expr(word, -n, 0, x => x > eci));
+          }
         }
       });
       row.cells = rndata;
@@ -239,7 +293,7 @@ class Rows {
     const row = this.get(ri);
     if (row !== null) {
       const cell = this.getCell(ri, ci);
-      if (cell !== null) {
+      if (cell !== null && cell.editable !== false) {
         if (what === 'all') {
           delete row.cells[ci];
         } else if (what === 'text') {
@@ -253,6 +307,19 @@ class Rows {
         }
       }
     }
+  }
+
+  maxCell() {
+    const keys = Object.keys(this._);
+    const ri = keys[keys.length - 1];
+    const col = this._[ri];
+    if (col) {
+      const { cells } = col;
+      const ks = Object.keys(cells);
+      const ci = ks[ks.length - 1];
+      return [parseInt(ri, 10), parseInt(ci, 10)];
+    }
+    return [0, 0];
   }
 
   each(cb) {
@@ -278,7 +345,8 @@ class Rows {
   }
 
   getData() {
-    return this._;
+    const { len } = this;
+    return Object.assign({ len }, this._);
   }
 }
 

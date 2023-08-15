@@ -3,6 +3,7 @@ import { tf } from '../locale/locale';
 const formatStringRender = v => v;
 
 const formatNumberRender = (v) => {
+  // match "-12.1" or "12" or "12.1"
   if (/^(-?\d*.?\d*)$/.test(v)) {
     const v1 = Number(v).toFixed(2).toString();
     const [first, ...parts] = v1.split('\\.');
@@ -51,6 +52,13 @@ const baseFormats = [
     type: 'number',
     label: '$10.00',
     render: v => `$${formatNumberRender(v)}`,
+  },
+  {
+    key: 'eur',
+    title: tf('format.eur'),
+    type: 'number',
+    label: '€10.00',
+    render: v => `€${formatNumberRender(v)}`,
   },
   {
     key: 'date',

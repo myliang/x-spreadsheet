@@ -17,13 +17,17 @@
   </a>
 </p>
 
+## Document
+* en
+* [zh-cn 中文](https://hondrytravis.github.io/x-spreadsheet-doc/)
+
 ## CDN
 ```html
-<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
-<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.1.5/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.1.5/dist/xspreadsheet.js"></script>
 
 <script>
-   x.spreadsheet('#xspreadsheet');
+   x_spreadsheet('#xspreadsheet');
 </script>
 ```
 
@@ -42,18 +46,23 @@ import Spreadsheet from "x-data-spreadsheet";
 // If you need to override the default options, you can set the override
 // const options = {};
 // new Spreadsheet('#x-spreadsheet-demo', options);
-new Spreadsheet("#x-spreadsheet-demo")
+const s = new Spreadsheet("#x-spreadsheet-demo")
   .loadData({}) // load data
   .change(data => {
     // save data to db
   });
+
+// data validation
+s.validate()
 ```
 
 ```javascript
 // default options
 {
+  mode: 'edit', // edit | read
   showToolbar: true,
   showGrid: true,
+  showContextmenu: true,
   view: {
     height: () => document.documentElement.clientHeight,
     width: () => document.documentElement.clientWidth,
@@ -86,6 +95,38 @@ new Spreadsheet("#x-spreadsheet-demo")
 }
 ```
 
+## import | export xlsx
+
+https://github.com/SheetJS/sheetjs/tree/master/demos/xspreadsheet#saving-data
+
+thanks https://github.com/SheetJS/sheetjs
+
+## Bind events
+```javascript
+const s = new Spreadsheet("#x-spreadsheet-demo")
+// event of click on cell
+s.on('cell-selected', (cell, ri, ci) => {});
+s.on('cells-selected', (cell, { sri, sci, eri, eci }) => {});
+// edited on cell
+s.on('cell-edited', (text, ri, ci) => {});
+```
+
+## update cell-text
+```javascript
+const s = new Spreadsheet("#x-spreadsheet-demo")
+// cellText(ri, ci, text, sheetIndex = 0)
+s.cellText(5, 5, 'xxxx').cellText(6, 5, 'yyy').reRender();
+```
+
+## get cell and cell-style
+```javascript
+const s = new Spreadsheet("#x-spreadsheet-demo")
+// cell(ri, ci, sheetIndex = 0)
+s.cell(ri, ci);
+// cellStyle(ri, ci, sheetIndex = 0)
+s.cellStyle(ri, ci);
+```
+
 ## Internationalization
 ```javascript
 // npm 
@@ -97,12 +138,12 @@ new Spreadsheet(document.getElementById('xss-demo'));
 ```
 ```html
 <!-- Import via CDN -->
-<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.css">
-<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/xspreadsheet.js"></script>
-<script src="https://unpkg.com/x-data-spreadsheet@1.0.13/dist/locale/zh-cn.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.1.5/dist/xspreadsheet.css">
+<script src="https://unpkg.com/x-data-spreadsheet@1.1.5/dist/xspreadsheet.js"></script>
+<script src="https://unpkg.com/x-data-spreadsheet@1.1.5/dist/locale/zh-cn.js"></script>
 
 <script>
-  x.spreadsheet.locale('zh-cn');
+  x_spreadsheet.locale('zh-cn');
 </script>
 ```
 
@@ -130,6 +171,9 @@ new Spreadsheet(document.getElementById('xss-demo'));
   - Autofill
   - Insert row, column
   - Delete row, column
+  - hide row, column
+  - multiple sheets
+  - print
   - Data validations
 
 ## Development

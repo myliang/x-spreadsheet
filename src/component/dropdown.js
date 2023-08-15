@@ -7,15 +7,17 @@ export default class Dropdown extends Element {
     super('div', `${cssPrefix}-dropdown ${placement}`);
     this.title = title;
     this.change = () => {};
+    this.headerClick = () => {};
     if (typeof title === 'string') {
       this.title = h('div', `${cssPrefix}-dropdown-title`).child(title);
     } else if (showArrow) {
       this.title.addClass('arrow-left');
     }
     this.contentEl = h('div', `${cssPrefix}-dropdown-content`)
-      .children(...children)
       .css('width', width)
       .hide();
+
+    this.setContentChildren(...children);
 
     this.headerEl = h('div', `${cssPrefix}-dropdown-header`);
     this.headerEl.on('click', () => {
@@ -31,6 +33,13 @@ export default class Dropdown extends Element {
       ) : '',
     );
     this.children(this.headerEl, this.contentEl);
+  }
+
+  setContentChildren(...children) {
+    this.contentEl.html('');
+    if (children.length > 0) {
+      this.contentEl.children(...children);
+    }
   }
 
   setTitle(title) {

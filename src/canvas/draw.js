@@ -41,11 +41,11 @@ class DrawBox {
   }
 
   innerWidth() {
-    return this.width - (this.padding * 2);
+    return this.width - (this.padding * 2) - 2;
   }
 
   innerHeight() {
-    return this.height - (this.padding * 2);
+    return this.height - (this.padding * 2) - 2;
   }
 
   textx(align) {
@@ -61,19 +61,15 @@ class DrawBox {
     return x;
   }
 
-  texty(align, fontSize, hoffset) {
+  texty(align, h) {
     const { height, padding } = this;
     let { y } = this;
     if (align === 'top') {
       y += padding;
     } else if (align === 'middle') {
-      y = y + height / 2 - hoffset;
-      // y = y1;
-      // const y2 = y + padding + fontSize / 2 + 1;
-      // if (y1 < y2) y = y2;
-      // else y = y1;
+      y += height / 2 - h / 2;
     } else if (align === 'bottom') {
-      y += height - hoffset * 2 - padding;
+      y += height - padding - h;
     }
     return y;
   }
@@ -182,6 +178,11 @@ class Draw {
     return this;
   }
 
+  scale(x, y) {
+    this.ctx.scale(x, y);
+    return this;
+  }
+
   clearRect(x, y, w, h) {
     this.ctx.clearRect(x, y, w, h);
     return this;
@@ -214,7 +215,7 @@ class Draw {
     }
     textWrap: text wrapping
   */
-  text(txt, box, attr = {}, textWrap = true) {
+  text(mtxt, box, attr = {}, textWrap = true) {
     const { ctx } = this;
     const {
       align, valign, font, color, strike, underline,
@@ -229,49 +230,41 @@ class Draw {
       fillStyle: color,
       strokeStyle: color,
     });
-    const txtWidth = ctx.measureText(txt).width;
-    let hoffset = 0;
-    if (textWrap) {
-      const n = Math.ceil(txtWidth / box.innerWidth());
-      hoffset = ((n - 1) * font.size) / 2;
-    }
-    let ty = box.texty(valign, font.size, hoffset);
-    // console.log('tx: ', tx, ', ty:', ty);
-    if (textWrap && txtWidth > box.innerWidth()) {
-      const textLine = { len: 0, start: 0 };
-      for (let i = 0; i < txt.length; i += 1) {
-        if (textLine.len >= box.innerWidth()) {
-          this.fillText(txt.substring(textLine.start, i), tx, ty);
-          if (strike) {
-            drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
+    const txts = `${mtxt}`.split('\n');
+    const biw = box.innerWidth();
+    const ntxts = [];
+    txts.forEach((it) => {
+      const txtWidth = ctx.measureText(it).width;
+      if (textWrap && txtWidth > npx(biw)) {
+        let textLine = { w: 0, len: 0, start: 0 };
+        for (let i = 0; i < it.length; i += 1) {
+          if (textLine.w >= npx(biw)) {
+            ntxts.push(it.substr(textLine.start, textLine.len));
+            textLine = { w: 0, len: 0, start: i };
           }
-          if (underline) {
-            drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, textLine.len);
-          }
-          ty += font.size + 2;
-          textLine.len = 0;
-          textLine.start = i;
+          textLine.len += 1;
+          textLine.w += ctx.measureText(it[i]).width + 1;
         }
-        textLine.len += ctx.measureText(txt[i]).width;
+        if (textLine.len > 0) {
+          ntxts.push(it.substr(textLine.start, textLine.len));
+        }
+      } else {
+        ntxts.push(it);
       }
-      if (textWrap && textLine.len > 0) {
-        this.fillText(txt.substring(textLine.start), tx, ty);
-        if (strike) {
-          drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, textLine.len);
-        }
-        if (underline) {
-          drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, textLine.len);
-        }
-      }
-    } else {
+    });
+    const txtHeight = (ntxts.length - 1) * (font.size + 2);
+    let ty = box.texty(valign, txtHeight);
+    ntxts.forEach((txt) => {
+      const txtWidth = ctx.measureText(txt).width;
       this.fillText(txt, tx, ty);
       if (strike) {
-        drawFontLine.call(this, 'striket', tx, ty, align, valign, font.size, txtWidth);
+        drawFontLine.call(this, 'strike', tx, ty, align, valign, font.size, txtWidth);
       }
       if (underline) {
         drawFontLine.call(this, 'underline', tx, ty, align, valign, font.size, txtWidth);
       }
-    }
+      ty += font.size + 2;
+    });
     ctx.restore();
     return this;
   }
@@ -298,6 +291,7 @@ class Draw {
   line(...xys) {
     const { ctx } = this;
     if (xys.length > 1) {
+      ctx.beginPath();
       const [x, y] = xys[0];
       ctx.moveTo(npxLine(x), npxLine(y));
       for (let i = 1; i < xys.length; i += 1) {
@@ -312,7 +306,6 @@ class Draw {
   strokeBorders(box) {
     const { ctx } = this;
     ctx.save();
-    ctx.beginPath();
     // border
     const {
       borderTop, borderRight, borderBottom, borderLeft,
@@ -337,6 +330,24 @@ class Draw {
     ctx.restore();
   }
 
+  dropdown(box) {
+    const { ctx } = this;
+    const {
+      x, y, width, height,
+    } = box;
+    const sx = x + width - 15;
+    const sy = y + height - 15;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx), npx(sy));
+    ctx.lineTo(npx(sx + 8), npx(sy));
+    ctx.lineTo(npx(sx + 4), npx(sy + 6));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 0, 0, .45)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   error(box) {
     const { ctx } = this;
     const { x, y, width } = box;
@@ -348,6 +359,21 @@ class Draw {
     ctx.lineTo(npx(sx), npx(y + 8));
     ctx.closePath();
     ctx.fillStyle = 'rgba(255, 0, 0, .65)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  frozen(box) {
+    const { ctx } = this;
+    const { x, y, width } = box;
+    const sx = x + width - 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(npx(sx - 8), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y - 1));
+    ctx.lineTo(npx(sx), npx(y + 8));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 255, 0, .85)';
     ctx.fill();
     ctx.restore();
   }

@@ -26,37 +26,60 @@ function tableFixedHeaderStyle() {
   };
 }
 
-function getDrawBox(rindex, cindex) {
-  const { data } = this;
+function getDrawBox(data, rindex, cindex, yoffset = 0) {
   const {
     left, top, width, height,
   } = data.cellRect(rindex, cindex);
-  return new DrawBox(left, top, width, height, cellPaddingWidth);
+  return new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
 }
-
-function renderCellBorders() {
-  const { draw, bboxes } = this;
+/*
+function renderCellBorders(bboxes, translateFunc) {
+  const { draw } = this;
   if (bboxes) {
-    bboxes.forEach(box => draw.strokeBorders(box));
+    const rset = new Set();
+    // console.log('bboxes:', bboxes);
+    bboxes.forEach(({ ri, ci, box }) => {
+      if (!rset.has(ri)) {
+        rset.add(ri);
+        translateFunc(ri);
+      }
+      draw.strokeBorders(box);
+    });
   }
 }
+*/
 
-function renderCell(rindex, cindex) {
-  const { draw, data } = this;
-  const cell = data.getCell(rindex, cindex);
+export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
+  const { sortedRowMap, rows, cols } = data;
+  if (rows.isHide(rindex) || cols.isHide(cindex)) return;
+  let nrindex = rindex;
+  if (sortedRowMap.has(rindex)) {
+    nrindex = sortedRowMap.get(rindex);
+  }
+
+  const cell = data.getCell(nrindex, cindex);
   if (cell === null) return;
+  let frozen = false;
+  if ('editable' in cell && cell.editable === false) {
+    frozen = true;
+  }
 
-  const style = data.getCellStyleOrDefault(rindex, cindex);
-  // console.log('style:', style);
-  const dbox = getDrawBox.call(this, rindex, cindex);
+  const style = data.getCellStyleOrDefault(nrindex, cindex);
+  const dbox = getDrawBox(data, rindex, cindex, yoffset);
   dbox.bgcolor = style.bgcolor;
   if (style.border !== undefined) {
     dbox.setBorders(style.border);
-    this.bboxes.push(dbox);
+    // bboxes.push({ ri: rindex, ci: cindex, box: dbox });
+    draw.strokeBorders(dbox);
   }
   draw.rect(dbox, () => {
     // render text
-    let cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+    let cellText = '';
+    if (!data.settings.evalPaused) {
+      cellText = _cell.render(cell.text || '', formulam, (y, x) => (data.getCellTextOrDefault(x, y)));
+    } else {
+      cellText = cell.text || '';
+    }
     if (style.format) {
       // console.log(data.formatm, '>>', cell.format);
       cellText = formatm[style.format].render(cellText);
@@ -78,7 +101,25 @@ function renderCell(rindex, cindex) {
       // console.log('error:', rindex, cindex, error);
       draw.error(dbox);
     }
+    if (frozen) {
+      draw.frozen(dbox);
+    }
   });
+}
+
+function renderAutofilter(viewRange) {
+  const { data, draw } = this;
+  if (viewRange) {
+    const { autoFilter } = data;
+    if (!autoFilter.active()) return;
+    const afRange = autoFilter.hrange();
+    if (viewRange.intersects(afRange)) {
+      afRange.each((ri, ci) => {
+        const dbox = getDrawBox(data, ri, ci);
+        draw.dropdown(dbox);
+      });
+    }
+  }
 }
 
 function renderContent(viewRange, fw, fh, tx, ty) {
@@ -87,20 +128,44 @@ function renderContent(viewRange, fw, fh, tx, ty) {
   draw.translate(fw, fh)
     .translate(tx, ty);
 
+  const { exceptRowSet } = data;
+  // const exceptRows = Array.from(exceptRowSet);
+  const filteredTranslateFunc = (ri) => {
+    const ret = exceptRowSet.has(ri);
+    if (ret) {
+      const height = data.rows.getHeight(ri);
+      draw.translate(0, -height);
+    }
+    return !ret;
+  };
+
+  const exceptRowTotalHeight = data.exceptRowTotalHeight(viewRange.sri, viewRange.eri);
   // 1 render cell
-  this.bboxes = [];
+  draw.save();
+  draw.translate(0, -exceptRowTotalHeight);
   viewRange.each((ri, ci) => {
-    renderCell.call(this, ri, ci);
+    renderCell(draw, data, ri, ci);
+  }, ri => filteredTranslateFunc(ri));
+  draw.restore();
+
+
+  // 2 render mergeCell
+  const rset = new Set();
+  draw.save();
+  draw.translate(0, -exceptRowTotalHeight);
+  data.eachMergesInView(viewRange, ({ sri, sci, eri }) => {
+    if (!exceptRowSet.has(sri)) {
+      renderCell(draw, data, sri, sci);
+    } else if (!rset.has(sri)) {
+      rset.add(sri);
+      const height = data.rows.sumHeight(sri, eri + 1);
+      draw.translate(0, -height);
+    }
   });
-  // 2 render cell border
-  renderCellBorders.call(this);
-  this.bboxes = [];
-  // 3 render mergeCell
-  data.eachMergesInView(viewRange, (r) => {
-    renderCell.call(this, r.sri, r.sci);
-  });
-  // 4 render mergeCell border
-  renderCellBorders.call(this);
+  draw.restore();
+
+  // 3 render autofilter
+  renderAutofilter.call(this, viewRange);
 
   draw.restore();
 }
@@ -149,6 +214,12 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
         renderSelectedHeaderCell.call(this, 0, y, w, rowHeight);
       }
       draw.fillText(ii + 1, w / 2, y + (rowHeight / 2));
+      if (i > 0 && data.rows.isHide(i - 1)) {
+        draw.save();
+        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.line([5, y + 5], [w - 5, y + 5]);
+        draw.restore();
+      }
     });
     draw.line([0, sumHeight + nty], [w, sumHeight + nty]);
     draw.line([w, nty], [w, sumHeight + nty]);
@@ -163,6 +234,12 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
         renderSelectedHeaderCell.call(this, x, 0, colWidth, h);
       }
       draw.fillText(stringAt(ii), x + (colWidth / 2), h / 2);
+      if (i > 0 && data.cols.isHide(i - 1)) {
+        draw.save();
+        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.line([x + 5, 5], [x + 5, h - 5]);
+        draw.restore();
+      }
     });
     draw.line([sumWidth + ntx, 0], [sumWidth + ntx, h]);
     draw.line([0, h], [sumWidth + ntx, h]);
@@ -191,8 +268,11 @@ function renderContentGrid({
   // const sumWidth = cols.sumWidth(sci, eci + 1);
   // const sumHeight = rows.sumHeight(sri, eri + 1);
   // console.log('sumWidth:', sumWidth);
-  draw.clearRect(0, 0, w, h);
-  if (!settings.showGrid) return;
+  // draw.clearRect(0, 0, w, h);
+  if (!settings.showGrid) {
+    draw.restore();
+    return;
+  }
   // console.log('rowStart:', rowStart, ', rowLen:', rowLen);
   data.rowEach(sri, eri, (i, y, ch) => {
     // console.log('y:', y);
@@ -226,6 +306,11 @@ class Table {
     this.data = data;
   }
 
+  resetData(data) {
+    this.data = data;
+    this.render();
+  }
+
   render() {
     // resize canvas
     const { data } = this;
@@ -245,8 +330,8 @@ class Table {
     const { x, y } = data.scroll;
     // 1
     renderContentGrid.call(this, viewRange, fw, fh, tx, ty);
-    renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty);
     renderContent.call(this, viewRange, fw, fh, -x, -y);
+    renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty);
     renderFixedLeftTopCell.call(this, fw, fh);
     const [fri, fci] = data.freeze;
     if (fri > 0 || fci > 0) {
@@ -257,8 +342,8 @@ class Table {
         vr.eri = fri - 1;
         vr.h = ty;
         renderContentGrid.call(this, vr, fw, fh, tx, 0);
-        renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0);
         renderContent.call(this, vr, fw, fh, -x, 0);
+        renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0);
       }
       // 3
       if (fci > 0) {

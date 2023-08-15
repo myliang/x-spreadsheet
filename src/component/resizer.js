@@ -8,6 +8,9 @@ export default class Resizer {
     this.moving = false;
     this.vertical = vertical;
     this.el = h('div', `${cssPrefix}-resizer ${vertical ? 'vertical' : 'horizontal'}`).children(
+      this.unhideHoverEl = h('div', `${cssPrefix}-resizer-hover`)
+        .on('dblclick.stop', evt => this.mousedblclickHandler(evt))
+        .css('position', 'absolute').hide(),
       this.hoverEl = h('div', `${cssPrefix}-resizer-hover`)
         .on('mousedown.stop', evt => this.mousedownHandler(evt)),
       this.lineEl = h('div', `${cssPrefix}-resizer-line`).hide(),
@@ -16,6 +19,16 @@ export default class Resizer {
     this.cRect = null;
     this.finishedFn = null;
     this.minDistance = minDistance;
+    this.unhideFn = () => {};
+  }
+
+  showUnhide(index) {
+    this.unhideIndex = index;
+    this.unhideHoverEl.show();
+  }
+
+  hideUnhide() {
+    this.unhideHoverEl.hide();
   }
 
   // rect : {top, left, width, height}
@@ -23,6 +36,7 @@ export default class Resizer {
   show(rect, line) {
     const {
       moving, vertical, hoverEl, lineEl, el,
+      unhideHoverEl,
     } = this;
     if (moving) return;
     this.cRect = rect;
@@ -41,6 +55,12 @@ export default class Resizer {
       width: vertical ? 0 : line.width,
       height: vertical ? line.height : 0,
     });
+    unhideHoverEl.offset({
+      left: vertical ? 5 - width : left,
+      top: vertical ? top : 5 - height,
+      width: vertical ? 5 : width,
+      height: vertical ? height : 5,
+    });
   }
 
   hide() {
@@ -48,6 +68,11 @@ export default class Resizer {
       left: 0,
       top: 0,
     }).hide();
+    this.hideUnhide();
+  }
+
+  mousedblclickHandler() {
+    if (this.unhideIndex) this.unhideFn(this.unhideIndex);
   }
 
   mousedownHandler(evt) {
