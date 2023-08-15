@@ -34,23 +34,32 @@ function getDrawBox(data, rindex, cindex, yoffset = 0) {
     left, top, width, height,
   } = data.cellRect(rindex, cindex);
   const dbox = new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
-  
+
   return dbox;
 }
 
 function getFillStyle(draw) {
   return global.getComputedStyle(draw.ctx.canvas)
-    .getPropertyValue('--table-header') || '#f4f5f8';
+    .getPropertyValue('--table-header') || 'hsl(360deg 0% 88%)';
 }
 
 function getStrokeStyle(draw) {
   return global.getComputedStyle(draw.ctx.canvas)
-    .getPropertyValue('--table-stroke') || '#e6e6e6';
+    .getPropertyValue('--table-stroke') || 'hsl(220, 6%, 51%)';
 }
 
 function getTextStyle(draw) {
   return global.getComputedStyle(draw.ctx.canvas)
-    .getPropertyValue('--table-header-text') || '#666';
+    .getPropertyValue('--table-header-text') || 'hsl(359deg 100% 0% / .6)';
+}
+
+function getAccent(draw, alpha) {
+  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-h') || '218';
+  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-s') || '100%';
+  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-l') || '65%';
+
+  const color = `hsl( ${accent_h}, ${accent_s}, ${accent_l}, ${alpha})`;
+  return color;
 }
 /*
 function renderCellBorders(bboxes, translateFunc) {
@@ -196,11 +205,9 @@ function renderSelectedHeaderCell(x, y, w, h) {
   const { draw } = this;
   // const {canvas} = draw.context;
   // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-fill') || '#4b89ff19';
-  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-h');
-  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-s');
-  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-l');
-
-  const color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 8%)`;
+  const color = getAccent(draw, '15%');
+  // color = 'hsl()'
+  // console.log(`color: ${color}`);
   draw.save();
   draw
     .attr({ fillStyle: `${color}` })
@@ -208,6 +215,7 @@ function renderSelectedHeaderCell(x, y, w, h) {
     .fillRect(x, y, w, h);
   draw.restore();
 }
+
 
 // viewRange
 // type: all | left | top
@@ -238,7 +246,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   // draw text
   // text font, align...
   const style = tableFixedHeaderStyle();
- 
+
   const textColor = getTextStyle(draw);
   const strokeStyle = getStrokeStyle(draw);
 
@@ -290,9 +298,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
 }
 
 
-
 function renderFixedLeftTopCell(fw, fh) {
-
   const { draw } = this;
   const fillStyle = getFillStyle(draw);
   draw.save();
@@ -341,21 +347,16 @@ function renderContentGrid({
 }
 
 
-
 function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const { draw, data } = this;
   const twidth = data.viewWidth() - fw;
   const theight = data.viewHeight() - fh;
 
-  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-h');
-  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-s');
-  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-l');
-
-  const color = `hsla( ${accent_h}, ${accent_s}, ${accent_l}, 60%)`;
+  const color = getAccent(draw, '65%');
 
   // color = '#4b89ff99';
   // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-stroke') || '#4b89ff99';
-
+  console.log(color);
   draw.save()
     .translate(fw, fh)
     .attr({ strokeStyle: `${color}` })

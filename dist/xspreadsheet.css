@@ -311,6 +311,7 @@ body {
   bottom: -5px;
   border: 2px solid var(--ss-background);
   background: var(--ss-accent-color);
+  box-sizing: content-box;
 }
 .x-spreadsheet-editor {
   z-index: 20;
