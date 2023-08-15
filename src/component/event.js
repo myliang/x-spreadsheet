@@ -1,43 +1,57 @@
 /* global window */
-export function bind(target, name, fn) {
+function bind(target, name, fn, before = () => {}) {
+  if(target === window || target === window.document.body){
+    this.savedEventListeners.push({target, name, fn});
+  }
   target.addEventListener(name, fn);
 }
-export function unbind(target, name, fn) {
+function unbind(target, name, fn) {
+  if(target === window || target === window.document.body){
+    for(let i = 0; i < this.savedEventListeners.length; i++){
+      const eventListener = this.savedEventListeners[i];
+      if(eventListener.target === target && eventListener.name === name && eventListener.fn === fn){
+        target.removeEventListener(name, fn);
+        this.savedEventListeners.splice(i, 1);
+        i--;
+      }
+    }
+  }
   target.removeEventListener(name, fn);
 }
-export function unbindClickoutside(el) {
-  if (el.xclickoutside) {
-    unbind(window.document.body, 'click', el.xclickoutside);
-    delete el.xclickoutside;
+function unbindClickoutside(el) {
+  if (el.el.xclickoutside) {
+    this.unbind(window.document.body, 'click', el.el.xclickoutside);
+    delete el.el.xclickoutside;
   }
 }
 
 // the left mouse button: mousedown → mouseup → click
 // the right mouse button: mousedown → contenxtmenu → mouseup
 // the right mouse button in firefox(>65.0): mousedown → contenxtmenu → mouseup → click on window
-export function bindClickoutside(el, cb) {
-  el.xclickoutside = (evt) => {
+function bindClickoutside(el, cb) {
+  this.unbindClickoutside(el);
+  el.el.xclickoutside = (evt) => {
     // ignore double click
     // console.log('evt:', evt);
     if (evt.detail === 2 || el.contains(evt.target)) return;
     if (cb) cb(el);
     else {
       el.hide();
-      unbindClickoutside(el);
+      this.unbindClickoutside(el);
     }
   };
-  bind(window.document.body, 'click', el.xclickoutside);
+  this.bind(window.document.body, 'click', el.el.xclickoutside);
 }
 export function mouseMoveUp(target, movefunc, upfunc) {
-  bind(target, 'mousemove', movefunc);
+  this.bind(target, 'mousemove', movefunc);
   const t = target;
   t.xEvtUp = (evt) => {
     // console.log('mouseup>>>');
-    unbind(target, 'mousemove', movefunc);
-    unbind(target, 'mouseup', target.xEvtUp);
+    this.unbind(target, 'mousemove', movefunc);
+    this.unbind(target, 'mouseup', target.xEvtUp);
     upfunc(evt);
   };
-  bind(target, 'mouseup', target.xEvtUp);
+  this.bind(target, 'mouseup', target.xEvtUp);
 }
 
 function calTouchDirection(spanx, spany, evt, cb) {
@@ -54,15 +68,15 @@ function calTouchDirection(spanx, spany, evt, cb) {
   }
 }
 // cb = (direction, distance) => {}
-export function bindTouch(target, { move, end }) {
+function bindTouch(target, { move, end }) {
   let startx = 0;
   let starty = 0;
-  bind(target, 'touchstart', (evt) => {
+  this.bind(target, 'touchstart', (evt) => {
     const { pageX, pageY } = evt.touches[0];
     startx = pageX;
     starty = pageY;
   });
-  bind(target, 'touchmove', (evt) => {
+  this.bind(target, 'touchmove', (evt) => {
     if (!move) return;
     const { pageX, pageY } = evt.changedTouches[0];
     const spanx = pageX - startx;
@@ -75,7 +89,7 @@ export function bindTouch(target, { move, end }) {
     }
     evt.preventDefault();
   });
-  bind(target, 'touchend', (evt) => {
+  this.bind(target, 'touchend', (evt) => {
     if (!end) return;
     const { pageX, pageY } = evt.changedTouches[0];
     const spanx = pageX - startx;
@@ -85,7 +99,7 @@ export function bindTouch(target, { move, end }) {
 }
 
 // eventemiter
-export function createEventEmitter() {
+function createEventEmitter() {
   const listeners = new Map();
 
   function on(eventName, callback) {
@@ -151,3 +165,27 @@ export function createEventEmitter() {
     removeAllListeners,
   };
 }
+
+function destroy(){
+  for(const eventListener of this.savedEventListeners){
+    eventListener.target.removeEventListener(eventListener.name, eventListener.fn);
+  }
+  this.savedEventListeners = [];
+}
+
+function Event() {
+  this.savedEventListeners = [];
+}
+
+Event.prototype={
+  bind,
+  unbind,
+  unbindClickoutside,
+  bindClickoutside,
+  mouseMoveUp,
+  bindTouch,
+  createEventEmitter,
+  destroy
+}
+
+export default Event;

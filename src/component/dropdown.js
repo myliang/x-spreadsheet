@@ -1,10 +1,10 @@
 import { Element, h } from './element';
-import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 export default class Dropdown extends Element {
-  constructor(title, width, showArrow, placement, ...children) {
+  constructor(event, title, width, showArrow, placement, ...children) {
     super('div', `${cssPrefix}-dropdown ${placement}`);
+    this.event = event;
     this.title = title;
     this.change = () => {};
     this.headerClick = () => {};
@@ -51,7 +51,7 @@ export default class Dropdown extends Element {
     const { contentEl } = this;
     contentEl.show();
     this.parent().active();
-    bindClickoutside(this.parent(), () => {
+    this.event.bindClickoutside(this.parent(), () => {
       this.hide();
     });
   }
@@ -59,6 +59,6 @@ export default class Dropdown extends Element {
   hide() {
     this.parent().active(false);
     this.contentEl.hide();
-    unbindClickoutside(this.parent());
+    this.event.unbindClickoutside(this.parent());
   }
 }

@@ -2,8 +2,8 @@ import DropdownItem from './dropdown_item';
 import DropdownFormat from '../dropdown_format';
 
 export default class Format extends DropdownItem {
-  constructor() {
-    super('format');
+  constructor(event) {
+    super(event, 'format');
   }
 
   getValue(it) {
@@ -11,6 +11,6 @@ export default class Format extends DropdownItem {
   }
 
   dropdown() {
-    return new DropdownFormat();
+    return new DropdownFormat(this.event);
   }
 }

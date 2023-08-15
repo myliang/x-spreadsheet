@@ -1,5 +1,4 @@
 import { h } from './element';
-import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 
 function inputMovePrev(evt) {
@@ -68,7 +67,8 @@ function inputKeydownHandler(evt) {
 }
 
 export default class Suggest {
-  constructor(items, itemClick, width = '200px') {
+  constructor(event, items, itemClick, width = '200px') {
+    this.event = event;
     this.filterItems = [];
     this.items = items;
     this.el = h('div', `${cssPrefix}-suggest`).css('width', width).hide();
@@ -86,7 +86,7 @@ export default class Suggest {
     this.filterItems = [];
     this.itemIndex = -1;
     el.hide();
-    unbindClickoutside(this.el.parent());
+    this.event.unbindClickoutside(this.el.parent());
   }
 
   setItems(items) {
@@ -126,7 +126,7 @@ export default class Suggest {
     const { el } = this;
     // items[0].toggle();
     el.html('').children(...items).show();
-    bindClickoutside(el.parent(), () => { this.hide(); });
+    this.event.bindClickoutside(el.parent(), () => { this.hide(); });
   }
 
   bindInputEvents(input) {

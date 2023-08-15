@@ -3,7 +3,6 @@ import { h } from './element';
 import Suggest from './suggest';
 import Datepicker from './datepicker';
 import { cssPrefix } from '../config';
-// import { mouseMoveUp } from '../event';
 
 function resetTextareaSize() {
   const { inputText } = this;
@@ -159,11 +158,11 @@ function dateFormat(d) {
 }
 
 export default class Editor {
-  constructor(formulas, viewFn, rowHeight) {
+  constructor(event, formulas, viewFn, rowHeight) {
     this.viewFn = viewFn;
     this.rowHeight = rowHeight;
     this.formulas = formulas;
-    this.suggest = new Suggest(formulas, (it) => {
+    this.suggest = new Suggest(event, formulas, (it) => {
       suggestItemClick.call(this, it);
     });
     this.datepicker = new Datepicker();

@@ -1,5 +1,4 @@
 import { h } from './element';
-import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 import { tf } from '../locale/locale';
 
@@ -47,7 +46,8 @@ function buildMenu() {
 }
 
 export default class ContextMenu {
-  constructor(viewFn, isHide = false) {
+  constructor(event, viewFn, isHide = false) {
+    this.event = event;
     this.menuItems = buildMenu.call(this);
     this.el = h('div', `${cssPrefix}-contextmenu`)
       .children(...this.menuItems)
@@ -72,7 +72,7 @@ export default class ContextMenu {
   hide() {
     const { el } = this;
     el.hide();
-    unbindClickoutside(el);
+    this.event.unbindClickoutside(el);
   }
 
   setPosition(x, y) {
@@ -95,6 +95,6 @@ export default class ContextMenu {
         .css('max-height', `${view.height - y}px`)
         .css('bottom', 'auto');
     }
-    bindClickoutside(el);
+    this.event.bindClickoutside(el);
   }
 }

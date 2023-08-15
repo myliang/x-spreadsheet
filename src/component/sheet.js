@@ -1,11 +1,5 @@
 /* global window */
 import { h } from './element';
-import {
-  bind,
-  mouseMoveUp,
-  bindTouch,
-  createEventEmitter,
-} from './event';
 import Resizer from './resizer';
 import Scrollbar from './scrollbar';
 import Selector from './selector';
@@ -409,7 +403,7 @@ function overlayerMousedown(evt) {
     }
 
     // mouse move up
-    mouseMoveUp(window, (e) => {
+    this.event.mouseMoveUp(window, (e) => {
       // console.log('mouseMoveUp::::');
       ({ ri, ci } = data.getCellRectByXY(e.offsetX, e.offsetY));
       if (isAutofillEl) {
@@ -648,7 +642,7 @@ function sheetInitEvents() {
   };
 
   // slide on mobile
-  bindTouch(overlayerEl.el, {
+  this.event.bindTouch(overlayerEl.el, {
     move: (direction, d) => {
       overlayerTouch.call(this, direction, d);
     },
@@ -715,28 +709,28 @@ function sheetInitEvents() {
     }
   };
 
-  bind(window, 'resize', () => {
+  this.event.bind(window, 'resize', () => {
     this.reload();
   });
 
-  bind(window, 'click', (evt) => {
+  this.event.bind(window, 'click', (evt) => {
     this.focusing = overlayerEl.contains(evt.target);
   });
 
-  bind(window, 'paste', (evt) => {
+  this.event.bind(window, 'paste', (evt) => {
     if (!this.focusing) return;
     paste.call(this, 'all', evt);
     evt.preventDefault();
   });
 
-  bind(window, 'copy', (evt) => {
+  this.event.bind(window, 'copy', (evt) => {
     if (!this.focusing) return;
     copy.call(this, evt);
     evt.preventDefault();
   });
 
   // for selector
-  bind(window, 'keydown', (evt) => {
+  this.event.bind(window, 'keydown', (evt) => {
     if (!this.focusing) return;
     const keyCode = evt.keyCode || evt.which;
     const {
@@ -886,32 +880,34 @@ function sheetInitEvents() {
 }
 
 export default class Sheet {
-  constructor(targetEl, data) {
-    this.eventMap = createEventEmitter();
+  constructor(event, targetEl, data) {
+    this.event = event;
+    this.eventMap = event.createEventEmitter();
     const { view, showToolbar, showContextmenu } = data.settings;
     this.el = h('div', `${cssPrefix}-sheet`);
-    this.toolbar = new Toolbar(data, view.width, !showToolbar);
+    this.toolbar = new Toolbar(event, data, view.width, !showToolbar);
     this.print = new Print(data);
     targetEl.children(this.toolbar.el, this.el, this.print.el);
     this.data = data;
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
-    this.rowResizer = new Resizer(false, data.rows.height);
-    this.colResizer = new Resizer(true, data.cols.minWidth);
+    this.rowResizer = new Resizer(event, false, data.rows.height);
+    this.colResizer = new Resizer(event, true, data.cols.minWidth);
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
     this.horizontalScrollbar = new Scrollbar(false);
     // editor
     this.editor = new Editor(
+      event,
       formulas,
       () => this.getTableOffset(),
       data.rows.height,
     );
     // data validation
-    this.modalValidation = new ModalValidation();
+    this.modalValidation = new ModalValidation(event);
     // contextMenu
-    this.contextMenu = new ContextMenu(() => this.getRect(), !showContextmenu);
+    this.contextMenu = new ContextMenu(event, () => this.getRect(), !showContextmenu);
     // selector
     this.selector = new Selector(data);
     this.overlayerCEl = h('div', `${cssPrefix}-overlayer-content`)
@@ -922,7 +918,7 @@ export default class Sheet {
     this.overlayerEl = h('div', `${cssPrefix}-overlayer`)
       .child(this.overlayerCEl);
     // sortFilter
-    this.sortFilter = new SortFilter();
+    this.sortFilter = new SortFilter(event);
     // root element
     this.el.children(
       this.tableEl,

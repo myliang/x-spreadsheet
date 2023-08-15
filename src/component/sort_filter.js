@@ -1,6 +1,5 @@
 import { h } from './element';
 import Button from './button';
-import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
 import { t } from '../locale/locale';
 
@@ -33,7 +32,8 @@ function resetFilterHeader() {
 }
 
 export default class SortFilter {
-  constructor() {
+  constructor(event) {
+    this.event = event;
     this.filterbEl = h('div', `${cssPrefix}-body`);
     this.filterhEl = h('div', `${cssPrefix}-header state`).on('click.stop', () => this.filterClick(0, 'all'));
     this.el = h('div', `${cssPrefix}-sort-filter`).children(
@@ -122,7 +122,7 @@ export default class SortFilter {
   setOffset(v) {
     this.el.offset(v).show();
     let tindex = 1;
-    bindClickoutside(this.el, () => {
+    this.event.bindClickoutside(this.el, () => {
       if (tindex <= 0) {
         this.hide();
       }
@@ -136,6 +136,6 @@ export default class SortFilter {
 
   hide() {
     this.el.hide();
-    unbindClickoutside(this.el);
+    this.event.unbindClickoutside(this.el);
   }
 }

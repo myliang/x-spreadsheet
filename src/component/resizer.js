@@ -1,10 +1,10 @@
 /* global window */
 import { h } from './element';
-import { mouseMoveUp } from './event';
 import { cssPrefix } from '../config';
 
 export default class Resizer {
-  constructor(vertical = false, minDistance) {
+  constructor(event, vertical = false, minDistance) {
+    this.event = event;
     this.moving = false;
     this.vertical = vertical;
     this.el = h('div', `${cssPrefix}-resizer ${vertical ? 'vertical' : 'horizontal'}`).children(
@@ -83,7 +83,7 @@ export default class Resizer {
     let distance = vertical ? cRect.width : cRect.height;
     // console.log('distance:', distance);
     lineEl.show();
-    mouseMoveUp(window, (e) => {
+    this.event.mouseMoveUp(window, (e) => {
       this.moving = true;
       if (startEvt !== null && e.buttons === 1) {
         // console.log('top:', top, ', left:', top, ', cRect:', cRect);

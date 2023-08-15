@@ -23,16 +23,16 @@ function buildTd(iconName) {
 }
 
 export default class BorderPalette {
-  constructor() {
+  constructor(event) {
     this.color = '#000';
     this.style = 'thin';
     this.mode = 'all';
     this.change = () => {};
-    this.ddColor = new DropdownColor('line-color', this.color);
+    this.ddColor = new DropdownColor(event, 'line-color', this.color);
     this.ddColor.change = (color) => {
       this.color = color;
     };
-    this.ddType = new DropdownLineType(this.style);
+    this.ddType = new DropdownLineType(event, this.style);
     this.ddType.change = ([s]) => {
       this.style = s;
     };
