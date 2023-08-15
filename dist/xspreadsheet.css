@@ -9,9 +9,9 @@ body {
   --ss-accent-color-hsl: var(--ss-accent-h) var(--ss-accent-s) var(--ss-accent-l);
   --ss-text-color-hsl: 359deg 100% 0%;
   --ss-background-hsl: 360deg 0% 100%;
-  --ss-background-alt-hsl: 360deg 0% 90%;
-  --ss-background-secondary-hsl: 360deg 0% 95%;
-  --ss-background-secondary-alt-hsl: 360deg 0% 85%;
+  --ss-background-alt-hsl: 360deg 0% 95%;
+  --ss-background-secondary-hsl: 360deg 0% 93%;
+  --ss-background-secondary-alt-hsl: 360deg 0% 88%;
   --ss-background: hsl(var(--ss-background-hsl));
   --ss-background-secondary: hsl(var(--ss-background-secondary-hsl));
   --ss-background-alt: hsl(var(--ss-background-alt-hsl));
@@ -546,6 +546,10 @@ body {
 .x-spreadsheet-toolbar .x-spreadsheet-toolbar-btn .x-spreadsheet-dropdown-header .icon-align-left,
 .x-spreadsheet-toolbar .x-spreadsheet-toolbar-btn .x-spreadsheet-dropdown-header .icon-align-middle {
   display: inline-block;
+}
+.x-spreadsheet-toolbar .x-spreadsheet-toolbar-btn .x-spreadsheet-dropdown-header .icon-align-left svg,
+.x-spreadsheet-toolbar .x-spreadsheet-toolbar-btn .x-spreadsheet-dropdown-header .icon-align-middle svg {
+  vertical-align: middle;
 }
 .x-spreadsheet-toolbar-divider {
   display: inline-block;

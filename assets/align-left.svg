@@ -2,6 +2,6 @@
     <g>
         <path fill-rule="evenodd"
             d="M0,14 L10,14 L10,12 L0,12 L0,14 Z M10,4 L0,4 L0,6 L10,6 L10,4 Z M0,0 L0,2 L14,2 L14,0 L0,0 Z M0,10 L14,10 L14,8 L0,8 L0,10 Z"
-            transform="translate(2 2)" />
+            transform="translate(2)" />
     </g>
 </svg>
