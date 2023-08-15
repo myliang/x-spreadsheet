@@ -85,8 +85,22 @@
                 console.log('click preview button：', data)
               }
             }
-          ],
-        }
+          ]
+        },
+          formats: [
+            {
+              key: 'date',
+              numfmt: 'dd/mm/yyyy',
+              label: '31/12/1971',
+              title: 'Short Date'
+            },
+            // {
+            //   key: 'longdate',
+            //   numfmt: 'dddd, dd mmmm , yyyy',
+            //   label: 'Friday, 31 December, 1971',
+            //   title: 'Long Date'
+            // },
+          ]
       })
         .loadData([{
           freeze: 'B3',

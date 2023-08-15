@@ -112,7 +112,7 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     if ((typeof (style.format) !== 'undefined')
       && ((typeof (cellText) === 'string') || (typeof (cellText) === 'number'))
     ) {
-      cellText = formatm.render(style.format, cellText);
+      cellText = formatm.render(style.format, cellText, data.settings);
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
@@ -356,7 +356,6 @@ function renderFreezeHighlightLine(fw, fh, ftw, fth) {
 
   // color = '#4b89ff99';
   // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-stroke') || '#4b89ff99';
-  console.log(color);
   draw.save()
     .translate(fw, fh)
     .attr({ strokeStyle: `${color}` })

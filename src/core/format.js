@@ -84,12 +84,28 @@ const baseFormats = [
     render: numfmt(eurFmt),
   },
   {
-    // key: 'date',
+    key: 'date',
     numfmt: dateFmt,
     title: tf('format.date'),
     type: 'date',
     label: '26/09/2008',
     render: numfmt(dateFmt),
+  },
+  
+  // {
+  //   key: 'datetime',
+  //   title: tf('format.datetime'),
+  //   type: 'date',
+  //   label: '26/09/2008 15:59:00',
+  //   render: timeFmt,
+  // },
+  {
+    key: 'longdate',
+    numfmt: longdateFmt,
+    title: tf('format.longdate'),
+    type: 'date',
+    label: 'Friday, Dec. 31, 1971',
+    render: numfmt(longdateFmt),
   },
   {
     // key: 'time',
@@ -99,22 +115,6 @@ const baseFormats = [
     label: '15:59:00',
     render: numfmt(timeFmt),
   },
-  // {
-  //   key: 'datetime',
-  //   title: tf('format.datetime'),
-  //   type: 'date',
-  //   label: '26/09/2008 15:59:00',
-  //   render: timeFmt,
-  // },
-  {
-    // key: 'longdate',
-    numfmt: longdateFmt,
-    title: tf('format.longdate'),
-    type: 'date',
-    label: '24:01:00',
-    render: numfmt(longdateFmt),
-  },
-
 ];
 
 // const formats = (ary = []) => {
@@ -126,12 +126,36 @@ const baseFormats = [
 // };
 const formatm = {};
 baseFormats.forEach((f) => {
-  formatm[f.key] = f;
+  formatm[f.numfmt] = f;
 });
+
+export function mergeFormats(custom) {
+  custom.forEach(c => {
+    const bf = baseFormats.find(f => f.key === c.key);
+    if(bf) {
+      bf.numfmt = c.numfmt;
+      bf.label = c.label || bf.label;
+      bf.render = numfmt(c.numfmt);
+      bf.title = c.title ? ()=>c.title : bf.title;
+      bf.type = c.type || bf.type;
+    } else {
+      const nf = {
+        key: c.key,
+        numfmt: c.numfmt,
+        render: numfmt(c.numfmt),
+        title: ()=>c.title,
+        label: c.label,
+        type: c.type,
+      }
+      baseFormats.push(nf);
+      formatm[f.numfmt] = nf;
+    }
+  })
+}
 
 const numfmtCache = new Map();
 
-formatm.render = (format, cellText) => {
+formatm.render = (format, cellText, settings) => {
   const p = numfmt.parseValue(cellText);
 
   const v = (p && p.v) || cellText;

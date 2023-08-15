@@ -104,6 +104,7 @@ const defaultSettings = {
       italic: false,
     },
     format: '',
+    dateFormat: 'mm/dd/yyyy',
   },
 };
 
