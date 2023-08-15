@@ -34,9 +34,11 @@ body {
   --toolbar-bg-active: hsl(var(--ss-text-color-hsl) / 0.15);
   --form-input: hsl(var(--ss-background-hsl) / 0.87);
   --form-error: #DB2828;
-  --table-header: var(--ss-background-secondary-alt);
-  --table-stroke: var(--ss-border-color);
-  --table-header-text: var(--ss-text-color-muted);
+  --table-header: hsl(360deg 0% 88%);
+  --table-background: #fff;
+  --table-text: #000;
+  --table-stroke: hsl(220, 6%, 51%);
+  --table-header-text: hsl(359deg 100% 0%);
 }
 .x-spreadsheet {
   font-size: 13px;
@@ -55,6 +57,7 @@ body {
 .x-spreadsheet-sheet {
   position: relative;
   overflow: hidden;
+  background: var(--table-background);
 }
 .x-spreadsheet-table {
   vertical-align: bottom;
@@ -91,7 +94,7 @@ body {
   padding: 0;
   border-collapse: separate;
   border-spacing: 2;
-  background: var(--ss-background);
+  background: var(--table-background);
 }
 .x-spreadsheet-color-palette table td {
   margin: 0;

@@ -53,10 +53,10 @@ export default class Spreadsheet {
     if (!this.options.style || !this.options.style.bgcolor) {
       this.options.style = this.options.style || {};
       const bgColor = global.getComputedStyle(rootEl.el)
-        .getPropertyValue('--ss-background') || '#fff';
+        .getPropertyValue('--table-background') || '#fff';
       this.options.style.bgcolor = bgColor;
       const color = global.getComputedStyle(rootEl.el)
-        .getPropertyValue('--ss-text-color') || '#000';
+        .getPropertyValue('--table-text') || '#000';
       this.options.style.color = color;
     }
   }
