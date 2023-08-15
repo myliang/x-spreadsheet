@@ -255,7 +255,11 @@ const evalSuffixExpr = (srcStack,formulaMap,cellRender,cellList) => {
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      stack.push(formulaMap[f].render(params.reverse()));
+      if(formulaMap[f] !== undefined && formulaMap[f].render){
+        stack.push(formulaMap[f].render(params.reverse()));
+      } else {
+        stack.push("#ERROR");
+      }
     }
     else if (formulaMap[expr]) { // try to support unary operators
       const params = [];

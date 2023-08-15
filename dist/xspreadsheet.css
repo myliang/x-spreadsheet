@@ -9,7 +9,7 @@ body {
   --ss-accent-color-hsl: var(--ss-accent-h) var(--ss-accent-s) var(--ss-accent-l);
   --ss-text-color-hsl: 359deg 100% 0%;
   --ss-background-hsl: 360deg 0% 100%;
-  --ss-background-alt-hsl: 360deg 0% 80%;
+  --ss-background-alt-hsl: 360deg 0% 90%;
   --ss-background-secondary-hsl: 360deg 0% 95%;
   --ss-background-secondary-alt-hsl: 360deg 0% 85%;
   --ss-background: hsl(var(--ss-background-hsl));
