@@ -2,21 +2,21 @@ body {
   margin: 0;
 }
 .x-spreadsheet {
-  --ss-accent-h: 118;
-  --ss-accent-s: 80%;
-  --ss-accent-l: 80%;
+  --ss-accent-h: 218;
+  --ss-accent-s: 100%;
+  --ss-accent-l: 65%;
   --ss-accent-color: hsl(var(--ss-accent-h), var(--ss-accent-s), var(--ss-accent-l));
   --ss-accent-color-hsl: var(--ss-accent-h) var(--ss-accent-s) var(--ss-accent-l);
-  --ss-text-color-hsl: 0deg 100% 100%;
-  --ss-background-hsl: 220deg 50% 15%;
-  --ss-background-alt-hsl: 220deg 50% 35%;
-  --ss-background-secondary-hsl: 220deg 60% 25%;
-  --ss-background-secondary-alt-hsl: 220deg 60% 45%;
+  --ss-text-color-hsl: 359deg 100% 0%;
+  --ss-background-hsl: 360deg 0% 100%;
+  --ss-background-alt-hsl: 360deg 0% 80%;
+  --ss-background-secondary-hsl: 360deg 0% 95%;
+  --ss-background-secondary-alt-hsl: 360deg 0% 85%;
   --ss-background: hsl(var(--ss-background-hsl));
   --ss-background-secondary: hsl(var(--ss-background-secondary-hsl));
   --ss-background-alt: hsl(var(--ss-background-alt-hsl));
   --ss-background-secondary-alt: hsl(var(--ss-background-secondary-alt-hsl));
-  --ss-border-color: hsl(220deg 60% 75%);
+  --ss-border-color: hsl(220, 6%, 51%);
   --ss-text-color: hsl(var(--ss-text-color-hsl));
   --ss-text-color-muted: hsl(var(--ss-text-color-hsl) / 0.6);
   --tooltip-background: hsl(var(--ss-text-color-hsl) / 1);
