@@ -159,11 +159,12 @@ class Rows {
                   } else if ((rn <= 1 && cn > 1 && (dsri > eri || deri < sri))
                     || (cn <= 1 && rn > 1 && (dsci > eci || deci < sci))
                     || (rn <= 1 && cn <= 1)) {
-                    const result = /[\\.\d]+$/.exec(text);
-                    // console.log('result:', result);
+                    const result = RegExp(/(\d+)(?!.*\d+)/, 'g').exec(text);
                     if (result !== null) {
-                      const index = Number(result[0]) + n - 1;
-                      ncell.text = text.substring(0, result.index) + index;
+                      const s = result[0];
+                      let t = String(Number(s) + n - 1);
+                      t = '0'.repeat(Math.max(0, s.length - t.length)) + t
+                      ncell.text = text.substring(0, result.index) + t + text.substring(result.index + s.length);
                     }
                   }
                 }
