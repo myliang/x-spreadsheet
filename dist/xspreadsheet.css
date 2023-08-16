@@ -28,7 +28,7 @@ body {
   --dropdown-shadow: hsl(var(--ss-text-color-hsl) / 0.07);
   --scrollbar-bgcolor: #f4f5f8;
   --scollbar-color: rgb(from var(--ss-accent-color) h s calc(l + 5%));
-  --item-hover: hsl(var(--ss-text-color-hsl) / 0.05);
+  --item-hover: hsl(360deg 0% 50%);
   --divider: hsl(var(--ss-text-color-hsl) / 0.1);
   --menu-divider: hsl(var(--ss-text-color-hsl) / 0.1);
   --toolbar-bg-active: hsl(var(--ss-text-color-hsl) / 0.15);
@@ -36,6 +36,7 @@ body {
   --form-error: #DB2828;
   --table-header: hsl(360deg 0% 88%);
   --table-background: #fff;
+  --table-background-alt: hsl(360deg 0% 95%);
   --table-text: #000;
   --table-stroke: hsl(220, 6%, 51%);
   --table-header-text: hsl(359deg 100% 0%);
@@ -92,9 +93,11 @@ body {
 .x-spreadsheet-color-palette table {
   margin: 0;
   padding: 0;
-  border-collapse: separate;
+  border-collapse: separate !important;
   border-spacing: 2;
-  background: var(--table-background);
+}
+.x-spreadsheet-color-palette table tbody tr {
+  background: var(--ss-background-secondary-alt);
 }
 .x-spreadsheet-color-palette table td {
   margin: 0;
@@ -102,7 +105,7 @@ body {
   border: 1px solid transparent;
 }
 .x-spreadsheet-color-palette table td:hover {
-  border-color: var(--ss-border-color-hover);
+  border-color: var(--ss-accent-color);
 }
 .x-spreadsheet-color-palette table td .x-spreadsheet-color-palette-cell {
   width: 16px;
@@ -116,11 +119,17 @@ body {
   padding: 0;
   border-collapse: separate;
   border-spacing: 0;
-  background: var(--ss-background);
   table-layout: fixed;
 }
-.x-spreadsheet-border-palette table td {
+.x-spreadsheet-border-palette table tbody tr {
+  background: var(--ss-background-secondary-alt);
+}
+.x-spreadsheet-border-palette table tbody tr td {
   margin: 0;
+}
+.x-spreadsheet-border-palette table tbody tr td .x-spreadsheet-dropdown .x-spreadsheet-item {
+  color: var(--ss-text-color-muted);
+  stroke: var(--ss-text-color-muted);
 }
 .x-spreadsheet-border-palette .x-spreadsheet-border-palette-left {
   border-right: 1px solid var(--ss-border-color-hover);
@@ -266,7 +275,7 @@ body {
 }
 .x-spreadsheet-editor,
 .x-spreadsheet-selector {
-  box-sizing: content-box;
+  box-sizing: content-box !important;
   position: absolute;
   overflow: hidden;
   pointer-events: none;
@@ -290,6 +299,7 @@ body {
   border: 2px solid var(--ss-accent-color);
   background: rgba(var(--ss-accent-color), 0.1);
   z-index: 5;
+  box-sizing: content-box;
 }
 .x-spreadsheet-selector .x-spreadsheet-selector-clipboard,
 .x-spreadsheet-selector .x-spreadsheet-selector-autofill {
@@ -312,7 +322,7 @@ body {
   width: 5px;
   right: -5px;
   bottom: -5px;
-  border: 2px solid var(--ss-background);
+  border: 2px solid var(--table-background);
   background: var(--ss-accent-color);
   box-sizing: content-box;
 }
@@ -336,8 +346,8 @@ body {
   text-align: start;
   overflow-y: hidden;
   font: 400 13px Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
-  color: var(--ss-text-color);
-  background: var(--ss-background-alt);
+  color: var(--table-text);
+  background: var(--table-background-alt);
   white-space: normal;
   word-wrap: break-word;
   line-height: 22px;
