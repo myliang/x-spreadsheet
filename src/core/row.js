@@ -1,6 +1,13 @@
 import helper from './helper';
 import { expr2expr } from './alphabet';
 
+function add(num1, num2) {
+  const num1Digits = (num1.toString().split('.')[1] || '').length;
+  const num2Digits = (num2.toString().split('.')[1] || '').length;
+  const baseNum = Math.pow(10, Math.max(num1Digits, num2Digits));
+  return (num1 * baseNum + num2 * baseNum) / baseNum;
+}
+
 class Rows {
   constructor({ len, height }) {
     this._ = {};
@@ -162,7 +169,7 @@ class Rows {
                     const result = /[\\.\d]+$/.exec(text);
                     // console.log('result:', result);
                     if (result !== null) {
-                      const index = Number(result[0]) + n - 1;
+                      const index =add(result[0],n-1);
                       ncell.text = text.substring(0, result.index) + index;
                     }
                   }
