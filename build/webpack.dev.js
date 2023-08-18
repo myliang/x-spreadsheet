@@ -27,5 +27,6 @@ module.exports = merge(common, {
   devServer: {
     host: 'localhost',
     contentBase: '../dist',
+    disableHostCheck: true
   },
 });
