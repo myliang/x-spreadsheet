@@ -48,6 +48,10 @@ export default {
     size: 'Paper size',
     orientation: 'Page orientation',
     orientations: ['Landscape', 'Portrait'],
+	printmodel: 'printScale',
+    printmodels: ['print all colums on one page', 'print all on one page', 'none', 'print all rows on one page'],
+    showPageNumers: 'show page numbers',
+    numbertype: 1,
   },
   format: {
     normal: 'Normal',

@@ -48,6 +48,10 @@ export default {
     size: '纸张大小',
     orientation: '方向',
     orientations: ['横向', '纵向'],
+	printmodel: '打印缩放',
+    printmodels: ['将所有列打印在一页', '将整个工作表打印在一页', '无打印缩放', '将所有行打印在一页'],
+    showPageNumers: '是否显示页码',
+    numbertype: 0,
   },
   format: {
     normal: '正常',
