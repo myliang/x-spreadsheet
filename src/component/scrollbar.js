@@ -29,16 +29,16 @@ export default class Scrollbar {
 
   set(distance, contentDistance) {
     const d = distance - 1;
-    // console.log('distance:', distance, ', contentDistance:', contentDistance);
-    if (contentDistance > d) {
-      const cssKey = this.vertical ? 'height' : 'width';
-      // console.log('d:', d);
-      this.el.css(cssKey, `${d - 15}px`).show();
-      this.contentEl
-        .css(this.vertical ? 'width' : 'height', '1px')
-        .css(cssKey, `${contentDistance}px`);
-    } else {
-      this.el.hide();
+    const cssKey = this.vertical ? 'height' : 'width';
+    // console.log('d:', d);
+    this.el.css(cssKey, `${d - 15}px`).show();
+    this.contentEl
+      .css(this.vertical ? 'width' : 'height', '1px')
+      .css(cssKey, `${contentDistance}px`);
+    if (contentDistance <= d) {
+      setTimeout(() => {
+        this.el.hide()
+      });
     }
     return this;
   }
