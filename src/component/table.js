@@ -3,6 +3,7 @@ import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
 import { formulam } from '../core/formula';
 import { formatm } from '../core/format';
+import { isFunction } from '../core/helper';
 
 import {
   Draw, DrawBox, thinLineWidth, npx,
@@ -184,7 +185,7 @@ function renderSelectedHeaderCell(x, y, w, h) {
 // h: the fixed height of header
 // tx: moving distance on x-axis
 // ty: moving distance on y-axis
-function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
+function renderFixedHeaders(type, viewRange, w, h, tx, ty, headerCellRender) {
   const { draw, data } = this;
   const sumHeight = viewRange.h; // rows.sumHeight(viewRange.sri, viewRange.eri + 1);
   const sumWidth = viewRange.w; // cols.sumWidth(viewRange.sci, viewRange.eci + 1);
@@ -233,7 +234,8 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
       if (sci <= ii && ii < eci + 1) {
         renderSelectedHeaderCell.call(this, x, 0, colWidth, h);
       }
-      draw.fillText(stringAt(ii), x + (colWidth / 2), h / 2);
+      const text = isFunction(headerCellRender) ? headerCellRender(stringAt(ii), ii) : stringAt(ii);
+      draw.fillText(text, x + (colWidth / 2), h / 2);
       if (i > 0 && data.cols.isHide(i - 1)) {
         draw.save();
         draw.attr({ strokeStyle: '#c6c6c6' });
@@ -314,7 +316,7 @@ class Table {
   render() {
     // resize canvas
     const { data } = this;
-    const { rows, cols } = data;
+    const { rows, cols, headerCellRender } = data;
     // fixed width of header
     const fw = cols.indexWidth;
     // fixed height of header
@@ -331,7 +333,8 @@ class Table {
     // 1
     renderContentGrid.call(this, viewRange, fw, fh, tx, ty);
     renderContent.call(this, viewRange, fw, fh, -x, -y);
-    renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty);
+
+    renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty, headerCellRender);
     renderFixedLeftTopCell.call(this, fw, fh);
     const [fri, fci] = data.freeze;
     if (fri > 0 || fci > 0) {
@@ -343,7 +346,7 @@ class Table {
         vr.h = ty;
         renderContentGrid.call(this, vr, fw, fh, tx, 0);
         renderContent.call(this, vr, fw, fh, -x, 0);
-        renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0);
+        renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0, headerCellRender);
       }
       // 3
       if (fci > 0) {
@@ -352,13 +355,13 @@ class Table {
         vr.eci = fci - 1;
         vr.w = tx;
         renderContentGrid.call(this, vr, fw, fh, 0, ty);
-        renderFixedHeaders.call(this, 'left', vr, fw, fh, 0, ty);
+        renderFixedHeaders.call(this, 'left', vr, fw, fh, 0, ty, headerCellRender);
         renderContent.call(this, vr, fw, fh, 0, -y);
       }
       // 4
       const freezeViewRange = data.freezeViewRange();
       renderContentGrid.call(this, freezeViewRange, fw, fh, 0, 0);
-      renderFixedHeaders.call(this, 'all', freezeViewRange, fw, fh, 0, 0);
+      renderFixedHeaders.call(this, 'all', freezeViewRange, fw, fh, 0, 0, headerCellRender);
       renderContent.call(this, freezeViewRange, fw, fh, 0, 0);
       // 5
       renderFreezeHighlightLine.call(this, fw, fh, tx, ty);

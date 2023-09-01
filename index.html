@@ -101,7 +101,17 @@
             2: { width: 200 },
           },
           rows,
-        }, { name: 'sheet-test', rows: rows10 }]).change((cdata) => {
+        }, { 
+          name: 'sheet-test', 
+          rows: rows10,
+        },{ 
+          name: 'sheet-custom-header', 
+          rows: rows10,
+          headerCellRender: function(text, ii) {
+            return '第' + text + '列';
+          },
+          headerCellBackground: 'red'
+        }]).change((cdata) => {
           // console.log(cdata);
           console.log('>>>', xs.getData());
         });

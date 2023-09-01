@@ -133,6 +133,14 @@ export function numberCalc(type, a1, a2) {
   return ret.toFixed(Math.max(al1, al2));
 }
 
+function getObjType(o) {
+  return Object.prototype.toString.call(o);
+}
+
+export function isFunction(fn) {
+  return getObjType(fn) === '[object Function]';
+}
+
 export default {
   cloneDeep,
   merge: (...sources) => mergeDeep({}, ...sources),
@@ -144,4 +152,5 @@ export default {
   rangeReduceIf,
   deleteProperty,
   numberCalc,
+  isFunction,
 };
