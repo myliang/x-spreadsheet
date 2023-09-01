@@ -13,7 +13,11 @@ function returnMessage(flag, key, ...arg) {
   }
   return [flag, message];
 }
-
+export function  sanitizeHTML(str) {
+return str.replace(/[^\w. ]/gi, function (c) {
+    return '&#' + c.charCodeAt(0) + ';';
+  });
+};
 export default class Validator {
   // operator: b|nb|eq|neq|lt|lte|gt|gte
   // type: date|number|list|phone|email
