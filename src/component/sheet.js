@@ -67,8 +67,12 @@ function scrollbarMove() {
   }
 }
 
-function selectorSet(multiple, ri, ci, indexesUpdated = true, moving = false) {
+function selectorSet(multiple, _ri, _ci, indexesUpdated = true, moving = false) {
+  const { showColHeader, showRowHeader } = this.data.settings;
+  const ri = (!showColHeader && _ri === -1) ? 0 : _ri;
+  const ci = (!showRowHeader && _ci === -1) ? 0 : _ci;
   if (ri === -1 && ci === -1) return;
+
   const {
     table, selector, toolbar, data,
     contextMenu,
@@ -136,7 +140,7 @@ function overlayerMousemove(evt) {
     rowResizer, colResizer, tableEl, data,
   } = this;
   const { rows, cols } = data;
-  if (offsetX > cols.indexWidth && offsetY > rows.height) {
+  if (offsetX > data.getFw() && offsetY > data.getFh()) {
     rowResizer.hide();
     colResizer.hide();
     return;
@@ -144,7 +148,7 @@ function overlayerMousemove(evt) {
   const tRect = tableEl.box();
   const cRect = data.getCellRectByXY(evt.offsetX, evt.offsetY);
   if (cRect.ri >= 0 && cRect.ci === -1) {
-    cRect.width = cols.indexWidth;
+    cRect.width = data.getFw();
     rowResizer.show(cRect, {
       width: tRect.width,
     });
@@ -157,7 +161,7 @@ function overlayerMousemove(evt) {
     rowResizer.hide();
   }
   if (cRect.ri === -1 && cRect.ci >= 0) {
-    cRect.height = rows.height;
+    cRect.height = data.getFh();
     colResizer.show(cRect, {
       height: tRect.height,
     });
@@ -897,7 +901,7 @@ export default class Sheet {
     // table
     this.tableEl = h('canvas', `${cssPrefix}-table`);
     // resizer
-    this.rowResizer = new Resizer(false, data.rows.height);
+    this.rowResizer = new Resizer(false, data.getFh());
     this.colResizer = new Resizer(true, data.cols.minWidth);
     // scrollbar
     this.verticalScrollbar = new Scrollbar(true);
@@ -906,7 +910,7 @@ export default class Sheet {
     this.editor = new Editor(
       formulas,
       () => this.getTableOffset(),
-      data.rows.height,
+      data.getFh(),
     );
     // data validation
     this.modalValidation = new ModalValidation();
@@ -1001,13 +1005,14 @@ export default class Sheet {
   }
 
   getTableOffset() {
-    const { rows, cols } = this.data;
+    const fw = this.data.getFw();
+    const fh = this.data.getFh();
     const { width, height } = this.getRect();
     return {
-      width: width - cols.indexWidth,
-      height: height - rows.height,
-      left: cols.indexWidth,
-      top: rows.height,
+      width: width - fw,
+      height: height - fh,
+      left: fw,
+      top: fh,
     };
   }
 }

@@ -75,9 +75,12 @@ const defaultSettings = {
     width: () => document.documentElement.clientWidth,
   },
   showGrid: true,
+  showSelect: true,
   showToolbar: true,
   showContextmenu: true,
   showBottomBar: true,
+  showRowHeader: true,
+  showColHeader: true,
   row: {
     len: 100,
     height: 25,
@@ -277,8 +280,9 @@ function getCellRowByY(y, scrollOffsety) {
   const { rows } = this;
   const fsh = this.freezeTotalHeight();
   // console.log('y:', y, ', fsh:', fsh);
-  let inits = rows.height;
-  if (fsh + rows.height < y) inits -= scrollOffsety;
+  const fh = this.getFh();
+  let inits = fh;
+  if (fsh + fh < y) inits -= scrollOffsety;
 
   // handle ri in autofilter
   const frset = this.exceptRowSet;
@@ -306,18 +310,19 @@ function getCellRowByY(y, scrollOffsety) {
 function getCellColByX(x, scrollOffsetx) {
   const { cols } = this;
   const fsw = this.freezeTotalWidth();
-  let inits = cols.indexWidth;
-  if (fsw + cols.indexWidth < x) inits -= scrollOffsetx;
+  const fw = this.getFw();
+  let inits = fw;
+  if (fsw + fw < x) inits -= scrollOffsetx;
   const [ci, left, width] = helper.rangeReduceIf(
     0,
     cols.len,
     inits,
-    cols.indexWidth,
+    fw,
     x,
     i => cols.getWidth(i),
   );
   if (left <= 0) {
-    return { ci: -1, left: 0, width: cols.indexWidth };
+    return { ci: -1, left: 0, width: fw };
   }
   return { ci: ci - 1, left, width };
 }
@@ -347,6 +352,18 @@ export default class DataProxy {
     this.exceptRowSet = new Set();
     this.sortedRowMap = new Map();
     this.unsortedRowMap = new Map();
+  }
+
+  getFw() {
+    const { showRowHeader } = this.settings;
+    const val = this.cols.indexWidth;
+    return showRowHeader ? val : 0;
+  }
+
+  getFh() {
+    const { showColHeader } = this.settings;
+    const val = this.rows.height;
+    return showColHeader ? val : 0;
   }
 
   addValidation(mode, ref, validator) {
@@ -663,8 +680,8 @@ export default class DataProxy {
     const {
       left, top, width, height,
     } = this.getSelectedRect();
-    const x1 = x - this.cols.indexWidth;
-    const y1 = y - this.rows.height;
+    const x1 = x - this.getFw();
+    const y1 = y - this.getFh();
     // console.log('x:', x, ',y:', y, 'left:', left, 'top:', top);
     return x1 > left && x1 < (left + width)
       && y1 > top && y1 < (top + height);
