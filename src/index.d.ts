@@ -12,8 +12,8 @@ declare module 'x-data-spreadsheet' {
     showSelect?: boolean; // 显示选择框
     showContextmenu?: boolean;
     showBottomBar?: boolean;
-    showRowHeader: true, // 显示行头
-    showColHeader: true, // 显示列头
+    showRowHeader: boolean, // 显示行头
+    showColHeader: boolean, // 显示列头
     extendToolbar?: {
       left?: ExtendToolbarOption[],
       right?: ExtendToolbarOption[],
