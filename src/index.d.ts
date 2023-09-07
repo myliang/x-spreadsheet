@@ -9,8 +9,11 @@ declare module 'x-data-spreadsheet' {
     mode?: 'edit' | 'read';
     showToolbar?: boolean;
     showGrid?: boolean;
+    showSelect?: boolean; // 显示选择框
     showContextmenu?: boolean;
     showBottomBar?: boolean;
+    showRowHeader: true, // 显示行头
+    showColHeader: true, // 显示列头
     extendToolbar?: {
       left?: ExtendToolbarOption[],
       right?: ExtendToolbarOption[],

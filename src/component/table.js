@@ -186,6 +186,7 @@ function renderSelectedHeaderCell(x, y, w, h) {
 // ty: moving distance on y-axis
 function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   const { draw, data } = this;
+  const { showRowHeader, showColHeader } = data.settings;
   const sumHeight = viewRange.h; // rows.sumHeight(viewRange.sri, viewRange.eri + 1);
   const sumWidth = viewRange.w; // cols.sumWidth(viewRange.sci, viewRange.eci + 1);
   const nty = ty + h;
@@ -194,8 +195,8 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   draw.save();
   // draw rect background
   draw.attr(tableFixedHeaderCleanStyle);
-  if (type === 'all' || type === 'left') draw.fillRect(0, nty, w, sumHeight);
-  if (type === 'all' || type === 'top') draw.fillRect(ntx, 0, sumWidth, h);
+  if (showRowHeader && (type === 'all' || type === 'left')) draw.fillRect(0, nty, w, sumHeight);
+  if (showColHeader && (type === 'all' || type === 'top')) draw.fillRect(ntx, 0, sumWidth, h);
 
   const {
     sri, sci, eri, eci,
@@ -205,7 +206,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   // text font, align...
   draw.attr(tableFixedHeaderStyle());
   // y-header-text
-  if (type === 'all' || type === 'left') {
+  if (showRowHeader && (type === 'all' || type === 'left')) {
     data.rowEach(viewRange.sri, viewRange.eri, (i, y1, rowHeight) => {
       const y = nty + y1;
       const ii = i;
@@ -225,7 +226,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
     draw.line([w, nty], [w, sumHeight + nty]);
   }
   // x-header-text
-  if (type === 'all' || type === 'top') {
+  if (showColHeader && (type === 'all' || type === 'top')) {
     data.colEach(viewRange.sci, viewRange.eci, (i, x1, colWidth) => {
       const x = ntx + x1;
       const ii = i;
@@ -314,11 +315,10 @@ class Table {
   render() {
     // resize canvas
     const { data } = this;
-    const { rows, cols } = data;
     // fixed width of header
-    const fw = cols.indexWidth;
+    const fw = data.getFw();
     // fixed height of header
-    const fh = rows.height;
+    const fh = data.getFh();
 
     this.draw.resize(data.viewWidth(), data.viewHeight());
     this.clear();

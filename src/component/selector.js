@@ -291,6 +291,7 @@ export default class Selector {
 
   set(ri, ci, indexesUpdated = true) {
     const { data } = this;
+    const { showSelect } = data.settings;
     const cellRange = data.calSelectedRangeByStart(ri, ci);
     const { sri, sci } = cellRange;
     if (indexesUpdated) {
@@ -306,7 +307,9 @@ export default class Selector {
     // this.eIndexes = eIndexes;
     this.range = cellRange;
     this.resetAreaOffset();
-    this.el.show();
+    if (showSelect) {
+      this.el.show();
+    }
   }
 
   setEnd(ri, ci, moving = true) {
