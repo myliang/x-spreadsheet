@@ -44,7 +44,6 @@ export default class Spreadsheet {
     } catch (e) {
       console.error(e);
     }
-    console.log(baseFormats);
     targetEl.appendChild(rootEl.el);
     this.sheet = new Sheet(rootEl,this.data);
     if (this.bottombar !== null) {
