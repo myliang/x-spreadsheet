@@ -9,7 +9,7 @@ class DropdownMore extends Dropdown {
   constructor() {
     const icon = new Icon('ellipsis');
     const moreBtns = h('div', `${cssPrefix}-toolbar-more`);
-    super(icon, 'auto', false, 'bottom-right', moreBtns);
+    super(icon, 'auto', false, 'bottom-right','dd-more', moreBtns);
     this.moreBtns = moreBtns;
     this.contentEl.css('max-width', '420px');
   }

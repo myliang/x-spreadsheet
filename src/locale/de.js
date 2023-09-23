@@ -36,7 +36,7 @@ export default {
     deleteCellText: 'Zellentext löschen',
   },
   format: {
-    normal: 'Regulär',
+    general: 'Regulär',
     text: 'Text',
     number: 'Nummer',
     percent: 'Prozent',

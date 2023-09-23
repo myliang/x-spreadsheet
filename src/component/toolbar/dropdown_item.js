@@ -17,7 +17,7 @@ export default class DropdownItem extends Item {
   }
 
   setState(v) {
-    if (v) {
+    if (v !== undefined) {
       this.value = v;
       this.dd.setTitle(v);
     }

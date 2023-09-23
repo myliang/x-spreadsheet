@@ -45,14 +45,20 @@ export function indexAt(str) {
 export function expr2xy(src) {
   let x = '';
   let y = '';
+  let xlock = false;
+  let ylock = false;
   for (let i = 0; i < src.length; i += 1) {
-    if (src.charAt(i) >= '0' && src.charAt(i) <= '9') {
+    if(src.charAt(i) === '$') {
+      if(x.length > 0) ylock = true
+      else xlock = true
+    } else  if (src.charAt(i) >= '0' && src.charAt(i) <= '9') {
       y += src.charAt(i);
     } else {
       x += src.charAt(i);
     }
   }
-  return [indexAt(x), parseInt(y, 10) - 1];
+
+  return [indexAt(x), parseInt(y, 10) - 1, xlock, ylock];
 }
 
 /** translate XY-tag to A1-tag
@@ -63,8 +69,10 @@ export function expr2xy(src) {
  * @param {number} y
  * @returns {tagA1}
  */
-export function xy2expr(x, y) {
-  return `${stringAt(x)}${y + 1}`;
+export function xy2expr(x, y, xlock, ylock) {
+  const x$ = xlock ? '$' : '';
+  const y$ = ylock ? '$' : '';
+  return `${x$}${stringAt(x)}${y$}${y + 1}`;
 }
 
 /** translate A1-tag src by (xn, yn)
@@ -77,9 +85,9 @@ export function xy2expr(x, y) {
  */
 export function expr2expr(src, xn, yn, condition = () => true) {
   if (xn === 0 && yn === 0) return src;
-  const [x, y] = expr2xy(src);
+  const [x, y, xlock, ylock] = expr2xy(src);
   if (!condition(x, y)) return src;
-  return xy2expr(x + xn, y + yn);
+  return xy2expr(x + (xlock ? 0 : xn), y + (ylock ? 0 : yn), xlock, ylock);
 }
 
 export default {

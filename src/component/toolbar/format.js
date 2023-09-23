@@ -7,7 +7,8 @@ export default class Format extends DropdownItem {
   }
 
   getValue(it) {
-    return it.key;
+    // return it.key;
+    return it.numfmt;
   }
 
   dropdown() {

@@ -89,7 +89,8 @@ declare module 'x-data-spreadsheet' {
   export interface RowData {
     cells: {
       [key: number]: CellData;
-    }
+    },
+    hidden?: boolean; // not used
   }
 
   /**
@@ -105,8 +106,18 @@ declare module 'x-data-spreadsheet' {
       [key: number]: ColProperties;
     };
     rows?: {
+      len?: number;
       [key: number]: RowData
     };
+    autofilter?: {
+      ref: string;
+      filters?: {
+        ci: number,
+        operator: string,
+        value: string[]
+      }[];
+      sort?: any
+    }
   }
 
   /**
@@ -114,6 +125,23 @@ declare module 'x-data-spreadsheet' {
    */
   export interface SpreadsheetData {
     [index: number]: SheetData;
+    state?: {
+      sheetName?: string;
+      selector?: any
+    }
+    metadata?: {
+      creator?: string,
+      category?: string,
+      company?: string,
+      created?: Date,
+      creator?: string,
+      keywords?: string,
+      lastModifiedBy?: string,
+      manager?: string,
+      modified?: Date,
+      subject?: string,
+      title?: string,
+    }
   }
 
   export interface CellStyle {
@@ -121,7 +149,13 @@ declare module 'x-data-spreadsheet' {
     valign?: 'top' | 'middle' | 'bottom';
     font?: {
       bold?: boolean;
+      italic?: boolean;
+      name?: string;
+      family?: number; // not yet used
+      size?: number;
     }
+    strike?: boolean;
+    underline?: boolean;
     bgcolor?: string;
     textwrap?: boolean;
     color?: string;
@@ -131,6 +165,7 @@ declare module 'x-data-spreadsheet' {
       bottom?: string[];
       left?: string[];
     };
+    format?: string;
   }
   export interface Editor {}
   export interface Element {}

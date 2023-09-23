@@ -10,6 +10,6 @@ export default class DropdownBorder extends Dropdown {
       this.change(v);
       this.hide();
     };
-    super(icon, 'auto', false, 'bottom-left', borderPalette.el);
+    super(icon, 'auto', false, 'bottom-right','dd-border', borderPalette.el);
   }
 }

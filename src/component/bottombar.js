@@ -11,7 +11,7 @@ import { tf } from '../locale/locale';
 class DropdownMore extends Dropdown {
   constructor(click) {
     const icon = new Icon('ellipsis');
-    super(icon, 'auto', false, 'top-left');
+    super(icon, 'auto', false, 'top-left', 'dd-more');
     this.contentClick = click;
   }
 
@@ -114,6 +114,7 @@ export default class Bottombar {
       const v = item.html();
       const input = new FormInput('auto', '');
       input.val(v);
+      // TODO: support ENTER key
       input.input.on('blur', ({ target }) => {
         const { value } = target;
         const nindex = this.dataNames.findIndex(it => it === v);

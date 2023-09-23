@@ -1,5 +1,26 @@
 import { expr2xy, xy2expr } from './alphabet';
+import font from './font';
 import { numberCalc } from './helper';
+
+function buildRange(stack) {
+  const [ex, ey] = expr2xy(stack.pop());
+  const [sx, sy] = expr2xy(stack.pop());
+  // console.log('::', sx, sy, ex, ey);
+  // let rangelen = 0;
+  const rows = [];
+  let items = [];
+  // TODO: what about rectangular selection
+  for (let x = sx; x <= ex; x += 1) {
+    for (let y = sy; y <= ey; y += 1) {
+      items.push(xy2expr(x, y));
+      // rangelen += 1;
+    }
+    rows.push(items);
+    items = [];
+  }
+
+  return rows;
+}
 
 // Converting infix expression to a suffix expression
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
@@ -12,13 +33,19 @@ const infixExprToSuffixExpr = (src) => {
   let fnArgOperator = '';
   let fnArgsLen = 1; // A1,A2,A3...
   let oldc = '';
+  let locked = false;
   for (let i = 0; i < src.length; i += 1) {
     const c = src.charAt(i);
     if (c !== ' ') {
-      if (c >= 'a' && c <= 'z') {
-        subStrs.push(c.toUpperCase());
+      // skip '$' for now
+      if (c === '$') {
+        locked = true;
+      } else if (c >= 'a' && c <= 'z') {
+        subStrs.push((locked ? '$' : '') + c.toUpperCase());
+        locked = false;
       } else if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c === '.') {
-        subStrs.push(c);
+        subStrs.push((locked ? '$' : '') + c);
+        locked = false;
       } else if (c === '"') {
         i += 1;
         while (src.charAt(i) !== '"') {
@@ -34,39 +61,52 @@ const infixExprToSuffixExpr = (src) => {
         if (c !== '(' && subStrs.length > 0) {
           stack.push(subStrs.join(''));
         }
-        if (c === ')') {
-          let c1 = operatorStack.pop();
-          if (fnArgType === 2) {
+        if (c === ')' /* || c === ',' */) {
+          // let c1 = operatorStack.pop();
+          if (fnArgType === 2) { // encountered a :
             // fn argument range => A1:B5
             try {
-              const [ex, ey] = expr2xy(stack.pop());
-              const [sx, sy] = expr2xy(stack.pop());
-              // console.log('::', sx, sy, ex, ey);
-              let rangelen = 0;
-              for (let x = sx; x <= ex; x += 1) {
-                for (let y = sy; y <= ey; y += 1) {
-                  stack.push(xy2expr(x, y));
-                  rangelen += 1;
-                }
-              }
-              stack.push([c1, rangelen]);
+              const items = buildRange(stack);
+              stack.push(items);
+              // it will be actually incremented lated
+              // if (c === ')') {
+              const c1 = operatorStack.pop();
+              stack.push({ f: c1, len: fnArgsLen });
+              // } else {
+              //   fnArgType = 1;
+              //   fnArgsLen += 1;
+              // }
             } catch (e) {
               // console.log(e);
             }
           } else if (fnArgType === 1 || fnArgType === 3) {
-            if (fnArgType === 3) stack.push(fnArgOperator);
+            if (fnArgType === 3) {
+              stack.push(fnArgOperator);
+              fnArgOperator = '';
+            }
+            // if (fnArgType === 1) stack.push({ f: c1, len: fnArgsLen});
+            // if (c === ')') {
+            const c1 = operatorStack.pop();
+
             // fn argument => A1,A2,B5
-            stack.push([c1, fnArgsLen]);
+            stack.push({ f: c1, len: fnArgsLen });
             fnArgsLen = 1;
+            // } else {
+            //   fnArgType = 1;
+            //   fnArgsLen += 1;
+            // }
           } else {
             // console.log('c1:', c1, fnArgType, stack, operatorStack);
+            let c1 = operatorStack.pop();
             while (c1 !== '(') {
               stack.push(c1);
               if (operatorStack.length <= 0) break;
               c1 = operatorStack.pop();
             }
           }
+          // if (c === ')') {
           fnArgType = 0;
+          // }
         } else if (c === '=' || c === '>' || c === '<') {
           const nc = src.charAt(i + 1);
           fnArgOperator = c;
@@ -78,8 +118,13 @@ const infixExprToSuffixExpr = (src) => {
         } else if (c === ':') {
           fnArgType = 2;
         } else if (c === ',') {
-          if (fnArgType === 3) {
+          // TODO: here if the previous parameter is a range, we should colllect it
+          if (fnArgType === 2) {
+            const items = buildRange(stack);
+            stack.push(items);
+          } else if (fnArgType === 3) {
             stack.push(fnArgOperator);
+            fnArgOperator = '';
           }
           fnArgType = 1;
           fnArgsLen += 1;
@@ -116,10 +161,18 @@ const infixExprToSuffixExpr = (src) => {
   while (operatorStack.length > 0) {
     stack.push(operatorStack.pop());
   }
+  if (fnArgOperator.length > 0) {
+    stack.push(fnArgOperator);
+  }
   return stack;
 };
 
 const evalSubExpr = (subExpr, cellRender) => {
+  if (Array.isArray(subExpr)) {
+    const ret = subExpr.map(e => evalSubExpr(e, cellRender));
+    return ret;
+  }
+
   const [fl] = subExpr;
   let expr = subExpr;
   if (fl === '"') {
@@ -134,7 +187,9 @@ const evalSubExpr = (subExpr, cellRender) => {
     return ret * Number(expr);
   }
   const [x, y] = expr2xy(expr);
-  return ret * cellRender(x, y);
+  // changed by gcannata
+  // return ret * cellRender(x, y);
+  return cellRender(x, y);
 };
 
 // evaluate the suffix expression
@@ -182,13 +237,31 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
         ret = (left <= top);
       }
       stack.push(ret);
-    } else if (Array.isArray(expr)) {
-      const [formula, len] = expr;
+    }
+    // by gcannata
+    // else if (Array.isArray(expr)) {
+    //   const [formula, len] = expr;
+    //   const params = [];
+    //   for (let j = 0; j < len; j += 1) {
+    //     params.push(stack.pop());
+    //   }
+    //   stack.push(formulaMap[formula].render(params.reverse()));
+    // }
+    else if (expr.f) {
+      const { f, len } = expr;
       const params = [];
       for (let j = 0; j < len; j += 1) {
         params.push(stack.pop());
       }
-      stack.push(formulaMap[formula].render(params.reverse()));
+      if (formulaMap[f] !== undefined && formulaMap[f].render) {
+        stack.push(formulaMap[f].render(params.reverse()));
+      } else {
+        stack.push('#ERROR');
+      }
+    } else if (formulaMap[expr]) { // try to support unary operators
+      const params = [];
+      params.push(stack.pop());
+      stack.push(formulaMap[expr].render(params));
     } else {
       if (cellList.includes(expr)) {
         return 0;
@@ -201,7 +274,11 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
     }
     // console.log('stack:', stack);
   }
-  return stack[0];
+  // by gcanata
+  // return stack[0];
+  const ret = stack[0];
+  if (ret !== undefined && ret !== null) return ret;
+  return 0;
 };
 
 const cellRender = (src, formulaMap, getCellText, cellList = []) => {

@@ -11,21 +11,27 @@ export default function tooltip(html, target) {
     left, top, width, height,
   } = target.getBoundingClientRect();
   const el = h('div', `${cssPrefix}-tooltip`).html(html).show();
-  document.body.appendChild(el.el);
+  const where = target.parentElement.parentElement;
+  // document.body.appendChild(el.el);
+  where.appendChild(el.el);
   const elBox = el.box();
+  const wherebox = where.getBoundingClientRect();
+  const tooltipLeft = left-wherebox.left;
+  const tooltiptop = top-wherebox.top;
+
   // console.log('elBox:', elBox);
-  el.css('left', `${left + (width / 2) - (elBox.width / 2)}px`)
-    .css('top', `${top + height + 2}px`);
+  el.css('left', `${tooltipLeft + (width / 2) - (elBox.width / 2)}px`)
+    .css('top', `${tooltiptop + height + 2}px`);
 
   bind(target, 'mouseleave', () => {
-    if (document.body.contains(el.el)) {
-      document.body.removeChild(el.el);
+    if (where.contains(el.el)) {
+      where.removeChild(el.el);
     }
   });
 
   bind(target, 'click', () => {
-    if (document.body.contains(el.el)) {
-      document.body.removeChild(el.el);
+    if (where.contains(el.el)) {
+      where.removeChild(el.el);
     }
   });
 }

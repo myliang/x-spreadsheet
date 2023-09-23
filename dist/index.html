@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>x-spreadsheet</title>
-    
 <link href="xspreadsheet.css" rel="stylesheet"></head>
 <body onload="load()">
   <div style="position: fixed; right: 0; top: .3em;">
@@ -28,22 +27,31 @@
       }
       const rows = {
         len: 80,
+        0: {
+          cells: {
+            0: { text: '1' },
+            1: { text: "=A$1"}
+          },
+        },
         1: {
           cells: {
-            0: { text: 'testingtesttestetst' },
-            2: { text: 'testing' },
-          },
+            0: { text: '2' },
+            // 1: { text: "=A1"}
+
+          }
         },
         2: {
           cells: {
-            0: { text: 'render', style: 0 },
-            1: { text: 'Hello' },
-            2: { text: 'haha', merge: [1, 1] },
+            0: { text: '3' },
+            // 1: { text: "Three"}
+
           }
         },
-        8: {
+        3: {
           cells: {
-            8: { text: 'border test', style: 0 },
+            0: { text: '4' },
+            // 1: { text: "Four"}
+
           }
         }
       };
@@ -58,6 +66,7 @@
         showToolbar: true,
         showGrid: true,
         showBottomBar: true,
+        autoFillOnCopy: true,
         extendToolbar: {
           left: [
             {
@@ -76,8 +85,22 @@
                 console.log('click preview button：', data)
               }
             }
-          ],
-        }
+          ]
+        },
+          formats: [
+            {
+              key: 'date',
+              numfmt: 'dd/mm/yyyy',
+              label: '31/12/1971',
+              title: 'Short Date'
+            },
+            // {
+            //   key: 'longdate',
+            //   numfmt: 'dddd, dd mmmm , yyyy',
+            //   label: 'Friday, 31 December, 1971',
+            //   title: 'Long Date'
+            // },
+          ]
       })
         .loadData([{
           freeze: 'B3',
@@ -94,9 +117,9 @@
               },
             },
           ],
-          merges: [
-            'C3:D4',
-          ],
+          // merges: [
+          //   'C3:D4',
+          // ],
           cols: {
             len: 10,
             2: { width: 200 },
@@ -111,14 +134,16 @@
           console.log('cell:', cell, ', ri:', ri, ', ci:', ci);
         }).on('cell-edited', (text, ri, ci) => {
           console.log('text:', text, ', ri: ', ri, ', ci:', ci);
+        }).on('pasted-clipboard', (data) => {
+          console.log('>>>> data is ', data);
         });
 
-      setTimeout(() => {
-        // xs.loadData([{ rows }]);
-        xs.cellText(14, 3, 'cell-text').reRender();
-        console.log('cell(8, 8):', xs.cell(8, 8));
-        console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
-      }, 5000);
+      // setTimeout(() => {
+      //   // xs.loadData([{ rows }]);
+      //   xs.cellText(14, 3, 'cell-text').reRender();
+      //   console.log('cell(8, 8):', xs.cell(8, 8));
+      //   console.log('cellStyle(8, 8):', xs.cellStyle(8, 8));
+      // }, 5000);
     }
   </script>
   <!--script type="text/javascript" src="https://unpkg.com/x-data-spreadsheet@1.0.20/dist/locale/zh-cn.js"></script-->

@@ -1,10 +1,11 @@
 import { Element, h } from './element';
 import { bindClickoutside, unbindClickoutside } from './event';
 import { cssPrefix } from '../config';
+import { buildImg, default as Icon } from './icon';
 
 export default class Dropdown extends Element {
-  constructor(title, width, showArrow, placement, ...children) {
-    super('div', `${cssPrefix}-dropdown ${placement}`);
+  constructor(title, width, showArrow, placement, classname, ...children) {
+    super('div', `${cssPrefix}-dropdown ${placement} ${classname||''}`);
     this.title = title;
     this.change = () => {};
     this.headerClick = () => {};
@@ -29,7 +30,9 @@ export default class Dropdown extends Element {
     }).children(
       this.title,
       showArrow ? h('div', `${cssPrefix}-icon arrow-right`).child(
-        h('div', `${cssPrefix}-icon-img arrow-down`),
+        // h('div', `${cssPrefix}-icon-img arrow-down`),
+        // buildImg('arrow-down') 
+        new Icon('arrow-down')
       ) : '',
     );
     this.children(this.headerEl, this.contentEl);

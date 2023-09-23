@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" version="1.1">
+    <g>
+        <path fill-rule="evenodd"
+            d="M15,0 C15.55,0 16,0.45 16,1 L16,15 C16,15.55 15.55,16 15,16 L1,16 C0.45,16 0,15.55 0,15 L0,1 C0,0.45 0.45,0 1,0 L15,0 Z M2,2 L2,14 L14,14 L14,2 L2,2 Z M6,12 L4,12 L4,7 L6,7 L6,12 L6,12 Z M9,12 L7,12 L7,4 L9,4 L9,12 L9,12 Z M12,12 L10,12 L10,8 L12,8 L12,12 L12,12 Z"
+            transform="translate(1 1)" />
+    </g>
+</svg>
+    

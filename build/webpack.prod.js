@@ -25,5 +25,7 @@ module.exports = merge(common, {
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, '../dist'),
+    library: "x_data_spreadsheet",
+    libraryTarget: "umd",
   },
 });

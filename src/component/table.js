@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { stringAt } from '../core/alphabet';
 import { getFontSizePxByPt } from '../core/font';
 import _cell from '../core/cell';
@@ -7,14 +8,16 @@ import { formatm } from '../core/format';
 import {
   Draw, DrawBox, thinLineWidth, npx,
 } from '../canvas/draw';
+
 // gobal var
 const cellPaddingWidth = 5;
-const tableFixedHeaderCleanStyle = { fillStyle: '#f4f5f8' };
-const tableGridStyle = {
-  fillStyle: '#fff',
-  lineWidth: thinLineWidth,
-  strokeStyle: '#e6e6e6',
-};
+// const tableFixedHeaderCleanStyle= { fillStyle: '#f4f5f8'  };
+// const tableGridStyle = {
+//   fillStyle: '#fff',
+//   lineWidth: thinLineWidth,
+//   strokeStyle: '#e6e6e6',
+// };
+
 function tableFixedHeaderStyle() {
   return {
     textAlign: 'center',
@@ -30,7 +33,33 @@ function getDrawBox(data, rindex, cindex, yoffset = 0) {
   const {
     left, top, width, height,
   } = data.cellRect(rindex, cindex);
-  return new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
+  const dbox = new DrawBox(left, top + yoffset, width, height, cellPaddingWidth);
+
+  return dbox;
+}
+
+function getFillStyle(draw) {
+  return global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-header') || 'hsl(360deg 0% 88%)';
+}
+
+function getStrokeStyle(draw) {
+  return global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-stroke') || 'hsl(220, 6%, 51%)';
+}
+
+function getTextStyle(draw) {
+  return global.getComputedStyle(draw.ctx.canvas)
+    .getPropertyValue('--table-header-text') || 'hsl(359deg 100% 0% / .6)';
+}
+
+function getAccent(draw, alpha) {
+  const accent_h = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-h') || '218';
+  const accent_s = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-s') || '100%';
+  const accent_l = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--ss-accent-l') || '65%';
+
+  const color = `hsl( ${accent_h}, ${accent_s}, ${accent_l}, ${alpha})`;
+  return color;
 }
 /*
 function renderCellBorders(bboxes, translateFunc) {
@@ -80,9 +109,10 @@ export function renderCell(draw, data, rindex, cindex, yoffset = 0) {
     } else {
       cellText = cell.text || '';
     }
-    if (style.format) {
-      // console.log(data.formatm, '>>', cell.format);
-      cellText = formatm[style.format].render(cellText);
+    if ((typeof (style.format) !== 'undefined')
+      && ((typeof (cellText) === 'string') || (typeof (cellText) === 'number'))
+    ) {
+      cellText = formatm.render(style.format, cellText, data.settings);
     }
     const font = Object.assign({}, style.font);
     font.size = getFontSizePxByPt(font.size);
@@ -116,6 +146,7 @@ function renderAutofilter(viewRange) {
     if (viewRange.intersects(afRange)) {
       afRange.each((ri, ci) => {
         const dbox = getDrawBox(data, ri, ci);
+        dbox.color = getTextStyle(draw);
         draw.dropdown(dbox);
       });
     }
@@ -172,11 +203,19 @@ function renderContent(viewRange, fw, fh, tx, ty) {
 
 function renderSelectedHeaderCell(x, y, w, h) {
   const { draw } = this;
+  // const {canvas} = draw.context;
+  // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-fill') || '#4b89ff19';
+  const color = getAccent(draw, '15%');
+  // color = 'hsl()'
+  // console.log(`color: ${color}`);
   draw.save();
-  draw.attr({ fillStyle: 'rgba(75, 137, 255, 0.08)' })
+  draw
+    .attr({ fillStyle: `${color}` })
+    // .attr({ fillStyle: 'rgba(75, 137, 255, 0.08)' })
     .fillRect(x, y, w, h);
   draw.restore();
 }
+
 
 // viewRange
 // type: all | left | top
@@ -193,7 +232,10 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
 
   draw.save();
   // draw rect background
-  draw.attr(tableFixedHeaderCleanStyle);
+  const fillStyle = getFillStyle(draw);
+
+  // draw.attr(tableFixedHeaderCleanStyle);
+  draw.attr({ fillStyle });
   if (type === 'all' || type === 'left') draw.fillRect(0, nty, w, sumHeight);
   if (type === 'all' || type === 'top') draw.fillRect(ntx, 0, sumWidth, h);
 
@@ -203,7 +245,15 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   // console.log(data.selectIndexes);
   // draw text
   // text font, align...
-  draw.attr(tableFixedHeaderStyle());
+  const style = tableFixedHeaderStyle();
+
+  const textColor = getTextStyle(draw);
+  const strokeStyle = getStrokeStyle(draw);
+
+  if (textColor) (style.fillStyle = textColor);
+  if (strokeStyle) (style.strokeStyle = strokeStyle);
+
+  draw.attr(style);
   // y-header-text
   if (type === 'all' || type === 'left') {
     data.rowEach(viewRange.sri, viewRange.eri, (i, y1, rowHeight) => {
@@ -216,7 +266,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
       draw.fillText(ii + 1, w / 2, y + (rowHeight / 2));
       if (i > 0 && data.rows.isHide(i - 1)) {
         draw.save();
-        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.attr({ strokeStyle });
         draw.line([5, y + 5], [w - 5, y + 5]);
         draw.restore();
       }
@@ -236,7 +286,7 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
       draw.fillText(stringAt(ii), x + (colWidth / 2), h / 2);
       if (i > 0 && data.cols.isHide(i - 1)) {
         draw.save();
-        draw.attr({ strokeStyle: '#c6c6c6' });
+        draw.attr({ strokeStyle });
         draw.line([x + 5, 5], [x + 5, h - 5]);
         draw.restore();
       }
@@ -247,11 +297,13 @@ function renderFixedHeaders(type, viewRange, w, h, tx, ty) {
   draw.restore();
 }
 
+
 function renderFixedLeftTopCell(fw, fh) {
   const { draw } = this;
+  const fillStyle = getFillStyle(draw);
   draw.save();
   // left-top-cell
-  draw.attr({ fillStyle: '#f4f5f8' })
+  draw.attr({ fillStyle })
     .fillRect(0, 0, fw, fh);
   draw.restore();
 }
@@ -262,8 +314,16 @@ function renderContentGrid({
   const { draw, data } = this;
   const { settings } = data;
 
+  const fillStyle = getFillStyle(draw);
+
+  const strokeStyle = getStrokeStyle(draw);
+
   draw.save();
-  draw.attr(tableGridStyle)
+  draw.attr({
+    fillStyle,
+    lineWidth: thinLineWidth,
+    strokeStyle,
+  })
     .translate(fw + tx, fh + ty);
   // const sumWidth = cols.sumWidth(sci, eci + 1);
   // const sumHeight = rows.sumHeight(sri, eri + 1);
@@ -286,13 +346,21 @@ function renderContentGrid({
   draw.restore();
 }
 
+
 function renderFreezeHighlightLine(fw, fh, ftw, fth) {
   const { draw, data } = this;
   const twidth = data.viewWidth() - fw;
   const theight = data.viewHeight() - fh;
+
+  const color = getAccent(draw, '65%');
+
+  // color = '#4b89ff99';
+  // const color = global.getComputedStyle(draw.ctx.canvas).getPropertyValue('--canvas-header-stroke') || '#4b89ff99';
   draw.save()
     .translate(fw, fh)
-    .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' });
+    .attr({ strokeStyle: `${color}` })
+    // .attr({ strokeStyle: 'rgba(75, 137, 255, .6)' })
+  ;
   draw.line([0, fth], [twidth, fth]);
   draw.line([ftw, 0], [ftw, theight]);
   draw.restore();
@@ -330,9 +398,10 @@ class Table {
     const { x, y } = data.scroll;
     // 1
     renderContentGrid.call(this, viewRange, fw, fh, tx, ty);
-    renderContent.call(this, viewRange, fw, fh, -x, -y);
     renderFixedHeaders.call(this, 'all', viewRange, fw, fh, tx, ty);
     renderFixedLeftTopCell.call(this, fw, fh);
+    // gcannata moved here for top borders
+    renderContent.call(this, viewRange, fw, fh, -x, -y);
     const [fri, fci] = data.freeze;
     if (fri > 0 || fci > 0) {
       // 2
@@ -342,8 +411,9 @@ class Table {
         vr.eri = fri - 1;
         vr.h = ty;
         renderContentGrid.call(this, vr, fw, fh, tx, 0);
-        renderContent.call(this, vr, fw, fh, -x, 0);
         renderFixedHeaders.call(this, 'top', vr, fw, fh, tx, 0);
+        // gcannata moved here for top borders
+        renderContent.call(this, vr, fw, fh, -x, 0);
       }
       // 3
       if (fci > 0) {

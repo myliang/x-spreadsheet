@@ -1,7 +1,10 @@
+import numfmt from 'numfmt';
 import { tf } from '../locale/locale';
 
+// eslint-disable-next-line no-unused-vars
 const formatStringRender = v => v;
 
+// eslint-disable-next-line no-unused-vars
 const formatNumberRender = (v) => {
   // match "-12.1" or "12" or "12.1"
   if (/^(-?\d*.?\d*)$/.test(v)) {
@@ -12,81 +15,105 @@ const formatNumberRender = (v) => {
   return v;
 };
 
+const generalFmt = ``;
+const textFmt = '@';
+const numericFmt = '#,##0.00';
+const percentFmt = '#,##0.00%';
+const rmbFmt = '￥#,##0.00';
+const usdFmt = '$#,##0.00';
+const eurFmt = '€#,##0.00';
+// TODO: take from locale
+const dateFmt = tf('format.dateformat')() || 'yyyy-mm-dd';
+const timeFmt = '[$-F400]h:mm:ss AM/PM';
+const longdateFmt = '[$-F800]dddd, mmmm dd, yyyy';
+
+
 const baseFormats = [
   {
-    key: 'normal',
-    title: tf('format.normal'),
+    // key: 'general',
+    numfmt: generalFmt,
+    title: tf('format.general'),
     type: 'string',
-    render: formatStringRender,
+    render: numfmt(generalFmt),
   },
   {
-    key: 'text',
+    // key: 'text',
+    numfmt: textFmt,
     title: tf('format.text'),
     type: 'string',
-    render: formatStringRender,
+    render: numfmt(textFmt),
   },
   {
-    key: 'number',
+    // key: 'number',
+    numfmt: numericFmt,
     title: tf('format.number'),
     type: 'number',
     label: '1,000.12',
-    render: formatNumberRender,
+    render: numfmt(numericFmt),
   },
   {
-    key: 'percent',
+    // key: 'percent',
+    numfmt: percentFmt,
     title: tf('format.percent'),
     type: 'number',
     label: '10.12%',
-    render: v => `${v}%`,
+    render: numfmt(percentFmt),
   },
   {
-    key: 'rmb',
+    // key: 'rmb',
+    numfmt: rmbFmt,
     title: tf('format.rmb'),
     type: 'number',
     label: '￥10.00',
-    render: v => `￥${formatNumberRender(v)}`,
+    render: numfmt(rmbFmt),
   },
   {
-    key: 'usd',
+    // key: 'usd',
+    numfmt: usdFmt,
     title: tf('format.usd'),
     type: 'number',
     label: '$10.00',
-    render: v => `$${formatNumberRender(v)}`,
+    render: numfmt(usdFmt),
   },
   {
-    key: 'eur',
+    // key: 'eur',
+    numfmt: eurFmt,
     title: tf('format.eur'),
     type: 'number',
     label: '€10.00',
-    render: v => `€${formatNumberRender(v)}`,
+    render: numfmt(eurFmt),
   },
   {
     key: 'date',
+    numfmt: dateFmt,
     title: tf('format.date'),
     type: 'date',
     label: '26/09/2008',
-    render: formatStringRender,
+    render: numfmt(dateFmt),
+  },
+  
+  // {
+  //   key: 'datetime',
+  //   title: tf('format.datetime'),
+  //   type: 'date',
+  //   label: '26/09/2008 15:59:00',
+  //   render: timeFmt,
+  // },
+  {
+    key: 'longdate',
+    numfmt: longdateFmt,
+    title: tf('format.longdate'),
+    type: 'date',
+    label: 'Friday, Dec. 31, 1971',
+    render: numfmt(longdateFmt),
   },
   {
-    key: 'time',
+    // key: 'time',
+    numfmt: timeFmt,
     title: tf('format.time'),
     type: 'date',
     label: '15:59:00',
-    render: formatStringRender,
-  },
-  {
-    key: 'datetime',
-    title: tf('format.datetime'),
-    type: 'date',
-    label: '26/09/2008 15:59:00',
-    render: formatStringRender,
-  },
-  {
-    key: 'duration',
-    title: tf('format.duration'),
-    type: 'date',
-    label: '24:01:00',
-    render: formatStringRender,
+    render: numfmt(timeFmt),
   },
 ];
 
@@ -99,8 +126,55 @@ const baseFormats = [
 // };
 const formatm = {};
 baseFormats.forEach((f) => {
-  formatm[f.key] = f;
+  formatm[f.numfmt] = f;
 });
+
+export function mergeFormats(custom) {
+  custom.forEach(c => {
+    const bf = baseFormats.find(f => f.key === c.key);
+    if(bf) {
+      bf.numfmt = c.numfmt;
+      bf.label = c.label || bf.label;
+      bf.render = numfmt(c.numfmt);
+      bf.title = c.title ? ()=>c.title : bf.title;
+      bf.type = c.type || bf.type;
+    } else {
+      const nf = {
+        key: c.key,
+        numfmt: c.numfmt,
+        render: numfmt(c.numfmt),
+        title: ()=>c.title,
+        label: c.label,
+        type: c.type,
+      }
+      baseFormats.push(nf);
+      formatm[f.numfmt] = nf;
+    }
+  })
+}
+
+const numfmtCache = new Map();
+
+formatm.render = (format, cellText, settings) => {
+  const p = numfmt.parseValue(cellText);
+
+  const v = (p && p.v) || cellText;
+  // if (p) {
+  //   const { v } = p;
+  //   // console.log(data.formatm, '>>', cell.format);
+  //   cellText = formatm[style.format].render(v);
+  // }
+  let f;
+  if (formatm[format]) {
+    f = formatm[format].render;
+  } else if (numfmtCache.has(format)) {
+    f = numfmtCache.get(format);
+  } else {
+    f = numfmt(format);
+    numfmtCache.set(format, f);
+  }
+  return f(v);
+};
 
 export default {
 };

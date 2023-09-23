@@ -22,6 +22,9 @@ module.exports = merge(common, {
   ],
   output: {
     filename: '[name].[contenthash].js',
+    
+    library: "x_data_spreadsheet",
+    libraryTarget: "umd",
   },
   devtool: 'inline-source-map',
   devServer: {

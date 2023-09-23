@@ -50,7 +50,7 @@ export default {
     orientations: ['横向', '纵向'],
   },
   format: {
-    normal: '正常',
+    general: '正常',
     text: '文本',
     number: '数值',
     percent: '百分比',

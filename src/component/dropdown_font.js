@@ -11,6 +11,6 @@ export default class DropdownFont extends Dropdown {
         this.change(it);
       })
       .child(it.title));
-    super(baseFonts[0].title, '160px', true, 'bottom-left', ...nfonts);
+    super(baseFonts[0].title, '160px', true, 'bottom-left','dd-font', ...nfonts);
   }
 }

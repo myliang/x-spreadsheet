@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" version="1.1">
+    <g>
+        <path fill-rule="evenodd"
+            d="M6,4 L6,0 L4,0 L4,4 L0,4 L0,6 L4,6 L4,10 L6,10 L6,6 L10,6 L10,4 L6,4 Z"
+            transform="translate(4 4)" />
+    </g>
+</svg>
