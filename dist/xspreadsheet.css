@@ -28,7 +28,7 @@ body {
   --dropdown-shadow: hsl(var(--ss-text-color-hsl) / 0.07);
   --scrollbar-bgcolor: #f4f5f8;
   --scollbar-color: rgb(from var(--ss-accent-color) h s calc(l + 5%));
-  --item-hover: hsl(360deg 0% 50%);
+  --item-hover: hsl(360deg 0% 88%);
   --divider: hsl(var(--ss-text-color-hsl) / 0.1);
   --menu-divider: hsl(var(--ss-text-color-hsl) / 0.1);
   --toolbar-bg-active: hsl(var(--ss-text-color-hsl) / 0.15);
