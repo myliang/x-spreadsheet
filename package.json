@@ -65,6 +65,7 @@
     "webpack-merge": "^4.1.4"
   },
   "dependencies": {
+    "@formulajs/formulajs": "^4.3.4",
     "opencollective": "^1.0.3",
     "opencollective-postinstall": "^2.0.2"
   },
