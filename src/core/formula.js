@@ -12,6 +12,7 @@
  */
 import { tf } from '../locale/locale';
 import { numberCalc } from './helper';
+import * as  formulajs from '@formulajs/formulajs'
 
 /** @type {Formula[]} */
 const baseFormulas = [
@@ -84,7 +85,17 @@ const formulas = baseFormulas;
 //   return formulaMap;
 // };
 const formulam = {};
-baseFormulas.forEach((f) => {
+const filterNames = ["LOG", "EXPONDIST"];
+const extendFormulas = []
+for (const [key, f] of Object.entries(formulajs).filter(([key, f]) => filterNames.includes(key))) {
+  extendFormulas.push({
+    key: key,
+    title: tf('formula.' + key),
+    render: ary => f(...ary),
+  })
+}
+const outFormulas = [...baseFormulas, ...extendFormulas]
+outFormulas.forEach((f) => {
   formulam[f.key] = f;
 });
 
@@ -94,5 +105,5 @@ export default {
 export {
   formulam,
   formulas,
-  baseFormulas,
+  outFormulas as baseFormulas,
 };
