@@ -1,4 +1,4 @@
-import helper from "./helper";
+import helper from './helper';
 
 export default class History {
   constructor() {
@@ -65,19 +65,14 @@ export default class History {
 
     const getValue = (ri, ci) => {
       let val;
-
       if (
-        rows[ri].cells[ci] &&
-        rows[ri].cells[ci].text &&
-        ((parsedInitial.rows[ri] &&
-          parsedInitial.rows[ri].cells[ci] &&
-          parsedInitial.rows[ri].cells[ci].text !== rows[ri].cells[ci].text) ||
-          !parsedInitial.rows[ri] ||
-          !parsedInitial.rows[ri].cells[ci])
-      ) {
+        rows[ri].cells[ci] !== null
+        && (
+          (rows[ri].cells[ci].text === null && parsedInitial.rows[ri].cells[ci].text !== null)
+           || (rows[ri].cells[ci].text !== null && parsedInitial.rows[ri].cells[ci].text === null)
+           || parsedInitial.rows[ri].cells[ci].text !== rows[ri].cells[ci].text)) {
         val = rows[ri].cells[ci].text;
       }
-
       return val;
     };
 
@@ -89,7 +84,7 @@ export default class History {
           Object.keys(rows[ri].cells).forEach((ci) => {
             const value = getValue(ri, ci);
 
-            if (value) {
+            if (value !== undefined) {
               set.push({ ri: parseInt(ri, 10), ci: parseInt(ci, 10), value });
             }
           });
@@ -111,8 +106,7 @@ export default class History {
     const { undoItems } = this;
     if (undoItems.length === 0) return;
     const [item] = undoItems.at(stateIndex);
-    if (!item.rows[ri] || !item.rows[ri].cells || !item.rows[ri].cells[ci])
-      return;
+    if (!item.rows[ri] || !item.rows[ri].cells || !item.rows[ri].cells[ci]) return;
     if (item.rows[ri].cells[ci].text !== text) {
       item.rows[ri].cells[ci].text = text;
     }
