@@ -1,5 +1,3 @@
-const path = require('path');
-
 function getLocaleCode(name, code) {
   return `${code.replace('export default', 'const message =')}
 if (window && window.x_spreadsheet) {
@@ -10,13 +8,14 @@ export default message;
 `;
 }
 
-module.exports = require('babel-loader').custom(babel => {
-  return {
-    result(result, { options }) {
-      // console.log('options:', options);
-      const lang = path.basename(options.filename, '.js');
-      result.code = getLocaleCode(lang, result.code);
-      return result;
-    },
-  };
-});
+module.exports = function (content, map, meta) {
+  // this.callback(null, someSyncOperation(content), map, meta);
+  // console.log(this.resourcePath)
+  // console.log(this.currentLoader)
+  // console.log(this.mode)
+  const fileName = this.resourcePath.slice(this.resourcePath.lastIndexOf("/")+1);
+  const [lang] = fileName.split(".");
+
+  this.callback(null, getLocaleCode(lang, content), map, meta);
+  return;
+};
