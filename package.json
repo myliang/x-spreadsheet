@@ -1,5 +1,5 @@
 {
-  "name": "x-spreadsheet",
+  "name": "@nmemonica/x-spreadsheet",
   "version": "1.0.0",
   "description": "a javascript xpreadsheet",
   "types": "src/index.d.ts",
@@ -7,7 +7,7 @@
   "files": [
     "assets",
     "dist",
-    "src"
+    "THIRD_PARTY_LICENSE"
   ],
   "author": "bryan",
   "license": "MIT",
