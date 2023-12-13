@@ -123,6 +123,12 @@ class Spreadsheet {
     return this;
   }
 
+  freeze(sheetIndex, ri, ci) {
+    this.datas[sheetIndex].setFreeze(ri, ci);
+    // this.sheet.freeze(ri, ci)
+    return this;
+  }
+
   static locale(lang, message) {
     locale(lang, message);
   }
