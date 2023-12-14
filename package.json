@@ -1,8 +1,8 @@
 {
   "name": "@nmemonica/x-spreadsheet",
-  "version": "1.0.1",
-  "description": "a javascript xpreadsheet",
-  "types": "src/index.d.ts",
+  "version": "1.0.2",
+  "description": "A Javascript xpreadsheet",
+  "types": "dist/xspreadsheet.d.ts",
   "module": "dist/xspreadsheet.js",
   "files": [
     "assets",

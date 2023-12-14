@@ -2,7 +2,6 @@ const rspack = require("@rspack/core");
 const path = require("path");
 const LicenseCheckerWebpackPlugin = require("license-checker-webpack-plugin");
 
-
 module.exports = function (env, argv) {
   return {
     mode: "production",
@@ -22,15 +21,19 @@ module.exports = function (env, argv) {
       outputModule: true,
     },
 
-    // builtins: {
-    //   html: [{ template: 'index.html', title: 'x-spreadsheet' }],
-    // },
     plugins: [
+      // copy .d.ts to dist
+      new rspack.CopyRspackPlugin({
+        patterns: [{ from: "./src/index.d.ts", to: "xspreadsheet.d.ts" }],
+      }),
+
       new rspack.HtmlRspackPlugin({
         template: "./index.html",
         title: "x-spreadsheet",
       }),
-      new LicenseCheckerWebpackPlugin({ outputFilename: 'ThirdPartyNotice.txt'}),
+      new LicenseCheckerWebpackPlugin({
+        outputFilename: "ThirdPartyNotice.txt",
+      }),
     ],
 
     module: {
