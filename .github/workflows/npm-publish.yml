@@ -19,6 +19,10 @@ jobs:
           node-version: '20.x'
       - run: npm install
       - run: npm run build
+      - uses: actions/upload-artifact@v3
+        with: 
+          name: dist
+          path: /dist
 
   publish-npm:
     environment: ci
@@ -34,6 +38,9 @@ jobs:
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
