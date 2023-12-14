@@ -19,10 +19,11 @@ jobs:
           node-version: '20.x'
       - run: npm install
       - run: npm run build
+      - run: npm run build-locale
       - uses: actions/upload-artifact@v3
         with: 
           name: dist
-          path: /dist
+          path: dist/
 
   publish-npm:
     environment: ci
