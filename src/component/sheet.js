@@ -518,6 +518,7 @@ function dataSetCellText(text, state = 'finished') {
   const { ri, ci } = data.selector;
   if (state === 'finished') {
     table.render();
+    this.trigger('cell-edited-done', text, ri, ci);
   } else {
     this.trigger('cell-edited', text, ri, ci);
   }

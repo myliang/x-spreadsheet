@@ -32,6 +32,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       # Setup .npmrc file to publish to npm
@@ -43,6 +44,6 @@ jobs:
         with:
           name: dist
           path: dist
-      - run: npm publish --access public
+      - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

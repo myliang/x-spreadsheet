@@ -52,6 +52,7 @@ export interface Options {
 export type CELL_SELECTED = "cell-selected";
 export type CELLS_SELECTED = "cells-selected";
 export type CELL_EDITED = "cell-edited";
+export type CELL_EDITED_DONE = "cell-edited-done";
 
 export type CellMerge = [number, number];
 
@@ -69,6 +70,10 @@ export interface SpreadsheetEventHandler {
   ): void;
   (
     evnt: CELL_EDITED,
+    callback: (text: string, rowIndex: number, colIndex: number) => void,
+  ): void;
+  (
+    evnt: CELL_EDITED_DONE,
     callback: (text: string, rowIndex: number, colIndex: number) => void,
   ): void;
 }
