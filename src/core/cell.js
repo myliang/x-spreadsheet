@@ -99,7 +99,7 @@ const infixExprToSuffixExpr = (src) => {
                 else break;
               }
             }
-          } else if (operatorStack.length > 0) {
+          } else if (c!=='(' && operatorStack.length > 0) {
             const top = operatorStack[operatorStack.length - 1];
             if (top === '*' || top === '/') stack.push(operatorStack.pop());
           }

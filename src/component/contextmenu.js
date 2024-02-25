@@ -25,6 +25,8 @@ const menuItems = [
   { key: 'divider' },
   { key: 'cell-editable', title: tf('contextmenu.celleditable') },
   { key: 'cell-non-editable', title: tf('contextmenu.cellnoneditable') },
+  { key: 'divider' },
+  { key: 'scroll-to-last-row', title: tf('contextmenu.scrollToLastRow') },
 ];
 
 function buildMenuItem(item) {

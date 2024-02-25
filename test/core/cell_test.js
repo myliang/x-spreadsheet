@@ -40,6 +40,9 @@ describe('infixExprToSuffixExpr', () => {
   it('should return 105-20+ when the value is 10-5+20', () => {
     assert.equal(infixExprToSuffixExpr('10-5+20').join(''), '105-20+');
   });
+  it('should return 12+34+* when the value (1+2)*(3+4)', () => {
+    assert.deepEqual(infixExprToSuffixExpr('(1+2)*(3+4)'), ['1','2','+','3','4','+','*']);
+  });
   it('should return 123*+45*6+7*+ when the value is 1 + 2*3 + (4 * 5 + 6) * 7', () => {
     assert.equal(infixExprToSuffixExpr('1+2*3+(4*5+6)*7').join(''), '123*+45*6+7*+');
   });
