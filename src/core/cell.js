@@ -1,5 +1,6 @@
 import { expr2xy, xy2expr } from './alphabet';
 import { numberCalc } from './helper';
+import {formulam} from "./formula";
 
 // Converting infix expression to a suffix expression
 // src: AVERAGE(SUM(A1,A2), B1) + 50 + B20
@@ -58,7 +59,17 @@ const infixExprToSuffixExpr = (src) => {
             // fn argument => A1,A2,B5
             stack.push([c1, fnArgsLen]);
             fnArgsLen = 1;
+
+          } else if(formulam[c1]?.operator === 'unary') {
+            // md5 is unary operator
+            // console.log('c1:', c1, fnArgType, stack, operatorStack);
+            while (c1 !== '(') {
+              stack.push([c1,1]);
+              if (operatorStack.length <= 0) break;
+              c1 = operatorStack.pop();
+            }
           } else {
+            // binary operators (+, -, ..)
             // console.log('c1:', c1, fnArgType, stack, operatorStack);
             while (c1 !== '(') {
               stack.push(c1);
@@ -204,6 +215,13 @@ const evalSuffixExpr = (srcStack, formulaMap, cellRender, cellList) => {
   return stack[0];
 };
 
+/**
+ * Get's called for each data-containing cell
+ * @param {string} src Cell text
+ * @param {*} formulaMap Formula Map
+ * @param {*} getCellText
+ * @param {*} cellList Sheet cell's list
+ */
 const cellRender = (src, formulaMap, getCellText, cellList = []) => {
   if (src[0] === '=') {
     const stack = infixExprToSuffixExpr(src.substring(1));

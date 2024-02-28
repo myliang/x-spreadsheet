@@ -1,6 +1,6 @@
 {
   "name": "@nmemonica/x-spreadsheet",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A Javascript xpreadsheet",
   "types": "dist/xspreadsheet.d.ts",
   "module": "dist/xspreadsheet.js",
@@ -49,5 +49,8 @@
     "nyc": "^15.1.0",
     "prettier": "^3.1.1",
     "ts-node": "^10.9.1"
+  },
+  "dependencies": {
+    "md5": "^2.3.0"
   }
 }
