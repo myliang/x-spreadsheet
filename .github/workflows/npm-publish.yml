@@ -1,0 +1,49 @@
+name: Publish to npmjs
+on:
+  push:
+    branches:
+      - main
+    # tags:
+    #   - "v*"
+  # release:
+  #   types: [published]
+jobs:
+  build:
+    environment: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - run: npm install
+      - run: npm run build
+      - run: npm run build-locale
+      - uses: actions/upload-artifact@v3
+        with: 
+          name: dist
+          path: dist/
+
+  publish-npm:
+    environment: ci
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

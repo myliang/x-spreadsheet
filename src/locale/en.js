@@ -43,6 +43,7 @@ export default {
     cellnonprintable: 'Disable export',
     celleditable: 'Enable editing',
     cellnoneditable: 'Disable editing',
+    scrollToLastRow: 'Scroll to last row'
   },
   print: {
     size: 'Paper size',
@@ -71,6 +72,7 @@ export default {
     and: 'AND',
     or: 'OR',
     concat: 'Concat',
+    md5: 'md5'
   },
   validation: {
     required: 'it must be required',

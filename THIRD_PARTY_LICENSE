@@ -1,7 +1,10 @@
+x-spreadsheet is based on the original code from:
+
+x-data-spreadsheet
+
 MIT License
 
-Copyright (c) 2017 - 2023 myliang
-Copyright (c) 2024 -      bryan
+Copyright (c) 2017 myliang
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

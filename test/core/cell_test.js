@@ -40,6 +40,9 @@ describe('infixExprToSuffixExpr', () => {
   it('should return 105-20+ when the value is 10-5+20', () => {
     assert.equal(infixExprToSuffixExpr('10-5+20').join(''), '105-20+');
   });
+  it('should return 12+34+* when the value (1+2)*(3+4)', () => {
+    assert.deepEqual(infixExprToSuffixExpr('(1+2)*(3+4)'), ['1','2','+','3','4','+','*']);
+  });
   it('should return 123*+45*6+7*+ when the value is 1 + 2*3 + (4 * 5 + 6) * 7', () => {
     assert.equal(infixExprToSuffixExpr('1+2*3+(4*5+6)*7').join(''), '123*+45*6+7*+');
   });
@@ -57,6 +60,10 @@ describe('infixExprToSuffixExpr', () => {
   });
   it('should return SUM( when the value is SUM', () => {
     assert.equal(infixExprToSuffixExpr('SUM(').join(''), 'SUM');
+  });
+  it('should return "messageMD5,1 when the value is MD5("message")', () => {
+    // md5 function is an unary operator
+    assert.equal(infixExprToSuffixExpr('MD5("message")').join(''), '"messageMD5,1');
   });
 });
 
@@ -76,6 +83,10 @@ describe('cell', () => {
         // console.log('x:', x, ', y:', y);
         return x + y;
       }), 1 + 500 - 20);
+    });
+    it('should return 78e731027d8fd50ed642340b7c9a63b3 when =MD5("message")', () => {
+      const expected = "78e731027d8fd50ed642340b7c9a63b3";
+      assert.equal(cell.render('=MD5("message")', formulam, (x, y) => {}), expected);
     });
   });
 });

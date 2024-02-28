@@ -518,6 +518,7 @@ function dataSetCellText(text, state = 'finished') {
   const { ri, ci } = data.selector;
   if (state === 'finished') {
     table.render();
+    this.trigger('cell-edited-done', text, ri, ci);
   } else {
     this.trigger('cell-edited', text, ri, ci);
   }
@@ -710,6 +711,11 @@ function sheetInitEvents() {
       paste.call(this, 'format');
     } else if (type === 'hide') {
       hideRowsOrCols.call(this);
+    } else if (type === 'scroll-to-last-row') {
+      const y = this.data.rows.len;
+      const rowHeight = this.data.rows.height;
+      const distance = rowHeight * (y - 4) ;
+        verticalScrollbarMove.call(this, distance);
     } else {
       insertDeleteRowColumn.call(this, type);
     }

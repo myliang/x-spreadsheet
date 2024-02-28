@@ -10,6 +10,7 @@
  * @property {function} title
  * @property {function} render
  */
+import md5 from 'md5';
 import { tf } from '../locale/locale';
 import { numberCalc } from './helper';
 
@@ -55,6 +56,12 @@ const baseFormulas = [
     title: tf('formula.concat'),
     render: ary => ary.join(''),
   },
+  {
+    key: 'MD5',
+    operator: 'unary',
+    title: tf('formula.md5'),
+    render: (/** @type {[string]} */[s]) => md5(s),
+  },
   /* support:  1 + A1 + B2 * 3
   {
     key: 'DIVIDE',
@@ -92,7 +99,7 @@ export default {
 };
 
 export {
-  formulam,
-  formulas,
-  baseFormulas,
+  formulam,    // object
+  formulas,    // array
+  baseFormulas,// array
 };
