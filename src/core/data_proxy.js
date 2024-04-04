@@ -255,8 +255,9 @@ function setStyleBorders({ mode, style, color }) {
         ci += rows.getCellMerge(sri, ci)[1];
       }
       if (mode === 'bottom') {
-        setStyleBorder.call(this, eri, ci, { bottom: [style, color] });
-        ci += rows.getCellMerge(eri, ci)[1];
+        const ri = getMergeCellRow(rows, ci, sri, eri);
+        setStyleBorder.call(this, ri, ci, { bottom: [style, color] });
+        ci += rows.getCellMerge(ri, ci)[1];
       }
     }
   } else if (mode === 'left' || mode === 'right') {
@@ -266,11 +267,38 @@ function setStyleBorders({ mode, style, color }) {
         ri += rows.getCellMerge(ri, sci)[0];
       }
       if (mode === 'right') {
-        setStyleBorder.call(this, ri, eci, { right: [style, color] });
-        ri += rows.getCellMerge(ri, eci)[0];
+        const ci = getMergeCellColumn(rows, ri, sci, eci);
+        setStyleBorder.call(this, ri, ci, { right: [style, color] });
+        ri += rows.getCellMerge(ri, ci)[0];
       }
     }
   }
+}
+
+function getMergeCellRow(rows, ci, sri, eri) {
+  for (let ri = eri; ri >= sri; ri -= 1) {
+    const cell = rows.getCell(ri, ci);
+    if (cell && cell.merge) {
+      const [ rn ] = cell.merge;
+      if (ri + rn === eri) return ri;
+      return eri;
+    }
+  }
+
+  return eri;
+}
+
+function getMergeCellColumn(rows, ri, sci, eci) {
+  for (let ci = eci; ci >= sci; ci -= 1) {
+    const cell = rows.getCell(ri, ci);
+    if (cell && cell.merge) {
+      const [_, cn] = cell.merge;
+      if (ci + cn === eci) return ci;
+      return eci;
+    }
+  }
+
+  return eci;
 }
 
 function getCellRowByY(y, scrollOffsety) {
