@@ -81,6 +81,7 @@ const defaultSettings = {
   row: {
     len: 100,
     height: 25,
+    minHeight: 25,
   },
   col: {
     len: 26,
