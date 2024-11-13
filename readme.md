@@ -178,7 +178,7 @@ new Spreadsheet(document.getElementById('xss-demo'));
 
 ## Development
 
-```sheel
+```shell
 git clone https://github.com/myliang/x-spreadsheet.git
 cd x-spreadsheet
 npm install
