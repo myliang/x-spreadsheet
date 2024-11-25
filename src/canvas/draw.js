@@ -233,25 +233,51 @@ class Draw {
     const txts = `${mtxt}`.split('\n');
     const biw = box.innerWidth();
     const ntxts = [];
-    txts.forEach((it) => {
-      const txtWidth = ctx.measureText(it).width;
-      if (textWrap && txtWidth > npx(biw)) {
-        let textLine = { w: 0, len: 0, start: 0 };
-        for (let i = 0; i < it.length; i += 1) {
-          if (textLine.w >= npx(biw)) {
-            ntxts.push(it.substr(textLine.start, textLine.len));
-            textLine = { w: 0, len: 0, start: i };
+    txts.forEach((line) => {
+      const words = line.split(' '); 
+      let currentLine = '';
+      let currentWidth = 0;
+    
+      words.forEach((word, index) => {
+        const wordWidth = ctx.measureText(word).width;
+    
+        if (currentWidth + wordWidth > npx(biw)) {
+          if (currentLine) {
+            ntxts.push(currentLine.trim());
+            currentLine = '';
+            currentWidth = 0;
           }
-          textLine.len += 1;
-          textLine.w += ctx.measureText(it[i]).width + 1;
+    
+          if (wordWidth > npx(biw)) {
+            let splitWord = '';
+            for (let char of word) {
+              const charWidth = ctx.measureText(char).width;
+              if (currentWidth + charWidth > npx(biw)) {
+                ntxts.push(splitWord);
+                splitWord = '';
+                currentWidth = 0;
+              }
+              splitWord += char;
+              currentWidth += charWidth;
+            }
+            if (splitWord) {
+              ntxts.push(splitWord);
+              currentWidth = 0;
+            }
+          } else {
+            currentLine += word + ' ';
+            currentWidth += wordWidth + ctx.measureText(' ').width;
+          }
+        } else {
+          currentLine += word + (index < words.length - 1 ? ' ' : ''); 
+          currentWidth += wordWidth + ctx.measureText(' ').width;
         }
-        if (textLine.len > 0) {
-          ntxts.push(it.substr(textLine.start, textLine.len));
-        }
-      } else {
-        ntxts.push(it);
+      });
+    
+      if (currentLine) {
+        ntxts.push(currentLine.trim());
       }
-    });
+    });    
     const txtHeight = (ntxts.length - 1) * (font.size + 2);
     let ty = box.texty(valign, txtHeight);
     ntxts.forEach((txt) => {
