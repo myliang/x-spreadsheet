@@ -57,7 +57,6 @@ function keydownEventHandler(evt) {
 
 function inputEventHandler(evt) {
   const v = evt.target.value;
-  // console.log(evt, 'v:', v);
   const { suggest, textlineEl, validator } = this;
   const { cell } = this;
   if (cell !== null) {
@@ -81,7 +80,10 @@ function inputEventHandler(evt) {
       resetTextareaSize.call(this);
       this.change('input', v);
     } else {
+      evt.preventDefault();  // 阻止输入事件
       evt.target.value = cell.text || '';
+      this.inputText = cell.text || '';  // 保持原始文本值
+      return;  // 直接返回
     }
   } else {
     this.inputText = v;
