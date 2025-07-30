@@ -271,7 +271,7 @@ class Draw {
 
   border(style, color) {
     const { ctx } = this;
-    ctx.lineWidth = thinLineWidth;
+    ctx.lineWidth = thinLineWidth();
     ctx.strokeStyle = color;
     // console.log('style:', style);
     if (style === 'medium') {
@@ -284,7 +284,7 @@ class Draw {
       ctx.setLineDash([npx(1), npx(1)]);
     } else if (style === 'double') {
       ctx.setLineDash([npx(2), 0]);
-    }
+    } 
     return this;
   }
 
