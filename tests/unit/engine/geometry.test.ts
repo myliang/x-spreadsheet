@@ -13,33 +13,57 @@ import {
   scrollTo,
   visibleCellRange,
 } from '../../../src/engine';
-import type { SheetData } from '../../../src/core';
+import type { CellPoint, CellRange, SheetData } from '../../../src/core';
 import type { SheetGridSizing } from '../../../src/engine';
 
 const emptyAxisCases: readonly {
   readonly label: string;
   readonly sheet: SheetData;
   readonly sizing: SheetGridSizing;
+  readonly hit: CellPoint | null;
+  readonly visible: CellRange | null;
 }[] = [
   {
     label: 'an all-hidden row axis',
     sheet: { rows: { len: 2, 0: { hide: true }, 1: { hide: true } }, cols: { len: 2 } },
     sizing: {},
+    hit: { row: 1, column: 0 },
+    visible: null,
   },
   {
     label: 'an all-hidden column axis',
     sheet: { rows: { len: 2 }, cols: { len: 2, 0: { hide: true }, 1: { hide: true } } },
     sizing: {},
+    hit: { row: 0, column: 1 },
+    visible: null,
   },
   {
     label: 'a zero default row height',
     sheet: { rows: { len: 2 }, cols: { len: 2 } },
     sizing: { defaultRowHeight: 0 },
+    hit: null,
+    visible: null,
   },
   {
     label: 'a zero default column width',
     sheet: { rows: { len: 2 }, cols: { len: 2 } },
     sizing: { defaultColumnWidth: 0 },
+    hit: { row: 0, column: 1 },
+    visible: null,
+  },
+  {
+    label: 'an empty row axis',
+    sheet: { rows: { len: 0 }, cols: { len: 2 } },
+    sizing: {},
+    hit: null,
+    visible: null,
+  },
+  {
+    label: 'an empty column axis',
+    sheet: { rows: { len: 2 }, cols: { len: 0 } },
+    sizing: {},
+    hit: null,
+    visible: null,
   },
 ];
 
@@ -206,14 +230,14 @@ describe('DOM-free grid geometry', () => {
     expect(hitTest({ x: 400, y: 200 }, metrics)).toEqual({ row: 0, column: 0 });
   });
 
-  it.each(emptyAxisCases)('does not manufacture a hit for $label', ({ sheet, sizing }) => {
+  it.each(emptyAxisCases)('characterizes $label', ({ sheet, sizing, hit, visible }) => {
     const metrics = createViewportMetrics(createSheetGridModel(sheet, sizing), {
       width: 500,
       height: 300,
     });
 
-    expect(hitTest({ x: 61, y: 26 }, metrics)).toBeNull();
-    expect(visibleCellRange(metrics)).toBeNull();
+    expect(hitTest({ x: 61, y: 26 }, metrics)).toEqual(hit);
+    expect(visibleCellRange(metrics)).toEqual(visible);
   });
 
   it('keeps scroll state immutable and clamps it to scrollable content', () => {

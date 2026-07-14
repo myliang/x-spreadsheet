@@ -109,6 +109,8 @@ export function clipToDataViewport(
 
 export function visibleCellRange(viewport: ViewportMetrics): CellRange | null {
   if (viewport.model.rowCount === 0 || viewport.model.columnCount === 0) return null;
+  if (viewport.model.rowOffset(viewport.model.rowCount) === 0
+    || viewport.model.columnOffset(viewport.model.columnCount) === 0) return null;
   const { left, top, width, height } = dataViewportRect(viewport);
   if (width === 0 || height === 0) return null;
   const insideEdge = 1e-7;

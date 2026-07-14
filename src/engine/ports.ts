@@ -98,6 +98,8 @@ interface AxisOverride {
   readonly prefixDelta: number;
 }
 
+type ZeroExtentPolicy = 'last' | 'none';
+
 function sparseIndex(key: string, count: number): number | null {
   if (!/^(0|[1-9]\d*)$/.test(key)) return null;
   const index = Number(key);
@@ -121,6 +123,7 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
   fallback: number,
   sizeOf: (data: T) => number | undefined,
   label: 'row' | 'column',
+  zeroExtentPolicy: ZeroExtentPolicy,
 ): SparseAxis {
   const rawOverrides = Object.entries(collection ?? {}).flatMap(([key, value]) => {
     const index = sparseIndex(key, count);
@@ -157,7 +160,7 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
   const indexAt = (coordinate: number): number | null => {
     if (!Number.isFinite(coordinate) || coordinate < 0 || count === 0) return null;
     const total = offset(count);
-    if (total === 0) return null;
+    if (total === 0) return zeroExtentPolicy === 'last' ? count - 1 : null;
     if (coordinate >= total) return count - 1;
     let low = 0;
     let high = count;
@@ -195,6 +198,7 @@ export function createSheetGridModel(
     defaultRowHeight,
     data => data.height,
     'row',
+    defaultRowHeight > 0 ? 'last' : 'none',
   );
   const columns = createSparseAxis<ColumnData>(
     sheet.cols,
@@ -202,6 +206,7 @@ export function createSheetGridModel(
     defaultColumnWidth,
     data => data.width,
     'column',
+    'last',
   );
 
   return Object.freeze({
