@@ -1,23 +1,14 @@
 language: node_js
 
 node_js:
- - 10.12.0
-
-branches:
-  only:
-  - master
+  - '24'
 
 install:
- - npm install -g istanbul
- - npm install
-
-before_script:
+  - npm ci
 
 script:
+  - npm run typecheck
+  - npm run lint
+  - npm test
   - npm run build
-  - npm run test
-  - npm run coverage
-
-after_script:
-  - cp ./dist/* ./docs/ -r
-
+  - npm run test:package

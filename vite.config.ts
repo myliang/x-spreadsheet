@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
+export function isReactExternal(id: string): boolean {
+  return (
+    id === 'react'
+    || id.startsWith('react/')
+    || id === 'react-dom'
+    || id.startsWith('react-dom/')
+  );
+}
+
 export default defineConfig({
   plugins: [
     react(),
@@ -19,7 +28,7 @@ export default defineConfig({
       name: 'TegoSheet',
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      external: isReactExternal,
       output: {
         exports: 'named',
       },

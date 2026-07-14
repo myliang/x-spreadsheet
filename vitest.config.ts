@@ -39,6 +39,15 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'architecture',
+          environment: 'node',
+          exclude: sharedExcludes,
+          include: ['tests/architecture/**/*.test.{ts,tsx}'],
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: 'ssr',
           environment: 'node',
           exclude: sharedExcludes,

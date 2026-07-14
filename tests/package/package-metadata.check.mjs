@@ -6,6 +6,7 @@ import test from 'node:test';
 import pkg from '../../package.json' with { type: 'json' };
 
 const packageRoot = new URL('../../', import.meta.url);
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 const expectedDevDependencies = {
   '@eslint/js': '10.0.1',
@@ -65,6 +66,10 @@ test('publishes only tego-sheet', () => {
   assert.equal(Object.keys(pkg.exports).some((path) => path.includes('legacy')), false);
   assert.deepEqual(requiredScripts.filter((script) => !(script in pkg.scripts)), []);
   assert.equal(
+    pkg.scripts['test:unit'],
+    'vitest run --project unit --project component --project architecture',
+  );
+  assert.equal(
     pkg.scripts['test:package'],
     'npm run build && node --test tests/package/*.check.mjs',
   );
@@ -86,8 +91,45 @@ test('published README describes only the current tego-sheet foundation', () => 
   assert.match(readme, /active rewrite|not release-ready/i);
 });
 
+test('CI runs only the supported foundation checks on Node 24', () => {
+  const travis = readFileSync(new URL('.travis.yml', packageRoot), 'utf8');
+
+  assert.doesNotMatch(travis, /10\.12\.0|istanbul|coverage|npm install(?:\s|$)/i);
+  assert.match(travis, /node_js:\s*\n\s*- ['"]?24['"]?/);
+  assert.match(travis, /install:\s*\n\s*- npm ci/);
+
+  const commands = [
+    'npm run typecheck',
+    'npm run lint',
+    'npm test',
+    'npm run build',
+    'npm run test:package',
+  ];
+  const positions = commands.map((command) => travis.indexOf(command));
+  assert.equal(positions.every((position) => position >= 0), true);
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
+});
+
+test('Vite development page describes the foundation without legacy runtime markers', () => {
+  const html = readFileSync(new URL('index.html', packageRoot), 'utf8');
+
+  assert.doesNotMatch(
+    html,
+    /x_spreadsheet|xspreadsheet|htmlWebpackPlugin|dist\/xspreadsheet|webpack/i,
+  );
+  assert.match(html, /tego-sheet/i);
+  assert.match(html, /foundation|active rewrite|not release-ready/i);
+});
+
+test('lockfile uses the canonical npm registry', () => {
+  const lockfile = readFileSync(new URL('package-lock.json', packageRoot), 'utf8');
+
+  assert.doesNotMatch(lockfile, /registry\.npmmirror\.com/i);
+  assert.match(lockfile, /https:\/\/registry\.npmjs\.org\//);
+});
+
 test('package dry run includes public files only', () => {
-  const result = spawnSync('npm', ['pack', '--dry-run', '--json'], {
+  const result = spawnSync(npmCommand, ['pack', '--dry-run', '--json'], {
     cwd: packageRoot,
     encoding: 'utf8',
   });
@@ -96,13 +138,59 @@ test('package dry run includes public files only', () => {
   const [pack] = JSON.parse(result.stdout);
   const paths = pack.files.map(({ path }) => path);
 
-  assert.equal(paths.includes('readme.md'), true);
-  assert.equal(paths.includes('package.json'), true);
-  assert.equal(paths.includes('LICENSE'), true);
-  assert.equal(paths.some((path) => path.startsWith('dist/')), true);
-  assert.equal(
-    paths.some((path) => /^(?:legacy|src|tests|scripts|assets|docs)\//.test(path)),
-    false,
+  assert.deepEqual(paths, [
+    'LICENSE',
+    'dist/index.d.ts',
+    'dist/tego-sheet.cjs',
+    'dist/tego-sheet.js',
+    'package.json',
+    'readme.md',
+  ]);
+
+  const declaredTargets = new Set([
+    pkg.main,
+    pkg.module,
+    pkg.types,
+    ...Object.values(pkg.exports['.']),
+  ]);
+  for (const target of declaredTargets) {
+    assert.equal(paths.includes(target.replace(/^\.\//, '')), true, target);
+  }
+});
+
+test('built entry formats import without browser globals', () => {
+  const clearBrowserGlobals = `
+    for (const name of ['window', 'document', 'navigator']) {
+      Reflect.deleteProperty(globalThis, name);
+      if (name in globalThis) throw new Error(name + ' must be absent');
+    }
+  `;
+  const esm = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      `${clearBrowserGlobals}
+       const entry = await import('./dist/tego-sheet.js');
+       if (Object.getOwnPropertyNames(entry).length !== 0) {
+         throw new Error('ESM entry exposes unexpected public exports');
+       }`,
+    ],
+    { cwd: packageRoot, encoding: 'utf8' },
   );
-  assert.equal(paths.some((path) => /xspreadsheet|x-data-spreadsheet/i.test(path)), false);
+  assert.equal(esm.status, 0, esm.stderr);
+
+  const cjs = spawnSync(
+    process.execPath,
+    [
+      '--eval',
+      `${clearBrowserGlobals}
+       const entry = require('./dist/tego-sheet.cjs');
+       if (Object.getOwnPropertyNames(entry).length !== 0) {
+         throw new Error('CJS entry exposes unexpected public exports');
+       }`,
+    ],
+    { cwd: packageRoot, encoding: 'utf8' },
+  );
+  assert.equal(cjs.status, 0, cjs.stderr);
 });

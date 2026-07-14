@@ -27,7 +27,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "test:unit": "vitest run tests/unit tests/component",
+    "test:unit": "vitest run --project unit --project component --project architecture",
     "test:browser": "playwright test tests/browser",
     "test:visual": "playwright test tests/visual",
     "test:ssr": "vitest run tests/ssr tests/unit/bootstrap.test.ts",
