@@ -34,9 +34,55 @@ function stable(value) {
   return value;
 }
 
-function writeJson(filePath, value) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(stable(value), null, 2)}\n`);
+function serializeJson(value) {
+  return `${JSON.stringify(stable(value), null, 2)}\n`;
+}
+
+function publishAtomically(publications) {
+  const parityDir = path.join(root, 'tests/parity');
+  fs.mkdirSync(parityDir, { recursive: true });
+  const transactionDir = fs.mkdtempSync(path.join(parityDir, '.capture-legacy-parity-'));
+  const prepared = publications.map((publication, index) => ({
+    ...publication,
+    backup: path.join(transactionDir, `backup-${index}.json.bak`),
+    existed: fs.existsSync(publication.target),
+    staged: path.join(transactionDir, `staged-${index}.json.tmp`),
+  }));
+  let replacing = false;
+
+  try {
+    prepared.forEach((publication) => {
+      fs.writeFileSync(publication.staged, publication.contents);
+    });
+    prepared.forEach((publication) => {
+      if (publication.existed) fs.copyFileSync(publication.target, publication.backup);
+    });
+
+    replacing = true;
+    prepared.forEach((publication) => {
+      fs.mkdirSync(path.dirname(publication.target), { recursive: true });
+      fs.renameSync(publication.staged, publication.target);
+    });
+  } catch (publishError) {
+    if (replacing) {
+      const rollbackErrors = [];
+      prepared.forEach((publication) => {
+        try {
+          if (publication.existed) {
+            fs.copyFileSync(publication.backup, publication.target);
+          } else if (fs.existsSync(publication.target)) {
+            fs.unlinkSync(publication.target);
+          }
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError);
+        }
+      });
+      if (rollbackErrors.length > 0) publishError.rollbackErrors = rollbackErrors;
+    }
+    throw publishError;
+  } finally {
+    fs.rmSync(transactionDir, { force: true, recursive: true });
+  }
 }
 
 function createData(name, input) {
@@ -496,12 +542,7 @@ captureWorkbook('sparse-falsy', {
 const missing = [...required].filter(id => !captured.has(id));
 if (missing.length > 0) throw new Error(`Missing legacy fixtures: ${missing.join(', ')}`);
 
-for (const [id, fixture] of captured) {
-  const directory = fixture.category === 'workbooks' ? workbookDir : operationDir;
-  writeJson(path.join(directory, `${id}.json`), fixture.value);
-}
-
-writeJson(metadataPath, {
+const metadata = {
   build: {
     command: 'NODE_OPTIONS=--openssl-legacy-provider npm run build',
     defaultRuntimeResult: 'fails without the OpenSSL legacy provider',
@@ -526,4 +567,14 @@ writeJson(metadataPath, {
     warnings: 0,
   },
   nodeVersion: process.version,
+};
+
+const publications = [...captured].map(([id, fixture]) => {
+  const directory = fixture.category === 'workbooks' ? workbookDir : operationDir;
+  return {
+    contents: serializeJson(fixture.value),
+    target: path.join(directory, `${id}.json`),
+  };
 });
+publications.push({ contents: serializeJson(metadata), target: metadataPath });
+publishAtomically(publications);
