@@ -39,4 +39,19 @@ describe('controller history', () => {
     expect(history.undo()?.metadata).toBe('first');
     expect(checkpoint.undo).toHaveLength(1);
   });
+
+  it('exposes immutable checkpoint arrays and entries', () => {
+    const history = new History<string>();
+    history.record({ before: 'A', after: 'B', metadata: 'first' });
+    const checkpoint = history.checkpoint();
+
+    expect(() => {
+      (checkpoint.undo as Array<unknown>).push('forged');
+    }).toThrow();
+    expect(() => {
+      (checkpoint.undo[0] as { before: string }).before = 'forged';
+    }).toThrow();
+
+    expect(history.undo()).toEqual({ before: 'A', after: 'B', metadata: 'first' });
+  });
 });

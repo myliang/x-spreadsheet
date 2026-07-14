@@ -10,6 +10,7 @@ import type { CellAddress, SheetId } from '../types/coordinates';
 import type { WorkbookData, WorkbookInput } from '../types/workbook';
 import {
   createControllerCheckpoint,
+  hasCheckpointOwner,
   type ControllerCheckpoint,
   type HistoryMetadata,
 } from './controller-checkpoint';
@@ -84,6 +85,8 @@ export class WorkbookController {
   private state: WorkbookState;
   private readonly history = new History<WorkbookState, HistoryMetadata>();
   private readonly subscriptions = new SubscriptionStore<ControllerEvent>();
+  private readonly checkpointOwner = Object.freeze({});
+  private readonly checkpoints = new WeakSet<ControllerCheckpoint>();
   private readonly controllerId: number;
   private revision = 0;
   private changeSequence = 0;
@@ -183,10 +186,11 @@ export class WorkbookController {
     this.state = applied.state;
     this.revision += 1;
     if (applied.undoable) {
+      const metadata = isolated<HistoryMetadata>({ command: commandCopy, change });
       this.history.record({
         before,
         after: applied.state,
-        metadata: { command: commandCopy, change },
+        metadata,
       });
     }
 
@@ -215,11 +219,26 @@ export class WorkbookController {
 
   checkpoint(): ControllerCheckpoint {
     this.ensureActive();
-    return createControllerCheckpoint(this.state, this.history.checkpoint(), this.revision);
+    const checkpoint = createControllerCheckpoint(
+      this.state,
+      this.history.checkpoint(),
+      this.revision,
+      this.checkpointOwner,
+    );
+    this.checkpoints.add(checkpoint);
+    return checkpoint;
   }
 
   restore(checkpoint: ControllerCheckpoint): void {
     this.ensureActive();
+    if (
+      typeof checkpoint !== 'object'
+      || checkpoint === null
+      || !this.checkpoints.has(checkpoint)
+      || !hasCheckpointOwner(checkpoint, this.checkpointOwner)
+    ) {
+      throw invalidCommand('Checkpoint does not belong to this workbook controller');
+    }
     this.state = checkpoint.state;
     this.history.restore(checkpoint.history);
     this.revision = checkpoint.revision;

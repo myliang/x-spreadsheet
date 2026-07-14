@@ -134,6 +134,100 @@ describe('WorkbookController command boundary', () => {
     expect(subscriber).not.toHaveBeenCalled();
   });
 
+  it('rejects foreign and structurally copied checkpoints atomically and silently', () => {
+    const first = new WorkbookController({ name: 'First' });
+    const second = new WorkbookController({ name: 'Second' });
+    const secondAddress = firstAddress(second);
+    second.dispatch({ type: 'set-cell-text', address: secondAddress, text: 'kept' }, 'ref', {
+      notify: false,
+    });
+    const foreign = first.checkpoint();
+    const genuine = second.checkpoint();
+    const forged = { ...genuine } as typeof genuine;
+    const tokenCopied = Object.create(
+      Object.getPrototypeOf(genuine),
+      Object.getOwnPropertyDescriptors(genuine),
+    ) as typeof genuine;
+    const before = {
+      ids: second.getSheetIds(),
+      value: second.getValue(),
+      history: second.historySize,
+      revision: second.getSnapshot().revision,
+    };
+    const subscriber = vi.fn();
+    second.subscribe(subscriber);
+
+    expect(() => second.restore(foreign))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => second.restore(forged))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => second.restore(tokenCopied))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+
+    expect(second.getSheetIds()).toEqual(before.ids);
+    expect(second.getValue()).toEqual(before.value);
+    expect(second.historySize).toEqual(before.history);
+    expect(second.getSnapshot().revision).toBe(before.revision);
+    expect(subscriber).not.toHaveBeenCalled();
+  });
+
+  it('restores registered same-controller checkpoints silently', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller);
+    const checkpoint = controller.checkpoint();
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    controller.dispatch({ type: 'set-cell-text', address, text: 'later' }, 'ref', {
+      notify: false,
+    });
+    controller.restore(checkpoint);
+
+    expect(controller.getCellText(address)).toBe('');
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(controller.getSnapshot().revision).toBe(0);
+    expect(subscriber).not.toHaveBeenCalled();
+  });
+
+  it('deeply isolates history command and change metadata from checkpoint mutation', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller, 2, 3);
+    controller.dispatch({ type: 'set-cell-text', address, text: 'committed' }, 'ref', {
+      notify: false,
+    });
+    const checkpoint = controller.checkpoint();
+    const entry = checkpoint.history.undo[0]!;
+    const metadata = entry.metadata as unknown as {
+      command: { address: { row: number }; text: string };
+      change: { kind: string; range: { start: { row: number } } };
+    };
+
+    expect(() => {
+      (entry as unknown as { metadata: unknown }).metadata = {};
+    }).toThrow();
+    expect(() => {
+      (entry.metadata as unknown as { command: unknown }).command = { type: 'undo' };
+    }).toThrow();
+    expect(() => { metadata.command.text = 'forged'; }).toThrow();
+    expect(() => { metadata.command.address.row = 99; }).toThrow();
+    expect(() => { metadata.change.kind = 'sheet'; }).toThrow();
+    expect(() => { metadata.change.range.start.row = 99; }).toThrow();
+
+    const changes: Array<{ kind: string; row: number | undefined }> = [];
+    controller.subscribe(event => changes.push({
+      kind: event.commit.change.kind,
+      row: event.commit.change.range?.start.row,
+    }));
+    controller.undo('ref');
+    controller.redo('ref');
+
+    expect(changes).toEqual([
+      { kind: 'history', row: 2 },
+      { kind: 'history', row: 2 },
+    ]);
+    expect(controller.getCellText(address)).toBe('committed');
+  });
+
   it('keeps subscription traversal safe across unsubscribe and reentrant dispatch', () => {
     const controller = new WorkbookController({ name: 'A' });
     const address = firstAddress(controller);
@@ -199,6 +293,7 @@ describe('WorkbookController command boundary', () => {
     const address = firstAddress(controller);
     const subscriber = vi.fn();
     const unsubscribe = controller.subscribe(subscriber);
+    const checkpoint = controller.checkpoint();
 
     controller.dispose();
     controller.dispose();
@@ -207,6 +302,8 @@ describe('WorkbookController command boundary', () => {
     expect(() => controller.subscribe(subscriber))
       .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
     expect(() => controller.dispatch({ type: 'set-cell-text', address, text: 'late' }, 'ref'))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => controller.restore(checkpoint))
       .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
     expect(subscriber).not.toHaveBeenCalled();
   });
