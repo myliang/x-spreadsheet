@@ -63,8 +63,12 @@ export function normalizeSelection(
 ): SelectionState {
   const anchor = clampPoint(selection.anchor, model);
   const focus = clampPoint(selection.focus, model);
-  const active = model.mergeAt(focus)?.start ?? focus;
-  const range = expandMerges(normalizeCellRange({ start: anchor, end: focus }), model);
+  const focusMerge = model.mergeAt(focus);
+  const active = focusMerge?.start ?? focus;
+  const singlePoint = anchor.row === focus.row && anchor.column === focus.column;
+  const range = singlePoint && focusMerge !== null
+    ? focusMerge
+    : expandMerges(normalizeCellRange({ start: anchor, end: focus }), model);
   return Object.freeze({ anchor, focus, active, range });
 }
 
@@ -74,7 +78,7 @@ export function moveSelection(
   model: GridModelPort,
 ): SelectionState {
   const normalized = normalizeSelection(selection, model);
-  const current = normalized.active;
+  const current = model.mergeAt(normalized.anchor)?.start ?? normalized.anchor;
   let next = current;
   if (direction === 'up') {
     next = {

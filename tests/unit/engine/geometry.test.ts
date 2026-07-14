@@ -14,6 +14,34 @@ import {
   visibleCellRange,
 } from '../../../src/engine';
 import type { SheetData } from '../../../src/core';
+import type { SheetGridSizing } from '../../../src/engine';
+
+const emptyAxisCases: readonly {
+  readonly label: string;
+  readonly sheet: SheetData;
+  readonly sizing: SheetGridSizing;
+}[] = [
+  {
+    label: 'an all-hidden row axis',
+    sheet: { rows: { len: 2, 0: { hide: true }, 1: { hide: true } }, cols: { len: 2 } },
+    sizing: {},
+  },
+  {
+    label: 'an all-hidden column axis',
+    sheet: { rows: { len: 2 }, cols: { len: 2, 0: { hide: true }, 1: { hide: true } } },
+    sizing: {},
+  },
+  {
+    label: 'a zero default row height',
+    sheet: { rows: { len: 2 }, cols: { len: 2 } },
+    sizing: { defaultRowHeight: 0 },
+  },
+  {
+    label: 'a zero default column width',
+    sheet: { rows: { len: 2 }, cols: { len: 2 } },
+    sizing: { defaultColumnWidth: 0 },
+  },
+];
 
 describe('DOM-free grid geometry', () => {
   it('matches the legacy header-offset hit-test fixture', () => {
@@ -176,6 +204,16 @@ describe('DOM-free grid geometry', () => {
     );
 
     expect(hitTest({ x: 400, y: 200 }, metrics)).toEqual({ row: 0, column: 0 });
+  });
+
+  it.each(emptyAxisCases)('does not manufacture a hit for $label', ({ sheet, sizing }) => {
+    const metrics = createViewportMetrics(createSheetGridModel(sheet, sizing), {
+      width: 500,
+      height: 300,
+    });
+
+    expect(hitTest({ x: 61, y: 26 }, metrics)).toBeNull();
+    expect(visibleCellRange(metrics)).toBeNull();
   });
 
   it('keeps scroll state immutable and clamps it to scrollable content', () => {

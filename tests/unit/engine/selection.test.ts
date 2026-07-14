@@ -99,4 +99,38 @@ describe('selection state', () => {
       end: { row: 4, column: 3 },
     });
   });
+
+  it('uses only the first matching merge when normalizing one point', () => {
+    const model = createSheetGridModel({
+      rows: { len: 8 },
+      cols: { len: 8 },
+      merges: ['B2:C3', 'C3:D4'],
+    });
+
+    expect(normalizeSelection(
+      createSelectionState({ row: 2, column: 2 }),
+      model,
+    )).toEqual({
+      anchor: { row: 2, column: 2 },
+      focus: { row: 2, column: 2 },
+      active: { row: 1, column: 1 },
+      range: {
+        start: { row: 1, column: 1 },
+        end: { row: 2, column: 2 },
+      },
+    });
+  });
+
+  it('moves non-shift arrows from the anchor of a backwards range', () => {
+    const model = createSheetGridModel({ rows: { len: 8 }, cols: { len: 8 } });
+    const backwards = normalizeSelection(createSelectionState(
+      { row: 4, column: 5 },
+      { row: 1, column: 2 },
+    ), model);
+
+    expect(moveSelection(backwards, 'left', model).active).toEqual({ row: 4, column: 4 });
+    expect(moveSelection(backwards, 'right', model).active).toEqual({ row: 4, column: 6 });
+    expect(moveSelection(backwards, 'up', model).active).toEqual({ row: 3, column: 5 });
+    expect(moveSelection(backwards, 'down', model).active).toEqual({ row: 5, column: 5 });
+  });
 });

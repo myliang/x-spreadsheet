@@ -157,6 +157,7 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
   const indexAt = (coordinate: number): number | null => {
     if (!Number.isFinite(coordinate) || coordinate < 0 || count === 0) return null;
     const total = offset(count);
+    if (total === 0) return null;
     if (coordinate >= total) return count - 1;
     let low = 0;
     let high = count;
