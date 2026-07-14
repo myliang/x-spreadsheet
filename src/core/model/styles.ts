@@ -1,5 +1,6 @@
 import type { JsonValue } from '../types/json';
-import type { CellStyle } from '../types/workbook';
+import type { CellStyle, SheetData } from '../types/workbook';
+import { cloneSheet } from './cells';
 
 export interface AddStyleResult {
   readonly styles: readonly CellStyle[];
@@ -42,4 +43,21 @@ export function addStyle(styles: readonly CellStyle[], style: CellStyle): AddSty
   const index = styles.findIndex(existing => stylesEqual(existing, normalized));
   if (index >= 0) return { styles, index, added: false };
   return { styles: [...styles, normalized], index: styles.length, added: true };
+}
+
+export interface AddSheetStyleResult {
+  readonly sheet: SheetData;
+  readonly index: number;
+  readonly added: boolean;
+}
+
+export function addStyleToSheet(sheet: SheetData, style: CellStyle): AddSheetStyleResult {
+  const result = addStyle(sheet.styles ?? [], style);
+  if (!result.added) return { sheet, index: result.index, added: false };
+  const next = cloneSheet(sheet);
+  return {
+    sheet: { ...next, styles: result.styles } as unknown as SheetData,
+    index: result.index,
+    added: true,
+  };
 }

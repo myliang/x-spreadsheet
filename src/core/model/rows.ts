@@ -1,0 +1,174 @@
+import { parseA1Reference, renderA1Reference } from '../coordinates/a1';
+import type { CellData, CellsData, RowData, RowsData, SheetData } from '../types/workbook';
+import { cloneSheet } from './cells';
+import { transformMergesForDelete, transformMergesForInsert } from './merges';
+
+function assertIndex(value: number, label: string): void {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new RangeError(`${label} must be a non-negative safe integer`);
+  }
+}
+
+function numericKey(key: string): bigint | null {
+  return /^\d+$/.test(key) ? BigInt(key) : null;
+}
+
+function define(target: Record<string, unknown>, key: string, value: unknown): void {
+  Object.defineProperty(target, key, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  });
+}
+
+function shiftFormula(
+  formula: string,
+  axis: 'row' | 'column',
+  threshold: number,
+  delta: number,
+): string {
+  if (!formula.startsWith('=')) return formula;
+  return formula.replace(/[a-zA-Z]{1,3}\d+/g, word => {
+    const reference = parseA1Reference(word.toUpperCase());
+    const coordinate = axis === 'row' ? reference.row : reference.column;
+    if (coordinate < threshold) return word;
+    return renderA1Reference(axis === 'row'
+      ? { ...reference, row: reference.row + delta }
+      : { ...reference, column: reference.column + delta });
+  });
+}
+
+export function shiftCellFormula(
+  cell: CellData,
+  axis: 'row' | 'column',
+  threshold: number,
+  delta: number,
+): CellData {
+  if (typeof cell.text !== 'string' || !cell.text.startsWith('=')) return cell;
+  const text = shiftFormula(cell.text, axis, threshold, delta);
+  if (text === cell.text) return cell;
+  const updated = { ...cell } as Record<string, unknown>;
+  updated.text = text;
+  delete updated.value;
+  return updated as CellData;
+}
+
+export function shiftRowFormulas(
+  row: RowData,
+  axis: 'row' | 'column',
+  threshold: number,
+  delta: number,
+): RowData {
+  if (row.cells === undefined) return row;
+  const cells = { ...row.cells } as Record<string, unknown>;
+  for (const [key, value] of Object.entries(cells)) {
+    if (!/^\d+$/.test(key) || value === null || typeof value !== 'object' || Array.isArray(value)) {
+      continue;
+    }
+    const cell = value as CellData;
+    cells[key] = shiftCellFormula(cell, axis, threshold, delta);
+  }
+  return { ...row, cells: cells as CellsData } as unknown as RowData;
+}
+
+export function getRowData(sheet: SheetData, row: number): RowData | null {
+  assertIndex(row, 'row');
+  const value = sheet.rows?.[String(row)];
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as RowData
+    : null;
+}
+
+function updateRow(
+  sheet: SheetData,
+  row: number,
+  updater: (value: RowData) => RowData,
+): SheetData {
+  assertIndex(row, 'row');
+  const next = cloneSheet(sheet);
+  const rows = { ...(next.rows ?? { len: 100 }) } as Record<string, unknown>;
+  const current = getRowData(next, row) ?? {};
+  rows[String(row)] = updater(current);
+  return { ...next, rows: rows as RowsData } as unknown as SheetData;
+}
+
+export function setRowHeight(sheet: SheetData, row: number, height: number): SheetData {
+  if (!Number.isFinite(height) || height < 0) {
+    throw new RangeError('row height must be a non-negative finite number');
+  }
+  return updateRow(sheet, row, value => ({ ...value, height }) as unknown as RowData);
+}
+
+export function setRowHidden(sheet: SheetData, row: number, hidden: boolean): SheetData {
+  return updateRow(sheet, row, value => ({ ...value, hide: hidden }) as unknown as RowData);
+}
+
+export function insertRows(sheet: SheetData, index: number, count = 1): SheetData {
+  assertIndex(index, 'row index');
+  assertIndex(count, 'row count');
+  if (count === 0) return sheet;
+  const next = cloneSheet(sheet);
+  const source = { ...(next.rows ?? { len: 100 }) } as Record<string, unknown>;
+  const output: Record<string, unknown> = {};
+  const boundary = BigInt(index);
+  const delta = BigInt(count);
+
+  for (const [key, value] of Object.entries(source)) {
+    const numeric = numericKey(key);
+    if (numeric === null) {
+      define(output, key, key === 'len' && typeof value === 'number' ? value + count : value);
+      continue;
+    }
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) continue;
+    const shifted = numeric >= boundary;
+    const destination = shifted ? (numeric + delta).toString() : key;
+    define(output, destination, shifted
+      ? shiftRowFormulas(value as RowData, 'row', index, count)
+      : value);
+  }
+  if (!Object.hasOwn(output, 'len')) output.len = 100 + count;
+  return transformMergesForInsert(
+    { ...next, rows: output as RowsData } as unknown as SheetData,
+    'row',
+    index,
+    count,
+  );
+}
+
+export function deleteRows(sheet: SheetData, start: number, end: number): SheetData {
+  assertIndex(start, 'start row');
+  assertIndex(end, 'end row');
+  if (end < start) throw new RangeError('end row must not precede start row');
+  const next = cloneSheet(sheet);
+  const source = { ...(next.rows ?? { len: 100 }) } as Record<string, unknown>;
+  const output: Record<string, unknown> = {};
+  const startKey = BigInt(start);
+  const endKey = BigInt(end);
+  const count = end - start + 1;
+  const delta = BigInt(count);
+
+  for (const [key, value] of Object.entries(source)) {
+    const numeric = numericKey(key);
+    if (numeric === null) {
+      define(output, key, key === 'len' && typeof value === 'number'
+        ? Math.max(0, value - count)
+        : value);
+      continue;
+    }
+    if (numeric >= startKey && numeric <= endKey) continue;
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) continue;
+    const shifted = numeric > endKey;
+    const destination = shifted ? (numeric - delta).toString() : key;
+    define(output, destination, shifted
+      ? shiftRowFormulas(value as RowData, 'row', end + 1, -count)
+      : value);
+  }
+  if (!Object.hasOwn(output, 'len')) output.len = Math.max(0, 100 - count);
+  return transformMergesForDelete(
+    { ...next, rows: output as RowsData } as unknown as SheetData,
+    'row',
+    start,
+    end,
+  );
+}

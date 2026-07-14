@@ -127,5 +127,53 @@ export type {
   FormulaErrorValue,
   RenderedValue,
 } from './formulas/rendered-value';
-export { addStyle, normalizeStyle, stylesEqual } from './model/styles';
-export type { AddStyleResult } from './model/styles';
+export { createSheetId } from './model/sheet-ids';
+export { WorkbookState } from './model/workbook-state';
+export type { RuntimeSheet } from './model/workbook-state';
+export {
+  cloneSheet,
+  getCellData,
+  setCellMergeSpan,
+  setCellStyleIndex,
+  setCellText,
+  updateCellData,
+} from './model/cells';
+export {
+  getRowData,
+  insertRows,
+  deleteRows,
+  setRowHeight,
+  setRowHidden,
+  shiftCellFormula,
+  shiftRowFormulas,
+} from './model/rows';
+export {
+  deleteColumns,
+  getColumnData,
+  insertColumns,
+  setColumnHidden,
+  setColumnWidth,
+} from './model/columns';
+export {
+  addMerge,
+  findMerge,
+  mergeIntersects,
+  removeMerge,
+  synchronizeMergeAnchors,
+  transformMergesForDelete,
+  transformMergesForInsert,
+} from './model/merges';
+export {
+  addStyle,
+  addStyleToSheet,
+  normalizeStyle,
+  stylesEqual,
+} from './model/styles';
+export type { AddSheetStyleResult, AddStyleResult } from './model/styles';
+export {
+  selectRuntimeSheet,
+  selectSheetData,
+  selectWorkbookData,
+} from './selectors/workbook';
+export { selectCell, selectCellText } from './selectors/cell';
+export { selectCellStyle } from './selectors/style';
