@@ -12,9 +12,28 @@ export type CellSelector = (point: CellPoint) => string | number | boolean | nul
 interface EvaluationContext {
   readonly selectCell: CellSelector;
   readonly active: Set<string>;
+  readonly budget?: FormulaEvaluationBudget;
 }
 
 type EvaluationValue = RenderedValue | readonly FormulaScalar[];
+
+export interface FormulaEvaluationBudget {
+  remaining: number;
+}
+
+export class FormulaEvaluationLimitError extends RangeError {
+  constructor() {
+    super('formula evaluation exceeds the shared cell-reference step limit');
+    this.name = 'FormulaEvaluationLimitError';
+  }
+}
+
+export function createFormulaEvaluationBudget(limit: number): FormulaEvaluationBudget {
+  if (!Number.isSafeInteger(limit) || limit < 0) {
+    throw new RangeError('formula evaluation limit must be a non-negative safe integer');
+  }
+  return { remaining: limit };
+}
 
 function pointKey(point: CellPoint): string {
   return `${point.row}:${point.column}`;
@@ -26,6 +45,10 @@ function scalar(value: EvaluationValue): FormulaScalar | FormulaErrorValue {
 }
 
 function evaluatePoint(point: CellPoint, context: EvaluationContext): RenderedValue {
+  if (context.budget !== undefined) {
+    if (context.budget.remaining <= 0) throw new FormulaEvaluationLimitError();
+    context.budget.remaining -= 1;
+  }
   const key = pointKey(point);
   if (context.active.has(key)) return '#CYCLE!';
   context.active.add(key);
@@ -113,15 +136,24 @@ function evaluateSource(source: string, context: EvaluationContext): RenderedVal
   try {
     const value = evaluate(parseFormula(source), context);
     return Array.isArray(value) ? '#ERROR!' : value as RenderedValue;
-  } catch {
+  } catch (cause) {
+    if (cause instanceof FormulaEvaluationLimitError) throw cause;
     return '#ERROR!';
   }
 }
 
-export function evaluateFormula(source: string, selectCell: CellSelector): RenderedValue {
-  return evaluateSource(source, { selectCell, active: new Set() });
+export function evaluateFormula(
+  source: string,
+  selectCell: CellSelector,
+  budget?: FormulaEvaluationBudget,
+): RenderedValue {
+  return evaluateSource(source, { selectCell, active: new Set(), budget });
 }
 
-export function evaluateCell(point: CellPoint, selectCell: CellSelector): RenderedValue {
-  return evaluatePoint(point, { selectCell, active: new Set() });
+export function evaluateCell(
+  point: CellPoint,
+  selectCell: CellSelector,
+  budget?: FormulaEvaluationBudget,
+): RenderedValue {
+  return evaluatePoint(point, { selectCell, active: new Set(), budget });
 }

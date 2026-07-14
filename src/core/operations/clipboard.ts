@@ -6,7 +6,7 @@ import {
   renderA1Range,
 } from '../coordinates/ranges';
 import { cloneSheet, getCellData } from '../model/cells';
-import { mergeIntersects } from '../model/merges';
+import { mergeIntersects, synchronizeMergeAnchors } from '../model/merges';
 import { addStyle } from '../model/styles';
 import { semanticEqual } from '../serialization/semantic-equal';
 import type { CellRange } from '../types/coordinates';
@@ -68,8 +68,12 @@ function expandedRange(source: CellRange, target: CellRange): CellRange {
   };
 }
 
-export function internalPasteRange(source: CellRange, target: CellRange): CellRange {
-  return expandedRange(source, target);
+export function internalPasteRange(
+  source: CellRange,
+  target: CellRange,
+  cut = false,
+): CellRange {
+  return expandedRange(source, cut ? { start: target.start, end: target.start } : target);
 }
 
 export function externalPasteRange(
@@ -255,7 +259,7 @@ export function pasteInternal(
   mode: PasteMode,
   cut = false,
 ): PasteTransform {
-  const range = internalPasteRange(source, target);
+  const range = internalPasteRange(source, target, cut);
   assertClipboardResourceLimit(source);
   assertClipboardResourceLimit(range);
   assertPasteMergeCompatibility(targetSheet, sourceSheet, source, range);
@@ -310,8 +314,9 @@ export function pasteInternal(
       ...translatedMerges(sourceSheet, source, range),
     ];
   }
+  const synchronized = mode === 'value' ? next : synchronizeMergeAnchors(next);
   return {
-    sheet: semanticEqual(next, targetSheet) ? targetSheet : next,
+    sheet: semanticEqual(synchronized, targetSheet) ? targetSheet : synchronized,
     range,
     values: clipboardMatrix(sourceSheet, source),
   };

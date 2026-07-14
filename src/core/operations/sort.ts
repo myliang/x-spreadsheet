@@ -1,11 +1,19 @@
 import { parseA1Range } from '../coordinates/ranges';
-import { evaluateCell } from '../formulas/evaluator';
+import {
+  createFormulaEvaluationBudget,
+  evaluateCell,
+  type FormulaEvaluationBudget,
+} from '../formulas/evaluator';
 import { getCellData, cloneSheet } from '../model/cells';
 import { semanticEqual } from '../serialization/semantic-equal';
 import type { LocaleDefinition } from '../types/changes';
 import type { CellRange } from '../types/coordinates';
 import type { SheetData } from '../types/workbook';
-import { assertDataToolResourceLimit, filteredRows } from './filter';
+import {
+  assertDataToolResourceLimit,
+  filteredRows,
+  MAX_DATA_TOOL_CELLS,
+} from './filter';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -59,8 +67,47 @@ export function sortValues<T>(
     .map(entry => entry.value);
 }
 
-function renderedValue(sheet: SheetData, row: number, column: number): unknown {
-  return evaluateCell({ row, column }, point => getCellData(sheet, point.row, point.column)?.text);
+function renderedValue(
+  sheet: SheetData,
+  row: number,
+  column: number,
+  budget: FormulaEvaluationBudget,
+): unknown {
+  return evaluateCell(
+    { row, column },
+    point => getCellData(sheet, point.row, point.column)?.text,
+    budget,
+  );
+}
+
+interface SortEntry {
+  readonly row: number;
+  readonly index: number;
+  readonly value: unknown;
+}
+
+function evaluatedSortEntries(
+  sheet: SheetData,
+  column: number,
+  range: CellRange,
+): SortEntry[] {
+  assertDataToolResourceLimit(range, (sheet.autofilter?.filters?.length ?? 0) + 1);
+  const excluded = new Set(filteredRows(sheet));
+  const budget = createFormulaEvaluationBudget(MAX_DATA_TOOL_CELLS);
+  return Array.from(
+    { length: Math.max(0, range.end.row - range.start.row) },
+    (_, index) => range.start.row + index + 1,
+  )
+    .filter(row => !excluded.has(row))
+    .map((row, index) => ({ row, index, value: renderedValue(sheet, row, column, budget) }));
+}
+
+export function assertSortResourceLimit(
+  sheet: SheetData,
+  column: number,
+  range: CellRange,
+): void {
+  evaluatedSortEntries(sheet, column, range);
 }
 
 export function sortRows(
@@ -72,15 +119,8 @@ export function sortRows(
     ? { start: { row: 0, column }, end: { row: 0, column } }
     : parseA1Range(sheet.autofilter.ref),
 ): readonly number[] {
-  assertDataToolResourceLimit(range, (sheet.autofilter?.filters?.length ?? 0) + 1);
   const compare = comparator(order, locale);
-  const excluded = new Set(filteredRows(sheet));
-  const rows = Array.from(
-    { length: Math.max(0, range.end.row - range.start.row) },
-    (_, index) => range.start.row + index + 1,
-  ).filter(row => !excluded.has(row));
-  return rows
-    .map((row, index) => ({ row, index, value: renderedValue(sheet, row, column) }))
+  return evaluatedSortEntries(sheet, column, range)
     .sort((left, right) => compare(left.value, right.value) || left.index - right.index)
     .map(entry => entry.row);
 }
@@ -93,10 +133,7 @@ export function setSort(
   if (sheet.autofilter?.ref === undefined) {
     throw new RangeError('sort requires an active autofilter range');
   }
-  assertDataToolResourceLimit(
-    parseA1Range(sheet.autofilter.ref),
-    (sheet.autofilter.filters?.length ?? 0) + 1,
-  );
+  assertSortResourceLimit(sheet, column, parseA1Range(sheet.autofilter.ref));
   const next = cloneSheet(sheet);
   (next as Record<string, unknown>).autofilter = {
     ...next.autofilter,

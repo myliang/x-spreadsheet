@@ -19,10 +19,66 @@ export function assertDataToolResourceLimit(range: CellRange, columns = 1): void
   }
 }
 
-function includes(item: AutoFilterItemData, value: string): boolean {
-  if (item.operator === 'all') return true;
-  if (item.operator === 'in') return (item.value ?? []).includes(value);
+export function assertFilterResourceLimit(
+  range: CellRange,
+  filters: readonly AutoFilterItemData[],
+): void {
+  const dataRows = BigInt(range.end.row) - BigInt(range.start.row);
+  if (dataRows < 0n) throw new RangeError('data-tool range must be normalized');
+  let workload = dataRows * BigInt(filters.length);
+  for (const filter of filters) {
+    if (filter.operator === 'in') workload += BigInt(filter.value?.length ?? 0);
+  }
+  if (workload > BigInt(MAX_DATA_TOOL_CELLS)) {
+    throw new RangeError(`filter workload exceeds the ${MAX_DATA_TOOL_CELLS}-cell operation limit`);
+  }
+}
+
+interface CompiledFilter {
+  readonly item: AutoFilterItemData;
+  readonly values?: ReadonlySet<string>;
+}
+
+function compileFilters(filters: readonly AutoFilterItemData[]): readonly CompiledFilter[] {
+  return filters.map(item => item.operator === 'in'
+    ? { item, values: new Set(item.value ?? []) }
+    : { item });
+}
+
+function includes(filter: CompiledFilter, value: string): boolean {
+  if (filter.item.operator === 'all') return true;
+  if (filter.item.operator === 'in') return filter.values!.has(value);
   return true;
+}
+
+function filtersForRange(
+  sheet: SheetData,
+  range: CellRange,
+  filter: FilterDefinition,
+): readonly AutoFilterItemData[] {
+  const filters = (sheet.autofilter?.filters ?? []).filter(item => (
+    item.ci !== undefined
+    && item.ci >= range.start.column
+    && item.ci <= range.end.column
+  ));
+  const index = filters.findIndex(item => item.ci === filter.column);
+  const replacement: AutoFilterItemData = {
+    ...(index < 0 ? {} : filters[index]),
+    ci: filter.column,
+    operator: filter.operator,
+    value: [...filter.value],
+  };
+  if (index < 0) filters.push(replacement);
+  else filters[index] = replacement;
+  return filters;
+}
+
+export function assertSetFilterResourceLimit(
+  sheet: SheetData,
+  range: CellRange,
+  filter: FilterDefinition,
+): void {
+  assertFilterResourceLimit(range, filtersForRange(sheet, range, filter));
 }
 
 export function filterItems(
@@ -50,12 +106,15 @@ export function filteredRows(sheet: SheetData): readonly number[] {
   const autofilter = sheet.autofilter;
   if (autofilter?.ref === undefined) return [];
   const range = parseA1Range(autofilter.ref);
-  assertDataToolResourceLimit(range, Math.max(1, autofilter.filters?.length ?? 0));
+  const filters = autofilter.filters ?? [];
+  assertFilterResourceLimit(range, filters);
+  if (filters.length === 0) return [];
+  const compiled = compileFilters(filters);
   const excluded: number[] = [];
   for (let row = range.start.row + 1; row <= range.end.row; row += 1) {
-    const accepted = (autofilter.filters ?? []).every(item => includes(
-      item,
-      getCellData(sheet, row, item.ci ?? range.start.column)?.text ?? '',
+    const accepted = compiled.every(filter => includes(
+      filter,
+      getCellData(sheet, row, filter.item.ci ?? range.start.column)?.text ?? '',
     ));
     if (!accepted) excluded.push(row);
   }
@@ -67,32 +126,14 @@ export function setFilter(
   range: CellRange,
   filter: FilterDefinition,
 ): SheetData {
-  const existingFilters = sheet.autofilter?.filters ?? [];
-  assertDataToolResourceLimit(range, Math.max(1, existingFilters.length));
-  const replaces = existingFilters.some(item => item.ci === filter.column);
-  assertDataToolResourceLimit(
-    range,
-    Math.max(1, existingFilters.length + (replaces ? 0 : 1)),
-  );
+  const filters = filtersForRange(sheet, range, filter);
+  assertFilterResourceLimit(range, filters);
   const next = cloneSheet(sheet);
   const previous = next.autofilter ?? {};
-  const filters = (previous.filters ?? []).filter(item => (
-    item.ci !== undefined
-    && item.ci >= range.start.column
-    && item.ci <= range.end.column
-  ));
-  const index = filters.findIndex(item => item.ci === filter.column);
-  const replacement: AutoFilterItemData = {
-    ci: filter.column,
-    operator: filter.operator,
-    value: [...filter.value],
-  };
-  if (index < 0) filters.push(replacement);
-  else filters[index] = replacement;
   (next as Record<string, unknown>).autofilter = {
     ...previous,
     ref: renderA1Range(range),
-    filters,
+    filters: structuredClone(filters),
     sort: previous.sort?.ci !== undefined
       && previous.sort.ci >= range.start.column
       && previous.sort.ci <= range.end.column

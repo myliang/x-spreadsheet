@@ -24,7 +24,8 @@ import {
 } from '../operations/clipboard';
 import { assertValidationRule } from '../operations/validation';
 import { parseA1Range } from '../coordinates/ranges';
-import { assertDataToolResourceLimit } from '../operations/filter';
+import { assertSetFilterResourceLimit } from '../operations/filter';
+import { assertSortResourceLimit } from '../operations/sort';
 import type { WorkbookCommand } from './workbook-command';
 
 export function invalidCommand(message: string, cause?: unknown): TegoSheetException {
@@ -308,7 +309,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         throw invalidCommand('cross-sheet cut is not supported');
       }
       try {
-        const range = internalPasteRange(command.source.range, command.target.range);
+        const range = internalPasteRange(command.source.range, command.target.range, command.cut);
         assertClipboardResourceLimit(command.source.range);
         assertClipboardResourceLimit(range);
         assertRangeWithinSheet(state, command.target.sheet, range);
@@ -380,12 +381,10 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         throw invalidCommand('filter definition is invalid or outside its range');
       }
       try {
-        const filters = state.get(command.selection.sheet)!.data.autofilter?.filters ?? [];
-        assertDataToolResourceLimit(command.selection.range, Math.max(1, filters.length));
-        const replaces = filters.some(item => item.ci === command.filter.column);
-        assertDataToolResourceLimit(
+        assertSetFilterResourceLimit(
+          state.get(command.selection.sheet)!.data,
           command.selection.range,
-          Math.max(1, filters.length + (replaces ? 0 : 1)),
+          command.filter,
         );
       } catch (cause) {
         throw invalidCommand('filter workload exceeds the resource limit', cause);
@@ -409,10 +408,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         if (command.column < range.start.column || command.column > range.end.column) {
           throw new RangeError('sort column is outside the autofilter range');
         }
-        assertDataToolResourceLimit(
-          range,
-          (runtimeSheet.data.autofilter.filters?.length ?? 0) + 1,
-        );
+        assertSortResourceLimit(runtimeSheet.data, command.column, range);
       } catch (cause) {
         throw invalidCommand('sort autofilter range is invalid', cause);
       }

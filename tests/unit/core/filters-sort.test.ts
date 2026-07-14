@@ -2,8 +2,13 @@ import filterFixture from '../../parity/fixtures/operations/filter.json';
 import sortFixture from '../../parity/fixtures/operations/sort.json';
 import { describe, expect, it } from 'vitest';
 import { WorkbookController } from '../../../src/core/controller/workbook-controller';
-import { filterItems, filteredRows } from '../../../src/core/operations/filter';
-import { sortRows, sortValues } from '../../../src/core/operations/sort';
+import {
+  assertFilterResourceLimit,
+  filterItems,
+  filteredRows,
+  setFilter,
+} from '../../../src/core/operations/filter';
+import { setSort, sortRows, sortValues } from '../../../src/core/operations/sort';
 import type { LocaleDefinition } from '../../../src/core/types/changes';
 import type { Selection, SheetId } from '../../../src/core/types/coordinates';
 import type { SheetData } from '../../../src/core/types/workbook';
@@ -33,6 +38,44 @@ describe('filter and corrected sorting transforms', () => {
     }, 0, {
       start: { row: 0, column: 0 }, end: { row: 3, column: 0 },
     })).toEqual(JSON.parse('{"":1,"__proto__":2}'));
+  });
+
+  it('compiles in-filter candidates once without Array.includes and preserves extensions', () => {
+    const candidates = ['keep'];
+    candidates.includes = () => {
+      throw new Error('candidate membership must use Set.has');
+    };
+    const sheet: SheetData = {
+      vendorSheet: true,
+      rows: {
+        len: 3,
+        1: { cells: { 0: { text: 'keep' } } },
+        2: { cells: { 0: { text: 'drop' } } },
+      },
+      cols: { len: 2 },
+      autofilter: {
+        ref: 'A1:B3', vendorAuto: 1,
+        filters: [{ ci: 0, operator: 'in', value: candidates, vendorFilter: 'keep' }],
+      },
+    };
+    expect(filteredRows(sheet)).toEqual([2]);
+    const extensionSheet = {
+      ...sheet,
+      autofilter: {
+        ...sheet.autofilter,
+        filters: [{ ci: 0, operator: 'in', value: ['keep'], vendorFilter: 'keep' }],
+      },
+    } as unknown as SheetData;
+    const next = setFilter(extensionSheet, {
+      start: { row: 0, column: 0 }, end: { row: 2, column: 1 },
+    }, { column: 0, operator: 'all', value: [] });
+    expect(next).toMatchObject({
+      vendorSheet: true,
+      autofilter: {
+        ref: 'A1:B3', vendorAuto: 1,
+        filters: [{ ci: 0, operator: 'all', value: [], vendorFilter: 'keep' }],
+      },
+    });
   });
 
   it('@parity:tools.sort-total-order keeps empties last descending with stable ties', () => {
@@ -111,5 +154,89 @@ describe('filter and corrected sorting transforms', () => {
       .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
     expect(controller.getValue()).toEqual(before);
     expect(controller.historySize.undo).toBe(0);
+  });
+
+  it('budgets candidate-set construction before pure or controller filter work', () => {
+    const boundaryRange = {
+      start: { row: 0, column: 0 }, end: { row: 125_000, column: 0 },
+    };
+    expect(() => assertFilterResourceLimit(boundaryRange, [{
+      ci: 0, operator: 'in', value: Array<string>(125_000).fill('keep'),
+    }])).not.toThrow();
+    expect(() => assertFilterResourceLimit(boundaryRange, [{
+      ci: 0, operator: 'in', value: Array<string>(125_001).fill('keep'),
+    }])).toThrow(RangeError);
+
+    const values = Array<string>(250_000).fill('keep');
+    const range = { start: { row: 0, column: 0 }, end: { row: 250_000, column: 0 } };
+    const filter = { ci: 0, operator: 'in' as const, value: values };
+    expect(() => assertFilterResourceLimit(range, [filter])).toThrow(RangeError);
+    const hugeSheet: SheetData = {
+      rows: { len: 250_001 }, cols: { len: 1 },
+      autofilter: { ref: 'A1:A250001', filters: [filter], sort: null },
+    };
+    expect(() => filteredRows(hugeSheet)).toThrow(RangeError);
+
+    const controller = new WorkbookController({ rows: { len: 250_001 }, cols: { len: 1 } });
+    const sheet = controller.getSheetIds()[0]!;
+    const before = controller.getValue();
+    expect(() => controller.dispatch({
+      type: 'set-filter', selection: { sheet, range, active: range.start },
+      filter: { column: 0, operator: 'in', value: values },
+    }, 'toolbar')).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize.undo).toBe(0);
+  });
+
+  it('shares one formula-reference budget across every sort key and rejects before mutation', () => {
+    const hugeFormulaSheet: SheetData = {
+      rows: {
+        len: 3,
+        1: { cells: { 1: { text: '=SUM(A1:A300001)' } } },
+        2: { cells: { 1: { text: '1' } } },
+      },
+      cols: { len: 2 },
+      autofilter: { ref: 'A1:B3', filters: [], sort: null },
+    };
+    const range = { start: { row: 0, column: 0 }, end: { row: 2, column: 1 } };
+    expect(() => sortRows(hugeFormulaSheet, 1, 'asc', locale, range)).toThrow(RangeError);
+    expect(() => setSort(hugeFormulaSheet, 1, 'asc')).toThrow(RangeError);
+
+    const controller = new WorkbookController(hugeFormulaSheet);
+    const sheet = controller.getSheetIds()[0]!;
+    const before = controller.getValue();
+    expect(() => controller.dispatch({ type: 'sort', sheet, column: 1, order: 'asc' }, 'toolbar'))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize.undo).toBe(0);
+
+    const sharedDependency: SheetData = {
+      rows: {
+        len: 3,
+        0: { cells: { 2: { text: '=SUM(B1:B125000)' } } },
+        1: { cells: { 0: { text: '=C1' } } },
+        2: { cells: { 0: { text: '=C1' } } },
+      },
+      cols: { len: 3 },
+      autofilter: { ref: 'A1:A3', filters: [], sort: null },
+    };
+    expect(() => sortRows(sharedDependency, 0, 'asc', locale, {
+      start: { row: 0, column: 0 }, end: { row: 2, column: 0 },
+    })).toThrow(RangeError);
+  });
+
+  it('keeps cycles and ordinary parse errors as rendered sort values, not budget failures', () => {
+    const sheet: SheetData = {
+      rows: {
+        len: 4,
+        1: { cells: { 0: { text: '=A3' } } },
+        2: { cells: { 0: { text: '=A2' } } },
+        3: { cells: { 0: { text: '=SUM(' } } },
+      },
+      cols: { len: 1 },
+      autofilter: { ref: 'A1:A4', filters: [], sort: null },
+    };
+    expect(sortRows(sheet, 0, 'asc', locale)).toEqual([1, 2, 3]);
+    expect(setSort(sheet, 0, 'asc')).not.toBe(sheet);
   });
 });
