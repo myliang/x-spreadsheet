@@ -3,6 +3,7 @@ import type {
   JsonValue,
   SparseJsonCollection,
 } from './json';
+import type { ValidationOperator, ValidationType } from './validation';
 
 export type HorizontalAlign = 'left' | 'center' | 'right';
 
@@ -46,7 +47,7 @@ export type CellData = JsonExtensible<{
   readonly value?: JsonValue;
 }>;
 
-export type CellsData = SparseJsonCollection<CellData>;
+export type CellsData = SparseJsonCollection;
 
 export type RowData = JsonExtensible<{
   readonly height?: number;
@@ -55,7 +56,7 @@ export type RowData = JsonExtensible<{
   readonly cells?: CellsData;
 }>;
 
-export type RowsData = SparseJsonCollection<RowData, {
+export type RowsData = SparseJsonCollection<{
   readonly len?: number;
 }>;
 
@@ -65,34 +66,34 @@ export type ColumnData = JsonExtensible<{
   readonly style?: number;
 }>;
 
-export type ColsData = SparseJsonCollection<ColumnData, {
+export type ColsData = SparseJsonCollection<{
   readonly len?: number;
 }>;
 
 export type ValidationData = JsonExtensible<{
   readonly refs?: readonly string[];
-  readonly mode?: string;
-  readonly type?: string;
+  readonly mode?: 'cell';
+  readonly type?: ValidationType;
   readonly required?: boolean;
-  readonly operator?: string;
+  readonly operator?: ValidationOperator | 'in';
   readonly value?: JsonValue;
 }>;
 
 export type AutoFilterItemData = JsonExtensible<{
   readonly ci?: number;
-  readonly operator?: string;
-  readonly value?: JsonValue;
+  readonly operator?: 'all' | 'in';
+  readonly value?: readonly string[];
 }>;
 
 export type AutoFilterSortData = JsonExtensible<{
   readonly ci?: number;
-  readonly order?: string;
+  readonly order?: 'asc' | 'desc';
 }>;
 
 export type AutoFilterData = JsonExtensible<{
   readonly ref?: string;
   readonly filters?: readonly AutoFilterItemData[];
-  readonly sort?: AutoFilterSortData;
+  readonly sort?: AutoFilterSortData | null;
 }>;
 
 export type SheetData = JsonExtensible<{

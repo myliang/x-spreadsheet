@@ -10,6 +10,8 @@ import type {
   JsonValue,
   LocaleDefinition,
   PasteEvent,
+  RowData,
+  RowsData,
   Selection,
   SheetData,
   SheetOptions,
@@ -25,6 +27,7 @@ import type {
   WorkbookInput,
 } from '../../src/index';
 import type { SheetId } from '../../src/index';
+import type { CellsData, ColsData, ColumnData, ValidationData } from '../../src/index';
 
 describe('the public type contract', () => {
   it('accepts canonical workbook arrays and permissive single-sheet input', () => {
@@ -162,6 +165,58 @@ describe('the public type contract', () => {
     expectTypeOf(invalidUndefined).toEqualTypeOf<SheetData>();
   });
 
+  it('models sparse collections without inventing absent or negative entries', () => {
+    const rows: RowsData = {
+      len: 4,
+      0: { cells: { 0: { text: 'present' } } },
+      '-1': 'negative-index metadata',
+      vendorRows: { retained: true },
+    };
+    const cells: CellsData = { 0: { text: 'present' }, '-1': false };
+    const columns: ColsData = { len: 2, 0: { width: 80 }, '-1': null };
+
+    const firstRow: JsonValue | undefined = rows[0];
+    const absentRow: JsonValue | undefined = rows[99];
+    const firstCell: JsonValue | undefined = cells[0];
+    const absentCell: JsonValue | undefined = cells[99];
+    const firstColumn: JsonValue | undefined = columns[0];
+    const absentColumn: JsonValue | undefined = columns[99];
+    const undefinedRow: typeof rows[99] = undefined;
+    const undefinedCell: typeof cells[99] = undefined;
+    const undefinedColumn: typeof columns[99] = undefined;
+
+    expectTypeOf(firstRow).toMatchTypeOf<JsonValue | undefined>();
+    expectTypeOf(absentRow).toMatchTypeOf<JsonValue | undefined>();
+    expectTypeOf(firstCell).toMatchTypeOf<JsonValue | undefined>();
+    expectTypeOf(absentCell).toMatchTypeOf<JsonValue | undefined>();
+    expectTypeOf(firstColumn).toMatchTypeOf<JsonValue | undefined>();
+    expectTypeOf(absentColumn).toMatchTypeOf<JsonValue | undefined>();
+    expectTypeOf(undefinedRow).toEqualTypeOf<undefined>();
+    expectTypeOf(undefinedCell).toEqualTypeOf<undefined>();
+    expectTypeOf(undefinedColumn).toEqualTypeOf<undefined>();
+    expectTypeOf(rows[-1]).toEqualTypeOf<JsonValue | undefined>();
+    expectTypeOf(rows['-1']).toEqualTypeOf<JsonValue | undefined>();
+    expectTypeOf(cells[-1]).toEqualTypeOf<JsonValue | undefined>();
+    expectTypeOf(columns[-1]).toEqualTypeOf<JsonValue | undefined>();
+    expectTypeOf(rows.len).toEqualTypeOf<number | undefined>();
+    expectTypeOf(columns.len).toEqualTypeOf<number | undefined>();
+
+    // Sparse values are intentionally narrowed by Task 5 parsing rather than asserted by lookup.
+    // @ts-expect-error an unchecked sparse value is not definitely a RowData object
+    const uncheckedRow: RowData = rows[0];
+    // @ts-expect-error an unchecked sparse value is not definitely a CellData object
+    const uncheckedCell: CellData = cells[0];
+    // @ts-expect-error an unchecked sparse value is not definitely a ColumnData object
+    const uncheckedColumn: ColumnData = columns[0];
+    // Sparse declarations model unchecked serialized input; Task 5 rejects undefined values.
+    const uncheckedRows: RowsData = { vendorRows: undefined };
+
+    expectTypeOf(uncheckedRow).toEqualTypeOf<RowData>();
+    expectTypeOf(uncheckedCell).toEqualTypeOf<CellData>();
+    expectTypeOf(uncheckedColumn).toEqualTypeOf<ColumnData>();
+    expectTypeOf(uncheckedRows).toEqualTypeOf<RowsData>();
+  });
+
   it('uses branded sheet identities and deeply readonly event payloads', () => {
     const sheet = 'sheet-1' as SheetId;
     const address: CellAddress = { sheet, row: 0, column: 0 };
@@ -259,6 +314,12 @@ describe('the public type contract', () => {
       defaultStyle: { align: 'right' },
       autoFocus: false,
     };
+    const emptyOptions: SheetOptions = {};
+    const gridOnlyOptions: SheetOptions = { showGrid: false };
+    const partialNestedOptions: SheetOptions = {
+      rows: { defaultHeight: 24 },
+      columns: { minimumWidth: 48 },
+    };
     const toolbarProps: ToolbarRenderProps = {
       selection: null,
       activeStyle: {},
@@ -281,6 +342,9 @@ describe('the public type contract', () => {
     };
 
     expectTypeOf(actions).toMatchTypeOf<readonly ToolbarAction[]>();
+    expectTypeOf(emptyOptions).toEqualTypeOf<SheetOptions>();
+    expectTypeOf(gridOnlyOptions).toEqualTypeOf<SheetOptions>();
+    expectTypeOf(partialNestedOptions).toEqualTypeOf<SheetOptions>();
 
     // @ts-expect-error serialized legacy operators do not make invalid command rules legal
     const invalidRule: ValidationRule = { mode: 'cell', type: 'list', required: false, operator: 'in' };
@@ -300,6 +364,10 @@ describe('the public type contract', () => {
     };
     // @ts-expect-error options are readonly
     options.autoFocus = true;
+    if (options.rows) {
+      // @ts-expect-error nested option fields are readonly
+      options.rows.defaultHeight = 30;
+    }
     // @ts-expect-error filter values are readonly
     filter.value.push('closed');
     const styleAction: ToolbarAction = {
@@ -320,6 +388,78 @@ describe('the public type contract', () => {
     expectTypeOf(invalidSort).toEqualTypeOf<ToolbarAction>();
     expectTypeOf(duplicatedToolbarOption).toEqualTypeOf<SheetOptions>();
     expectTypeOf(duplicatedTabsOption).toEqualTypeOf<SheetOptions>();
+  });
+
+  it('narrows serialized validation and autofilter literals while preserving extensions', () => {
+    const validations: readonly ValidationData[] = [
+      {
+        refs: ['A1:A3'],
+        mode: 'cell',
+        type: 'number',
+        required: true,
+        operator: 'be',
+        value: [1, 10],
+        vendorValidation: false,
+      },
+      {
+        refs: ['B1'],
+        mode: 'cell',
+        type: 'list',
+        required: false,
+        operator: 'in',
+        value: ['red', 'blue'],
+      },
+    ];
+    const emptyFilterSheet: SheetData = { autofilter: { sort: null } };
+    const filteredSheet: SheetData = {
+      autofilter: {
+        ref: 'A1:C5',
+        filters: [
+          { ci: 0, operator: 'all', value: [], vendorFilter: 0 },
+          { ci: 1, operator: 'in', value: ['open'] },
+        ],
+        sort: { ci: 2, order: 'desc', vendorSort: '' },
+      },
+    };
+
+    expectTypeOf(validations).toMatchTypeOf<readonly ValidationData[]>();
+    expectTypeOf(emptyFilterSheet).toEqualTypeOf<SheetData>();
+    expectTypeOf(filteredSheet).toEqualTypeOf<SheetData>();
+
+    const invalidMode: ValidationData = {
+      // @ts-expect-error serialized validation mode is exactly cell
+      mode: 'range',
+    };
+    const invalidType: ValidationData = {
+      // @ts-expect-error serialized validation types are the approved validation types
+      type: 'currency',
+    };
+    const invalidValidationOperator: ValidationData = {
+      // @ts-expect-error serialized validation operators exclude unknown legacy strings
+      operator: 'contains',
+    };
+    const invalidFilterOperator: SheetData = {
+      autofilter: {
+        filters: [
+          {
+            // @ts-expect-error serialized filters support only all and in
+            operator: 'eq',
+          },
+        ],
+      },
+    };
+    const invalidSortOrder: SheetData = {
+      autofilter: {
+        // @ts-expect-error serialized sort order is exactly asc or desc
+        sort: { order: 'ascending' },
+      },
+    };
+
+    expectTypeOf(invalidMode).toEqualTypeOf<ValidationData>();
+    expectTypeOf(invalidType).toEqualTypeOf<ValidationData>();
+    expectTypeOf(invalidValidationOperator).toEqualTypeOf<ValidationData>();
+    expectTypeOf(invalidFilterOperator).toEqualTypeOf<SheetData>();
+    expectTypeOf(invalidSortOrder).toEqualTypeOf<SheetData>();
   });
 
   it('keeps validation and error results deeply readonly', () => {

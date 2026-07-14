@@ -3,24 +3,24 @@ import type { CellStyle } from './workbook';
 import type { ValidationRule } from './validation';
 
 export interface SheetRowOptions {
-  readonly initialCount: number;
-  readonly defaultHeight: number;
+  readonly initialCount?: number;
+  readonly defaultHeight?: number;
 }
 
 export interface SheetColumnOptions {
-  readonly initialCount: number;
-  readonly defaultWidth: number;
-  readonly minimumWidth: number;
+  readonly initialCount?: number;
+  readonly defaultWidth?: number;
+  readonly minimumWidth?: number;
 }
 
 export interface SheetOptions {
-  readonly showGrid: boolean;
-  readonly showContextMenu: boolean;
-  readonly rows: SheetRowOptions;
-  readonly columns: SheetColumnOptions;
-  readonly rowHeaderWidth: number;
-  readonly defaultStyle: CellStyle;
-  readonly autoFocus: boolean;
+  readonly showGrid?: boolean;
+  readonly showContextMenu?: boolean;
+  readonly rows?: SheetRowOptions;
+  readonly columns?: SheetColumnOptions;
+  readonly rowHeaderWidth?: number;
+  readonly defaultStyle?: CellStyle;
+  readonly autoFocus?: boolean;
 }
 
 export interface FilterDefinition {
