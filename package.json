@@ -1,13 +1,23 @@
 {
-  "name": "x-data-spreadsheet",
+  "name": "tego-sheet",
   "version": "1.1.8",
-  "description": "a javascript xpreadsheet",
-  "types": "src/index.d.ts",
-  "main": "src/index.js",
+  "description": "A React spreadsheet library",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/tego-sheet.cjs",
+  "module": "./dist/tego-sheet.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/tego-sheet.js",
+      "require": "./dist/tego-sheet.cjs"
+    }
+  },
   "files": [
-    "assets",
-    "dist",
-    "src"
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
   ],
   "author": "myliang <liangyuliang0335@gmail.com>",
   "license": "MIT",
@@ -15,61 +25,51 @@
     "type": "git",
     "url": "https://github.com/myliang/x-spreadsheet.git"
   },
-  "nyc": {
-    "all": true,
-    "include": [
-      "src/core/*.js",
-      "src/locale/locale.js"
-    ],
-    "exclude": [
-      "**/*.spec.js"
-    ]
-  },
   "scripts": {
-    "dev": "webpack-dev-server --open --config build/webpack.dev.js",
-    "build": "webpack --config build/webpack.prod.js",
-    "build-locale": "webpack --config build/webpack.locale.js",
-    "lint": "./node_modules/eslint/bin/eslint.js src",
-    "test": "nyc ./node_modules/mocha/bin/mocha --require @babel/register --recursive test",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 31ecdb12-8ecb-46f7-a486-65c2516307dd",
-    "postinstall": "opencollective-postinstall"
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit tests/component",
+    "test:browser": "playwright test tests/browser",
+    "test:visual": "playwright test tests/visual",
+    "test:ssr": "vitest run tests/ssr tests/unit/bootstrap.test.ts",
+    "test:package": "node --test tests/package/*.check.mjs",
+    "test:parity-gate": "node --test tests/parity/manifest-gate.check.ts && node scripts/verify-parity-manifest.ts test-results/parity-evidence.ndjson",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "dev": "vite",
+    "build": "vite build"
   },
   "keywords": [
-    "javascript",
+    "react",
     "spreadsheet",
     "canvas"
   ],
   "devDependencies": {
-    "@babel/core": "^7.3.4",
-    "@babel/plugin-proposal-class-properties": "^7.4.4",
-    "@babel/preset-env": "^7.3.4",
-    "@babel/register": "^7.0.0",
-    "babel-loader": "^8.0.5",
-    "clean-webpack-plugin": "^0.1.19",
-    "codecov": "^3.3.0",
-    "css-loader": "^1.0.0",
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.14.0",
-    "file-loader": "^2.0.0",
-    "html-webpack-plugin": "^3.2.0",
-    "less": "^3.8.1",
-    "less-loader": "^4.1.0",
-    "mini-css-extract-plugin": "^0.4.4",
-    "mocha": "^5.2.0",
-    "nyc": "^13.3.0",
-    "style-loader": "^0.23.0",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.1.0",
-    "webpack-dev-server": "^3.10.2",
-    "webpack-merge": "^4.1.4"
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.61.1",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.7.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "jsdom": "29.1.1",
+    "less": "4.6.7",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.64.0",
+    "vite": "8.1.4",
+    "vite-plugin-dts": "5.0.3",
+    "vitest": "4.1.10"
   },
-  "dependencies": {
-    "opencollective": "^1.0.3",
-    "opencollective-postinstall": "^2.0.2"
-  },
-  "collective": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/x-spreadsheet"
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   }
 }

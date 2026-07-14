@@ -3,3 +3,7 @@ yarn.lock
 
 .nyc_output/*
 .worktrees/
+coverage/
+dist/
+playwright-report/
+test-results/

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "scripts/**/*.ts",
+    "*.config.ts"
+  ],
+  "exclude": [
+    "legacy",
+    "dist",
+    "coverage",
+    "node_modules",
+    "playwright-report",
+    "test-results"
+  ]
+}
