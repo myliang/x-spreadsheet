@@ -74,3 +74,53 @@ export { canonicalKey, canonicalizeWorkbook } from './serialization/canonicalize
 export { parseWorkbook } from './serialization/parse-workbook';
 export { semanticEqual } from './serialization/semantic-equal';
 export { serializeWorkbook } from './serialization/serialize-workbook';
+export {
+  parseA1,
+  parseA1Reference,
+  renderA1,
+  renderA1Reference,
+  shiftA1,
+  shiftFormulaReferences,
+} from './coordinates/a1';
+export type { A1Reference, CoordinateDelta } from './coordinates/a1';
+export {
+  containsCell,
+  containsRange,
+  differenceRanges,
+  intersectRanges,
+  iterateRange,
+  normalizeRange,
+  parseA1Range,
+  rangeSize,
+  rangesIntersect,
+  rangesEqual,
+  renderA1Range,
+  shiftA1Range,
+  unionRanges,
+} from './coordinates/ranges';
+export { tokenizeFormula } from './formulas/tokenizer';
+export type { FormulaToken, FormulaTokenKind } from './formulas/tokenizer';
+export { infixToPostfix, parseFormula } from './formulas/parser';
+export type { BinaryOperator, FormulaExpression } from './formulas/parser';
+export { FORMULA_FUNCTIONS } from './formulas/functions';
+export type {
+  FormulaFunction,
+  FormulaFunctionName,
+  FormulaScalar,
+} from './formulas/functions';
+export { evaluateCell, evaluateFormula } from './formulas/evaluator';
+export type { CellSelector } from './formulas/evaluator';
+export {
+  FORMAT_DEFINITIONS,
+  formatValue,
+  isFormulaError,
+  renderFormulaValue,
+} from './formulas/rendered-value';
+export type {
+  FormatDefinition,
+  FormatType,
+  FormulaErrorValue,
+  RenderedValue,
+} from './formulas/rendered-value';
+export { addStyle, normalizeStyle, stylesEqual } from './model/styles';
+export type { AddStyleResult } from './model/styles';

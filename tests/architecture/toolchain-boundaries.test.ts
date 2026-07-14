@@ -38,6 +38,14 @@ it('keeps the core contract independent of React and browser globals', () => {
     'src/core/types/options.ts',
     'src/core/errors/tego-sheet-error.ts',
     'src/core/errors/tego-sheet-exception.ts',
+    'src/core/coordinates/a1.ts',
+    'src/core/coordinates/ranges.ts',
+    'src/core/formulas/evaluator.ts',
+    'src/core/formulas/functions.ts',
+    'src/core/formulas/parser.ts',
+    'src/core/formulas/rendered-value.ts',
+    'src/core/formulas/tokenizer.ts',
+    'src/core/model/styles.ts',
   ];
 
   for (const file of coreFiles) {

@@ -168,9 +168,17 @@ test('package dry run includes public files only', () => {
 
   assert.deepEqual(paths, [
     'LICENSE',
+    'dist/core/coordinates/a1.d.ts',
+    'dist/core/coordinates/ranges.d.ts',
     'dist/core/errors/tego-sheet-error.d.ts',
     'dist/core/errors/tego-sheet-exception.d.ts',
+    'dist/core/formulas/evaluator.d.ts',
+    'dist/core/formulas/functions.d.ts',
+    'dist/core/formulas/parser.d.ts',
+    'dist/core/formulas/rendered-value.d.ts',
+    'dist/core/formulas/tokenizer.d.ts',
     'dist/core/index.d.ts',
+    'dist/core/model/styles.d.ts',
     'dist/core/serialization/canonicalize-workbook.d.ts',
     'dist/core/serialization/parse-workbook.d.ts',
     'dist/core/serialization/semantic-equal.d.ts',
