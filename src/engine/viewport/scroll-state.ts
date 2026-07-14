@@ -40,6 +40,7 @@ export function scrollTo(
   const snapAxis = (
     target: number,
     frozen: number,
+    totalExtent: number,
     offset: (boundary: number) => number,
     indexAt: (coordinate: number) => number | null,
   ): number => {
@@ -48,19 +49,22 @@ export function scrollTo(
     }
     if (target === 0) return 0;
     const start = offset(frozen);
-    const index = indexAt(start + target);
+    const boundedTarget = Math.min(target, Math.max(0, totalExtent - start));
+    const index = indexAt(start + boundedTarget);
     return index === null ? 0 : Math.max(0, offset(index + 1) - start);
   };
   return clampScroll({
     x: snapAxis(
       scroll.x,
       viewport.freeze.column,
+      viewport.model.columnOffset(viewport.model.columnCount),
       viewport.model.columnOffset,
       viewport.model.columnAt,
     ),
     y: snapAxis(
       scroll.y,
       viewport.freeze.row,
+      viewport.model.rowOffset(viewport.model.rowCount),
       viewport.model.rowOffset,
       viewport.model.rowAt,
     ),

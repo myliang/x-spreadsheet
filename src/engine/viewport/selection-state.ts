@@ -12,16 +12,41 @@ export interface SelectionState {
 
 export type SelectionDirection = 'up' | 'down' | 'left' | 'right';
 
+function frozenPoint(point: CellPoint): CellPoint {
+  return Object.freeze({ row: point.row, column: point.column });
+}
+
+function frozenRange(range: CellRange): CellRange {
+  return Object.freeze({
+    start: frozenPoint(range.start),
+    end: frozenPoint(range.end),
+  });
+}
+
+function frozenSelection(
+  anchor: CellPoint,
+  focus: CellPoint,
+  active: CellPoint,
+  range: CellRange,
+): SelectionState {
+  return Object.freeze({
+    anchor: frozenPoint(anchor),
+    focus: frozenPoint(focus),
+    active: frozenPoint(active),
+    range: frozenRange(range),
+  });
+}
+
 export function createSelectionState(
   anchor: CellPoint,
   focus: CellPoint = anchor,
 ): SelectionState {
-  return Object.freeze({
-    anchor: Object.freeze({ ...anchor }),
-    focus: Object.freeze({ ...focus }),
-    active: Object.freeze({ ...focus }),
-    range: Object.freeze(normalizeCellRange({ start: anchor, end: focus })),
-  });
+  return frozenSelection(
+    anchor,
+    focus,
+    focus,
+    normalizeCellRange({ start: anchor, end: focus }),
+  );
 }
 
 function clampPoint(point: CellPoint, model: GridModelPort): CellPoint {
@@ -69,7 +94,7 @@ export function normalizeSelection(
   const range = singlePoint && focusMerge !== null
     ? focusMerge
     : expandMerges(normalizeCellRange({ start: anchor, end: focus }), model);
-  return Object.freeze({ anchor, focus, active, range });
+  return frozenSelection(anchor, focus, active, range);
 }
 
 export function moveSelection(

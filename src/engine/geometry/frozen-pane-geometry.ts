@@ -1,4 +1,10 @@
-import { columnOffset, dataViewportRect, rowOffset } from './grid-geometry';
+import {
+  columnOffset,
+  createCssRect,
+  dataViewportRect,
+  finiteCssSum,
+  rowOffset,
+} from './grid-geometry';
 import type { CssRect, FreezeState, ViewportMetrics } from '../ports';
 
 export type FrozenQuadrantKind = 'corner' | 'top' | 'left' | 'body';
@@ -8,7 +14,8 @@ export interface FrozenQuadrant extends CssRect {
 }
 
 function quadrant(kind: FrozenQuadrantKind, rect: CssRect): FrozenQuadrant | null {
-  return rect.width > 0 && rect.height > 0 ? { kind, ...rect } : null;
+  const finiteRect = createCssRect(rect.left, rect.top, rect.width, rect.height);
+  return finiteRect.width > 0 && finiteRect.height > 0 ? { kind, ...finiteRect } : null;
 }
 
 export function frozenQuadrants(
@@ -38,20 +45,20 @@ export function frozenQuadrants(
       height: frozenHeight,
     }),
     quadrant('top', {
-      left: data.left + frozenWidth,
+      left: finiteCssSum(data.left, frozenWidth, 'frozen pane left edge'),
       top: data.top,
       width: remainingWidth,
       height: frozenHeight,
     }),
     quadrant('left', {
       left: data.left,
-      top: data.top + frozenHeight,
+      top: finiteCssSum(data.top, frozenHeight, 'frozen pane top edge'),
       width: frozenWidth,
       height: remainingHeight,
     }),
     quadrant('body', {
-      left: data.left + frozenWidth,
-      top: data.top + frozenHeight,
+      left: finiteCssSum(data.left, frozenWidth, 'frozen pane left edge'),
+      top: finiteCssSum(data.top, frozenHeight, 'frozen pane top edge'),
       width: remainingWidth,
       height: remainingHeight,
     }),

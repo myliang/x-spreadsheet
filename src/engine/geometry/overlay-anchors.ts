@@ -1,7 +1,7 @@
 import type { CellRange } from '../../core/types/coordinates';
 import { normalizeCellRange } from '../../core/types/coordinates';
 import { frozenQuadrants } from './frozen-pane-geometry';
-import { rangeRect } from './grid-geometry';
+import { createCssRect, finiteCssSum, rangeRect } from './grid-geometry';
 import type { CssRect, ViewportMetrics } from '../ports';
 import type { FrozenQuadrantKind } from './frozen-pane-geometry';
 
@@ -33,10 +33,16 @@ function axisSegments(start: number, end: number, frozen: number): readonly Axis
 function intersect(first: CssRect, second: CssRect): CssRect | null {
   const left = Math.max(first.left, second.left);
   const top = Math.max(first.top, second.top);
-  const right = Math.min(first.left + first.width, second.left + second.width);
-  const bottom = Math.min(first.top + first.height, second.top + second.height);
+  const right = Math.min(
+    finiteCssSum(first.left, first.width, 'overlay right edge'),
+    finiteCssSum(second.left, second.width, 'overlay right edge'),
+  );
+  const bottom = Math.min(
+    finiteCssSum(first.top, first.height, 'overlay bottom edge'),
+    finiteCssSum(second.top, second.height, 'overlay bottom edge'),
+  );
   return right > left && bottom > top
-    ? { left, top, width: right - left, height: bottom - top }
+    ? createCssRect(left, top, right - left, bottom - top)
     : null;
 }
 
@@ -98,13 +104,14 @@ export function overlayAnchor(
   if (fragments.length === 0) return null;
   const left = Math.min(...fragments.map(fragment => fragment.left));
   const top = Math.min(...fragments.map(fragment => fragment.top));
-  const right = Math.max(...fragments.map(fragment => fragment.left + fragment.width));
-  const bottom = Math.max(...fragments.map(fragment => fragment.top + fragment.height));
+  const right = Math.max(...fragments.map(fragment => (
+    finiteCssSum(fragment.left, fragment.width, 'overlay right edge')
+  )));
+  const bottom = Math.max(...fragments.map(fragment => (
+    finiteCssSum(fragment.top, fragment.height, 'overlay bottom edge')
+  )));
   return {
-    left,
-    top,
-    width: right - left,
-    height: bottom - top,
+    ...createCssRect(left, top, right - left, bottom - top),
     clipped: fragments.some(fragment => fragment.clipped),
   };
 }

@@ -4,6 +4,38 @@ import type { CssRect, GridModelPort, ViewportMetrics } from '../ports';
 
 type Axis = 'row' | 'column';
 
+const floatBits = new DataView(new ArrayBuffer(8));
+
+function adjacentFloat(value: number, direction: -1 | 1): number {
+  if (!Number.isFinite(value)) return value;
+  if (value === 0) return direction < 0 ? -Number.MIN_VALUE : Number.MIN_VALUE;
+  floatBits.setFloat64(0, value);
+  const bits = floatBits.getBigUint64(0);
+  const nextBits = (value > 0) === (direction > 0) ? bits + 1n : bits - 1n;
+  floatBits.setBigUint64(0, nextBits);
+  return floatBits.getFloat64(0);
+}
+
+export function finiteCssSum(left: number, right: number, label: string): number {
+  const value = left + right;
+  if (!Number.isFinite(value)) {
+    throw new RangeError(`${label} must be finite`);
+  }
+  return value;
+}
+
+export function createCssRect(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): CssRect {
+  if (![left, top, width, height].every(Number.isFinite) || width < 0 || height < 0) {
+    throw new RangeError('CSS rectangle must have finite coordinates and dimensions');
+  }
+  return { left, top, width, height };
+}
+
 function axisSize(axis: Axis, index: number, model: GridModelPort): number {
   return axis === 'row' ? model.rowHeight(index) : model.columnWidth(index);
 }
@@ -25,7 +57,8 @@ function viewportAxisPosition(index: number, axis: Axis, viewport: ViewportMetri
   const scroll = axis === 'row' ? viewport.scroll.y : viewport.scroll.x;
   const frozen = axis === 'row' ? viewport.freeze.row : viewport.freeze.column;
   const content = axisOffset(index, axis, viewport.model);
-  return header + content - (index < frozen ? 0 : scroll);
+  const translatedContent = content - (index < frozen ? 0 : scroll);
+  return finiteCssSum(header, translatedContent, 'CSS axis position');
 }
 
 function axisRangeBounds(
@@ -42,8 +75,11 @@ function axisRangeBounds(
     const position = viewportAxisPosition(segmentStart, axis, viewport);
     return [
       position,
-      viewportAxisPosition(segmentEnd, axis, viewport)
-        + axisSize(axis, segmentEnd, viewport.model),
+      finiteCssSum(
+        viewportAxisPosition(segmentEnd, axis, viewport),
+        axisSize(axis, segmentEnd, viewport.model),
+        'CSS axis edge',
+      ),
     ] as const;
   });
   return [
@@ -66,7 +102,7 @@ function rangeRectRaw(range: CellRange, viewport: ViewportMetrics): CssRect {
     'row',
     viewport,
   );
-  return { left, top, width: right - left, height: bottom - top };
+  return createCssRect(left, top, right - left, bottom - top);
 }
 
 export function resolveMergedRange(point: CellPoint, model: GridModelPort): CellRange {
@@ -82,21 +118,27 @@ export function rangeRect(range: CellRange, viewport: ViewportMetrics): CssRect 
 }
 
 export function dataViewportRect(viewport: ViewportMetrics): CssRect {
-  return {
-    left: viewport.rowHeaderWidth,
-    top: viewport.columnHeaderHeight,
-    width: Math.max(0, viewport.width - viewport.rowHeaderWidth),
-    height: Math.max(0, viewport.height - viewport.columnHeaderHeight),
-  };
+  return createCssRect(
+    viewport.rowHeaderWidth,
+    viewport.columnHeaderHeight,
+    Math.max(0, viewport.width - viewport.rowHeaderWidth),
+    Math.max(0, viewport.height - viewport.columnHeaderHeight),
+  );
 }
 
 function intersectRect(first: CssRect, second: CssRect): CssRect | null {
   const left = Math.max(first.left, second.left);
   const top = Math.max(first.top, second.top);
-  const right = Math.min(first.left + first.width, second.left + second.width);
-  const bottom = Math.min(first.top + first.height, second.top + second.height);
+  const right = Math.min(
+    finiteCssSum(first.left, first.width, 'CSS rectangle right edge'),
+    finiteCssSum(second.left, second.width, 'CSS rectangle right edge'),
+  );
+  const bottom = Math.min(
+    finiteCssSum(first.top, first.height, 'CSS rectangle bottom edge'),
+    finiteCssSum(second.top, second.height, 'CSS rectangle bottom edge'),
+  );
   return right > left && bottom > top
-    ? { left, top, width: right - left, height: bottom - top }
+    ? createCssRect(left, top, right - left, bottom - top)
     : null;
 }
 
@@ -113,13 +155,12 @@ export function visibleCellRange(viewport: ViewportMetrics): CellRange | null {
     || viewport.model.columnOffset(viewport.model.columnCount) === 0) return null;
   const { left, top, width, height } = dataViewportRect(viewport);
   if (width === 0 || height === 0) return null;
-  const insideEdge = 1e-7;
   const topLeft = findCellAtViewportPoint(
-    { x: left + insideEdge, y: top + insideEdge },
+    { x: adjacentFloat(left, 1), y: adjacentFloat(top, 1) },
     viewport,
   );
   const bottomRight = findCellAtViewportPoint(
-    { x: left + width - insideEdge, y: top + height - insideEdge },
+    { x: adjacentFloat(viewport.width, -1), y: adjacentFloat(viewport.height, -1) },
     viewport,
   );
   if (topLeft === null || bottomRight === null) return null;

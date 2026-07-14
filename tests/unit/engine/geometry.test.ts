@@ -7,6 +7,7 @@ import {
   hitTest,
   hitTestRegion,
   overlayAnchor,
+  rangeRect,
   rowOffset,
   columnOffset,
   scrollBy,
@@ -169,6 +170,26 @@ describe('DOM-free grid geometry', () => {
     expect(visibleCellRange(metrics)?.start).toEqual({ row: 2, column: 2 });
   });
 
+  it('finds visible cells when dimensions are smaller than the former fixed epsilon', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 20_000 }, cols: { len: 20_000 } },
+      { defaultRowHeight: 1e-10, defaultColumnWidth: 1e-10 },
+    );
+    const size = { width: 60 + 1e-6, height: 25 + 1e-6 };
+
+    expect(visibleCellRange(createViewportMetrics(model, size))).toEqual({
+      start: { row: 0, column: 0 },
+      end: { row: 9_999, column: 9_999 },
+    });
+    expect(visibleCellRange(createViewportMetrics(model, {
+      ...size,
+      scroll: { x: 5e-8, y: 5e-8 },
+    }))).toEqual({
+      start: { row: 500, column: 500 },
+      end: { row: 10_499, column: 10_499 },
+    });
+  });
+
   it('maps a merged interior hit to its anchor and full rectangle', () => {
     const sheet: SheetData = {
       rows: { len: 8 },
@@ -187,6 +208,44 @@ describe('DOM-free grid geometry', () => {
       width: 200,
       height: 50,
     });
+  });
+
+  it('throws when a CSS rectangle edge cannot be represented finitely', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 1 }, cols: { len: 2 } },
+      { defaultColumnWidth: 8e307 },
+    );
+    const metrics = createViewportMetrics(model, {
+      width: Number.MAX_VALUE,
+      height: 100,
+      rowHeaderWidth: 1.2e308,
+    });
+    const range = {
+      start: { row: 0, column: 0 },
+      end: { row: 0, column: 1 },
+    };
+
+    expect(() => cellRect({ row: 0, column: 0 }, metrics)).toThrow(RangeError);
+    expect(() => rangeRect(range, metrics)).toThrow(RangeError);
+    expect(() => overlayAnchor(range, metrics)).toThrow(RangeError);
+  });
+
+  it('subtracts scroll before adding headers to avoid intermediate overflow', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 1 }, cols: { len: 11 } },
+      { defaultColumnWidth: 1e307 },
+    );
+    const metrics = createViewportMetrics(model, {
+      width: Number.MAX_VALUE,
+      height: 100,
+      rowHeaderWidth: 1e308,
+      scroll: { x: 1e308, y: 0 },
+    });
+
+    const rect = cellRect({ row: 0, column: 10 }, metrics);
+    expect(rect.left).toBe(1e308);
+    expect(rect.width).toBeGreaterThan(9e306);
+    expect(Object.values(rect).every(Number.isFinite)).toBe(true);
   });
 
   it('keeps legacy zero-size overrides at the defaults while hidden structure is zero-size', () => {
@@ -219,6 +278,17 @@ describe('DOM-free grid geometry', () => {
       { rows: { len: Number.MAX_SAFE_INTEGER } },
       { defaultRowHeight: Number.MAX_VALUE },
     )).toThrow(/finite extent/);
+  });
+
+  it('keeps a finite sparse extent when a hidden override avoids fallback overflow', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 2, 0: { hide: true } }, cols: { len: 1 } },
+      { defaultRowHeight: 1e308 },
+    );
+
+    expect(model.rowOffset(1)).toBe(0);
+    expect(model.rowOffset(2)).toBe(1e308);
+    expect(model.rowAt(1)).toBe(1);
   });
 
   it('characterizes blank space after small content as the final legacy cell', () => {
@@ -261,5 +331,21 @@ describe('DOM-free grid geometry', () => {
     expect(scrollTo({ x: 1, y: 1 }, metrics)).toEqual({ x: 100, y: 25 });
     expect(scrollTo({ x: 100, y: 25 }, metrics)).toEqual({ x: 200, y: 50 });
     expect(scrollTo({ x: 0, y: 0 }, metrics)).toEqual({ x: 0, y: 0 });
+  });
+
+  it('clamps a huge snapped target before adding the frozen-axis offset', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 1 }, cols: { len: 2 } },
+      { defaultColumnWidth: 8e307 },
+    );
+    const metrics = createViewportMetrics(model, {
+      width: 0,
+      height: 0,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+      freeze: { row: 0, column: 1 },
+    });
+
+    expect(scrollTo({ x: 1.2e308, y: 0 }, metrics).x).toBe(8e307);
   });
 });

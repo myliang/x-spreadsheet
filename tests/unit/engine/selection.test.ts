@@ -8,6 +8,53 @@ import {
 } from '../../../src/engine';
 
 describe('selection state', () => {
+  it('deep-freezes cloned selection state without exposing model merge references', () => {
+    const model = createSheetGridModel({
+      rows: { len: 4 },
+      cols: { len: 4 },
+      merges: ['B2:C3'],
+    });
+    const input = { row: 2, column: 2 };
+    const created = createSelectionState(input);
+    const normalized = normalizeSelection(created, model);
+
+    input.row = 0;
+    expect(created.active).toEqual({ row: 2, column: 2 });
+    expect(Object.isFrozen(created)).toBe(true);
+    expect(Object.isFrozen(created.range)).toBe(true);
+    expect(Object.isFrozen(created.range.start)).toBe(true);
+    expect(Object.isFrozen(created.range.end)).toBe(true);
+    expect(Object.isFrozen(normalized)).toBe(true);
+    expect(Object.isFrozen(normalized.active)).toBe(true);
+    expect(Object.isFrozen(normalized.range)).toBe(true);
+    expect(Object.isFrozen(normalized.range.start)).toBe(true);
+    expect(Object.isFrozen(normalized.range.end)).toBe(true);
+
+    try {
+      (normalized.active as { row: number }).row = 0;
+    } catch {
+      // Strict-mode mutation of frozen state is expected to throw.
+    }
+    try {
+      (normalized.range.start as { row: number }).row = 0;
+      (normalized.range.end as { column: number }).column = 3;
+    } catch {
+      // Strict-mode mutation of frozen state is expected to throw.
+    }
+
+    expect(model.mergeAt({ row: 2, column: 2 })).toEqual({
+      start: { row: 1, column: 1 },
+      end: { row: 2, column: 2 },
+    });
+    expect(model.merges).toEqual([{
+      start: { row: 1, column: 1 },
+      end: { row: 2, column: 2 },
+    }]);
+    expect(Object.isFrozen(model.merges[0])).toBe(true);
+    expect(Object.isFrozen(model.merges[0]?.start)).toBe(true);
+    expect(Object.isFrozen(model.merges[0]?.end)).toBe(true);
+  });
+
   it('normalizes a backwards drag while retaining its active focus', () => {
     const model = createSheetGridModel({ rows: { len: 8 }, cols: { len: 8 } });
     const selection = createSelectionState(

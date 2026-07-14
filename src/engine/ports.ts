@@ -86,6 +86,13 @@ function assertIndex(index: number, count: number, label: string): void {
   }
 }
 
+function frozenRange(range: CellRange): CellRange {
+  return Object.freeze({
+    start: Object.freeze({ row: range.start.row, column: range.start.column }),
+    end: Object.freeze({ row: range.end.row, column: range.end.column }),
+  });
+}
+
 interface SparseAxis {
   readonly size: (index: number) => number;
   readonly offset: (boundary: number) => number;
@@ -95,7 +102,7 @@ interface SparseAxis {
 interface AxisOverride {
   readonly index: number;
   readonly size: number;
-  readonly prefixDelta: number;
+  readonly prefixSizeSum: number;
 }
 
 type ZeroExtentPolicy = 'last' | 'none';
@@ -134,12 +141,13 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
       : overrideSize(sizeOf(data), fallback, `${label} size`);
     return size === fallback ? [] : [{ index, size }];
   }).sort((left, right) => left.index - right.index);
-  let delta = 0;
+  let overrideSizeSum = 0;
   const overrides = rawOverrides.map(value => {
-    delta += value.size - fallback;
-    return { ...value, prefixDelta: delta };
+    overrideSizeSum += value.size;
+    return { ...value, prefixSizeSum: overrideSizeSum };
   });
-  if (!Number.isFinite(count * fallback + delta)) {
+  const extent = (count - overrides.length) * fallback + overrideSizeSum;
+  if (!Number.isFinite(extent)) {
     throw new RangeError(`${label} geometry must have a finite extent`);
   }
 
@@ -148,8 +156,10 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
       throw new RangeError(`${label} boundary is outside the grid`);
     }
     const position = upperBound(overrides, boundary);
-    const prefixDelta = position === 0 ? 0 : overrides[position - 1]?.prefixDelta ?? 0;
-    return boundary * fallback + prefixDelta;
+    const prefixSizeSum = position === 0
+      ? 0
+      : overrides[position - 1]?.prefixSizeSum ?? 0;
+    return (boundary - position) * fallback + prefixSizeSum;
   };
   const size = (index: number): number => {
     assertIndex(index, count, label);
@@ -191,7 +201,9 @@ export function createSheetGridModel(
     DEFAULT_COLUMN_WIDTH,
     'default column width',
   );
-  const merges = Object.freeze((sheet.merges ?? []).map(parseA1Range));
+  const merges = Object.freeze((sheet.merges ?? []).map(value => (
+    frozenRange(parseA1Range(value))
+  )));
   const rows = createSparseAxis<RowData>(
     sheet.rows,
     rowCount,
