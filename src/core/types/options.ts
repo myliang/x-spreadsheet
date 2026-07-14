@@ -1,5 +1,5 @@
 import type { Selection, SheetId } from './coordinates';
-import type { CellStyle } from './workbook';
+import type { BorderLine, CellStyle } from './workbook';
 import type { ValidationRule } from './validation';
 
 export interface SheetRowOptions {
@@ -29,10 +29,13 @@ export interface FilterDefinition {
   readonly value: readonly string[];
 }
 
+export type BorderMode = 'none' | 'all' | 'inside' | 'outside' | 'horizontal' | 'vertical';
+
 export type ToolbarAction =
   | { readonly type: 'undo' | 'redo' | 'print' }
   | { readonly type: 'paint-format' | 'clear-format' }
   | { readonly type: 'set-style'; readonly patch: Readonly<Partial<CellStyle>> }
+  | { readonly type: 'set-border'; readonly mode: BorderMode; readonly line?: BorderLine }
   | { readonly type: 'merge' | 'unmerge' }
   | { readonly type: 'freeze' | 'unfreeze' }
   | { readonly type: 'insert-row' | 'delete-row' | 'hide-row' | 'unhide-row' }

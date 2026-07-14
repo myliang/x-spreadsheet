@@ -68,4 +68,16 @@ describe('sheet and freeze operations', () => {
     expect(events).toHaveBeenCalledTimes(1);
     expect(before).toHaveLength(2);
   });
+
+  it('preserves legacy sheet deletion even when the sheet contains locked cells', () => {
+    const controller = new WorkbookController({
+      name: 'Locked', rows: { 0: { cells: { 0: { editable: false, vendorCell: true } } } },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+
+    expect(controller.dispatch({ type: 'delete-sheet', sheet }, 'sheet-tabs').status)
+      .toBe('committed');
+    expect(controller.getValue()).toEqual([]);
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+  });
 });

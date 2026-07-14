@@ -194,6 +194,7 @@ test('package dry run includes public files only', () => {
     'dist/core/model/styles.d.ts',
     'dist/core/model/workbook-state.d.ts',
     'dist/core/operations/cell.d.ts',
+    'dist/core/operations/editable.d.ts',
     'dist/core/operations/merge.d.ts',
     'dist/core/operations/sheet.d.ts',
     'dist/core/operations/structure.d.ts',

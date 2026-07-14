@@ -67,4 +67,34 @@ describe('merge range operations', () => {
     }, 'toolbar')).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
     expect(controller.getValue()).toEqual(before);
   });
+
+  it('rejects merge only when it would delete a locked non-anchor cell', () => {
+    const controller = new WorkbookController({
+      rows: { len: 3, 0: { cells: { 1: { text: 'locked', editable: false } } } },
+      cols: { len: 3 },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    const before = controller.getValue();
+
+    expect(() => controller.dispatch({
+      type: 'merge', selection: selection(sheet, {
+        start: { row: 0, column: 0 }, end: { row: 1, column: 1 },
+      }),
+    }, 'toolbar')).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+
+    const anchorController = new WorkbookController({
+      merges: ['A1:B2'],
+      rows: { len: 3, 0: { cells: { 0: { text: 'anchor', editable: false, merge: [1, 1] } } } },
+      cols: { len: 3 },
+    });
+    const anchorSheet = anchorController.getSheetIds()[0]!;
+    expect(anchorController.dispatch({
+      type: 'unmerge', selection: selection(anchorSheet, {
+        start: { row: 0, column: 0 }, end: { row: 1, column: 1 },
+      }),
+    }, 'toolbar').status).toBe('committed');
+    expect(anchorController.getValue()[0]!.merges).toEqual([]);
+  });
 });

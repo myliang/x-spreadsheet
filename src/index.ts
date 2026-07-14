@@ -4,6 +4,7 @@ export type {
   AutoFilterItemData,
   AutoFilterSortData,
   BorderLine,
+  BorderMode,
   CellAddress,
   CellBorders,
   CellData,

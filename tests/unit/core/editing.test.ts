@@ -42,7 +42,7 @@ describe('cell editing operations', () => {
     expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
   });
 
-  it('treats editor cancel/same text and editable false as silent no-ops', () => {
+  it('treats editor cancel/same text as a no-op and rejects editable false atomically', () => {
     const controller = new WorkbookController({
       rows: { 0: { cells: { 0: { text: 'same' }, 1: { text: 'locked', editable: false } } } },
     });
@@ -52,9 +52,9 @@ describe('cell editing operations', () => {
     expect(controller.dispatch({
       type: 'set-cell-text', address: address(controller), text: 'same',
     }, 'keyboard')).toEqual({ status: 'noop' });
-    expect(controller.dispatch({
+    expect(() => controller.dispatch({
       type: 'set-cell-text', address: address(controller, 0, 1), text: 'changed',
-    }, 'keyboard')).toEqual({ status: 'noop' });
+    }, 'keyboard')).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
     expect(controller.getCellText(address(controller, 0, 1))).toBe('locked');
     expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
     expect(subscriber).not.toHaveBeenCalled();

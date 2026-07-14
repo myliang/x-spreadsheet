@@ -5,6 +5,7 @@ import { applyMergeOperation } from '../operations/merge';
 import { applyFreezeOperation, applySheetOperation } from '../operations/sheet';
 import { applyStructureOperation, structureRange } from '../operations/structure';
 import { applyStyleOperation } from '../operations/style';
+import { paintFormatTargetRange } from '../operations/style';
 import type { CellRange, SheetId } from '../types/coordinates';
 import type { WorkbookChangeKind } from '../types/changes';
 import { invalidCommand } from './validate-command';
@@ -19,10 +20,21 @@ export interface AppliedCommand {
   readonly undoable: boolean;
 }
 
-function failure(command: WorkbookCommand, cause: unknown): never {
+function commandType(command: unknown): string {
+  if (command !== null && typeof command === 'object' && 'type' in command) {
+    return String(command.type);
+  }
+  return '<unknown>';
+}
+
+function assertNeverCommand(command: never): never {
+  throw invalidCommand(`Unknown workbook command: ${commandType(command)}`);
+}
+
+function failure(command: unknown, cause: unknown): never {
   if (cause instanceof Error && 'code' in cause && cause.code === 'INVALID_COMMAND') throw cause;
   const message = cause instanceof Error ? cause.message : String(cause);
-  throw invalidCommand(`${command.type} could not be applied: ${message}`, cause);
+  throw invalidCommand(`${commandType(command)} could not be applied: ${message}`, cause);
 }
 
 export function applyCommand(
@@ -53,6 +65,7 @@ export function applyCommand(
         };
       }
       case 'set-style':
+      case 'set-border':
       case 'clear-format': {
         const runtimeSheet = state.get(command.selection.sheet);
         if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.selection.sheet}`);
@@ -71,6 +84,7 @@ export function applyCommand(
         const source = state.get(command.source.sheet);
         const target = state.get(command.target.sheet);
         if (source === null || target === null) throw new RangeError('Unknown paint-format sheet ID');
+        const range = paintFormatTargetRange(command);
         const next = applyStyleOperation(target.data, command, source.data);
         if (next === target.data) return null;
         return {
@@ -78,7 +92,7 @@ export function applyCommand(
           result: undefined,
           kind: 'style',
           sheet: command.target.sheet,
-          range: command.target.range,
+          range,
           undoable: true,
         };
       }
@@ -145,6 +159,8 @@ export function applyCommand(
           undoable: true,
         };
       }
+      default:
+        return assertNeverCommand(command);
     }
   } catch (cause) {
     return failure(command, cause);

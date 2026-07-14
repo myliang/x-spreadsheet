@@ -1,6 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import type {
   ActiveSheetChangeEvent,
+  BorderMode,
   CellAddress,
   CellData,
   CellEditEvent,
@@ -280,6 +281,7 @@ describe('the public type contract', () => {
       value: ['0', '10'],
     };
     const filter: FilterDefinition = { column: 0, operator: 'in', value: ['', 'open'] };
+    const borderMode: BorderMode = 'outside';
     const actions: readonly ToolbarAction[] = [
       { type: 'undo' },
       { type: 'redo' },
@@ -287,6 +289,7 @@ describe('the public type contract', () => {
       { type: 'paint-format' },
       { type: 'clear-format' },
       { type: 'set-style', patch: { boldVendorFlag: false, font: { bold: true } } },
+      { type: 'set-border', mode: borderMode, line: ['thin', '#000'] },
       { type: 'merge' },
       { type: 'unmerge' },
       { type: 'freeze' },

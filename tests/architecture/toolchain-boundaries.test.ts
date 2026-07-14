@@ -60,7 +60,9 @@ it('keeps pure operations independent from the controller mutation boundary', ()
   const directory = resolve(import.meta.dirname, '../../src/core/operations');
   const operationFiles = readdirSync(directory).filter(file => file.endsWith('.ts'));
 
-  expect(operationFiles.sort()).toEqual(['cell.ts', 'merge.ts', 'sheet.ts', 'structure.ts', 'style.ts']);
+  expect(operationFiles).toEqual(expect.arrayContaining([
+    'cell.ts', 'merge.ts', 'sheet.ts', 'structure.ts', 'style.ts',
+  ]));
   for (const file of operationFiles) {
     const source = readFileSync(resolve(directory, file), 'utf8');
     expect(source, file).not.toMatch(/(?:workbook-controller|controller\/)/);

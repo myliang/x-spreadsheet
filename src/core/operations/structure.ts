@@ -134,7 +134,9 @@ export function applyStructureOperation(sheet: SheetData, command: StructureComm
         ? sheet
         : setRowHeight(sheet, command.row, command.height);
     case 'set-row-hidden':
-      return (getRowData(sheet, command.row)?.hide ?? false) === command.hidden
+      return (command.hidden
+        ? getRowData(sheet, command.row)?.hide === true
+        : getRowData(sheet, command.row)?.hide === undefined)
         ? sheet
         : setRowHidden(sheet, command.row, command.hidden);
     case 'set-column-width':
@@ -142,7 +144,9 @@ export function applyStructureOperation(sheet: SheetData, command: StructureComm
         ? sheet
         : setColumnWidth(sheet, command.column, command.width);
     case 'set-column-hidden':
-      return (getColumnData(sheet, command.column)?.hide ?? false) === command.hidden
+      return (command.hidden
+        ? getColumnData(sheet, command.column)?.hide === true
+        : getColumnData(sheet, command.column)?.hide === undefined)
         ? sheet
         : setColumnHidden(sheet, command.column, command.hidden);
   }

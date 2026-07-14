@@ -79,7 +79,12 @@ export function setColumnWidth(sheet: SheetData, column: number, width: number):
 }
 
 export function setColumnHidden(sheet: SheetData, column: number, hidden: boolean): SheetData {
-  return updateColumn(sheet, column, value => ({ ...value, hide: hidden }));
+  return updateColumn(sheet, column, value => {
+    const next = { ...value } as Record<string, unknown>;
+    if (hidden) next.hide = true;
+    else delete next.hide;
+    return next as ColumnData;
+  });
 }
 
 function transformRowCells(

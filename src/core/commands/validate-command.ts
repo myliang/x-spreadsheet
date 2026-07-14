@@ -3,10 +3,19 @@ import type { WorkbookState } from '../model/workbook-state';
 import { containsCell } from '../coordinates/ranges';
 import { assertStructureCommand, columnCount, rowCount } from '../operations/structure';
 import { assertSheetName } from '../operations/sheet';
+import {
+  assertStyleResourceLimit,
+  paintFormatTargetRange,
+} from '../operations/style';
+import {
+  assertCellEditable,
+  assertMergeEditable,
+  assertRangeEditable,
+} from '../operations/editable';
 import { parseWorkbook } from '../serialization/parse-workbook';
 import { assertCellAddress, assertCellPoint, assertCellRange } from '../types/coordinates';
 import type { SheetId } from '../types/coordinates';
-import type { CellStyle } from '../types/workbook';
+import type { BorderLine, CellStyle } from '../types/workbook';
 import type { WorkbookCommand } from './workbook-command';
 
 export function invalidCommand(message: string, cause?: unknown): TegoSheetException {
@@ -58,7 +67,44 @@ function validateSelection(state: WorkbookState, selection: WorkbookCommand & {
   }
 }
 
+function assertNeverCommand(command: never): never {
+  const runtime = command as { readonly type?: unknown };
+  throw invalidCommand(`Unknown workbook command: ${String(runtime.type ?? '<missing>')}`);
+}
+
+function validCommandObject(command: unknown): command is WorkbookCommand {
+  return command !== null && typeof command === 'object' && typeof (command as { type?: unknown }).type === 'string';
+}
+
+function validateStyleRange(state: WorkbookState, sheet: SheetId, range: {
+  readonly start: { readonly row: number; readonly column: number };
+  readonly end: { readonly row: number; readonly column: number };
+}): void {
+  const runtimeSheet = state.get(sheet);
+  if (runtimeSheet === null) throw invalidCommand(`Unknown sheet ID: ${sheet}`);
+  if (range.end.row >= rowCount(runtimeSheet.data)
+    || range.end.column >= columnCount(runtimeSheet.data)) {
+    throw invalidCommand('format range exceeds the sheet structure');
+  }
+  try {
+    assertStyleResourceLimit(range);
+    assertRangeEditable(runtimeSheet.data, range);
+  } catch (cause) {
+    throw invalidCommand('format range is not mutable', cause);
+  }
+}
+
+function validateBorderLine(line: BorderLine | undefined): void {
+  if (line === undefined) throw invalidCommand('Border mode requires a border line');
+  try {
+    parseWorkbook({ styles: [{ border: { top: line } } as unknown as CellStyle] });
+  } catch (cause) {
+    throw invalidCommand('Border line is invalid', cause);
+  }
+}
+
 export function validateCommand(state: WorkbookState, command: WorkbookCommand): void {
+  if (!validCommandObject(command)) throw invalidCommand('Command must have a string type');
   switch (command.type) {
     case 'set-cell-text':
       try {
@@ -68,6 +114,15 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       }
       validateSheet(state, command.address.sheet);
       if (typeof command.text !== 'string') throw invalidCommand('Cell text must be a string');
+      try {
+        assertCellEditable(
+          state.get(command.address.sheet)!.data,
+          command.address.row,
+          command.address.column,
+        );
+      } catch (cause) {
+        throw invalidCommand('Cell is not editable', cause);
+      }
       return;
     case 'set-style':
       validateSelection(state, command);
@@ -79,13 +134,30 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       } catch (cause) {
         throw invalidCommand('Style patch must contain valid style values', cause);
       }
+      validateStyleRange(state, command.selection.sheet, command.selection.range);
+      return;
+    case 'set-border':
+      validateSelection(state, command);
+      if (!['none', 'all', 'inside', 'outside', 'horizontal', 'vertical'].includes(command.mode)) {
+        throw invalidCommand('Border mode is invalid');
+      }
+      if (command.mode !== 'none') validateBorderLine(command.line);
+      validateStyleRange(state, command.selection.sheet, command.selection.range);
       return;
     case 'clear-format':
       validateSelection(state, command);
+      validateStyleRange(state, command.selection.sheet, command.selection.range);
       return;
     case 'paint-format':
       validateSelection(state, { ...command, selection: command.source });
       validateSelection(state, { ...command, selection: command.target });
+      try {
+        const target = paintFormatTargetRange(command);
+        validateStyleRange(state, command.target.sheet, target);
+      } catch (cause) {
+        if (cause instanceof TegoSheetException) throw cause;
+        throw invalidCommand('Paint format target is invalid', cause);
+      }
       return;
     case 'insert-row':
     case 'delete-row':
@@ -147,6 +219,13 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       }
       return;
     case 'merge':
+      validateSelection(state, command);
+      try {
+        assertMergeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
+      } catch (cause) {
+        throw invalidCommand('Merge would delete locked cells', cause);
+      }
+      return;
     case 'unmerge':
       validateSelection(state, command);
       return;
@@ -188,5 +267,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
     case 'undo':
     case 'redo':
       return;
+    default:
+      return assertNeverCommand(command);
   }
 }

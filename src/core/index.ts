@@ -59,6 +59,7 @@ export type {
   ValidationType,
 } from './types/validation';
 export type {
+  BorderMode,
   FilterDefinition,
   SheetColumnOptions,
   SheetOptions,
@@ -193,6 +194,7 @@ export type {
   ResizeColumnCommand,
   ResizeRowCommand,
   SetCellTextCommand,
+  SetBorderCommand,
   SetFreezeCommand,
   SetStyleCommand,
   UndoCommand,

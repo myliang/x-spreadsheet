@@ -80,4 +80,29 @@ describe('row and column structure operations', () => {
     expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
     expect(subscriber).not.toHaveBeenCalled();
   });
+
+  it('deletes hide fields on unhide and preserves legacy locked-cell structure movement', () => {
+    const controller = new WorkbookController({
+      rows: {
+        len: 4,
+        1: { hide: true, vendorRow: false },
+        2: { cells: { 0: { text: 'locked', editable: false, vendorCell: 0 } } },
+      },
+      cols: { len: 3, 1: { hide: true, vendorColumn: '' } },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+
+    controller.dispatch({ type: 'set-row-hidden', sheet, row: 1, hidden: false }, 'context-menu');
+    controller.dispatch({ type: 'set-column-hidden', sheet, column: 1, hidden: false }, 'context-menu');
+    expect(controller.getValue()[0]!.rows?.['1']).toEqual({ vendorRow: false });
+    expect(controller.getValue()[0]!.cols?.['1']).toEqual({ vendorColumn: '' });
+
+    controller.dispatch({ type: 'insert-row', sheet, index: 2 }, 'context-menu');
+    expect(controller.getValue()[0]!.rows?.['3']).toMatchObject({
+      cells: { 0: { text: 'locked', editable: false, vendorCell: 0 } },
+    });
+    controller.dispatch({ type: 'delete-column', sheet, index: 0 }, 'context-menu');
+    expect(controller.getValue()[0]!.rows?.['3']).not.toHaveProperty('cells.0');
+    expect(controller.historySize).toEqual({ undo: 4, redo: 0 });
+  });
 });

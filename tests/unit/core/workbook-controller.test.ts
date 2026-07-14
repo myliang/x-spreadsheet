@@ -5,6 +5,9 @@ import {
 } from '../../../src/core/controller/workbook-controller';
 import { TegoSheetException } from '../../../src/core/errors/tego-sheet-exception';
 import type { CellAddress } from '../../../src/core/types/coordinates';
+import { applyCommand } from '../../../src/core/commands/apply-command';
+import { validateCommand } from '../../../src/core/commands/validate-command';
+import { WorkbookState } from '../../../src/core/model/workbook-state';
 
 function firstAddress(controller: WorkbookController, row = 0, column = 0): CellAddress {
   const sheet = controller.getSheetIds()[0];
@@ -423,6 +426,20 @@ describe('WorkbookController command boundary', () => {
     expect(controller.getValue()[0]?.name).toBe('B');
     expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
     expect(subscriber).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects forged unknown command variants in validation, application, and dispatch', () => {
+    const state = WorkbookState.from({ name: 'A' });
+    const controller = new WorkbookController({ name: 'A' });
+    const unknown = { type: 'future-command', payload: true } as never;
+
+    expect(() => validateCommand(state, unknown))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => applyCommand(state, unknown))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => controller.dispatch(unknown, 'ref'))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
   });
 
   it('keeps the last valid state and runtime IDs when replacement parsing fails', () => {

@@ -1,5 +1,6 @@
 import type { CellAddress, Selection, SheetId } from '../types/coordinates';
-import type { CellStyle } from '../types/workbook';
+import type { BorderMode } from '../types/options';
+import type { BorderLine, CellStyle } from '../types/workbook';
 
 export interface SetCellTextCommand {
   readonly type: 'set-cell-text';
@@ -11,6 +12,13 @@ export interface SetStyleCommand {
   readonly type: 'set-style';
   readonly selection: Selection;
   readonly patch: Readonly<Partial<CellStyle>>;
+}
+
+export interface SetBorderCommand {
+  readonly type: 'set-border';
+  readonly selection: Selection;
+  readonly mode: BorderMode;
+  readonly line?: BorderLine;
 }
 
 export interface ClearFormatCommand {
@@ -105,6 +113,7 @@ export type HistoryCommand = UndoCommand | RedoCommand;
 export type WorkbookCommand =
   | SetCellTextCommand
   | SetStyleCommand
+  | SetBorderCommand
   | ClearFormatCommand
   | PaintFormatCommand
   | IndexedSheetCommand

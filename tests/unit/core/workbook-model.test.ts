@@ -235,8 +235,10 @@ describe('sparse row, column, and cell model helpers', () => {
 
     expect(next.rows?.['2']).toMatchObject({ height: 18, hide: true });
     expect(next.cols?.['2']).toMatchObject({ width: 88, hide: true, vendorColumn: '' });
-    expect(restored.rows?.['2']).toMatchObject({ height: 18, hide: false });
-    expect(restored.cols?.['2']).toMatchObject({ width: 88, hide: false });
+    expect(restored.rows?.['2']).toMatchObject({ height: 18 });
+    expect(restored.rows?.['2']).not.toHaveProperty('hide');
+    expect(restored.cols?.['2']).toMatchObject({ width: 88 });
+    expect(restored.cols?.['2']).not.toHaveProperty('hide');
   });
 
   it('sets text immutably, respects editable false, and invalidates only derived cell cache', () => {

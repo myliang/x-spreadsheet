@@ -163,7 +163,12 @@ export function setRowHeight(sheet: SheetData, row: number, height: number): She
 }
 
 export function setRowHidden(sheet: SheetData, row: number, hidden: boolean): SheetData {
-  return updateRow(sheet, row, value => ({ ...value, hide: hidden }) as unknown as RowData);
+  return updateRow(sheet, row, value => {
+    const next = { ...value } as Record<string, unknown>;
+    if (hidden) next.hide = true;
+    else delete next.hide;
+    return next as RowData;
+  });
 }
 
 export function insertRows(sheet: SheetData, index: number, count = 1): SheetData {
