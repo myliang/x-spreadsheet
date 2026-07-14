@@ -80,11 +80,14 @@ export function autofillRange(
       const sourceCell: CellData | null = getCellData(sheet, sourceRow, sourceColumn);
       if (sourceCell?.text === undefined || sourceCell.text.length === 0) continue;
       const cell = mutableCell(next, row, column);
-      const delta = { row: row - sourceRow, column: column - sourceColumn };
+      const step = fillStep(source, target, row, column);
+      const delta = source.start.row === target.start.row
+        ? { row: 0, column: step }
+        : { row: step, column: 0 };
       cell.text = sourceCell.text.startsWith('=')
         ? autofillText(sourceCell.text, 0, delta)
         : incrementsNumericSuffix(source, target)
-          ? autofillText(sourceCell.text, fillStep(source, target, row, column), delta)
+          ? autofillText(sourceCell.text, step, delta)
           : sourceCell.text;
       delete cell.value;
     }

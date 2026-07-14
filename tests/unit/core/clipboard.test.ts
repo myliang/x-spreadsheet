@@ -104,7 +104,7 @@ describe('clipboard transformations', () => {
         } },
         2: { cells: {
           0: { text: 'all-stays', style: 0, vendorAll: true },
-          1: { text: 'format-stays', style: 0, vendorFormat: true },
+          1: { text: 'format-stays', value: 10, style: 0, merge: [0, 1], vendorFormat: true },
         } },
       },
       cols: { len: 4 },
@@ -135,16 +135,33 @@ describe('clipboard transformations', () => {
       type: 'paste-internal', source: absent,
       target: selection(sheet, { start: { row: 2, column: 0 }, end: { row: 2, column: 0 } }),
       mode: 'all', cut: false,
-    }, 'clipboard')).toEqual({ status: 'noop' });
+    }, 'clipboard').status).toBe('committed');
     expect(controller.dispatch({
       type: 'paste-internal', source: absent,
       target: selection(sheet, { start: { row: 2, column: 1 }, end: { row: 2, column: 1 } }),
       mode: 'format', cut: false,
-    }, 'clipboard')).toEqual({ status: 'noop' });
+    }, 'clipboard').status).toBe('committed');
     expect(controller.getValue()[0]).toMatchObject({ rows: { 2: { cells: {
-      0: { text: 'all-stays', style: 0, vendorAll: true },
-      1: { text: 'format-stays', style: 0, vendorFormat: true },
+      1: { text: 'format-stays', value: 10, vendorFormat: true },
     } } } });
+    expect(controller.getValue()[0]!.rows?.['2']).not.toHaveProperty('cells.0');
+    expect(controller.getValue()[0]!.rows?.['2']).not.toHaveProperty('cells.1.style');
+    expect(controller.getValue()[0]!.rows?.['2']).not.toHaveProperty('cells.1.merge');
+
+    const cutController = new WorkbookController({
+      rows: { len: 3, 1: { cells: { 0: { text: 'cut-target', value: 9, vendorCut: 0 } } } },
+      cols: { len: 2 },
+    });
+    const cutSheet = cutController.getSheetIds()[0]!;
+    expect(cutController.dispatch({
+      type: 'paste-internal',
+      source: selection(cutSheet, { start: { row: 0, column: 0 }, end: { row: 0, column: 0 } }),
+      target: selection(cutSheet, { start: { row: 1, column: 0 }, end: { row: 1, column: 0 } }),
+      mode: 'all', cut: true,
+    }, 'clipboard')).toEqual({ status: 'noop' });
+    expect(cutController.getValue()[0]).toMatchObject({
+      rows: { 1: { cells: { 0: { text: 'cut-target', value: 9, vendorCut: 0 } } } },
+    });
   });
 
   it('pastes an external matrix, expands from the target anchor, and rejects locked cells atomically', () => {

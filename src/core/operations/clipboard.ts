@@ -150,7 +150,22 @@ function assignCell(
   mode: PasteMode,
   sourceStyles: readonly CellStyle[],
 ): void {
-  if (source === null) return;
+  if (source === null) {
+    if (mode === 'value') return;
+    const cells = cellsRecord(sheet, row, false);
+    if (cells === null) return;
+    if (mode === 'all') {
+      delete cells[String(column)];
+      return;
+    }
+    const currentValue = cells[String(column)];
+    if (currentValue === null || typeof currentValue !== 'object' || Array.isArray(currentValue)) return;
+    const next = { ...currentValue as Record<string, unknown> };
+    delete next.style;
+    delete next.merge;
+    cells[String(column)] = next;
+    return;
+  }
   const cells = cellsRecord(sheet, row, true)!;
   const currentValue = cells[String(column)];
   const current = currentValue !== null && typeof currentValue === 'object' && !Array.isArray(currentValue)
@@ -158,25 +173,22 @@ function assignCell(
     : {};
 
   if (mode === 'all') {
-    if (source === null) delete cells[String(column)];
-    else {
-      const next = structuredClone(source) as Record<string, unknown>;
-      if (source.style !== undefined) {
-        const style = sourceStyles[source.style];
-        if (style !== undefined) {
-          const result = addStyle(sheet.styles ?? [], style);
-          (sheet as Record<string, unknown>).styles = result.styles;
-          next.style = result.index;
-        }
+    const next = structuredClone(source) as Record<string, unknown>;
+    if (source.style !== undefined) {
+      const style = sourceStyles[source.style];
+      if (style !== undefined) {
+        const result = addStyle(sheet.styles ?? [], style);
+        (sheet as Record<string, unknown>).styles = result.styles;
+        next.style = result.index;
       }
-      cells[String(column)] = next;
     }
+    cells[String(column)] = next;
     return;
   }
 
   if (mode === 'value') {
     const next = { ...current };
-    if (source !== null && Object.hasOwn(source, 'text')) next.text = source.text;
+    if (Object.hasOwn(source, 'text')) next.text = source.text;
     else delete next.text;
     delete next.value;
     cells[String(column)] = next;
@@ -186,7 +198,7 @@ function assignCell(
   const next = { ...current };
   delete next.style;
   delete next.merge;
-  if (source?.style !== undefined) {
+  if (source.style !== undefined) {
     const style = sourceStyles[source.style];
     if (style !== undefined) {
       const result = addStyle(sheet.styles ?? [], style);
@@ -194,7 +206,7 @@ function assignCell(
       next.style = result.index;
     }
   }
-  if (source?.merge !== undefined) next.merge = [...source.merge];
+  if (source.merge !== undefined) next.merge = [...source.merge];
   cells[String(column)] = next;
 }
 
@@ -268,11 +280,13 @@ export function pasteInternal(
     for (let column = range.start.column; column <= range.end.column; column += 1) {
       const sourceRow = source.start.row + ((row - range.start.row) % sourceRows);
       const sourceColumn = source.start.column + ((column - range.start.column) % sourceColumns);
+      const sourceCell = snapshots.get(`${sourceRow}:${sourceColumn}`) ?? null;
+      if (cut && sourceCell === null) continue;
       assignCell(
         next,
         row,
         column,
-        snapshots.get(`${sourceRow}:${sourceColumn}`) ?? null,
+        sourceCell,
         mode,
         sourceSheet.styles ?? [],
       );

@@ -81,9 +81,10 @@ export function validateValue(text: string, rule: ValidationRule): ValueValidati
     }
     const minimum = scalar(String(rule.value[0]), rule.type);
     const maximum = scalar(String(rule.value[1]), rule.type);
-    const inside = relational(actual) >= relational(minimum)
-      && relational(actual) <= relational(maximum);
-    return (rule.operator === 'be' ? inside : !inside)
+    const matches = rule.operator === 'be'
+      ? relational(actual) >= relational(minimum) && relational(actual) <= relational(maximum)
+      : relational(actual) < relational(minimum) || relational(actual) > relational(maximum);
+    return matches
       ? valid()
       : invalid(rule.operator === 'be' ? 'Value is outside the allowed range' : 'Value is inside the excluded range');
   }

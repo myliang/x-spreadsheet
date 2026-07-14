@@ -59,6 +59,16 @@ describe('validation operations and workbook selector', () => {
     }).valid).toBe(false);
   });
 
+  it('keeps legacy nbe invalid-number and invalid-date comparisons false', () => {
+    expect(validateValue('not-a-number', {
+      mode: 'cell', type: 'number', required: false, operator: 'nbe', value: ['1', '10'],
+    }).valid).toBe(false);
+    expect(validateValue('not-a-date', {
+      mode: 'cell', type: 'date', required: false, operator: 'nbe',
+      value: ['2025-01-01', '2027-01-01'],
+    }).valid).toBe(false);
+  });
+
   it('sets and removes serialized validation refs without disturbing non-overlapping rules', () => {
     const controller = new WorkbookController({
       rows: { len: 3 }, cols: { len: 3 },

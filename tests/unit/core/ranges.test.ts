@@ -232,8 +232,59 @@ describe('autofill range operations', () => {
 
     controller.dispatch({
       type: 'autofill', source: selection(sheet, point(1, 4)),
-      target: selection(sheet, point(2, 5)), mode: 'value',
+      target: selection(sheet, point(2, 4)), mode: 'value',
     }, 'pointer');
-    expect(controller.getCellText({ sheet, row: 2, column: 5 })).toBe('=D4+$A$1');
+    expect(controller.getCellText({ sheet, row: 2, column: 4 })).toBe('=C4+$A$1');
+  });
+
+  it.each([
+    {
+      name: 'vertical forward', source: [[0, 0], [1, 0]], target: [[2, 0], [3, 0]],
+      formulas: ['=B1', '=B2'], expected: ['=B2', '=B3'],
+    },
+    {
+      name: 'vertical reverse', source: [[2, 0], [3, 0]], target: [[0, 0], [1, 0]],
+      formulas: ['=B3', '=B4'], expected: ['=B1', '=B2'],
+    },
+    {
+      name: 'horizontal forward', source: [[0, 0], [0, 1]], target: [[0, 2], [0, 3]],
+      formulas: ['=A2', '=B2'], expected: ['=B2', '=C2'],
+    },
+    {
+      name: 'horizontal reverse', source: [[0, 2], [0, 3]], target: [[0, 0], [0, 1]],
+      formulas: ['=C2', '=D2'], expected: ['=A2', '=B2'],
+    },
+  ])('uses one legacy tile shift for every formula in a $name multi-cell source', ({
+    source, target, formulas, expected,
+  }) => {
+    const controller = new WorkbookController({ rows: { len: 6 }, cols: { len: 6 } });
+    const sheet = controller.getSheetIds()[0]!;
+    const horizontal = source[0]![0] === source[1]![0];
+    formulas.forEach((text, index) => controller.dispatch({
+      type: 'set-cell-text',
+      address: {
+        sheet,
+        row: source[0]![0] + (horizontal ? 0 : index),
+        column: source[0]![1] + (horizontal ? index : 0),
+      },
+      text,
+    }, 'ref'));
+    const sourceRange: CellRange = {
+      start: { row: source[0]![0], column: source[0]![1] },
+      end: { row: source[1]![0], column: source[1]![1] },
+    };
+    const targetRange: CellRange = {
+      start: { row: target[0]![0], column: target[0]![1] },
+      end: { row: target[1]![0], column: target[1]![1] },
+    };
+    controller.dispatch({
+      type: 'autofill', source: selection(sheet, sourceRange),
+      target: selection(sheet, targetRange), mode: 'value',
+    }, 'pointer');
+    expect(expected.map((_, index) => controller.getCellText({
+      sheet,
+      row: targetRange.start.row + (horizontal ? 0 : index),
+      column: targetRange.start.column + (horizontal ? index : 0),
+    }))).toEqual(expected);
   });
 });
