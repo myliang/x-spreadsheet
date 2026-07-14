@@ -102,11 +102,16 @@ export { tokenizeFormula } from './formulas/tokenizer';
 export type { FormulaToken, FormulaTokenKind } from './formulas/tokenizer';
 export { infixToPostfix, parseFormula } from './formulas/parser';
 export type { BinaryOperator, FormulaExpression } from './formulas/parser';
-export { FORMULA_FUNCTIONS } from './formulas/functions';
+export {
+  FORMULA_FUNCTIONS,
+  legacyDigits,
+  legacyNumberCalc,
+} from './formulas/functions';
 export type {
   FormulaFunction,
   FormulaFunctionName,
   FormulaScalar,
+  LegacyArithmeticOperator,
 } from './formulas/functions';
 export { evaluateCell, evaluateFormula } from './formulas/evaluator';
 export type { CellSelector } from './formulas/evaluator';

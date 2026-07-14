@@ -1,6 +1,6 @@
 import type { CellPoint } from '../types/coordinates';
 import type { A1Reference } from '../coordinates/a1';
-import { FORMULA_FUNCTIONS } from './functions';
+import { FORMULA_FUNCTIONS, legacyNumberCalc } from './functions';
 import type { FormulaFunctionName, FormulaScalar } from './functions';
 import { parseFormula } from './parser';
 import type { BinaryOperator, FormulaExpression } from './parser';
@@ -58,14 +58,7 @@ function binary(operator: BinaryOperator, left: FormulaScalar, right: FormulaSca
     if (operator === '<') return a < b;
     return a <= b;
   }
-  const a = Number(left);
-  const b = Number(right);
-  if (operator === '/' && b === 0) return '#DIV/0!';
-  if (Number.isNaN(a) || Number.isNaN(b)) return '#ERROR!';
-  if (operator === '+') return a + b;
-  if (operator === '-') return a - b;
-  if (operator === '*') return a * b;
-  return a / b;
+  return legacyNumberCalc(operator, left, right);
 }
 
 function evaluate(expression: FormulaExpression, context: EvaluationContext): EvaluationValue {

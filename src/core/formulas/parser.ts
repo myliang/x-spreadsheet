@@ -1,4 +1,4 @@
-import { parseA1Reference } from '../coordinates/a1';
+import { parseA1, parseA1Reference, renderA1 } from '../coordinates/a1';
 import type { A1Reference } from '../coordinates/a1';
 import { tokenizeFormula } from './tokenizer';
 import type { FormulaToken, FormulaTokenKind } from './tokenizer';
@@ -112,32 +112,104 @@ export function parseFormula(source: string): FormulaExpression {
   return new Parser(tokenizeFormula(source)).parse();
 }
 
-function postfix(expression: FormulaExpression, output: Array<string | readonly [string, number]>): void {
-  if (expression.kind === 'number') output.push(String(expression.value));
-  else if (expression.kind === 'string') output.push(`"${expression.value}`);
-  else if (expression.kind === 'reference') output.push(expression.source);
-  else if (expression.kind === 'range') {
-    output.push(`${expression.start.column}:${expression.start.row}`);
-    output.push(`${expression.end.column}:${expression.end.row}`);
-  } else if (expression.kind === 'unary') {
-    postfix(expression.operand, output);
-    output.push('-');
-  } else if (expression.kind === 'binary') {
-    postfix(expression.left, output);
-    postfix(expression.right, output);
-    output.push(expression.operator);
-  } else {
-    expression.arguments.forEach(argument => postfix(argument, output));
-    output.push(expression.arguments.length <= 1
-      ? expression.name
-      : [expression.name, expression.arguments.length]);
-  }
-}
-
 export function infixToPostfix(source: string): readonly (string | readonly [string, number])[] {
-  const incompleteFunction = /^\s*([A-Z_][A-Z0-9_]*)\(\s*$/i.exec(source);
-  if (incompleteFunction !== null) return [incompleteFunction[1].toUpperCase()];
   const output: Array<string | readonly [string, number]> = [];
-  postfix(parseFormula(source), output);
+  const operators: string[] = [];
+  let fragments: string[] = [];
+  let functionArgumentType = 0;
+  let functionArgumentOperator = '';
+  let functionArgumentCount = 1;
+  let previous = '';
+
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source.charAt(index);
+    if (character === ' ') continue;
+    if (character >= 'a' && character <= 'z') {
+      fragments.push(character.toUpperCase());
+    } else if (
+      (character >= '0' && character <= '9')
+      || (character >= 'A' && character <= 'Z')
+      || character === '.'
+    ) {
+      fragments.push(character);
+    } else if (character === '"') {
+      index += 1;
+      while (index < source.length && source.charAt(index) !== '"') {
+        fragments.push(source.charAt(index));
+        index += 1;
+      }
+      output.push(`"${fragments.join('')}`);
+      fragments = [];
+    } else if (character === '-' && /[+\-*/,(]/.test(previous)) {
+      fragments.push(character);
+    } else {
+      if (character !== '(' && fragments.length > 0) output.push(fragments.join(''));
+      if (character === ')') {
+        let operator = operators.pop();
+        if (functionArgumentType === 2) {
+          const endSource = output.pop();
+          const startSource = output.pop();
+          if (typeof startSource === 'string' && typeof endSource === 'string' && operator !== undefined) {
+            const start = parseA1(startSource);
+            const end = parseA1(endSource);
+            let count = 0;
+            for (let column = start.column; column <= end.column; column += 1) {
+              for (let row = start.row; row <= end.row; row += 1) {
+                output.push(renderA1({ row, column }));
+                count += 1;
+              }
+            }
+            output.push([operator, count]);
+          }
+        } else if (functionArgumentType === 1 || functionArgumentType === 3) {
+          if (functionArgumentType === 3) output.push(functionArgumentOperator);
+          if (operator !== undefined) output.push([operator, functionArgumentCount]);
+          functionArgumentCount = 1;
+        } else {
+          while (operator !== undefined && operator !== '(') {
+            output.push(operator);
+            operator = operators.pop();
+          }
+        }
+        functionArgumentType = 0;
+      } else if (character === '=' || character === '>' || character === '<') {
+        const next = source.charAt(index + 1);
+        functionArgumentOperator = character;
+        if (next === '=' || next === '-') {
+          functionArgumentOperator += next;
+          index += 1;
+        }
+        functionArgumentType = 3;
+      } else if (character === ':') {
+        functionArgumentType = 2;
+      } else if (character === ',') {
+        if (functionArgumentType === 3) output.push(functionArgumentOperator);
+        functionArgumentType = 1;
+        functionArgumentCount += 1;
+      } else if (character === '(' && fragments.length > 0) {
+        operators.push(fragments.join(''));
+      } else {
+        if (operators.length > 0 && (character === '+' || character === '-')) {
+          let top = operators[operators.length - 1];
+          if (top !== '(') output.push(operators.pop() as string);
+          if (top === '*' || top === '/') {
+            while (operators.length > 0) {
+              top = operators[operators.length - 1];
+              if (top !== '(') output.push(operators.pop() as string);
+              else break;
+            }
+          }
+        } else if (operators.length > 0) {
+          const top = operators[operators.length - 1];
+          if (top === '*' || top === '/') output.push(operators.pop() as string);
+        }
+        operators.push(character);
+      }
+      fragments = [];
+    }
+    previous = character;
+  }
+  if (fragments.length > 0) output.push(fragments.join(''));
+  while (operators.length > 0) output.push(operators.pop() as string);
   return output;
 }

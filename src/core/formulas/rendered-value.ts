@@ -1,4 +1,4 @@
-export type FormulaErrorValue = '#CYCLE!' | '#DIV/0!' | '#ERROR!' | '#NAME?' | '#REF!';
+export type FormulaErrorValue = '#CYCLE!' | '#ERROR!' | '#NAME?';
 export type RenderedValue = string | number | boolean;
 
 export type FormatType = 'string' | 'number' | 'date';
@@ -32,10 +32,8 @@ export const FORMAT_DEFINITIONS: readonly FormatDefinition[] = Object.freeze([
 
 export function isFormulaError(value: unknown): value is FormulaErrorValue {
   return value === '#CYCLE!'
-    || value === '#DIV/0!'
     || value === '#ERROR!'
-    || value === '#NAME?'
-    || value === '#REF!';
+    || value === '#NAME?';
 }
 
 export function renderFormulaValue(value: RenderedValue | null | undefined): string {

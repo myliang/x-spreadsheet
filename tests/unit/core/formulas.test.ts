@@ -4,6 +4,8 @@ import {
   evaluateFormula,
   FORMULA_FUNCTIONS,
   infixToPostfix,
+  legacyDigits,
+  legacyNumberCalc,
   parseFormula,
   renderFormulaValue,
   shiftFormulaReferences,
@@ -25,7 +27,7 @@ describe('formula tokenization and parsing', () => {
     ['10-5-20', '105-20-'],
     ['1+2*3+(4*5+6)*7', '123*+45*6+7*+'],
     ['9+(3-1*2)*3+4/2', '9312*-3*+42/+'],
-    ['(9+(3-1))*(2+3)+4/2', '931-+23+*42/+'],
+    ['(9+(3-1))*(2+3)+4/2', '931-+*23+42/+'],
   ])('keeps observed legacy postfix output for %s', (input, expected) => {
     expect(infixToPostfix(input).join('')).toBe(expected);
   });
@@ -38,6 +40,14 @@ describe('formula tokenization and parsing', () => {
     ['SUM()', 'SUM'],
     ['SUM(', 'SUM'],
   ])('keeps legacy function postfix edge case %s', (input, expected) => {
+    expect(infixToPostfix(input).join('')).toBe(expected);
+  });
+
+  it.each([
+    ['AVERAGE(A1:A3)', 'A1A2A3AVERAGE,3'],
+    ['SUM(A1:B2)', 'A1A2B1B2SUM,4'],
+    ['CONCAT(B2:C3)', 'B2B3C2C3CONCAT,4'],
+  ])('expands legacy range arguments column-first for %s', (input, expected) => {
     expect(infixToPostfix(input).join('')).toBe(expected);
   });
 
@@ -55,7 +65,7 @@ describe('formula functions', () => {
   });
 
   it.each([
-    ['SUM', ['12', '12', 12], 36],
+    ['SUM', ['12', '12', 12], '36'],
     ['AVERAGE', ['12', '13', 14], 13],
     ['MAX', ['12', '13', 14], 14],
     ['MIN', ['12', '13', 14], 12],
@@ -67,6 +77,20 @@ describe('formula functions', () => {
     ['CONCAT', ['1200', 'USD'], '1200USD'],
   ] as const)('@parity:formulas.functions %s(%j)', (name, args, expected) => {
     expect(FORMULA_FUNCTIONS[name](args)).toEqual(expected);
+  });
+
+  it('ports legacy decimal digit counting and arithmetic return shapes exactly', () => {
+    expect(legacyDigits('12.340')).toBe(3);
+    expect(legacyDigits(12.34)).toBe(2);
+    expect(legacyNumberCalc('+', '0.1', '0.2')).toBe('0.3');
+    expect(legacyNumberCalc('-', '1.20', '0.1')).toBe('1.10');
+    expect(legacyNumberCalc('*', '1.2', 3)).toBe('3.6');
+    expect(legacyNumberCalc('/', 1, 3)).toBe('0.33');
+    expect(legacyNumberCalc('/', 1, 2)).toBe(0.5);
+    expect(legacyNumberCalc('/', 1, 0)).toBe(Number.POSITIVE_INFINITY);
+    expect(legacyNumberCalc('+', 'invalid', 1)).toBe('NaN');
+    expect(legacyNumberCalc('+', Number.NaN, 1)).toBe('NaN+1');
+    expect(FORMULA_FUNCTIONS.SUM(['0.1', '0.2'])).toBe('0.3');
   });
 });
 
@@ -84,13 +108,16 @@ describe('pure formula evaluation', () => {
   };
 
   it.each([
-    ['=SUM(A1,B2,A3)+50+B20', 78],
-    ['=50+B20', 70],
+    ['=SUM(A1,B2,A3)+50+B20', '78'],
+    ['=50+B20', '70'],
     ['=IF(2>1,2,1)', 2],
-    ['=AVERAGE(A1:A3)+50*10-B20', 482],
+    ['=AVERAGE(A1:A3)+50*10-B20', '482'],
     ['=1=1', true],
     ['=2<>1', true],
     ['=2<=2', true],
+    ['=0.1+0.2', '0.3'],
+    ['=1/3', '0.33'],
+    ['=1/0', Number.POSITIVE_INFINITY],
   ])('@parity:formulas.evaluation evaluates %s', (formula, expected) => {
     expect(evaluateFormula(formula, select)).toEqual(expected);
   });
@@ -99,7 +126,7 @@ describe('pure formula evaluation', () => {
     const stored = Object.freeze({ text: '=A2+1', value: 99 });
     const selector = (point: CellPoint) => point.row === 0 ? stored.text : '2';
 
-    expect(evaluateCell({ row: 0, column: 0 }, selector)).toBe(3);
+    expect(evaluateCell({ row: 0, column: 0 }, selector)).toBe('3');
     expect(stored).toEqual({ text: '=A2+1', value: 99 });
   });
 
@@ -111,12 +138,12 @@ describe('pure formula evaluation', () => {
     expect(evaluateCell({ row: 0, column: 0 }, indirect)).toBe('#CYCLE!');
   });
 
-  it('renders parse, unknown-function, reference, and division errors explicitly', () => {
-    expect(evaluateFormula('=1/0', select)).toBe('#DIV/0!');
+  it('renders supported parse, unknown-function, cycle, and scalar values explicitly', () => {
     expect(evaluateFormula('=NOPE(1)', select)).toBe('#NAME?');
     expect(evaluateFormula('=1+', select)).toBe('#ERROR!');
     expect(renderFormulaValue(null)).toBe('');
     expect(renderFormulaValue(false)).toBe('false');
     expect(renderFormulaValue('#CYCLE!')).toBe('#CYCLE!');
+    expect(renderFormulaValue(Number.POSITIVE_INFINITY)).toBe('Infinity');
   });
 });
