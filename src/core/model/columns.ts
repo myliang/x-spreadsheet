@@ -7,7 +7,7 @@ import type {
   RowsData,
   SheetData,
 } from '../types/workbook';
-import { cloneSheet } from './cells';
+import { canonicalSparseIndex, cloneSheet } from './cells';
 import { transformMergesForDelete, transformMergesForInsert } from './merges';
 import { shiftCellFormula } from './rows';
 
@@ -17,8 +17,28 @@ function assertIndex(value: number, label: string): void {
   }
 }
 
-function numericKey(key: string): bigint | null {
-  return /^\d+$/.test(key) ? BigInt(key) : null;
+function collectionLength(cols: ColsData | undefined): number {
+  const value = cols?.len ?? 26;
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new RangeError('column length must be a non-negative safe integer');
+  }
+  return value;
+}
+
+function inclusiveCount(start: number, end: number): number {
+  const count = end - start + 1;
+  if (!Number.isSafeInteger(count) || count <= 0) {
+    throw new RangeError('column deletion count must be a positive safe integer');
+  }
+  return count;
+}
+
+function nextLength(length: number, delta: number): number {
+  const value = length + delta;
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new RangeError('column length would be outside the safe non-negative range');
+  }
+  return value;
 }
 
 function define(target: Record<string, unknown>, key: string, value: unknown): void {
@@ -74,7 +94,7 @@ function transformRowCells(
   const endKey = end === null ? null : BigInt(end);
   const shift = BigInt(Math.abs(delta));
   for (const [key, value] of Object.entries(row.cells)) {
-    const numeric = numericKey(key);
+    const numeric = canonicalSparseIndex(key);
     if (numeric === null) {
       define(output, key, value);
       continue;
@@ -105,7 +125,8 @@ function transformAllRows(
 ): RowsData {
   const output = { ...rows } as Record<string, unknown>;
   for (const [key, value] of Object.entries(output)) {
-    if (!/^\d+$/.test(key) || value === null || typeof value !== 'object' || Array.isArray(value)) {
+    if (canonicalSparseIndex(key) === null
+      || value === null || typeof value !== 'object' || Array.isArray(value)) {
       continue;
     }
     output[key] = transformRowCells(value as RowData, start, end, delta);
@@ -117,20 +138,21 @@ export function insertColumns(sheet: SheetData, index: number, count = 1): Sheet
   assertIndex(index, 'column index');
   assertIndex(count, 'column count');
   if (count === 0) return sheet;
+  const length = nextLength(collectionLength(sheet.cols), count);
   const next = cloneSheet(sheet);
   const source = { ...(next.cols ?? { len: 26 }) } as Record<string, unknown>;
   const output: Record<string, unknown> = {};
   const boundary = BigInt(index);
   const delta = BigInt(count);
   for (const [key, value] of Object.entries(source)) {
-    const numeric = numericKey(key);
+    const numeric = canonicalSparseIndex(key);
     if (numeric === null) {
-      define(output, key, key === 'len' && typeof value === 'number' ? value + count : value);
+      define(output, key, key === 'len' ? length : value);
       continue;
     }
     define(output, numeric >= boundary ? (numeric + delta).toString() : key, value);
   }
-  if (!Object.hasOwn(output, 'len')) output.len = 26 + count;
+  if (!Object.hasOwn(output, 'len')) output.len = length;
   const rows = transformAllRows(next.rows ?? { len: 100 }, index, null, count);
   return transformMergesForInsert(
     { ...next, cols: output as ColsData, rows } as unknown as SheetData,
@@ -144,7 +166,8 @@ export function deleteColumns(sheet: SheetData, start: number, end: number): She
   assertIndex(start, 'start column');
   assertIndex(end, 'end column');
   if (end < start) throw new RangeError('end column must not precede start column');
-  const count = end - start + 1;
+  const count = inclusiveCount(start, end);
+  const length = nextLength(collectionLength(sheet.cols), -count);
   const next = cloneSheet(sheet);
   const source = { ...(next.cols ?? { len: 26 }) } as Record<string, unknown>;
   const output: Record<string, unknown> = {};
@@ -152,17 +175,15 @@ export function deleteColumns(sheet: SheetData, start: number, end: number): She
   const endKey = BigInt(end);
   const delta = BigInt(count);
   for (const [key, value] of Object.entries(source)) {
-    const numeric = numericKey(key);
+    const numeric = canonicalSparseIndex(key);
     if (numeric === null) {
-      define(output, key, key === 'len' && typeof value === 'number'
-        ? Math.max(0, value - count)
-        : value);
+      define(output, key, key === 'len' ? length : value);
       continue;
     }
     if (numeric >= startKey && numeric <= endKey) continue;
     define(output, numeric > endKey ? (numeric - delta).toString() : key, value);
   }
-  if (!Object.hasOwn(output, 'len')) output.len = Math.max(0, 26 - count);
+  if (!Object.hasOwn(output, 'len')) output.len = length;
   const rows = transformAllRows(next.rows ?? { len: 100 }, start, end, -count);
   return transformMergesForDelete(
     { ...next, cols: output as ColsData, rows } as unknown as SheetData,

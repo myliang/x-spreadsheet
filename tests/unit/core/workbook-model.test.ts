@@ -14,14 +14,22 @@ import {
   selectCell,
   selectCellStyle,
   selectWorkbookData,
+  setCellMergeSpan,
   setCellStyleIndex,
   setCellText,
   setColumnHidden,
   setColumnWidth,
   setRowHeight,
   setRowHidden,
+  synchronizeMergeAnchors,
 } from '../../../src/core';
-import type { CellRange, CellStyle, SheetData, WorkbookInput } from '../../../src/core';
+import type {
+  CellData,
+  CellRange,
+  CellStyle,
+  SheetData,
+  WorkbookInput,
+} from '../../../src/core';
 
 const range = (
   startRow: number,
@@ -274,6 +282,84 @@ describe('sparse row, column, and cell model helpers', () => {
     expect(({} as { rowExtension?: boolean }).rowExtension).toBeUndefined();
     expect(({} as { columnExtension?: boolean }).columnExtension).toBeUndefined();
   });
+
+  it('treats only canonical sparse row and column keys as indexes in direct helpers', () => {
+    const raw = {
+      rows: {
+        len: 4,
+        1: { vendor: 'canonical row', cells: {} },
+        '01': { vendor: 'extension row', cells: {} },
+      },
+      cols: {
+        len: 4,
+        1: { width: 70, vendor: 'canonical column' },
+        '01': { width: 9, vendor: 'extension column' },
+      },
+    } as unknown as SheetData;
+
+    const rowsInserted = insertRows(raw, 1, 1);
+    const columnsInserted = insertColumns(rowsInserted, 1, 1);
+
+    expect(rowsInserted.rows?.['2']).toMatchObject({ vendor: 'canonical row' });
+    expect(rowsInserted.rows?.['01']).toMatchObject({ vendor: 'extension row' });
+    expect(columnsInserted.cols?.['2']).toMatchObject({ vendor: 'canonical column' });
+    expect(columnsInserted.cols?.['01']).toMatchObject({ vendor: 'extension column' });
+  });
+
+  it('preserves noncanonical sparse cells and never transforms their formulas', () => {
+    const raw = {
+      rows: {
+        len: 3,
+        1: {
+          cells: {
+            1: { text: '=B2', value: 1 },
+            '01': { text: '=B2', value: 2, vendor: 'extension cell' },
+          },
+        },
+      },
+      cols: { len: 3 },
+      merges: [],
+    } as unknown as SheetData;
+
+    const inserted = insertColumns(raw, 1, 1);
+    const row = inserted.rows?.['1'] as { readonly cells: Record<string, CellData> };
+    expect(row.cells['2']).toEqual({ text: '=C2' });
+    expect(row.cells['01']).toEqual({
+      text: '=B2',
+      value: 2,
+      vendor: 'extension cell',
+    });
+
+    const edited = setCellText(raw, 1, 1, 'changed');
+    const editedRow = edited.rows?.['1'] as { readonly cells: Record<string, CellData> };
+    expect(editedRow.cells['1']).toEqual({ text: 'changed' });
+    expect(editedRow.cells['01']).toMatchObject({ vendor: 'extension cell', value: 2 });
+  });
+
+  it('synchronizes merge anchors without interpreting colliding noncanonical keys', () => {
+    const raw = {
+      merges: ['B2:C3'],
+      rows: {
+        len: 4,
+        1: {
+          cells: {
+            1: { text: 'anchor', merge: [9, 9] },
+            '01': { text: 'extension cell', merge: [7, 7] },
+          },
+        },
+        '01': { cells: { 1: { text: 'extension row', merge: [8, 8] } } },
+      },
+      cols: { len: 4 },
+    } as unknown as SheetData;
+
+    const synced = synchronizeMergeAnchors(raw);
+    expect(getCellData(synced, 1, 1)).toMatchObject({ text: 'anchor', merge: [1, 1] });
+    expect((synced.rows?.['1'] as { readonly cells: Record<string, CellData> }).cells['01'])
+      .toMatchObject({ text: 'extension cell', merge: [7, 7] });
+    expect(synced.rows?.['01']).toMatchObject({
+      cells: { 1: { text: 'extension row', merge: [8, 8] } },
+    });
+  });
 });
 
 describe('styles and merges', () => {
@@ -318,5 +404,106 @@ describe('styles and merges', () => {
     const unmerged = removeMerge(merged, range(1, 1, 1, 1));
     expect(unmerged.merges).toEqual([]);
     expect(getCellData(unmerged, 0, 0)).toEqual({ text: 'keep' });
+  });
+
+  it('adds a near-MAX_SAFE sparse merge by visiting stored entries rather than rectangle area', () => {
+    const maximum = Number.MAX_SAFE_INTEGER;
+    const nearMaximum = Math.floor(maximum / 2);
+    const beyond = (BigInt(maximum) + 1n).toString();
+    const source = {
+      merges: [],
+      rows: {
+        len: maximum,
+        0: {
+          cells: {
+            0: { text: 'anchor' },
+            1: { text: 'remove near' },
+            [nearMaximum]: { text: 'remove far column' },
+            [maximum]: { text: 'preserve MAX_SAFE column' },
+            [beyond]: { text: 'preserve bigint column' },
+          },
+        },
+        [nearMaximum]: { cells: { 0: { text: 'remove far row' } } },
+        [maximum]: { cells: { 0: { text: 'preserve MAX_SAFE row' } } },
+        [beyond]: { cells: { 0: { text: 'preserve bigint row' } } },
+      },
+      cols: { len: maximum },
+    } as unknown as SheetData;
+
+    const merged = addMerge(source, range(0, 0, nearMaximum, nearMaximum));
+
+    expect(merged.merges).toHaveLength(1);
+    expect(findMerge(merged, nearMaximum, nearMaximum))
+      .toEqual(range(0, 0, nearMaximum, nearMaximum));
+    expect(getCellData(merged, 0, 0)).toEqual({
+      text: 'anchor',
+      merge: [nearMaximum, nearMaximum],
+    });
+    expect(getCellData(merged, 0, 1)).toBeNull();
+    expect(getCellData(merged, nearMaximum, 0)).toBeNull();
+    expect(getCellData(merged, maximum, 0)).toEqual({ text: 'preserve MAX_SAFE row' });
+    const firstRow = merged.rows?.['0'] as { readonly cells: Record<string, CellData> };
+    expect(firstRow.cells[String(maximum)]).toEqual({ text: 'preserve MAX_SAFE column' });
+    expect(firstRow.cells[beyond]).toEqual({ text: 'preserve bigint column' });
+    expect(merged.rows?.[beyond]).toMatchObject({
+      cells: { 0: { text: 'preserve bigint row' } },
+    });
+  });
+
+  it.each([
+    { span: [-1, 0] },
+    { span: [0.5, 0] },
+    { span: [Number.NaN, 0] },
+    { span: [Number.POSITIVE_INFINITY, 0] },
+    { span: [Number.MAX_SAFE_INTEGER + 1, 0] },
+    { span: [0] },
+    { span: [0, 0, 0] },
+  ])('rejects invalid merge span $span atomically', ({ span: invalid }) => {
+    const source = WorkbookState.from({
+      rows: { 0: { cells: { 0: { text: 'safe', merge: [1, 1] } } } },
+    }).sheets[0]!.data;
+    const before = structuredClone(source);
+
+    expect(() => setCellMergeSpan(source, 0, 0, invalid as never)).toThrow(RangeError);
+    expect(source).toEqual(before);
+  });
+
+  it.each([
+    {
+      label: 'row insert len overflow',
+      raw: { rows: { len: Number.MAX_SAFE_INTEGER } },
+      run: (sheet: SheetData) => insertRows(sheet, 0, 1),
+    },
+    {
+      label: 'column insert len overflow',
+      raw: { cols: { len: Number.MAX_SAFE_INTEGER } },
+      run: (sheet: SheetData) => insertColumns(sheet, 0, 1),
+    },
+    {
+      label: 'row inclusive delete overflow',
+      raw: { rows: { len: Number.MAX_SAFE_INTEGER } },
+      run: (sheet: SheetData) => deleteRows(sheet, 0, Number.MAX_SAFE_INTEGER),
+    },
+    {
+      label: 'column inclusive delete overflow',
+      raw: { cols: { len: Number.MAX_SAFE_INTEGER } },
+      run: (sheet: SheetData) => deleteColumns(sheet, 0, Number.MAX_SAFE_INTEGER),
+    },
+    {
+      label: 'row delete len underflow',
+      raw: { rows: { len: 1 } },
+      run: (sheet: SheetData) => deleteRows(sheet, 0, 1),
+    },
+    {
+      label: 'column delete len underflow',
+      raw: { cols: { len: 1 } },
+      run: (sheet: SheetData) => deleteColumns(sheet, 0, 1),
+    },
+  ])('rejects unsafe structural arithmetic: $label', ({ raw, run }) => {
+    const source = raw as unknown as SheetData;
+    const before = structuredClone(source);
+
+    expect(() => run(source)).toThrow(RangeError);
+    expect(source).toEqual(before);
   });
 });

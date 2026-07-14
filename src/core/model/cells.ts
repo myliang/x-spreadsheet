@@ -1,4 +1,3 @@
-import { serializeWorkbook } from '../serialization/serialize-workbook';
 import type { CellData, CellsData, RowData, RowsData, SheetData } from '../types/workbook';
 
 function assertIndex(value: number, label: string): void {
@@ -8,7 +7,28 @@ function assertIndex(value: number, label: string): void {
 }
 
 export function cloneSheet(sheet: SheetData): SheetData {
-  return serializeWorkbook([sheet])[0] as SheetData;
+  return cloneJson(sheet) as SheetData;
+}
+
+function cloneJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(cloneJson);
+  if (value !== null && typeof value === 'object') {
+    const output: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      Object.defineProperty(output, key, {
+        configurable: true,
+        enumerable: true,
+        value: cloneJson((value as Record<string, unknown>)[key]),
+        writable: true,
+      });
+    }
+    return output;
+  }
+  return value;
+}
+
+export function canonicalSparseIndex(key: string): bigint | null {
+  return /^(0|[1-9]\d*)$/.test(key) ? BigInt(key) : null;
 }
 
 function rowAt(sheet: SheetData, row: number): RowData | null {
@@ -91,6 +111,13 @@ export function setCellMergeSpan(
   column: number,
   span: readonly [number, number] | null,
 ): SheetData {
+  if (span !== null && (
+    !Array.isArray(span)
+    || span.length !== 2
+    || span.some(value => !Number.isSafeInteger(value) || value < 0)
+  )) {
+    throw new RangeError('merge span must be null or two non-negative safe integers');
+  }
   return updateCellData(sheet, row, column, cell => {
     const mutable = { ...cell } as Record<string, unknown>;
     if (span === null || (span[0] === 0 && span[1] === 0)) delete mutable.merge;

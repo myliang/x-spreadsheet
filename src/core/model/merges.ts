@@ -2,7 +2,7 @@ import { parseA1Range, renderA1Range } from '../coordinates/ranges';
 import type { CellPoint, CellRange } from '../types/coordinates';
 import type { CellData, CellsData, RowData, RowsData, SheetData } from '../types/workbook';
 import { containsCell, normalizeRange, rangesEqual, rangesIntersect } from '../coordinates/ranges';
-import { cloneSheet, getCellData, updateCellData } from './cells';
+import { canonicalSparseIndex, cloneSheet } from './cells';
 
 type Axis = 'row' | 'column';
 
@@ -52,17 +52,36 @@ export function addMerge(sheet: SheetData, range: CellRange): SheetData {
     throw new RangeError('Merge overlaps an existing merged range');
   }
 
-  let next = cloneSheet(sheet);
-  for (let row = normalized.start.row; row <= normalized.end.row; row += 1) {
-    for (let column = normalized.start.column; column <= normalized.end.column; column += 1) {
-      if (row !== normalized.start.row || column !== normalized.start.column) {
-        if (getCellData(next, row, column) !== null) {
-          next = updateCellData(next, row, column, () => null);
-        }
-      }
-    }
-  }
+  const next = removeStoredNonAnchorCells(sheet, normalized);
   return withMergeList(next, [...merges, normalized]);
+}
+
+function removeStoredNonAnchorCells(sheet: SheetData, range: CellRange): SheetData {
+  const next = cloneSheet(sheet);
+  const rows = { ...(next.rows ?? { len: 100 }) } as Record<string, unknown>;
+  const startRow = BigInt(range.start.row);
+  const endRow = BigInt(range.end.row);
+  const startColumn = BigInt(range.start.column);
+  const endColumn = BigInt(range.end.column);
+
+  for (const [rowKey, rowValue] of Object.entries(rows)) {
+    const rowIndex = canonicalSparseIndex(rowKey);
+    if (rowIndex === null || rowIndex < startRow || rowIndex > endRow
+      || rowValue === null || typeof rowValue !== 'object' || Array.isArray(rowValue)) continue;
+    const row = { ...rowValue } as Record<string, unknown>;
+    const cellsValue = row.cells;
+    if (cellsValue === null || typeof cellsValue !== 'object' || Array.isArray(cellsValue)) continue;
+    const cells = { ...cellsValue } as Record<string, unknown>;
+    for (const cellKey of Object.keys(cells)) {
+      const columnIndex = canonicalSparseIndex(cellKey);
+      if (columnIndex === null || columnIndex < startColumn || columnIndex > endColumn) continue;
+      const anchor = rowIndex === startRow && columnIndex === startColumn;
+      if (!anchor) delete cells[cellKey];
+    }
+    row.cells = cells as CellsData;
+    rows[rowKey] = row as RowData;
+  }
+  return { ...next, rows: rows as RowsData } as unknown as SheetData;
 }
 
 export function removeMerge(sheet: SheetData, range: CellRange): SheetData {
@@ -132,13 +151,13 @@ export function synchronizeMergeAnchors(sheet: SheetData): SheetData {
   const rows = { ...(next.rows ?? { len: 100 }) } as Record<string, unknown>;
 
   for (const [rowKey, rowValue] of Object.entries(rows)) {
-    if (!/^\d+$/.test(rowKey) || rowValue === null || typeof rowValue !== 'object'
+    if (canonicalSparseIndex(rowKey) === null || rowValue === null || typeof rowValue !== 'object'
       || Array.isArray(rowValue)) continue;
     const row = { ...rowValue } as Record<string, unknown>;
     if (row.cells === null || typeof row.cells !== 'object' || Array.isArray(row.cells)) continue;
     const cells = { ...row.cells } as Record<string, unknown>;
     for (const [cellKey, cellValue] of Object.entries(cells)) {
-      if (!/^\d+$/.test(cellKey) || cellValue === null || typeof cellValue !== 'object'
+      if (canonicalSparseIndex(cellKey) === null || cellValue === null || typeof cellValue !== 'object'
         || Array.isArray(cellValue)) continue;
       const cell = { ...cellValue } as Record<string, unknown>;
       delete cell.merge;
