@@ -12,7 +12,14 @@ function cloneJson(value: JsonValue): JsonValue {
   if (value !== null && typeof value === 'object') {
     const object = value as Readonly<Record<string, JsonValue>>;
     const output: Record<string, JsonValue> = {};
-    for (const key of Object.keys(object).sort()) output[key] = cloneJson(object[key] as JsonValue);
+    for (const key of Object.keys(object).sort()) {
+      Object.defineProperty(output, key, {
+        configurable: true,
+        enumerable: true,
+        value: cloneJson(object[key] as JsonValue),
+        writable: true,
+      });
+    }
     return output;
   }
   return value;

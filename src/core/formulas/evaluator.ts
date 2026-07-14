@@ -94,7 +94,7 @@ function evaluate(expression: FormulaExpression, context: EvaluationContext): Ev
     return binary(expression.operator, left, right);
   }
 
-  if (!(expression.name in FORMULA_FUNCTIONS)) return '#NAME?';
+  if (!Object.hasOwn(FORMULA_FUNCTIONS, expression.name)) return '#NAME?';
   const parameters: FormulaScalar[] = [];
   for (const argument of expression.arguments) {
     const value = evaluate(argument, context);

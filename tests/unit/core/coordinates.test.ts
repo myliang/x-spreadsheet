@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertCellPoint,
   containsCell,
   differenceRanges,
   intersectRanges,
@@ -61,6 +62,16 @@ describe('A1 coordinates', () => {
   it('rejects reference shifts outside the sheet origin', () => {
     expect(() => shiftA1('A1', { row: -1, column: 0 })).toThrow(RangeError);
   });
+
+  it.each([
+    -1,
+    0.5,
+    Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])('rejects non-safe row and column coordinates: %s', coordinate => {
+    expect(() => assertCellPoint({ row: coordinate, column: 0 })).toThrow(TypeError);
+    expect(() => assertCellPoint({ row: 0, column: coordinate })).toThrow(TypeError);
+  });
 });
 
 describe('A1 ranges', () => {
@@ -121,4 +132,15 @@ describe('A1 ranges', () => {
   it('shifts absolute and relative range axes', () => {
     expect(shiftA1Range('$A1:B$2', { row: 2, column: 3 })).toBe('$A3:E$2');
   });
+
+  it.each([normalizeRange, iterateRange, rangeSize])(
+    'rejects unsafe coordinates before range work in %s',
+    operation => {
+      const unsafe = {
+        start: { row: 0, column: 0 },
+        end: { row: Number.MAX_SAFE_INTEGER + 1, column: 0 },
+      };
+      expect(() => operation(unsafe)).toThrow(TypeError);
+    },
+  );
 });

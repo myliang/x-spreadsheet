@@ -4,6 +4,7 @@ import {
   FORMAT_DEFINITIONS,
   formatValue,
   normalizeStyle,
+  stylesEqual,
 } from '../../../src/core';
 import type { CellStyle } from '../../../src/core';
 
@@ -72,5 +73,34 @@ describe('immutable style normalization and deduplication', () => {
       { font: { italic: true }, vendor: 'new' },
     ]);
     expect(styles).toHaveLength(1);
+  });
+
+  it('preserves dangerous extension keys as own data without changing prototypes', () => {
+    const style = JSON.parse(`{
+      "__proto__": {"polluted": true},
+      "constructor": {"vendor": "kept"},
+      "font": {"bold": true, "__proto__": {"fontPolluted": true}}
+    }`) as CellStyle;
+    const equivalent = JSON.parse(`{
+      "font": {"__proto__": {"fontPolluted": true}, "bold": true},
+      "constructor": {"vendor": "kept"},
+      "__proto__": {"polluted": true}
+    }`) as CellStyle;
+
+    const normalized = normalizeStyle(style);
+    expect(Object.hasOwn(normalized, '__proto__')).toBe(true);
+    expect(Object.hasOwn(normalized, 'constructor')).toBe(true);
+    expect(Object.getPrototypeOf(normalized)).toBe(Object.prototype);
+    expect(normalized.__proto__).toEqual({ polluted: true });
+    expect(normalized.constructor).toEqual({ vendor: 'kept' });
+    expect(Object.hasOwn(normalized.font as object, '__proto__')).toBe(true);
+    expect(Object.getPrototypeOf(normalized.font as object)).toBe(Object.prototype);
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+    expect(JSON.parse(JSON.stringify(normalized))).toEqual(JSON.parse(JSON.stringify(style)));
+    expect(stylesEqual(normalized, equivalent)).toBe(true);
+
+    const result = addStyle([normalized], equivalent);
+    expect(result).toMatchObject({ index: 0, added: false });
+    expect(result.styles).toHaveLength(1);
   });
 });

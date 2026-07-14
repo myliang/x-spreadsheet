@@ -146,4 +146,16 @@ describe('pure formula evaluation', () => {
     expect(renderFormulaValue('#CYCLE!')).toBe('#CYCLE!');
     expect(renderFormulaValue(Number.POSITIVE_INFINITY)).toBe('Infinity');
   });
+
+  it.each(['TOSTRING', 'VALUEOF', 'CONSTRUCTOR', '__PROTO__'])(
+    'rejects inherited function-table name %s',
+    name => {
+      expect(evaluateFormula(`=${name}()`, select)).toBe('#NAME?');
+      expect(evaluateFormula(`=${name.toLowerCase()}()`, select)).toBe('#NAME?');
+    },
+  );
+
+  it('normalizes supported function names without consulting the prototype chain', () => {
+    expect(evaluateFormula('=sum(1,2)', select)).toBe('3');
+  });
 });

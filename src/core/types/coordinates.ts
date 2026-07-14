@@ -27,7 +27,7 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function assertCoordinate(value: unknown, name: 'row' | 'column'): asserts value is number {
-  if (!Number.isInteger(value) || (value as number) < 0) {
+  if (!Number.isSafeInteger(value) || (value as number) < 0) {
     throw new TypeError(`${name} must be a non-negative integer`);
   }
 }
