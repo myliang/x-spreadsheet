@@ -1,0 +1,102 @@
+import { describe, expect, it } from 'vitest';
+import {
+  createSelectionState,
+  createSheetGridModel,
+  extendSelection,
+  moveSelection,
+  normalizeSelection,
+} from '../../../src/engine';
+
+describe('selection state', () => {
+  it('normalizes a backwards drag while retaining its active focus', () => {
+    const model = createSheetGridModel({ rows: { len: 8 }, cols: { len: 8 } });
+    const selection = createSelectionState(
+      { row: 4, column: 5 },
+      { row: 1, column: 2 },
+    );
+
+    expect(normalizeSelection(selection, model)).toEqual({
+      anchor: { row: 4, column: 5 },
+      focus: { row: 1, column: 2 },
+      active: { row: 1, column: 2 },
+      range: {
+        start: { row: 1, column: 2 },
+        end: { row: 4, column: 5 },
+      },
+    });
+  });
+
+  it('expands selection through a chain of non-overlapping merges', () => {
+    const model = createSheetGridModel({
+      rows: { len: 8 },
+      cols: { len: 8 },
+      merges: ['B2:D2', 'D3:E4'],
+    });
+    const selection = createSelectionState(
+      { row: 1, column: 1 },
+      { row: 2, column: 2 },
+    );
+
+    expect(normalizeSelection(selection, model)).toEqual({
+      anchor: { row: 1, column: 1 },
+      focus: { row: 2, column: 2 },
+      active: { row: 2, column: 2 },
+      range: {
+        start: { row: 1, column: 1 },
+        end: { row: 3, column: 4 },
+      },
+    });
+    expect(normalizeSelection(
+      createSelectionState({ row: 1, column: 2 }),
+      model,
+    ).active).toEqual({ row: 1, column: 1 });
+  });
+
+  it('clamps extension to the model and moves by index through hidden structure', () => {
+    const model = createSheetGridModel({
+      rows: { len: 5, 1: { hide: true }, 2: { hide: true } },
+      cols: { len: 5, 1: { hide: true } },
+    });
+    const initial = createSelectionState({ row: 0, column: 0 });
+    const down = moveSelection(initial, 'down', model);
+    const right = moveSelection(down, 'right', model);
+    const extended = extendSelection(right, { row: 99, column: 99 }, model);
+
+    expect(down.active).toEqual({ row: 1, column: 0 });
+    expect(right.active).toEqual({ row: 1, column: 1 });
+    expect(extended.range).toEqual({
+      start: { row: 1, column: 1 },
+      end: { row: 4, column: 4 },
+    });
+    expect(initial.active).toEqual({ row: 0, column: 0 });
+  });
+
+  it('moves right and down beyond the normalized merged range end', () => {
+    const model = createSheetGridModel({
+      rows: { len: 8 },
+      cols: { len: 8 },
+      merges: ['B2:C3'],
+    });
+    const merged = normalizeSelection(createSelectionState({ row: 2, column: 2 }), model);
+
+    expect(moveSelection(merged, 'right', model).active).toEqual({ row: 1, column: 3 });
+    expect(moveSelection(merged, 'down', model).active).toEqual({ row: 3, column: 1 });
+  });
+
+  it('expands merges in list order for exactly the two legacy passes', () => {
+    const model = createSheetGridModel({
+      rows: { len: 8 },
+      cols: { len: 8 },
+      merges: ['A5:C5', 'D3:D5', 'B2:D2'],
+    });
+    const selection = createSelectionState(
+      { row: 1, column: 1 },
+      { row: 2, column: 2 },
+    );
+
+    expect(normalizeSelection(selection, model).range).toEqual({
+      start: { row: 1, column: 1 },
+      end: { row: 4, column: 3 },
+    });
+  });
+});
