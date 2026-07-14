@@ -192,7 +192,14 @@ export {
 } from './operations/clipboard';
 export type { PasteMode, PasteTransform } from './operations/clipboard';
 export { autofillRange, autofillText } from './operations/autofill';
-export { clearFilter, filterItems, filteredRows, setFilter } from './operations/filter';
+export {
+  assertDataToolResourceLimit,
+  clearFilter,
+  filterItems,
+  filteredRows,
+  MAX_DATA_TOOL_CELLS,
+  setFilter,
+} from './operations/filter';
 export { setSort, sortRows, sortValues } from './operations/sort';
 export type { SortOrder } from './operations/sort';
 export {

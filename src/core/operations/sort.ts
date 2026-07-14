@@ -5,7 +5,7 @@ import { semanticEqual } from '../serialization/semantic-equal';
 import type { LocaleDefinition } from '../types/changes';
 import type { CellRange } from '../types/coordinates';
 import type { SheetData } from '../types/workbook';
-import { filteredRows } from './filter';
+import { assertDataToolResourceLimit, filteredRows } from './filter';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -72,6 +72,7 @@ export function sortRows(
     ? { start: { row: 0, column }, end: { row: 0, column } }
     : parseA1Range(sheet.autofilter.ref),
 ): readonly number[] {
+  assertDataToolResourceLimit(range, (sheet.autofilter?.filters?.length ?? 0) + 1);
   const compare = comparator(order, locale);
   const excluded = new Set(filteredRows(sheet));
   const rows = Array.from(
@@ -92,6 +93,10 @@ export function setSort(
   if (sheet.autofilter?.ref === undefined) {
     throw new RangeError('sort requires an active autofilter range');
   }
+  assertDataToolResourceLimit(
+    parseA1Range(sheet.autofilter.ref),
+    (sheet.autofilter.filters?.length ?? 0) + 1,
+  );
   const next = cloneSheet(sheet);
   (next as Record<string, unknown>).autofilter = {
     ...next.autofilter,

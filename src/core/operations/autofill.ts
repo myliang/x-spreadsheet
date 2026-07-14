@@ -6,7 +6,7 @@ import type { CellData, SheetData } from '../types/workbook';
 import { pasteInternal, type PasteMode, type PasteTransform } from './clipboard';
 import { semanticEqual } from '../serialization/semantic-equal';
 
-const NUMERIC_SUFFIX = /(-?(?:\d+(?:\.\d*)?|\.\d+))$/;
+const NUMERIC_SUFFIX = /[\\.\d]+$/;
 
 export function autofillText(
   text: string,
@@ -16,26 +16,28 @@ export function autofillText(
   if (text.startsWith('=')) return shiftFormulaReferences(text, delta);
   const match = NUMERIC_SUFFIX.exec(text);
   if (match === null) return text;
-  const numeric = Number(match[1]);
-  if (!Number.isFinite(numeric)) return text;
+  const numeric = Number(match[0]);
   return `${text.slice(0, match.index)}${numeric + step}`;
+}
+
+function incrementsNumericSuffix(source: CellRange, target: CellRange): boolean {
+  const [sourceRows, sourceColumns] = rangeSize(source);
+  const vertical = target.start.row > source.end.row || target.end.row < source.start.row;
+  const horizontal = target.start.column > source.end.column || target.end.column < source.start.column;
+  return (sourceRows <= 1 && sourceColumns > 1 && vertical)
+    || (sourceColumns <= 1 && sourceRows > 1 && horizontal)
+    || (sourceRows <= 1 && sourceColumns <= 1);
 }
 
 function fillStep(source: CellRange, target: CellRange, row: number, column: number): number {
   const [sourceRows, sourceColumns] = rangeSize(source);
-  if (target.start.row > source.end.row) {
-    return Math.floor((row - target.start.row) / sourceRows) + 1;
-  }
-  if (target.end.row < source.start.row) {
-    return -(Math.floor((target.end.row - row) / sourceRows) + 1);
-  }
-  if (target.start.column > source.end.column) {
-    return Math.floor((column - target.start.column) / sourceColumns) + 1;
-  }
-  if (target.end.column < source.start.column) {
-    return -(Math.floor((target.end.column - column) / sourceColumns) + 1);
-  }
-  return 0;
+  const [targetRows, targetColumns] = rangeSize(target);
+  const tileRowOffset = Math.floor((row - target.start.row) / sourceRows) * sourceRows;
+  const tileColumnOffset = Math.floor((column - target.start.column) / sourceColumns) * sourceColumns;
+  const offset = tileRowOffset + tileColumnOffset;
+  if (target.end.row < source.start.row) return offset - targetRows;
+  if (target.end.column < source.start.column) return offset - targetColumns;
+  return offset + 1;
 }
 
 function mutableCell(sheet: SheetData, row: number, column: number): Record<string, unknown> {
@@ -78,10 +80,12 @@ export function autofillRange(
       const sourceCell: CellData | null = getCellData(sheet, sourceRow, sourceColumn);
       if (sourceCell?.text === undefined || sourceCell.text.length === 0) continue;
       const cell = mutableCell(next, row, column);
-      cell.text = autofillText(sourceCell.text, fillStep(source, target, row, column), {
-        row: row - sourceRow,
-        column: column - sourceColumn,
-      });
+      const delta = { row: row - sourceRow, column: column - sourceColumn };
+      cell.text = sourceCell.text.startsWith('=')
+        ? autofillText(sourceCell.text, 0, delta)
+        : incrementsNumericSuffix(source, target)
+          ? autofillText(sourceCell.text, fillStep(source, target, row, column), delta)
+          : sourceCell.text;
       delete cell.value;
     }
   }

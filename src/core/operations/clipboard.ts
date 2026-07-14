@@ -150,6 +150,7 @@ function assignCell(
   mode: PasteMode,
   sourceStyles: readonly CellStyle[],
 ): void {
+  if (source === null) return;
   const cells = cellsRecord(sheet, row, true)!;
   const currentValue = cells[String(column)];
   const current = currentValue !== null && typeof currentValue === 'object' && !Array.isArray(currentValue)
@@ -175,7 +176,8 @@ function assignCell(
 
   if (mode === 'value') {
     const next = { ...current };
-    next.text = source?.text ?? '';
+    if (source !== null && Object.hasOwn(source, 'text')) next.text = source.text;
+    else delete next.text;
     delete next.value;
     cells[String(column)] = next;
     return;

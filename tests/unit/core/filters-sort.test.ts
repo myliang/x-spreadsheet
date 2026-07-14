@@ -83,4 +83,33 @@ describe('filter and corrected sorting transforms', () => {
     expect(controller.getValue()[0]!.autofilter).toEqual({});
     expect(controller.historySize.undo).toBe(3);
   });
+
+  it('rejects 250001-row filter and sort workloads before allocation or controller mutation', () => {
+    const hugeRange = {
+      start: { row: 0, column: 0 }, end: { row: 250_001, column: 0 },
+    };
+    const hugeSheet: SheetData = {
+      rows: { len: 250_002 }, cols: { len: 1 },
+      autofilter: { ref: 'A1:A250002', filters: [], sort: null },
+    };
+    expect(() => filterItems(hugeSheet, 0, hugeRange)).toThrow(RangeError);
+    expect(() => filteredRows({
+      rows: { len: 250_002 }, cols: { len: 1 },
+      autofilter: { ref: 'A1:A250002', filters: [{ ci: 0, operator: 'all', value: [] }] },
+    })).toThrow(RangeError);
+    expect(() => sortRows(hugeSheet, 0, 'asc', locale, hugeRange)).toThrow(RangeError);
+
+    const controller = new WorkbookController(hugeSheet);
+    const sheet = controller.getSheetIds()[0]!;
+    const before = controller.getValue();
+    expect(() => controller.dispatch({
+      type: 'set-filter',
+      selection: { sheet, range: hugeRange, active: hugeRange.start },
+      filter: { column: 0, operator: 'all', value: [] },
+    }, 'toolbar')).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => controller.dispatch({ type: 'sort', sheet, column: 0, order: 'asc' }, 'toolbar'))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize.undo).toBe(0);
+  });
 });

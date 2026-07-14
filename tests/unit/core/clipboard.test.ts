@@ -91,6 +91,62 @@ describe('clipboard transformations', () => {
     });
   });
 
+  it('distinguishes absent, textless, and explicit-empty source cells during value paste', () => {
+    const controller = new WorkbookController({
+      styles: [{ font: { bold: true } }],
+      rows: {
+        len: 3,
+        0: { cells: { 1: { value: 7, vendorTextless: 0 }, 2: { text: '', value: 8 } } },
+        1: { cells: {
+          0: { text: 'keep', value: 1, vendorAbsent: false },
+          1: { text: 'remove', value: 2, vendorTarget: '' },
+          2: { text: 'replace', value: 3 },
+        } },
+        2: { cells: {
+          0: { text: 'all-stays', style: 0, vendorAll: true },
+          1: { text: 'format-stays', style: 0, vendorFormat: true },
+        } },
+      },
+      cols: { len: 4 },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    controller.dispatch({
+      type: 'paste-internal',
+      source: selection(sheet, { start: { row: 0, column: 0 }, end: { row: 0, column: 2 } }),
+      target: selection(sheet, { start: { row: 1, column: 0 }, end: { row: 1, column: 2 } }),
+      mode: 'value', cut: false,
+    }, 'clipboard');
+
+    expect(controller.getValue()[0]).toMatchObject({
+      rows: { 1: { cells: {
+        0: { text: 'keep', value: 1, vendorAbsent: false },
+        1: { vendorTarget: '' },
+        2: { text: '' },
+      } } },
+    });
+    expect(controller.getValue()[0]!.rows?.['1']).not.toHaveProperty('cells.1.text');
+    expect(controller.getValue()[0]!.rows?.['1']).not.toHaveProperty('cells.1.value');
+    expect(controller.getValue()[0]!.rows?.['1']).not.toHaveProperty('cells.2.value');
+
+    const absent = selection(sheet, {
+      start: { row: 0, column: 0 }, end: { row: 0, column: 0 },
+    });
+    expect(controller.dispatch({
+      type: 'paste-internal', source: absent,
+      target: selection(sheet, { start: { row: 2, column: 0 }, end: { row: 2, column: 0 } }),
+      mode: 'all', cut: false,
+    }, 'clipboard')).toEqual({ status: 'noop' });
+    expect(controller.dispatch({
+      type: 'paste-internal', source: absent,
+      target: selection(sheet, { start: { row: 2, column: 1 }, end: { row: 2, column: 1 } }),
+      mode: 'format', cut: false,
+    }, 'clipboard')).toEqual({ status: 'noop' });
+    expect(controller.getValue()[0]).toMatchObject({ rows: { 2: { cells: {
+      0: { text: 'all-stays', style: 0, vendorAll: true },
+      1: { text: 'format-stays', style: 0, vendorFormat: true },
+    } } } });
+  });
+
   it('pastes an external matrix, expands from the target anchor, and rejects locked cells atomically', () => {
     const controller = new WorkbookController({
       rows: { len: 4, 0: { cells: { 0: { vendor: 'keep' } } } },

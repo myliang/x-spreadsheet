@@ -20,9 +20,8 @@ export interface ValueValidationResult {
   readonly message: string;
 }
 
-const NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
 const PHONE = /^[1-9]\d{10}$/;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL = /w+([-+.]w+)*@w+([-.]w+)*.w+([-.]w+)*/;
 
 const TYPES: readonly ValidationType[] = ['date', 'number', 'list', 'phone', 'email'];
 const OPERATORS: readonly ValidationOperator[] = ['be', 'nbe', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte'];
@@ -35,40 +34,31 @@ function valid(): ValueValidationResult {
   return { valid: true, message: '' };
 }
 
-function dateValue(value: string): number | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (match === null) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const timestamp = Date.UTC(year, month - 1, day);
-  const parsed = new Date(timestamp);
-  return parsed.getUTCFullYear() === year
-    && parsed.getUTCMonth() === month - 1
-    && parsed.getUTCDate() === day
-    ? timestamp
-    : null;
-}
+type LegacyValue = string | number | Date;
 
-function scalar(value: string, type: ValidationType): string | number | null {
-  if (type === 'number') return NUMBER.test(value.trim()) && Number.isFinite(Number(value))
-    ? Number(value)
-    : null;
-  if (type === 'date') return dateValue(value.trim());
+function scalar(value: string, type: ValidationType): LegacyValue {
+  if (type === 'number') return Number(value);
+  if (type === 'date') return new Date(value);
   return value;
 }
 
+function relational(value: LegacyValue): string | number {
+  return value instanceof Date ? value.getTime() : value;
+}
+
 function compare(
-  actual: string | number,
-  expected: string | number,
+  actual: LegacyValue,
+  expected: LegacyValue,
   operator: Exclude<ValidationOperator, 'be' | 'nbe'>,
 ): boolean {
   if (operator === 'eq') return actual === expected;
   if (operator === 'neq') return actual !== expected;
-  if (operator === 'lt') return actual < expected;
-  if (operator === 'lte') return actual <= expected;
-  if (operator === 'gt') return actual > expected;
-  return actual >= expected;
+  const left = relational(actual);
+  const right = relational(expected);
+  if (operator === 'lt') return left < right;
+  if (operator === 'lte') return left <= right;
+  if (operator === 'gt') return left > right;
+  return left >= right;
 }
 
 function listValues(value: ValidationRule['value']): readonly string[] {
@@ -83,24 +73,22 @@ export function validateValue(text: string, rule: ValidationRule): ValueValidati
   if (rule.type === 'list') {
     return listValues(rule.value).includes(text) ? valid() : invalid('Value is not in the list');
   }
-  const actual = scalar(text, rule.type);
-  if (actual === null) return invalid(`Value is not a valid ${rule.type}`);
   if (rule.operator === undefined) return valid();
+  const actual = scalar(text, rule.type);
   if (rule.operator === 'be' || rule.operator === 'nbe') {
     if (!Array.isArray(rule.value) || rule.value.length !== 2) {
       return invalid('Validation range is invalid');
     }
     const minimum = scalar(String(rule.value[0]), rule.type);
     const maximum = scalar(String(rule.value[1]), rule.type);
-    if (minimum === null || maximum === null) return invalid('Validation range is invalid');
-    const inside = actual >= minimum && actual <= maximum;
+    const inside = relational(actual) >= relational(minimum)
+      && relational(actual) <= relational(maximum);
     return (rule.operator === 'be' ? inside : !inside)
       ? valid()
       : invalid(rule.operator === 'be' ? 'Value is outside the allowed range' : 'Value is inside the excluded range');
   }
   if (typeof rule.value !== 'string') return invalid('Validation comparison is invalid');
   const expected = scalar(rule.value, rule.type);
-  if (expected === null) return invalid('Validation comparison is invalid');
   return compare(actual, expected, rule.operator)
     ? valid()
     : invalid(`Value does not satisfy ${rule.operator}`);
@@ -169,19 +157,40 @@ function validationRuleToData(rule: ValidationRule, range: CellRange): Validatio
   };
 }
 
-function subtractRange(data: ValidationData, removed: CellRange): ValidationData | null {
-  const refs: string[] = [];
-  for (const raw of data.refs ?? []) {
+function equalValues(left: JsonValue | undefined, right: ValidationRule['value']): boolean {
+  if (Array.isArray(left)) {
+    if (typeof right !== 'string' && !Array.isArray(right)) return false;
+    return left.length === right.length
+      && left.every((value, index) => value === right[index]);
+  }
+  return left === right;
+}
+
+function sameValidator(data: ValidationData, rule: ValidationRule): boolean {
+  return data.type === rule.type
+    && data.required === rule.required
+    && data.operator === rule.operator
+    && equalValues(data.value, rule.value);
+}
+
+function refsWithoutRange(refs: readonly string[] | undefined, removed: CellRange): readonly string[] {
+  const output: string[] = [];
+  for (const raw of refs ?? []) {
     let range: CellRange;
     try {
       range = parseA1Range(raw);
     } catch {
-      refs.push(raw);
+      output.push(raw);
       continue;
     }
-    if (!rangesIntersect(range, removed)) refs.push(renderA1Range(range));
-    else refs.push(...differenceRanges(range, removed).map(renderA1Range));
+    if (!rangesIntersect(range, removed)) output.push(renderA1Range(range));
+    else output.push(...differenceRanges(range, removed).map(renderA1Range));
   }
+  return output;
+}
+
+function subtractRange(data: ValidationData, removed: CellRange): ValidationData | null {
+  const refs = refsWithoutRange(data.refs, removed);
   return refs.length === 0 ? null : { ...data, refs };
 }
 
@@ -200,11 +209,18 @@ export function setValidation(
   rule: ValidationRule,
 ): SheetData {
   assertValidationRule(rule);
-  const withoutOverlap = removeValidation(sheet, range);
-  const next = cloneSheet(withoutOverlap);
-  (next as Record<string, unknown>).validations = [
-    ...(next.validations ?? []),
-    validationRuleToData(rule, range),
-  ];
+  const next = cloneSheet(sheet);
+  const validations = [...(next.validations ?? [])];
+  const existing = validations.findIndex(data => sameValidator(data, rule));
+  if (existing >= 0) {
+    const data = validations[existing] as ValidationData;
+    validations[existing] = {
+      ...data,
+      refs: [...refsWithoutRange(data.refs, range), renderA1Range(range)],
+    };
+  } else {
+    validations.push(validationRuleToData(rule, range));
+  }
+  (next as Record<string, unknown>).validations = validations;
   return semanticEqual(next, sheet) ? sheet : next;
 }

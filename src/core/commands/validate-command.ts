@@ -24,6 +24,7 @@ import {
 } from '../operations/clipboard';
 import { assertValidationRule } from '../operations/validation';
 import { parseA1Range } from '../coordinates/ranges';
+import { assertDataToolResourceLimit } from '../operations/filter';
 import type { WorkbookCommand } from './workbook-command';
 
 export function invalidCommand(message: string, cause?: unknown): TegoSheetException {
@@ -378,6 +379,17 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         || command.filter.value.some(value => typeof value !== 'string')) {
         throw invalidCommand('filter definition is invalid or outside its range');
       }
+      try {
+        const filters = state.get(command.selection.sheet)!.data.autofilter?.filters ?? [];
+        assertDataToolResourceLimit(command.selection.range, Math.max(1, filters.length));
+        const replaces = filters.some(item => item.ci === command.filter.column);
+        assertDataToolResourceLimit(
+          command.selection.range,
+          Math.max(1, filters.length + (replaces ? 0 : 1)),
+        );
+      } catch (cause) {
+        throw invalidCommand('filter workload exceeds the resource limit', cause);
+      }
       return;
     case 'clear-filter':
       validateSheet(state, command.sheet);
@@ -397,6 +409,10 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         if (command.column < range.start.column || command.column > range.end.column) {
           throw new RangeError('sort column is outside the autofilter range');
         }
+        assertDataToolResourceLimit(
+          range,
+          (runtimeSheet.data.autofilter.filters?.length ?? 0) + 1,
+        );
       } catch (cause) {
         throw invalidCommand('sort autofilter range is invalid', cause);
       }
@@ -406,18 +422,12 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       validateSelection(state, command.selection);
       try {
         assertValidationRule(command.rule);
-        assertRangeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
       } catch (cause) {
         throw invalidCommand('validation rule is invalid', cause);
       }
       return;
     case 'remove-validation':
       validateSelection(state, command.selection);
-      try {
-        assertRangeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
-      } catch (cause) {
-        throw invalidCommand('validation range is not mutable', cause);
-      }
       return;
     case 'undo':
     case 'redo':

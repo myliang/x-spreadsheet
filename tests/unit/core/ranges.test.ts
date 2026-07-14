@@ -103,6 +103,7 @@ describe('merge range operations', () => {
 describe('autofill range operations', () => {
   it('extends numeric suffixes and shifts relative formula references', () => {
     expect(autofillText('Item1', 3, { row: 3, column: 0 })).toBe('Item4');
+    expect(autofillText('-1', 1, { row: 1, column: 0 })).toBe('-2');
     expect(autofillText('plain', 3, { row: 3, column: 0 })).toBe('plain');
     expect(autofillText('=$A1+B$1', 2, { row: 2, column: 0 })).toBe('=$A3+B$1');
   });
@@ -137,5 +138,102 @@ describe('autofill range operations', () => {
         3: { cells: { 0: { text: 'Item4' }, 1: { text: '=A4+1' }, 2: { text: 'plain', style: 0 } } },
       },
     });
+  });
+
+  it.each([
+    {
+      name: 'horizontal forward', source: [[0, 0], [0, 1]], target: [[0, 2], [0, 5]],
+      input: ['Item1', 'Item2'], expected: ['Item1', 'Item2', 'Item1', 'Item2'],
+    },
+    {
+      name: 'horizontal reverse', source: [[0, 4], [0, 5]], target: [[0, 0], [0, 3]],
+      input: ['Item1', 'Item2'], expected: ['Item1', 'Item2', 'Item1', 'Item2'],
+    },
+    {
+      name: 'vertical forward', source: [[0, 0], [1, 0]], target: [[2, 0], [5, 0]],
+      input: ['Item1', 'Item2'], expected: ['Item1', 'Item2', 'Item1', 'Item2'],
+    },
+    {
+      name: 'vertical reverse', source: [[4, 0], [5, 0]], target: [[0, 0], [3, 0]],
+      input: ['Item1', 'Item2'], expected: ['Item1', 'Item2', 'Item1', 'Item2'],
+    },
+  ])('repeats multi-cell numeric suffix sequences for $name same-axis fills', ({ source, target, input, expected }) => {
+    const controller = new WorkbookController({ rows: { len: 8 }, cols: { len: 8 } });
+    const sheet = controller.getSheetIds()[0]!;
+    input.forEach((text, index) => {
+      const horizontal = source[0]![0] === source[1]![0];
+      controller.dispatch({
+        type: 'set-cell-text',
+        address: {
+          sheet,
+          row: source[0]![0] + (horizontal ? 0 : index),
+          column: source[0]![1] + (horizontal ? index : 0),
+        },
+        text,
+      }, 'ref');
+    });
+    const sourceRange = {
+      start: { row: source[0]![0], column: source[0]![1] },
+      end: { row: source[1]![0], column: source[1]![1] },
+    };
+    const targetRange = {
+      start: { row: target[0]![0], column: target[0]![1] },
+      end: { row: target[1]![0], column: target[1]![1] },
+    };
+    controller.dispatch({
+      type: 'autofill', source: selection(sheet, sourceRange),
+      target: selection(sheet, targetRange), mode: 'all',
+    }, 'pointer');
+
+    const horizontal = targetRange.start.row === targetRange.end.row;
+    const actual = expected.map((_, index) => controller.getCellText({
+      sheet,
+      row: targetRange.start.row + (horizontal ? 0 : index),
+      column: targetRange.start.column + (horizontal ? index : 0),
+    }));
+    expect(actual).toEqual(expected);
+  });
+
+  it('increments single-cell suffixes in all four directions and always shifts formulas by coordinates', () => {
+    const controller = new WorkbookController({
+      rows: {
+        len: 7,
+        1: { cells: { 4: { text: '=C3+$A$1' } } },
+        3: { cells: { 3: { text: 'Item1' } } },
+      },
+      cols: { len: 7 },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    const point = (row: number, column: number): CellRange => ({
+      start: { row, column }, end: { row, column },
+    });
+    const targets: readonly CellRange[] = [
+      { start: { row: 4, column: 3 }, end: { row: 5, column: 3 } },
+      { start: { row: 1, column: 3 }, end: { row: 2, column: 3 } },
+      { start: { row: 3, column: 4 }, end: { row: 3, column: 5 } },
+      { start: { row: 3, column: 1 }, end: { row: 3, column: 2 } },
+    ];
+    for (const target of targets) {
+      controller.dispatch({
+        type: 'autofill', source: selection(sheet, point(3, 3)),
+        target: selection(sheet, target), mode: 'value',
+      }, 'pointer');
+    }
+    expect([
+      controller.getCellText({ sheet, row: 4, column: 3 }),
+      controller.getCellText({ sheet, row: 5, column: 3 }),
+      controller.getCellText({ sheet, row: 1, column: 3 }),
+      controller.getCellText({ sheet, row: 2, column: 3 }),
+      controller.getCellText({ sheet, row: 3, column: 4 }),
+      controller.getCellText({ sheet, row: 3, column: 5 }),
+      controller.getCellText({ sheet, row: 3, column: 1 }),
+      controller.getCellText({ sheet, row: 3, column: 2 }),
+    ]).toEqual(['Item2', 'Item3', 'Item-1', 'Item0', 'Item2', 'Item3', 'Item-1', 'Item0']);
+
+    controller.dispatch({
+      type: 'autofill', source: selection(sheet, point(1, 4)),
+      target: selection(sheet, point(2, 5)), mode: 'value',
+    }, 'pointer');
+    expect(controller.getCellText({ sheet, row: 2, column: 5 })).toBe('=D4+$A$1');
   });
 });

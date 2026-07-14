@@ -24,7 +24,7 @@ describe('validation operations and workbook selector', () => {
     [{ mode: 'cell', type: 'date', required: false, operator: 'lt', value: '2026-01-02' }, '2026-01-01', true],
     [{ mode: 'cell', type: 'list', required: false, value: 'red,blue' }, 'blue', true],
     [{ mode: 'cell', type: 'phone', required: false }, '13812345678', true],
-    [{ mode: 'cell', type: 'email', required: false }, 'me@example.com', true],
+    [{ mode: 'cell', type: 'email', required: false }, 'w@wXw', true],
   ] as const)('supports every validation type/operator %#', (rule, value, valid) => {
     expect(validateValue(value, rule as ValidationRule).valid).toBe(valid);
   });
@@ -33,8 +33,30 @@ describe('validation operations and workbook selector', () => {
     expect(validateValue(' ', { mode: 'cell', type: 'email', required: true }))
       .toMatchObject({ valid: false, message: 'Value is required' });
     expect(validateValue('', { mode: 'cell', type: 'number', required: false }).valid).toBe(true);
-    expect(validateValue('12x', { mode: 'cell', type: 'number', required: false }).valid).toBe(false);
-    expect(validateValue('2026-02-30', { mode: 'cell', type: 'date', required: false }).valid).toBe(false);
+    expect(validateValue('12x', { mode: 'cell', type: 'number', required: false }).valid).toBe(true);
+    expect(validateValue('not-a-date', { mode: 'cell', type: 'date', required: false }).valid).toBe(true);
+    expect(validateValue('1e3', {
+      mode: 'cell', type: 'number', required: false, operator: 'eq', value: '1000',
+    }).valid).toBe(true);
+    expect(validateValue('me@example.com', { mode: 'cell', type: 'email', required: false }).valid)
+      .toBe(false);
+    expect(validateValue('w@wXw', { mode: 'cell', type: 'email', required: false }).valid).toBe(true);
+  });
+
+  it('preserves legacy date identity behavior for all comparison operators', () => {
+    const base = { mode: 'cell', type: 'date', required: false, value: '2026-01-01' } as const;
+    expect(validateValue('2026-01-01', { ...base, operator: 'eq' }).valid).toBe(false);
+    expect(validateValue('2026-01-01', { ...base, operator: 'neq' }).valid).toBe(true);
+    expect(validateValue('2025-12-31', { ...base, operator: 'lt' }).valid).toBe(true);
+    expect(validateValue('2026-01-01', { ...base, operator: 'lte' }).valid).toBe(true);
+    expect(validateValue('2026-01-02', { ...base, operator: 'gt' }).valid).toBe(true);
+    expect(validateValue('2026-01-01', { ...base, operator: 'gte' }).valid).toBe(true);
+    expect(validateValue('2026-01-01', {
+      ...base, operator: 'be', value: ['2025-01-01', '2027-01-01'],
+    }).valid).toBe(true);
+    expect(validateValue('2026-01-01', {
+      ...base, operator: 'nbe', value: ['2025-01-01', '2027-01-01'],
+    }).valid).toBe(false);
   });
 
   it('sets and removes serialized validation refs without disturbing non-overlapping rules', () => {
@@ -61,21 +83,63 @@ describe('validation operations and workbook selector', () => {
     ]);
   });
 
-  it('rejects validation mutations over locked cells without history or partial refs', () => {
+  it('allows validation metadata changes over locked cells while controller read-only still rejects', () => {
     const controller = new WorkbookController({
       rows: { len: 2, 0: { cells: { 0: { text: 'locked', editable: false } } } },
       cols: { len: 2 },
     });
     const sheet = controller.getSheetIds()[0]!;
-    const before = controller.getValue();
-
-    expect(() => controller.dispatch({
+    expect(controller.dispatch({
       type: 'set-validation',
       selection: selected(sheet),
       rule: { mode: 'cell', type: 'number', required: true },
+    }, 'toolbar').status).toBe('committed');
+    expect(controller.dispatch({ type: 'remove-validation', selection: selected(sheet) }, 'toolbar').status)
+      .toBe('committed');
+
+    controller.setReadOnly(true);
+    expect(() => controller.dispatch({
+      type: 'set-validation', selection: selected(sheet),
+      rule: { mode: 'cell', type: 'number', required: true },
     }, 'toolbar')).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
-    expect(controller.getValue()).toEqual(before);
-    expect(controller.historySize.undo).toBe(0);
+    expect(controller.historySize.undo).toBe(2);
+  });
+
+  it('merges refs only for the first equal validator and preserves overlapping different rules', () => {
+    const controller = new WorkbookController({
+      rows: { len: 4 }, cols: { len: 4 },
+      validations: [
+        {
+          refs: ['A1:A2'], mode: 'cell', type: 'number', required: true,
+          operator: 'gte', value: '0', vendorSame: false,
+        },
+        { refs: ['A1:C1'], mode: 'cell', type: 'email', required: true, vendorOther: 0 },
+      ],
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    const range: Selection = {
+      sheet,
+      range: { start: { row: 0, column: 1 }, end: { row: 1, column: 1 } },
+      active: { row: 0, column: 1 },
+    };
+    controller.dispatch({
+      type: 'set-validation', selection: range,
+      rule: { mode: 'cell', type: 'number', required: true, operator: 'gte', value: '0' },
+    }, 'toolbar');
+
+    expect(controller.getValue()[0]!.validations).toEqual([
+      {
+        refs: ['A1:A2', 'B1:B2'], mode: 'cell', type: 'number', required: true,
+        operator: 'gte', value: '0', vendorSame: false,
+      },
+      { refs: ['A1:C1'], mode: 'cell', type: 'email', required: true, vendorOther: 0 },
+    ]);
+    expect(controller.validate().issues.map(issue => [issue.address.row, issue.address.column, issue.rule.type]))
+      .toEqual([
+        [0, 0, 'number'], [0, 0, 'email'],
+        [0, 1, 'number'], [0, 1, 'email'],
+        [0, 2, 'email'], [1, 0, 'number'], [1, 1, 'number'],
+      ]);
   });
 
   it('@parity:tools.validation-all-sheets validates hidden cells on every sheet in sheet/row/column/rule order', () => {
