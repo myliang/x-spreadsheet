@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { URL } from 'node:url';
 import test from 'node:test';
 import pkg from '../../package.json' with { type: 'json' };
+
+const packageRoot = new URL('../../', import.meta.url);
 
 const expectedDevDependencies = {
   '@eslint/js': '10.0.1',
@@ -59,7 +64,45 @@ test('publishes only tego-sheet', () => {
   });
   assert.equal(Object.keys(pkg.exports).some((path) => path.includes('legacy')), false);
   assert.deepEqual(requiredScripts.filter((script) => !(script in pkg.scripts)), []);
+  assert.equal(
+    pkg.scripts['test:package'],
+    'npm run build && node --test tests/package/*.check.mjs',
+  );
   assert.equal('postinstall' in pkg.scripts, false);
   assert.equal('collective' in pkg, false);
   assert.equal('nyc' in pkg, false);
+});
+
+test('published README describes only the current tego-sheet foundation', () => {
+  const readme = readFileSync(new URL('readme.md', packageRoot), 'utf8');
+
+  assert.doesNotMatch(
+    readme,
+    /x-data-spreadsheet|xspreadsheet|x_spreadsheet|new Spreadsheet|dist\/xspreadsheet|docs\/demo\.png/i,
+  );
+  assert.match(readme, /^# tego-sheet$/m);
+  assert.match(readme, /React/);
+  assert.match(readme, /TypeScript/);
+  assert.match(readme, /active rewrite|not release-ready/i);
+});
+
+test('package dry run includes public files only', () => {
+  const result = spawnSync('npm', ['pack', '--dry-run', '--json'], {
+    cwd: packageRoot,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const [pack] = JSON.parse(result.stdout);
+  const paths = pack.files.map(({ path }) => path);
+
+  assert.equal(paths.includes('readme.md'), true);
+  assert.equal(paths.includes('package.json'), true);
+  assert.equal(paths.includes('LICENSE'), true);
+  assert.equal(paths.some((path) => path.startsWith('dist/')), true);
+  assert.equal(
+    paths.some((path) => /^(?:legacy|src|tests|scripts|assets|docs)\//.test(path)),
+    false,
+  );
+  assert.equal(paths.some((path) => /xspreadsheet|x-data-spreadsheet/i.test(path)), false);
 });
