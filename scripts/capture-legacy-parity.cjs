@@ -38,17 +38,49 @@ function serializeJson(value) {
   return `${JSON.stringify(stable(value), null, 2)}\n`;
 }
 
+function targetExistsAsRegularFile(target) {
+  try {
+    const stat = fs.lstatSync(target);
+    if (stat.isSymbolicLink() || !stat.isFile()) {
+      throw new Error(`Legacy parity target must be a regular file and not a symbolic link: ${target}`);
+    }
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+function transactionFailure(publicationError, transactionDir, details) {
+  const errors = [publicationError];
+  if (details.rollbackErrors) errors.push(...details.rollbackErrors);
+  if (details.cleanupError) errors.push(details.cleanupError);
+  const error = new AggregateError(
+    errors,
+    `${details.message} Recovery data retained at: ${transactionDir}`,
+    { cause: publicationError },
+  );
+  error.publicationError = publicationError;
+  error.recoveryDirectory = transactionDir;
+  if (details.rollbackErrors) error.rollbackErrors = details.rollbackErrors;
+  if (details.cleanupError) error.cleanupError = details.cleanupError;
+  return error;
+}
+
 function publishAtomically(publications) {
   const parityDir = path.join(root, 'tests/parity');
   fs.mkdirSync(parityDir, { recursive: true });
+  const inspected = publications.map(publication => ({
+    ...publication,
+    existed: targetExistsAsRegularFile(publication.target),
+  }));
   const transactionDir = fs.mkdtempSync(path.join(parityDir, '.capture-legacy-parity-'));
-  const prepared = publications.map((publication, index) => ({
+  const prepared = inspected.map((publication, index) => ({
     ...publication,
     backup: path.join(transactionDir, `backup-${index}.json.bak`),
-    existed: fs.existsSync(publication.target),
     staged: path.join(transactionDir, `staged-${index}.json.tmp`),
   }));
-  let replacing = false;
+  const replaced = [];
 
   try {
     prepared.forEach((publication) => {
@@ -58,30 +90,48 @@ function publishAtomically(publications) {
       if (publication.existed) fs.copyFileSync(publication.target, publication.backup);
     });
 
-    replacing = true;
     prepared.forEach((publication) => {
       fs.mkdirSync(path.dirname(publication.target), { recursive: true });
       fs.renameSync(publication.staged, publication.target);
+      replaced.push(publication);
     });
   } catch (publishError) {
-    if (replacing) {
-      const rollbackErrors = [];
-      prepared.forEach((publication) => {
-        try {
-          if (publication.existed) {
-            fs.copyFileSync(publication.backup, publication.target);
-          } else if (fs.existsSync(publication.target)) {
-            fs.unlinkSync(publication.target);
-          }
-        } catch (rollbackError) {
-          rollbackErrors.push(rollbackError);
+    const rollbackErrors = [];
+    [...replaced].reverse().forEach((publication) => {
+      try {
+        if (publication.existed) {
+          fs.copyFileSync(publication.backup, publication.target);
+        } else if (fs.existsSync(publication.target)) {
+          fs.unlinkSync(publication.target);
         }
+      } catch (rollbackError) {
+        rollbackError.target = publication.target;
+        rollbackErrors.push(rollbackError);
+      }
+    });
+    if (rollbackErrors.length > 0) {
+      throw transactionFailure(publishError, transactionDir, {
+        message: 'Legacy parity publication failed and rollback was incomplete.',
+        rollbackErrors,
       });
-      if (rollbackErrors.length > 0) publishError.rollbackErrors = rollbackErrors;
+    }
+
+    try {
+      fs.rmSync(transactionDir, { force: true, recursive: true });
+    } catch (cleanupError) {
+      throw transactionFailure(publishError, transactionDir, {
+        cleanupError,
+        message: 'Legacy parity publication failed; rollback succeeded, but cleanup failed.',
+      });
     }
     throw publishError;
-  } finally {
+  }
+
+  try {
     fs.rmSync(transactionDir, { force: true, recursive: true });
+  } catch (cleanupError) {
+    cleanupError.recoveryDirectory = transactionDir;
+    throw cleanupError;
   }
 }
 
