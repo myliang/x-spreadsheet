@@ -102,9 +102,9 @@ export const parityManifest: readonly ParityRow[] = [
   {
     id: 'correction.empty-workbook',
     unit: { assertions: ['correction.empty-workbook'] },
-    component: { notApplicable: 'The correction is enforced while constructing the workbook model.' },
+    component: { assertions: ['correction.empty-workbook-component'] },
     browser: { notApplicable: 'The corrected behavior does not depend on browser APIs.' },
-    visual: { notApplicable: 'The empty-workbook invariant is structural rather than pixel-specific.' },
+    visual: { notApplicable: 'The explicit empty UI is behavior-tested without pixel comparison.' },
   },
   {
     id: 'correction.validation-all-sheets',
