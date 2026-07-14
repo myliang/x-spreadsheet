@@ -16,6 +16,7 @@ const evidencePropertyNames = ['lane', 'status', 'title', 'source', 'project'] a
 const requiredEvidencePropertyNames = ['lane', 'status', 'title', 'source'] as const;
 const rowIdPattern = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const assertionIdPattern = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$/;
+const controlCharacterPattern = /[\u0000-\u001f\u007f-\u009f]/;
 const mandatoryCorrectionIds = [
   'correction.empty-workbook',
   'correction.validation-all-sheets',
@@ -168,11 +169,17 @@ function validateEvidenceRecords(evidence: unknown): readonly ValidatedEvidenceR
     if (typeof value.source !== 'string' || value.source.trim() === '') {
       throw new Error(`${label} must have a nonempty source`);
     }
+    if (controlCharacterPattern.test(value.source)) {
+      throw new Error(`${label} source must not contain control characters`);
+    }
     if (
       Object.hasOwn(value, 'project')
       && (typeof value.project !== 'string' || value.project.trim() === '')
     ) {
       throw new Error(`${label} project must be a nonempty string when provided`);
+    }
+    if (typeof value.project === 'string' && controlCharacterPattern.test(value.project)) {
+      throw new Error(`${label} project must not contain control characters`);
     }
 
     return {
@@ -212,7 +219,10 @@ export function verifyManifest(
   for (const row of records) {
     const rowId = row.id as string;
     validateNoUnexpectedRowProperties(rowId, row);
-    if (rawExecutableCount(row) === 0) {
+    const hasAllRequiredProperties = rowPropertyNames.every((propertyName) =>
+      Object.hasOwn(row, propertyName),
+    );
+    if (!hasAllRequiredProperties && rawExecutableCount(row) === 0) {
       throw new Error(`${rowId} has no executable assertion`);
     }
     validateRequiredRowProperties(rowId, row);
@@ -318,13 +328,25 @@ export function verifyManifest(
 }
 
 function parseEvidenceArtifact(path: string): unknown[] {
-  const contents = readFileSync(path, 'utf8').trim();
+  let contents: string;
+  try {
+    contents = readFileSync(path, 'utf8').trim();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`could not read execution artifact ${JSON.stringify(path)}: ${message}`);
+  }
   if (contents === '') {
     throw new Error(`execution artifact "${path}" is empty`);
   }
 
   if (contents.startsWith('[')) {
-    const parsed: unknown = JSON.parse(contents);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(contents) as unknown;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`execution artifact ${JSON.stringify(path)} has invalid JSON: ${message}`);
+    }
     if (!Array.isArray(parsed)) {
       throw new Error(`execution artifact "${path}" must contain a JSON array or NDJSON records`);
     }
@@ -335,7 +357,9 @@ function parseEvidenceArtifact(path: string): unknown[] {
     try {
       return JSON.parse(line) as unknown;
     } catch {
-      throw new Error(`execution artifact "${path}" has invalid NDJSON at line ${index + 1}`);
+      throw new Error(
+        `execution artifact ${JSON.stringify(path)} has invalid NDJSON at line ${index + 1}`,
+      );
     }
   });
 }

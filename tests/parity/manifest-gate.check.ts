@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { verifyManifest } from '../../scripts/verify-parity-manifest.ts';
 import { parityManifest } from './manifest.ts';
@@ -18,6 +21,150 @@ test('@parity:manifest.all-rows-covered rejects an uncovered row', () => {
 });
 
 const lanes = ['unit', 'component', 'browser', 'visual'] as const;
+type CatalogLane = readonly string[] | null;
+interface CatalogRow {
+  readonly id: string;
+  readonly unit: CatalogLane;
+  readonly component: CatalogLane;
+  readonly browser: CatalogLane;
+  readonly visual: CatalogLane;
+}
+
+const expectedCatalog: readonly CatalogRow[] = [
+  {
+    id: 'workbook',
+    unit: ['workbook.canonical-roundtrip', 'workbook.empty-input'],
+    component: ['workbook.sheet-lifecycle'],
+    browser: ['workbook.import-export'],
+    visual: ['workbook.initial-grid'],
+  },
+  {
+    id: 'selection',
+    unit: ['selection.normalize-range'],
+    component: ['selection.keyboard-extension'],
+    browser: ['selection.pointer-drag'],
+    visual: ['selection.active-range'],
+  },
+  {
+    id: 'editing',
+    unit: ['editing.commit-cancel'],
+    component: ['editing.inline-editor'],
+    browser: ['editing.ime-input'],
+    visual: ['editing.editor-overlay'],
+  },
+  {
+    id: 'history',
+    unit: ['history.undo-redo'],
+    component: ['history.command-controls'],
+    browser: ['history.shortcuts'],
+    visual: null,
+  },
+  {
+    id: 'formatting',
+    unit: ['formatting.commands'],
+    component: ['formatting.toolbar'],
+    browser: ['formatting.shortcuts'],
+    visual: ['formatting.styled-cells'],
+  },
+  {
+    id: 'structure',
+    unit: ['structure.row-column-operations'],
+    component: ['structure.sheet-tabs'],
+    browser: ['structure.resize-drag'],
+    visual: ['structure.hidden-resized-grid'],
+  },
+  {
+    id: 'ranges',
+    unit: ['ranges.merge-autofill'],
+    component: ['ranges.name-box'],
+    browser: ['ranges.drag-fill'],
+    visual: ['ranges.merged-selection'],
+  },
+  {
+    id: 'view',
+    unit: ['view.frozen-geometry'],
+    component: ['view.scroll-sync'],
+    browser: ['view.zoom-scroll'],
+    visual: ['view.frozen-panes'],
+  },
+  {
+    id: 'clipboard',
+    unit: ['clipboard.transform'],
+    component: ['clipboard.menu-actions'],
+    browser: ['clipboard.system-bridge'],
+    visual: null,
+  },
+  {
+    id: 'data-tools',
+    unit: ['tools.sort-total-order', 'tools.validation-all-sheets'],
+    component: ['tools.filter-controls'],
+    browser: ['tools.filter-menu'],
+    visual: ['tools.filtered-grid'],
+  },
+  {
+    id: 'formulas',
+    unit: ['formulas.references', 'formulas.computation'],
+    component: ['formulas.editor-display'],
+    browser: ['formulas.keyboard-commit'],
+    visual: null,
+  },
+  {
+    id: 'output',
+    unit: ['output.print-layout'],
+    component: ['output.print-dialog'],
+    browser: ['output.export-download'],
+    visual: ['output.print-preview'],
+  },
+  {
+    id: 'input',
+    unit: ['input.keymap'],
+    component: ['input.desktop-editing'],
+    browser: ['input.touch-gestures'],
+    visual: ['input.touch-handles'],
+  },
+  {
+    id: 'localization',
+    unit: ['locale.message-resolution'],
+    component: ['locale.switch-language'],
+    browser: ['locale.browser-default'],
+    visual: ['locale.localized-ui'],
+  },
+  {
+    id: 'correction.empty-workbook',
+    unit: ['correction.empty-workbook'],
+    component: ['correction.empty-workbook-component'],
+    browser: null,
+    visual: null,
+  },
+  {
+    id: 'correction.validation-all-sheets',
+    unit: ['correction.validation-all-sheets'],
+    component: null,
+    browser: null,
+    visual: null,
+  },
+  {
+    id: 'correction.sort-rendered-values',
+    unit: ['correction.sort-rendered-values'],
+    component: null,
+    browser: null,
+    visual: null,
+  },
+  {
+    id: 'correction.resource-cleanup',
+    unit: null,
+    component: null,
+    browser: ['correction.resource-cleanup'],
+    visual: null,
+  },
+  {
+    id: 'correction.printable-cells',
+    unit: ['correction.printable-cells'],
+    component: null,
+    browser: null,
+    visual: ['correction.printable-cells-visual'],
+  },
+];
 const correctionIds = [
   'correction.empty-workbook',
   'correction.validation-all-sheets',
@@ -63,18 +210,42 @@ function evidenceFor(
   }));
 }
 
-function runCli(input?: string) {
+function runCliPaths(paths: readonly string[]) {
   return spawnSync(
     process.execPath,
-    input === undefined
-      ? ['scripts/verify-parity-manifest.ts']
-      : ['scripts/verify-parity-manifest.ts', '/dev/stdin'],
+    ['scripts/verify-parity-manifest.ts', ...paths],
     {
       cwd: process.cwd(),
       encoding: 'utf8',
-      input,
     },
   );
+}
+
+function runCli(input?: string) {
+  if (input === undefined) {
+    return runCliPaths([]);
+  }
+
+  const directory = mkdtempSync(join(tmpdir(), 'parity-manifest-'));
+  const artifact = join(directory, 'evidence.json');
+  try {
+    writeFileSync(artifact, input, 'utf8');
+    return runCliPaths([artifact]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function projectCatalog(rows: readonly ParityRow[]): CatalogRow[] {
+  return rows.map((row) => ({
+    id: row.id,
+    ...Object.fromEntries(
+      lanes.map((lane) => [
+        lane,
+        'assertions' in row[lane] ? [...row[lane].assertions] : null,
+      ]),
+    ),
+  })) as CatalogRow[];
 }
 
 test('@parity:manifest.unique-row-ids rejects a duplicate row ID', () => {
@@ -245,6 +416,28 @@ test('@parity:manifest.lane-shape rejects lanes with conflicting keys', () => {
   );
 });
 
+test('@parity:manifest.lane-shape validates exact lanes before row coverage', () => {
+  const emptyAssertions = validRows();
+  emptyAssertions[0] = { ...emptyAssertions[0], unit: { assertions: [] } };
+  assert.throws(
+    () => verifyManifest(emptyAssertions),
+    /workbook\.unit assertions must be a nonempty array/,
+  );
+
+  const conflictingEmptyLane = validRows();
+  conflictingEmptyLane[0] = {
+    ...conflictingEmptyLane[0],
+    unit: {
+      assertions: [],
+      notApplicable: 'conflicting empty lane',
+    } as unknown as ParityRow['unit'],
+  };
+  assert.throws(
+    () => verifyManifest(conflictingEmptyLane),
+    /workbook\.unit.*exactly one of assertions or notApplicable/,
+  );
+});
+
 test('@parity:manifest.row-shape rejects missing and unexpected row properties', () => {
   const missing = validRows();
   delete (missing[0] as unknown as Record<string, unknown>).browser;
@@ -308,7 +501,7 @@ test('@parity:manifest.corrections-executable rejects correction rows without ev
   const rows = validRows();
   rows[1] = {
     id: correctionIds[0],
-    unit: { assertions: [] },
+    unit: { notApplicable: 'No unit evidence was declared for this invalid correction row.' },
     component: { notApplicable: 'No component integration is involved.' },
     browser: { notApplicable: 'No browser integration is involved.' },
     visual: { notApplicable: 'The correction has no visible state.' },
@@ -343,6 +536,18 @@ test('@parity:manifest.catalog is complete and uses stable assertion prefixes', 
     ['localization', 'locale.'],
   ]);
 
+  const projection = projectCatalog(parityManifest);
+  assert.deepEqual(projection, expectedCatalog);
+  assert.equal(projection.length, 19);
+  assert.equal(
+    projection.flatMap((row) => lanes.flatMap((lane) => row[lane] ?? [])).length,
+    63,
+  );
+  assert.equal(
+    projection.flatMap((row) => lanes.map((lane) => row[lane])).filter((lane) => lane === null)
+      .length,
+    16,
+  );
   assert.deepEqual(parityManifest.map(({ id }) => id), expectedRows);
   for (const entry of parityManifest) {
     const prefix = entry.id.startsWith('correction.')
@@ -373,6 +578,23 @@ test('@parity:manifest.inputs-readonly does not mutate manifest or structured ev
 
   assert.deepEqual(rows, rowsBefore);
   assert.deepEqual(evidence, evidenceBefore);
+});
+
+test('@parity:manifest.evidence-controls rejects control characters in trace metadata', () => {
+  const rows = validRows();
+  const sourceControl = evidenceFor(rows);
+  sourceControl[0] = { ...sourceControl[0], source: 'tests/unit/workbook.test.ts\nforged-line' };
+  assert.throws(
+    () => verifyManifest(rows, sourceControl),
+    /evidence record 1 source must not contain control characters/,
+  );
+
+  const projectControl = evidenceFor(rows);
+  projectControl[0] = { ...projectControl[0], project: '\u001b[31mforged-project' };
+  assert.throws(
+    () => verifyManifest(rows, projectControl),
+    /evidence record 1 project must not contain control characters/,
+  );
 });
 
 test('@parity:manifest.cli-missing-evidence exits nonzero without an execution artifact', () => {
@@ -446,4 +668,35 @@ test('@parity:manifest.cli-structured rejects bare, missing, failed, and wrong-l
     mixedSkipped.stderr,
     /workbook\.canonical-roundtrip.*mixed terminal outcomes.*passed.*webkit.*skipped.*case-3.*mobile-safari/,
   );
+});
+
+test('@parity:manifest.cli-artifact-errors include malformed and unreadable artifact paths', () => {
+  const malformed = runCli('[{"lane":');
+  assert.equal(malformed.status, 1);
+  assert.match(
+    malformed.stderr,
+    /execution artifact ".*evidence\.json" has invalid JSON:/,
+  );
+
+  const directory = mkdtempSync(join(tmpdir(), 'parity-manifest-missing-'));
+  const missingPath = join(directory, 'missing-evidence.json');
+  rmSync(directory, { recursive: true, force: true });
+  const missing = runCliPaths([missingPath]);
+  assert.equal(missing.status, 1);
+  assert.match(
+    missing.stderr,
+    /could not read execution artifact ".*missing-evidence\.json":/,
+  );
+
+  const unreadableDirectory = mkdtempSync(join(tmpdir(), 'parity-manifest-directory-'));
+  try {
+    const unreadable = runCliPaths([unreadableDirectory]);
+    assert.equal(unreadable.status, 1);
+    assert.match(
+      unreadable.stderr,
+      /could not read execution artifact ".*parity-manifest-directory-.*":/,
+    );
+  } finally {
+    rmSync(unreadableDirectory, { recursive: true, force: true });
+  }
 });
