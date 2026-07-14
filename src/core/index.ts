@@ -70,3 +70,7 @@ export type {
 } from './types/options';
 export type { TegoSheetError, TegoSheetErrorCode } from './errors/tego-sheet-error';
 export { TegoSheetException } from './errors/tego-sheet-exception';
+export { canonicalKey, canonicalizeWorkbook } from './serialization/canonicalize-workbook';
+export { parseWorkbook } from './serialization/parse-workbook';
+export { semanticEqual } from './serialization/semantic-equal';
+export { serializeWorkbook } from './serialization/serialize-workbook';
