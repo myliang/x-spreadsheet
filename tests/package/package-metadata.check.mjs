@@ -121,11 +121,39 @@ test('Vite development page describes the foundation without legacy runtime mark
   assert.match(html, /foundation|active rewrite|not release-ready/i);
 });
 
-test('lockfile uses the canonical npm registry', () => {
-  const lockfile = readFileSync(new URL('package-lock.json', packageRoot), 'utf8');
+test('lockfile cryptographically pins every registry package', () => {
+  const lockfile = JSON.parse(readFileSync(new URL('package-lock.json', packageRoot), 'utf8'));
+  assert.equal(lockfile.lockfileVersion, 3);
 
-  assert.doesNotMatch(lockfile, /registry\.npmmirror\.com/i);
-  assert.match(lockfile, /https:\/\/registry\.npmjs\.org\//);
+  const registryEntries = Object.entries(lockfile.packages).filter(([path, entry]) => {
+    if (!path.startsWith('node_modules/') || entry.link || entry.inBundle) {
+      return false;
+    }
+
+    return !String(entry.resolved ?? '').startsWith('file:');
+  });
+  const integrityPattern =
+    /^sha(?:1|256|384|512)-[A-Za-z0-9+/]+={0,2}(?:\s+sha(?:1|256|384|512)-[A-Za-z0-9+/]+={0,2})*$/;
+  const gaps = registryEntries.flatMap(([path, entry]) => {
+    const missing = [];
+
+    if (typeof entry.version !== 'string' || entry.version.length === 0) {
+      missing.push('version');
+    }
+    if (
+      typeof entry.resolved !== 'string'
+      || !entry.resolved.startsWith('https://registry.npmjs.org/')
+    ) {
+      missing.push('canonical resolved URL');
+    }
+    if (typeof entry.integrity !== 'string' || !integrityPattern.test(entry.integrity)) {
+      missing.push('npm integrity');
+    }
+
+    return missing.length === 0 ? [] : [`${path}: ${missing.join(', ')}`];
+  });
+
+  assert.deepEqual(gaps, [], `Incomplete registry lock metadata:\n${gaps.join('\n')}`);
 });
 
 test('package dry run includes public files only', () => {
