@@ -254,7 +254,7 @@ export function verifyManifest(
   let evidenceRecordCount = 0;
   let passedEvidenceRecordCount = 0;
   const passedIds = new Set<string>();
-  const observedStatuses = new Map<string, Set<EvidenceStatus>>();
+  const observedRecords = new Map<string, ValidatedEvidenceRecord[]>();
 
   if (evidence !== undefined) {
     const evidenceRecords = validateEvidenceRecords(evidence);
@@ -271,9 +271,9 @@ export function verifyManifest(
         );
       }
 
-      const statuses = observedStatuses.get(record.id) ?? new Set<EvidenceStatus>();
-      statuses.add(record.status);
-      observedStatuses.set(record.id, statuses);
+      const recordsForAssertion = observedRecords.get(record.id) ?? [];
+      recordsForAssertion.push(record);
+      observedRecords.set(record.id, recordsForAssertion);
       if (record.status === 'passed') {
         passedEvidenceRecordCount += 1;
         passedIds.add(record.id);
@@ -281,18 +281,29 @@ export function verifyManifest(
     }
 
     for (const [assertionId, declaration] of assertions) {
-      if (passedIds.has(assertionId)) {
-        continue;
-      }
-      const statuses = observedStatuses.get(assertionId);
-      if (statuses === undefined) {
+      const recordsForAssertion = observedRecords.get(assertionId);
+      if (recordsForAssertion === undefined) {
         throw new Error(
           `assertion "${assertionId}" declared by row "${declaration.rowId}" was not executed`,
         );
       }
-      throw new Error(
-        `assertion "${assertionId}" declared by row "${declaration.rowId}" has no passed evidence (statuses: ${[...statuses].join(', ')})`,
-      );
+
+      const recordSummary = recordsForAssertion
+        .map(
+          (record) =>
+            `status=${record.status} source="${record.source}" project="${record.project ?? '<none>'}"`,
+        )
+        .join('; ');
+      if (!passedIds.has(assertionId)) {
+        throw new Error(
+          `assertion "${assertionId}" declared by row "${declaration.rowId}" has no passed evidence; observed records: ${recordSummary}`,
+        );
+      }
+      if (recordsForAssertion.some(({ status }) => status !== 'passed')) {
+        throw new Error(
+          `assertion "${assertionId}" declared by row "${declaration.rowId}" has mixed terminal outcomes; every retained record must pass; observed records: ${recordSummary}`,
+        );
+      }
     }
   }
 

@@ -168,6 +168,40 @@ test('@parity:manifest.repeated-evidence accepts repeated passed runs and dedupl
   assert.equal(summary.passedEvidenceRecordCount, evidence.length);
 });
 
+test('@parity:manifest.mixed-failed rejects a failed record alongside a passed repeat', () => {
+  const rows = validRows();
+  const evidence = evidenceFor(rows);
+  evidence[0] = { ...evidence[0], project: 'chromium' };
+  evidence.push({
+    ...evidence[0],
+    status: 'failed',
+    source: 'tests/unit/workbook.table-case-2.test.ts',
+    project: 'firefox',
+  });
+
+  assert.throws(
+    () => verifyManifest(rows, evidence),
+    /workbook\.unit.*mixed terminal outcomes.*passed.*chromium.*failed.*table-case-2.*firefox/,
+  );
+});
+
+test('@parity:manifest.mixed-skipped rejects a skipped record alongside a passed repeat', () => {
+  const rows = validRows();
+  const evidence = evidenceFor(rows);
+  evidence[0] = { ...evidence[0], project: 'webkit' };
+  evidence.push({
+    ...evidence[0],
+    status: 'skipped',
+    source: 'tests/unit/workbook.table-case-3.test.ts',
+    project: 'mobile-safari',
+  });
+
+  assert.throws(
+    () => verifyManifest(rows, evidence),
+    /workbook\.unit.*mixed terminal outcomes.*passed.*webkit.*skipped.*table-case-3.*mobile-safari/,
+  );
+});
+
 test('@parity:manifest.evidence-shape rejects malformed records, statuses, sources, and titles', () => {
   const rows = validRows();
   const base = evidenceFor(rows);
@@ -382,4 +416,34 @@ test('@parity:manifest.cli-structured rejects bare, missing, failed, and wrong-l
   const wrongLane = runCli(JSON.stringify(wrongLaneRecords));
   assert.equal(wrongLane.status, 1);
   assert.match(wrongLane.stderr, /workbook\.canonical-roundtrip.*declared in unit.*reported in browser/);
+
+  const mixedFailedRecords = structuredClone(complete);
+  mixedFailedRecords[0] = { ...mixedFailedRecords[0], project: 'chromium' };
+  mixedFailedRecords.push({
+    ...mixedFailedRecords[0],
+    status: 'failed',
+    source: 'tests/unit/workbook.case-2.test.ts',
+    project: 'firefox',
+  });
+  const mixedFailed = runCli(JSON.stringify(mixedFailedRecords));
+  assert.equal(mixedFailed.status, 1);
+  assert.match(
+    mixedFailed.stderr,
+    /workbook\.canonical-roundtrip.*mixed terminal outcomes.*passed.*chromium.*failed.*case-2.*firefox/,
+  );
+
+  const mixedSkippedRecords = structuredClone(complete);
+  mixedSkippedRecords[0] = { ...mixedSkippedRecords[0], project: 'webkit' };
+  mixedSkippedRecords.push({
+    ...mixedSkippedRecords[0],
+    status: 'skipped',
+    source: 'tests/unit/workbook.case-3.test.ts',
+    project: 'mobile-safari',
+  });
+  const mixedSkipped = runCli(JSON.stringify(mixedSkippedRecords));
+  assert.equal(mixedSkipped.status, 1);
+  assert.match(
+    mixedSkipped.stderr,
+    /workbook\.canonical-roundtrip.*mixed terminal outcomes.*passed.*webkit.*skipped.*case-3.*mobile-safari/,
+  );
 });
