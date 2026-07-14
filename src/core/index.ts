@@ -177,3 +177,43 @@ export {
 } from './selectors/workbook';
 export { selectCell, selectCellText } from './selectors/cell';
 export { selectCellStyle } from './selectors/style';
+export type {
+  AddSheetCommand,
+  ClearFormatCommand,
+  CommandResult,
+  DeleteSheetCommand,
+  HideColumnCommand,
+  HideRowCommand,
+  HistoryCommand,
+  IndexedSheetCommand,
+  MergeCommand,
+  PaintFormatCommand,
+  RedoCommand,
+  RenameSheetCommand,
+  ResizeColumnCommand,
+  ResizeRowCommand,
+  SetCellTextCommand,
+  SetFreezeCommand,
+  SetStyleCommand,
+  UndoCommand,
+  WorkbookCommand,
+} from './commands/workbook-command';
+export type { CommandCommit, CommandOutcome } from './commands/command-result';
+export { validateCommand } from './commands/validate-command';
+export { applyCommand } from './commands/apply-command';
+export type { AppliedCommand } from './commands/apply-command';
+export { History } from './controller/history';
+export type { HistoryCheckpoint, HistoryEntry } from './controller/history';
+export type { ControllerCheckpoint, HistoryMetadata } from './controller/controller-checkpoint';
+export { SubscriptionStore } from './controller/subscription-store';
+export type { SubscriptionListener } from './controller/subscription-store';
+export { WorkbookController } from './controller/workbook-controller';
+export type {
+  ControllerEvent,
+  ControllerSheetSnapshot,
+  ControllerSnapshot,
+  ControllerSubscriber,
+  DispatchOptions,
+  WorkbookControllerOptions,
+  WorkbookHistoryEntry,
+} from './controller/workbook-controller';

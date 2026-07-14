@@ -1,0 +1,213 @@
+import { describe, expect, it, vi } from 'vitest';
+import {
+  WorkbookController,
+  type ControllerEvent,
+} from '../../../src/core/controller/workbook-controller';
+import { TegoSheetException } from '../../../src/core/errors/tego-sheet-exception';
+import type { CellAddress } from '../../../src/core/types/coordinates';
+
+function firstAddress(controller: WorkbookController, row = 0, column = 0): CellAddress {
+  const sheet = controller.getSheetIds()[0];
+  if (sheet === undefined) throw new Error('test workbook requires a sheet');
+  return { sheet, row, column };
+}
+
+describe('WorkbookController command boundary', () => {
+  it('does not publish or checkpoint a semantic no-op', () => {
+    const controller = new WorkbookController({ rows: { 0: { cells: { 0: { text: '' } } } } });
+    const address = firstAddress(controller);
+    const events: ControllerEvent[] = [];
+    controller.subscribe(event => events.push(event));
+
+    expect(controller.dispatch({ type: 'set-cell-text', address, text: '' }, 'ref'))
+      .toEqual({ status: 'noop' });
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(events).toHaveLength(0);
+  });
+
+  it('validates, commits, checkpoints, and publishes synchronously once', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller, 2, 3);
+    const seen: string[] = [];
+    controller.subscribe(event => {
+      const value = event.snapshot.value as unknown as Array<{
+        rows?: Record<string, { cells?: Record<string, { text?: string }> }>;
+      }>;
+      seen.push(`${event.commit.change.kind}:${value[0]?.rows?.['2']?.cells?.['3']?.text}`);
+    });
+
+    const outcome = controller.dispatch({ type: 'set-cell-text', address, text: 'next' }, 'ref');
+
+    expect(outcome.status).toBe('committed');
+    if (outcome.status === 'committed') {
+      expect(outcome.commit.change).toMatchObject({
+        kind: 'cell',
+        source: 'ref',
+        sheet: address.sheet,
+        range: { start: { row: 2, column: 3 }, end: { row: 2, column: 3 } },
+      });
+      expect(outcome.commit.change.id).toMatch(/^change-\d+-1$/);
+    }
+    expect(seen).toEqual(['cell:next']);
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+    expect(controller.getCellText(address)).toBe('next');
+  });
+
+  it('undoes and redoes with history changes and invalidates redo after a new commit', () => {
+    const controller = new WorkbookController({ rows: { 0: { cells: { 0: { text: 'A' } } } } });
+    const address = firstAddress(controller);
+    const kinds: string[] = [];
+    controller.subscribe(event => kinds.push(event.commit.change.kind));
+
+    controller.dispatch({ type: 'set-cell-text', address, text: 'B' }, 'keyboard');
+    expect(controller.undo('keyboard').status).toBe('committed');
+    expect(controller.getCellText(address)).toBe('A');
+    expect(controller.historySize).toEqual({ undo: 0, redo: 1 });
+
+    expect(controller.redo('keyboard').status).toBe('committed');
+    expect(controller.getCellText(address)).toBe('B');
+    expect(controller.undo('keyboard').status).toBe('committed');
+    controller.dispatch({ type: 'set-cell-text', address, text: 'C' }, 'keyboard');
+
+    expect(controller.redo('keyboard')).toEqual({ status: 'noop' });
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+    expect(kinds).toEqual(['cell', 'history', 'history', 'history', 'cell']);
+  });
+
+  it('rejects all document and history mutation while read-only before changing state', () => {
+    const controller = new WorkbookController({ name: 'A' }, { readOnly: true });
+    const address = firstAddress(controller);
+    const before = controller.getValue();
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    expect(() => controller.dispatch({ type: 'set-cell-text', address, text: 'blocked' }, 'ref'))
+      .toThrowError(TegoSheetException);
+    expect(() => controller.undo('ref')).toThrowError(
+      expect.objectContaining({ code: 'INVALID_COMMAND' }),
+    );
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
+  });
+
+  it('returns isolated query values and snapshots', () => {
+    const controller = new WorkbookController({
+      name: 'A',
+      vendor: { nested: true },
+      rows: { 0: { cells: { 0: { text: 'safe' } } } },
+    });
+    const value = controller.getValue() as unknown as Array<Record<string, unknown>>;
+    const snapshot = controller.getSnapshot() as unknown as {
+      value: Array<Record<string, unknown>>;
+    };
+
+    value[0]!.name = 'mutated';
+    expect(() => { snapshot.value[0]!.name = 'also-mutated'; }).toThrow();
+
+    expect(controller.getValue()[0]?.name).toBe('A');
+    expect(controller.getCellText(firstAddress(controller))).toBe('safe');
+  });
+
+  it('restores a controller checkpoint silently and replaces with fresh runtime IDs', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const originalId = controller.getSheetIds()[0]!;
+    const address: CellAddress = { sheet: originalId, row: 0, column: 0 };
+    const checkpoint = controller.checkpoint();
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    controller.dispatch({ type: 'set-cell-text', address, text: 'pending' }, 'ref', { notify: false });
+    expect(controller.getCellText(address)).toBe('pending');
+    expect(subscriber).not.toHaveBeenCalled();
+
+    controller.restore(checkpoint);
+    expect(controller.getCellText(address)).toBe('');
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
+
+    controller.dispatch({ type: 'set-cell-text', address, text: 'discarded' }, 'ref', { notify: false });
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+    controller.replace([{ name: 'A' }]);
+    expect(controller.getSheetIds()[0]).not.toBe(originalId);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
+  });
+
+  it('keeps subscription traversal safe across unsubscribe and reentrant dispatch', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller);
+    const calls: string[] = [];
+    let nested = false;
+    let unsubscribeSecond = (): void => undefined;
+
+    controller.subscribe(() => {
+      calls.push('first');
+      unsubscribeSecond();
+      if (!nested) {
+        nested = true;
+        controller.dispatch({ type: 'set-cell-text', address, text: 'nested' }, 'ref');
+      }
+    });
+    unsubscribeSecond = controller.subscribe(() => calls.push('second'));
+
+    controller.dispatch({ type: 'set-cell-text', address, text: 'outer' }, 'ref');
+
+    expect(calls).toEqual(['first', 'first']);
+    expect(controller.getCellText(address)).toBe('nested');
+    expect(controller.historySize).toEqual({ undo: 2, redo: 0 });
+  });
+
+  it('propagates subscriber exceptions after the committed state without converting them', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller);
+    const callbackError = new Error('consumer callback failed');
+    controller.subscribe(() => { throw callbackError; });
+
+    expect(() => controller.dispatch({ type: 'set-cell-text', address, text: 'committed' }, 'ref'))
+      .toThrow(callbackError);
+    expect(controller.getCellText(address)).toBe('committed');
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+  });
+
+  it('rejects scaffolded but unimplemented Task 9 commands without fake commits', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const sheet = controller.getSheetIds()[0]!;
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    expect(() => controller.dispatch({ type: 'rename-sheet', sheet, name: 'B' }, 'ref'))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.getValue()[0]?.name).toBe('A');
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
+  });
+
+  it('keeps the last valid state and runtime IDs when replacement parsing fails', () => {
+    const controller = new WorkbookController({ name: 'valid' });
+    const id = controller.getSheetIds()[0]!;
+
+    expect(() => controller.replace({ rows: { len: -1 } } as never))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_DATA' }));
+
+    expect(controller.getValue()[0]?.name).toBe('valid');
+    expect(controller.getSheetIds()).toEqual([id]);
+  });
+
+  it('disposes idempotently and forbids later subscriptions or dispatch', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller);
+    const subscriber = vi.fn();
+    const unsubscribe = controller.subscribe(subscriber);
+
+    controller.dispose();
+    controller.dispose();
+    expect(unsubscribe).not.toThrow();
+
+    expect(() => controller.subscribe(subscriber))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => controller.dispatch({ type: 'set-cell-text', address, text: 'late' }, 'ref'))
+      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(subscriber).not.toHaveBeenCalled();
+  });
+});

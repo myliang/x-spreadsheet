@@ -168,6 +168,14 @@ test('package dry run includes public files only', () => {
 
   assert.deepEqual(paths, [
     'LICENSE',
+    'dist/core/commands/apply-command.d.ts',
+    'dist/core/commands/command-result.d.ts',
+    'dist/core/commands/validate-command.d.ts',
+    'dist/core/commands/workbook-command.d.ts',
+    'dist/core/controller/controller-checkpoint.d.ts',
+    'dist/core/controller/history.d.ts',
+    'dist/core/controller/subscription-store.d.ts',
+    'dist/core/controller/workbook-controller.d.ts',
     'dist/core/coordinates/a1.d.ts',
     'dist/core/coordinates/ranges.d.ts',
     'dist/core/errors/tego-sheet-error.d.ts',
