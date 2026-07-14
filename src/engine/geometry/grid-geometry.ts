@@ -149,22 +149,47 @@ export function clipToDataViewport(
   return intersectRect(rect, dataViewportRect(viewport));
 }
 
+function visibleAxisBounds(
+  axis: Axis,
+  localEnd: number,
+  viewport: ViewportMetrics,
+): readonly [start: number, end: number] | null {
+  const count = axis === 'row' ? viewport.model.rowCount : viewport.model.columnCount;
+  const totalExtent = axisOffset(count, axis, viewport.model);
+  const frozen = axis === 'row' ? viewport.freeze.row : viewport.freeze.column;
+  const frozenExtent = axisOffset(frozen, axis, viewport.model);
+  const scroll = axis === 'row' ? viewport.scroll.y : viewport.scroll.x;
+  const boundedScroll = Math.min(scroll, totalExtent);
+  const startCoordinate = frozenExtent > 0 ? 0 : boundedScroll;
+  const endCoordinate = frozenExtent > 0 && localEnd <= frozenExtent
+    ? localEnd
+    : boundedScroll + Math.min(localEnd, totalExtent - boundedScroll);
+  const start = findAxisIndex(startCoordinate, axis, viewport.model);
+  const end = findAxisIndex(endCoordinate, axis, viewport.model);
+  return start === null || end === null ? null : [start, end];
+}
+
 export function visibleCellRange(viewport: ViewportMetrics): CellRange | null {
   if (viewport.model.rowCount === 0 || viewport.model.columnCount === 0) return null;
   if (viewport.model.rowOffset(viewport.model.rowCount) === 0
     || viewport.model.columnOffset(viewport.model.columnCount) === 0) return null;
-  const { left, top, width, height } = dataViewportRect(viewport);
+  const { width, height } = dataViewportRect(viewport);
   if (width === 0 || height === 0) return null;
-  const topLeft = findCellAtViewportPoint(
-    { x: adjacentFloat(left, 1), y: adjacentFloat(top, 1) },
+  const rows = visibleAxisBounds(
+    'row',
+    adjacentFloat(viewport.height, -1) - viewport.columnHeaderHeight,
     viewport,
   );
-  const bottomRight = findCellAtViewportPoint(
-    { x: adjacentFloat(viewport.width, -1), y: adjacentFloat(viewport.height, -1) },
+  const columns = visibleAxisBounds(
+    'column',
+    adjacentFloat(viewport.width, -1) - viewport.rowHeaderWidth,
     viewport,
   );
-  if (topLeft === null || bottomRight === null) return null;
-  return normalizeCellRange({ start: topLeft, end: bottomRight });
+  if (rows === null || columns === null) return null;
+  return normalizeCellRange({
+    start: { row: rows[0], column: columns[0] },
+    end: { row: rows[1], column: columns[1] },
+  });
 }
 
 function findAxisIndex(coordinate: number, axis: Axis, model: GridModelPort): number | null {

@@ -185,8 +185,52 @@ describe('DOM-free grid geometry', () => {
       ...size,
       scroll: { x: 5e-8, y: 5e-8 },
     }))).toEqual({
-      start: { row: 500, column: 500 },
+      // 5e-8 is one IEEE-754 step below offset(500), so modelAt(scroll) is 499.
+      start: { row: 499, column: 499 },
       end: { row: 10_499, column: 10_499 },
+    });
+  });
+
+  it('finds A1 when one minimum-value cell exactly fills the data viewport', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 1 }, cols: { len: 1 } },
+      {
+        defaultRowHeight: Number.MIN_VALUE,
+        defaultColumnWidth: Number.MIN_VALUE,
+      },
+    );
+    const metrics = createViewportMetrics(model, {
+      width: Number.MIN_VALUE,
+      height: Number.MIN_VALUE,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+    });
+
+    expect(visibleCellRange(metrics)).toEqual({
+      start: { row: 0, column: 0 },
+      end: { row: 0, column: 0 },
+    });
+  });
+
+  it('honors scrolling in a one-ULP viewport without falling back to A1', () => {
+    const model = createSheetGridModel(
+      { rows: { len: 4 }, cols: { len: 4 } },
+      {
+        defaultRowHeight: Number.MIN_VALUE,
+        defaultColumnWidth: Number.MIN_VALUE,
+      },
+    );
+    const metrics = createViewportMetrics(model, {
+      width: Number.MIN_VALUE,
+      height: Number.MIN_VALUE,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+      scroll: { x: Number.MIN_VALUE, y: Number.MIN_VALUE },
+    });
+
+    expect(visibleCellRange(metrics)).toEqual({
+      start: { row: 1, column: 1 },
+      end: { row: 1, column: 1 },
     });
   });
 
