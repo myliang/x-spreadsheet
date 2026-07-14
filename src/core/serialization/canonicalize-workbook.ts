@@ -12,6 +12,9 @@ interface KnownField {
 
 class DataValidationError extends Error {}
 
+// Keep recursive validation and canonical cloning below engine stack limits.
+const MAX_JSON_NESTING_DEPTH = 128;
+
 const own = (value: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(value, key);
 
@@ -54,12 +57,55 @@ function arrayAt(value: unknown, path: string): readonly unknown[] {
       fail(`${path}[${index}]`, 'must be an enumerable data property');
     }
   }
-  for (const key of Object.keys(value)) {
+  for (const key of Object.getOwnPropertyNames(value)) {
+    if (key === 'length') continue;
     if (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) {
       fail(`${path}.${key}`, 'must not be a named array property');
     }
   }
   return value;
+}
+
+function validateJsonGraph(
+  value: unknown,
+  path: string,
+  active: WeakSet<object>,
+  depth: number,
+): void {
+  if (
+    value === null
+    || typeof value === 'string'
+    || typeof value === 'boolean'
+  ) {
+    return;
+  }
+  if (typeof value === 'number') {
+    finiteNumberAt(value, path);
+    return;
+  }
+  if (typeof value !== 'object') fail(path, 'must be JSON-compatible');
+  if (depth > MAX_JSON_NESTING_DEPTH) {
+    fail(path, `exceeds maximum nesting depth of ${MAX_JSON_NESTING_DEPTH}`);
+  }
+  if (active.has(value)) fail(path, 'contains a circular reference');
+
+  active.add(value);
+  try {
+    if (Array.isArray(value)) {
+      const array = arrayAt(value, path);
+      array.forEach((item, index) => {
+        validateJsonGraph(item, `${path}[${index}]`, active, depth + 1);
+      });
+      return;
+    }
+
+    const object = objectAt(value, path);
+    for (const key of Object.keys(object).sort()) {
+      validateJsonGraph(object[key], `${path}.${key}`, active, depth + 1);
+    }
+  } finally {
+    active.delete(value);
+  }
 }
 
 function stringAt(value: unknown, path: string): string {
@@ -244,13 +290,9 @@ function column(value: unknown, path: string): JsonValue {
   ]);
 }
 
-function canonicalSparseKey(key: string, path: string): string | null {
+function canonicalSparseKey(key: string): string | null {
   if (!/^\d+$/.test(key)) return null;
-  const index = BigInt(key);
-  if (index > BigInt(Number.MAX_SAFE_INTEGER)) {
-    fail(`${path}.${key}`, 'must be within the safe integer range');
-  }
-  return index.toString(10);
+  return BigInt(key).toString(10);
 }
 
 function sparseCollection(
@@ -274,7 +316,7 @@ function sparseCollection(
   const seen = new Set<string>();
   for (const key of Object.keys(source)) {
     if (knownNames.has(key)) continue;
-    const canonicalKey = canonicalSparseKey(key, path);
+    const canonicalKey = canonicalSparseKey(key);
     if (canonicalKey === null) {
       extensionKeys.push(key);
       continue;
@@ -405,12 +447,17 @@ function invalidData(cause: unknown): TegoSheetException {
 
 export function canonicalizeWorkbook(input: WorkbookInput): WorkbookData {
   try {
+    validateJsonGraph(
+      input,
+      Array.isArray(input) ? 'workbook' : 'workbook[0]',
+      new WeakSet(),
+      1,
+    );
     const sheets: readonly unknown[] = Array.isArray(input)
       ? arrayAt(input, 'workbook')
       : [input];
     return sheets.map((item, index) => sheet(item, index));
   } catch (cause) {
-    if (cause instanceof TegoSheetException) throw cause;
     throw invalidData(cause);
   }
 }

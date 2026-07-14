@@ -194,6 +194,149 @@ describe('workbook parsing and serialization', () => {
     ).toThrowError(TegoSheetException);
   });
 
+  it('normalizes arbitrary-size sparse decimal keys without Number coercion', () => {
+    const rowKey = '900719925474099312345678901234567890';
+    const laterRowKey = '900719925474099312345678901234567891';
+    const columnKey = '800719925474099312345678901234567891';
+    const cellKey = '700719925474099312345678901234567892';
+
+    const parsed = parseWorkbook({
+      rows: {
+        [laterRowKey]: {},
+        [`000${rowKey}`]: {
+          cells: { [`000${cellKey}`]: { text: 'huge' } },
+        },
+      },
+      cols: { [`000${columnKey}`]: { width: 80 } },
+    });
+
+    expect(Object.keys(parsed[0]?.rows ?? {}).filter(key => /^\d+$/.test(key))).toEqual([
+      rowKey,
+      laterRowKey,
+    ]);
+    expect(Object.keys(parsed[0]?.cols ?? {})).toContain(columnKey);
+    const row = parsed[0]?.rows?.[rowKey] as { readonly cells: Record<string, unknown> };
+    expect(Object.keys(row.cells)).toContain(cellKey);
+  });
+
+  it.each([
+    {
+      rows: {
+        '900719925474099312345678901234567890': {},
+        '0900719925474099312345678901234567890': {},
+      },
+    },
+    {
+      cols: {
+        '800719925474099312345678901234567891': {},
+        '0800719925474099312345678901234567891': {},
+      },
+    },
+    {
+      rows: {
+        0: {
+          cells: {
+            '700719925474099312345678901234567892': {},
+            '0700719925474099312345678901234567892': {},
+          },
+        },
+      },
+    },
+  ])('rejects arbitrary-size sparse-key collisions after normalization: %o', input => {
+    expect(() => parseWorkbook(input as never)).toThrowError(TegoSheetException);
+  });
+
+  it('rejects direct and indirect JSON cycles with a deterministic path-bearing cause', () => {
+    const direct: Record<string, unknown> = {};
+    direct.self = direct;
+    const indirectObject: Record<string, unknown> = {};
+    const indirectArray: unknown[] = [indirectObject];
+    indirectObject.back = indirectArray;
+
+    for (const input of [{ vendor: direct }, { vendor: indirectArray }]) {
+      try {
+        parseWorkbook(input as never);
+        expect.fail('cyclic input should fail');
+      } catch (error) {
+        expect(error).toBeInstanceOf(TegoSheetException);
+        const exception = error as TegoSheetException;
+        expect(exception.code).toBe('INVALID_DATA');
+        expect(exception.cause).toBeInstanceOf(Error);
+        expect((exception.cause as Error).message).toMatch(
+          /^workbook\[0\]\.vendor(?:\.|\[).*contains a circular reference$/,
+        );
+      }
+    }
+  });
+
+  it('clones repeated non-cyclic shared extension references independently', () => {
+    const shared = { nested: [false, 0, ''] };
+    const parsed = parseWorkbook({ vendorA: shared, vendorB: shared });
+    const sheet = parsed[0] as Record<string, unknown>;
+
+    expect(sheet.vendorA).toEqual(shared);
+    expect(sheet.vendorB).toEqual(shared);
+    expect(sheet.vendorA).not.toBe(sheet.vendorB);
+  });
+
+  it('accepts ordinary nesting and rejects excessive nesting before stack overflow', () => {
+    function nested(depth: number): Record<string, unknown> {
+      const root: Record<string, unknown> = {};
+      let cursor = root;
+      for (let index = 0; index < depth; index += 1) {
+        const next: Record<string, unknown> = {};
+        cursor.next = next;
+        cursor = next;
+      }
+      return root;
+    }
+
+    expect(() => parseWorkbook({ vendor: nested(100) } as never)).not.toThrow();
+    try {
+      parseWorkbook({ vendor: nested(140) } as never);
+      expect.fail('excessive nesting should fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(TegoSheetException);
+      expect(((error as TegoSheetException).cause as Error).message).toMatch(
+        /^workbook\[0\]\.vendor\.next.*exceeds maximum nesting depth of 128$/,
+      );
+    }
+  });
+
+  it('wraps caller-thrown TegoSheetException instances as INVALID_DATA', () => {
+    const callerError = new TegoSheetException({
+      code: 'INVALID_COMMAND',
+      message: 'caller trap',
+      recoverable: true,
+    });
+    const input = new Proxy(
+      {},
+      {
+        getPrototypeOf() {
+          throw callerError;
+        },
+      },
+    );
+
+    try {
+      parseWorkbook(input);
+      expect.fail('proxy trap should fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(TegoSheetException);
+      expect(error).not.toBe(callerError);
+      expect(error).toMatchObject({ code: 'INVALID_DATA', cause: callerError });
+    }
+  });
+
+  it('rejects non-enumerable named array properties', () => {
+    const extension: unknown[] = [];
+    Object.defineProperty(extension, 'hidden', { value: true, enumerable: false });
+
+    expect(() => parseWorkbook({ vendor: extension } as never)).toThrowError(
+      TegoSheetException,
+    );
+  });
+
   it('canonicalizes deterministically and compares semantic content independent of object order', () => {
     const left = {
       vendor: { b: 2, a: 1 },
