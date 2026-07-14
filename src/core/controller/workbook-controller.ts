@@ -85,8 +85,8 @@ export class WorkbookController {
   private state: WorkbookState;
   private readonly history = new History<WorkbookState, HistoryMetadata>();
   private readonly subscriptions = new SubscriptionStore<ControllerEvent>();
-  private readonly checkpointOwner = Object.freeze({});
-  private readonly checkpoints = new WeakSet<ControllerCheckpoint>();
+  private checkpointOwner: object = Object.freeze({});
+  private checkpoints = new WeakSet<ControllerCheckpoint>();
   private readonly controllerId: number;
   private revision = 0;
   private changeSequence = 0;
@@ -158,25 +158,25 @@ export class WorkbookController {
     options: DispatchOptions = {},
   ): CommandOutcome<CommandResult<Command>, Command> {
     this.ensureMutable();
-    validateCommand(this.state, command);
-    if (command.type === 'undo') {
-      return this.applyHistory('undo', command, source, options) as CommandOutcome<
+    const commandSnapshot = this.isolateCommand(command);
+    validateCommand(this.state, commandSnapshot);
+    if (commandSnapshot.type === 'undo') {
+      return this.applyHistory('undo', commandSnapshot, source, options) as CommandOutcome<
         CommandResult<Command>,
         Command
       >;
     }
-    if (command.type === 'redo') {
-      return this.applyHistory('redo', command, source, options) as CommandOutcome<
+    if (commandSnapshot.type === 'redo') {
+      return this.applyHistory('redo', commandSnapshot, source, options) as CommandOutcome<
         CommandResult<Command>,
         Command
       >;
     }
 
-    const applied = applyCommand(this.state, command);
+    const applied = applyCommand(this.state, commandSnapshot);
     if (applied === null) return { status: 'noop' };
 
     const before = this.state;
-    const commandCopy = isolated(command);
     const change = this.createChange(
       applied.kind,
       source,
@@ -186,7 +186,7 @@ export class WorkbookController {
     this.state = applied.state;
     this.revision += 1;
     if (applied.undoable) {
-      const metadata = isolated<HistoryMetadata>({ command: commandCopy, change });
+      const metadata = Object.freeze<HistoryMetadata>({ command: commandSnapshot, change });
       this.history.record({
         before,
         after: applied.state,
@@ -195,7 +195,7 @@ export class WorkbookController {
     }
 
     const commit = this.createCommit(
-      commandCopy,
+      commandSnapshot,
       change,
       applied.result as CommandResult<Command>,
     );
@@ -250,6 +250,8 @@ export class WorkbookController {
     this.state = replacement;
     this.history.clear();
     this.revision += 1;
+    this.checkpointOwner = Object.freeze({});
+    this.checkpoints = new WeakSet<ControllerCheckpoint>();
   }
 
   setReadOnly(readOnly: boolean): void {
@@ -274,14 +276,13 @@ export class WorkbookController {
     if (entry === null) return { status: 'noop' };
     this.state = direction === 'undo' ? entry.before : entry.after;
     this.revision += 1;
-    const commandCopy = isolated(command);
     const change = this.createChange(
       'history',
       source,
       entry.metadata.change.sheet,
       entry.metadata.change.range,
     );
-    const commit = this.createCommit(commandCopy, change, undefined);
+    const commit = this.createCommit(command, change, undefined);
     this.publish(commit, options);
     return { status: 'committed', commit };
   }
@@ -307,7 +308,24 @@ export class WorkbookController {
     change: WorkbookChange,
     result: Result,
   ): CommandCommit<Result, Command> {
-    return isolated({ command, change, result, value: this.getValue() });
+    return Object.freeze({
+      command,
+      change,
+      result: isolated(result),
+      value: isolated(this.getValue()),
+    });
+  }
+
+  private isolateCommand<Command extends WorkbookCommand>(command: Command): Command {
+    try {
+      const snapshot = isolated(command);
+      if (snapshot === null || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+        throw new TypeError('Command must be an object');
+      }
+      return snapshot;
+    } catch (cause) {
+      throw invalidCommand('Command could not be isolated', cause);
+    }
   }
 
   private publish<Result, Command extends WorkbookCommand>(
