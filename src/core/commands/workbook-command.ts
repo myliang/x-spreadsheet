@@ -1,6 +1,9 @@
 import type { CellAddress, Selection, SheetId } from '../types/coordinates';
 import type { BorderMode } from '../types/options';
 import type { BorderLine, CellStyle } from '../types/workbook';
+import type { FilterDefinition } from '../types/options';
+import type { ValidationRule } from '../types/validation';
+import type { PasteMode } from '../operations/clipboard';
 
 export interface SetCellTextCommand {
   readonly type: 'set-cell-text';
@@ -95,6 +98,56 @@ export interface RenameSheetCommand {
   readonly name: string;
 }
 
+export interface PasteInternalCommand {
+  readonly type: 'paste-internal';
+  readonly source: Selection;
+  readonly target: Selection;
+  readonly mode: PasteMode;
+  readonly cut: boolean;
+}
+
+export interface PasteExternalCommand {
+  readonly type: 'paste-external';
+  readonly target: Selection;
+  readonly values: readonly (readonly string[])[];
+}
+
+export interface AutofillCommand {
+  readonly type: 'autofill';
+  readonly source: Selection;
+  readonly target: Selection;
+  readonly mode: PasteMode;
+}
+
+export interface SetFilterCommand {
+  readonly type: 'set-filter';
+  readonly selection: Selection;
+  readonly filter: FilterDefinition;
+}
+
+export interface ClearFilterCommand {
+  readonly type: 'clear-filter';
+  readonly sheet: SheetId;
+}
+
+export interface SortCommand {
+  readonly type: 'sort';
+  readonly sheet: SheetId;
+  readonly column: number;
+  readonly order: 'asc' | 'desc';
+}
+
+export interface SetValidationCommand {
+  readonly type: 'set-validation';
+  readonly selection: Selection;
+  readonly rule: ValidationRule;
+}
+
+export interface RemoveValidationCommand {
+  readonly type: 'remove-validation';
+  readonly selection: Selection;
+}
+
 export interface UndoCommand {
   readonly type: 'undo';
 }
@@ -126,6 +179,14 @@ export type WorkbookCommand =
   | AddSheetCommand
   | DeleteSheetCommand
   | RenameSheetCommand
+  | PasteInternalCommand
+  | PasteExternalCommand
+  | AutofillCommand
+  | SetFilterCommand
+  | ClearFilterCommand
+  | SortCommand
+  | SetValidationCommand
+  | RemoveValidationCommand
   | UndoCommand
   | RedoCommand;
 

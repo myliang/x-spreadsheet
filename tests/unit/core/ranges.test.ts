@@ -1,6 +1,7 @@
 import mergeFixture from '../../parity/fixtures/operations/merge.json';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkbookController } from '../../../src/core/controller/workbook-controller';
+import { autofillText } from '../../../src/core/operations/autofill';
 import type { CellRange, Selection, SheetId } from '../../../src/core/types/coordinates';
 
 const selection = (sheet: SheetId, range: CellRange): Selection => ({
@@ -96,5 +97,45 @@ describe('merge range operations', () => {
       }),
     }, 'toolbar').status).toBe('committed');
     expect(anchorController.getValue()[0]!.merges).toEqual([]);
+  });
+});
+
+describe('autofill range operations', () => {
+  it('extends numeric suffixes and shifts relative formula references', () => {
+    expect(autofillText('Item1', 3, { row: 3, column: 0 })).toBe('Item4');
+    expect(autofillText('plain', 3, { row: 3, column: 0 })).toBe('plain');
+    expect(autofillText('=$A1+B$1', 2, { row: 2, column: 0 })).toBe('=$A3+B$1');
+  });
+
+  it('applies numeric, text, and formula fill through one atomic command', () => {
+    const controller = new WorkbookController({
+      rows: {
+        len: 6,
+        0: { cells: {
+          0: { text: 'Item1', vendor: true },
+          1: { text: '=A1+1' },
+          2: { text: 'plain', style: 0 },
+        } },
+      },
+      cols: { len: 4 },
+      styles: [{ font: { italic: true } }],
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    const source = selection(sheet, {
+      start: { row: 0, column: 0 }, end: { row: 0, column: 2 },
+    });
+    const target = selection(sheet, {
+      start: { row: 1, column: 0 }, end: { row: 3, column: 2 },
+    });
+
+    expect(controller.dispatch({ type: 'autofill', source, target, mode: 'all' }, 'pointer'))
+      .toMatchObject({ status: 'committed', commit: { change: { kind: 'autofill', range: target.range } } });
+    expect(controller.getValue()[0]).toMatchObject({
+      rows: {
+        1: { cells: { 0: { text: 'Item2' }, 1: { text: '=A2+1' }, 2: { text: 'plain', style: 0 } } },
+        2: { cells: { 0: { text: 'Item3' }, 1: { text: '=A3+1' }, 2: { text: 'plain', style: 0 } } },
+        3: { cells: { 0: { text: 'Item4' }, 1: { text: '=A4+1' }, 2: { text: 'plain', style: 0 } } },
+      },
+    });
   });
 });

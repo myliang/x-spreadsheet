@@ -178,8 +178,35 @@ export {
 } from './selectors/workbook';
 export { selectCell, selectCellText } from './selectors/cell';
 export { selectCellStyle } from './selectors/style';
+export { validateWorkbook } from './selectors/validation';
+export type { ValidationWorkbookSource } from './selectors/validation';
+export {
+  assertClipboardResourceLimit,
+  assertPasteMergeCompatibility,
+  clipboardMatrix,
+  externalPasteRange,
+  internalPasteRange,
+  parseClipboardMatrix,
+  pasteExternal,
+  pasteInternal,
+} from './operations/clipboard';
+export type { PasteMode, PasteTransform } from './operations/clipboard';
+export { autofillRange, autofillText } from './operations/autofill';
+export { clearFilter, filterItems, filteredRows, setFilter } from './operations/filter';
+export { setSort, sortRows, sortValues } from './operations/sort';
+export type { SortOrder } from './operations/sort';
+export {
+  assertValidationRule,
+  removeValidation,
+  setValidation,
+  validateValue,
+  validationDataToRule,
+} from './operations/validation';
+export type { ValueValidationResult } from './operations/validation';
 export type {
   AddSheetCommand,
+  AutofillCommand,
+  ClearFilterCommand,
   ClearFormatCommand,
   CommandResult,
   DeleteSheetCommand,
@@ -189,14 +216,20 @@ export type {
   IndexedSheetCommand,
   MergeCommand,
   PaintFormatCommand,
+  PasteExternalCommand,
+  PasteInternalCommand,
   RedoCommand,
   RenameSheetCommand,
   ResizeColumnCommand,
   ResizeRowCommand,
   SetCellTextCommand,
+  SetFilterCommand,
   SetBorderCommand,
   SetFreezeCommand,
   SetStyleCommand,
+  SetValidationCommand,
+  SortCommand,
+  RemoveValidationCommand,
   UndoCommand,
   WorkbookCommand,
 } from './commands/workbook-command';

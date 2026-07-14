@@ -8,6 +8,8 @@ import type { ChangeSource, WorkbookChange } from '../types/changes';
 import { assertCellAddress } from '../types/coordinates';
 import type { CellAddress, SheetId } from '../types/coordinates';
 import type { WorkbookData, WorkbookInput } from '../types/workbook';
+import type { ValidationResult } from '../types/validation';
+import { validateWorkbook } from '../selectors/validation';
 import {
   createControllerCheckpoint,
   hasCheckpointOwner,
@@ -145,6 +147,11 @@ export class WorkbookController {
       canRedo: this.history.canRedo,
       readOnly: this.readOnly,
     });
+  }
+
+  validate(): ValidationResult {
+    this.ensureActive();
+    return validateWorkbook(this);
   }
 
   subscribe(subscriber: ControllerSubscriber): () => void {

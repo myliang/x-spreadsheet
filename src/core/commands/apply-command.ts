@@ -10,6 +10,12 @@ import type { CellRange, SheetId } from '../types/coordinates';
 import type { WorkbookChangeKind } from '../types/changes';
 import { invalidCommand } from './validate-command';
 import type { WorkbookCommand } from './workbook-command';
+import { pasteExternal, pasteInternal } from '../operations/clipboard';
+import { autofillRange } from '../operations/autofill';
+import { clearFilter, setFilter } from '../operations/filter';
+import { setSort } from '../operations/sort';
+import { removeValidation, setValidation } from '../operations/validation';
+import { parseA1Range } from '../coordinates/ranges';
 
 export interface AppliedCommand {
   readonly state: WorkbookState;
@@ -156,6 +162,124 @@ export function applyCommand(
           result: applied.result,
           kind: 'sheet',
           sheet: applied.sheet,
+          undoable: true,
+        };
+      }
+      case 'paste-internal': {
+        const source = state.get(command.source.sheet);
+        const target = state.get(command.target.sheet);
+        if (source === null || target === null) throw new RangeError('Unknown clipboard sheet ID');
+        const transformed = pasteInternal(
+          target.data,
+          source.data,
+          command.source.range,
+          command.target.range,
+          command.mode,
+          command.cut,
+        );
+        if (transformed.sheet === target.data) return null;
+        return {
+          state: state.update(command.target.sheet, () => transformed.sheet),
+          result: undefined,
+          kind: 'clipboard',
+          sheet: command.target.sheet,
+          range: transformed.range,
+          undoable: true,
+        };
+      }
+      case 'paste-external': {
+        const target = state.get(command.target.sheet);
+        if (target === null) throw new RangeError(`Unknown sheet ID: ${command.target.sheet}`);
+        const transformed = pasteExternal(target.data, command.target.range, command.values);
+        if (transformed.sheet === target.data) return null;
+        return {
+          state: state.update(command.target.sheet, () => transformed.sheet),
+          result: undefined,
+          kind: 'clipboard',
+          sheet: command.target.sheet,
+          range: transformed.range,
+          undoable: true,
+        };
+      }
+      case 'autofill': {
+        const runtimeSheet = state.get(command.target.sheet);
+        if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.target.sheet}`);
+        const transformed = autofillRange(
+          runtimeSheet.data,
+          command.source.range,
+          command.target.range,
+          command.mode,
+        );
+        if (transformed.sheet === runtimeSheet.data) return null;
+        return {
+          state: state.update(command.target.sheet, () => transformed.sheet),
+          result: undefined,
+          kind: 'autofill',
+          sheet: command.target.sheet,
+          range: transformed.range,
+          undoable: true,
+        };
+      }
+      case 'set-filter': {
+        const runtimeSheet = state.get(command.selection.sheet);
+        if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.selection.sheet}`);
+        const next = setFilter(runtimeSheet.data, command.selection.range, command.filter);
+        if (next === runtimeSheet.data) return null;
+        return {
+          state: state.update(command.selection.sheet, () => next),
+          result: undefined,
+          kind: 'filter',
+          sheet: command.selection.sheet,
+          range: command.selection.range,
+          undoable: true,
+        };
+      }
+      case 'clear-filter': {
+        const runtimeSheet = state.get(command.sheet);
+        if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.sheet}`);
+        const range = runtimeSheet.data.autofilter?.ref === undefined
+          ? undefined
+          : parseA1Range(runtimeSheet.data.autofilter.ref);
+        const next = clearFilter(runtimeSheet.data);
+        if (next === runtimeSheet.data) return null;
+        return {
+          state: state.update(command.sheet, () => next),
+          result: undefined,
+          kind: 'filter',
+          sheet: command.sheet,
+          ...(range === undefined ? {} : { range }),
+          undoable: true,
+        };
+      }
+      case 'sort': {
+        const runtimeSheet = state.get(command.sheet);
+        if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.sheet}`);
+        const range = parseA1Range(runtimeSheet.data.autofilter!.ref!);
+        const next = setSort(runtimeSheet.data, command.column, command.order);
+        if (next === runtimeSheet.data) return null;
+        return {
+          state: state.update(command.sheet, () => next),
+          result: undefined,
+          kind: 'filter',
+          sheet: command.sheet,
+          range,
+          undoable: true,
+        };
+      }
+      case 'set-validation':
+      case 'remove-validation': {
+        const runtimeSheet = state.get(command.selection.sheet);
+        if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.selection.sheet}`);
+        const next = command.type === 'set-validation'
+          ? setValidation(runtimeSheet.data, command.selection.range, command.rule)
+          : removeValidation(runtimeSheet.data, command.selection.range);
+        if (next === runtimeSheet.data) return null;
+        return {
+          state: state.update(command.selection.sheet, () => next),
+          result: undefined,
+          kind: 'validation',
+          sheet: command.selection.sheet,
+          range: command.selection.range,
           undoable: true,
         };
       }

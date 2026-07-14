@@ -16,6 +16,14 @@ import { parseWorkbook } from '../serialization/parse-workbook';
 import { assertCellAddress, assertCellPoint, assertCellRange } from '../types/coordinates';
 import type { Selection, SheetId } from '../types/coordinates';
 import type { BorderLine, CellStyle } from '../types/workbook';
+import {
+  assertClipboardResourceLimit,
+  assertPasteMergeCompatibility,
+  externalPasteRange,
+  internalPasteRange,
+} from '../operations/clipboard';
+import { assertValidationRule } from '../operations/validation';
+import { parseA1Range } from '../coordinates/ranges';
 import type { WorkbookCommand } from './workbook-command';
 
 export function invalidCommand(message: string, cause?: unknown): TegoSheetException {
@@ -106,6 +114,22 @@ function validateBorderLine(line: BorderLine | undefined): void {
     parseWorkbook({ styles: [{ border: { top: line } } as unknown as CellStyle] });
   } catch (cause) {
     throw invalidCommand('Border line is invalid', cause);
+  }
+}
+
+function assertRangeWithinSheet(state: WorkbookState, sheetId: SheetId, range: {
+  readonly end: { readonly row: number; readonly column: number };
+}): void {
+  const runtimeSheet = state.get(sheetId);
+  if (runtimeSheet === null) throw invalidCommand(`Unknown sheet ID: ${sheetId}`);
+  if (range.end.row >= rowCount(runtimeSheet.data) || range.end.column >= columnCount(runtimeSheet.data)) {
+    throw invalidCommand('operation range exceeds the sheet structure');
+  }
+}
+
+function validatePasteMode(mode: unknown): void {
+  if (mode !== 'all' && mode !== 'value' && mode !== 'format') {
+    throw invalidCommand('paste mode must be all, value, or format');
   }
 }
 
@@ -271,6 +295,128 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         assertSheetName(state, command.name, command.sheet);
       } catch (cause) {
         throw invalidCommand('Sheet name is invalid', cause);
+      }
+      return;
+    case 'paste-internal': {
+      validateSelection(state, command.source);
+      validateSelection(state, command.target);
+      validatePasteMode(command.mode);
+      if (typeof command.cut !== 'boolean') throw invalidCommand('cut must be a boolean');
+      if (command.cut && command.mode !== 'all') throw invalidCommand('cut supports all-cell paste only');
+      if (command.cut && command.source.sheet !== command.target.sheet) {
+        throw invalidCommand('cross-sheet cut is not supported');
+      }
+      try {
+        const range = internalPasteRange(command.source.range, command.target.range);
+        assertClipboardResourceLimit(command.source.range);
+        assertClipboardResourceLimit(range);
+        assertRangeWithinSheet(state, command.target.sheet, range);
+        const targetSheet = state.get(command.target.sheet)!.data;
+        assertPasteMergeCompatibility(
+          targetSheet,
+          state.get(command.source.sheet)!.data,
+          command.source.range,
+          range,
+        );
+        assertRangeEditable(targetSheet, range);
+        if (command.cut) assertRangeEditable(state.get(command.source.sheet)!.data, command.source.range);
+      } catch (cause) {
+        if (cause instanceof TegoSheetException) throw cause;
+        throw invalidCommand('internal paste is not mutable', cause);
+      }
+      return;
+    }
+    case 'paste-external': {
+      validateSelection(state, command.target);
+      if (!Array.isArray(command.values) || command.values.length === 0
+        || command.values.some(row => !Array.isArray(row) || row.length === 0
+          || row.some(value => typeof value !== 'string'))) {
+        throw invalidCommand('external paste values must be a non-empty string matrix');
+      }
+      try {
+        const range = externalPasteRange(command.target.range, command.values);
+        assertClipboardResourceLimit(range);
+        assertRangeWithinSheet(state, command.target.sheet, range);
+        const targetSheet = state.get(command.target.sheet)!.data;
+        assertPasteMergeCompatibility(targetSheet, null, null, range);
+        assertRangeEditable(targetSheet, range);
+      } catch (cause) {
+        if (cause instanceof TegoSheetException) throw cause;
+        throw invalidCommand('external paste is not mutable', cause);
+      }
+      return;
+    }
+    case 'autofill': {
+      validateSelection(state, command.source);
+      validateSelection(state, command.target);
+      validatePasteMode(command.mode);
+      if (command.source.sheet !== command.target.sheet) {
+        throw invalidCommand('autofill source and target must use the same sheet');
+      }
+      try {
+        const range = internalPasteRange(command.source.range, command.target.range);
+        assertClipboardResourceLimit(command.source.range);
+        assertClipboardResourceLimit(range);
+        assertRangeWithinSheet(state, command.target.sheet, range);
+        const targetSheet = state.get(command.target.sheet)!.data;
+        assertPasteMergeCompatibility(targetSheet, targetSheet, command.source.range, range);
+        assertRangeEditable(targetSheet, range);
+      } catch (cause) {
+        if (cause instanceof TegoSheetException) throw cause;
+        throw invalidCommand('autofill range is not mutable', cause);
+      }
+      return;
+    }
+    case 'set-filter':
+      validateSelection(state, command.selection);
+      if (command.filter === null || typeof command.filter !== 'object'
+        || !Number.isSafeInteger(command.filter.column)
+        || command.filter.column < command.selection.range.start.column
+        || command.filter.column > command.selection.range.end.column
+        || (command.filter.operator !== 'all' && command.filter.operator !== 'in')
+        || !Array.isArray(command.filter.value)
+        || command.filter.value.some(value => typeof value !== 'string')) {
+        throw invalidCommand('filter definition is invalid or outside its range');
+      }
+      return;
+    case 'clear-filter':
+      validateSheet(state, command.sheet);
+      return;
+    case 'sort': {
+      validateSheet(state, command.sheet);
+      validateIndex(command.column, 'column');
+      if (command.order !== 'asc' && command.order !== 'desc') {
+        throw invalidCommand('sort order must be asc or desc');
+      }
+      const runtimeSheet = state.get(command.sheet)!;
+      if (runtimeSheet.data.autofilter?.ref === undefined) {
+        throw invalidCommand('sort requires an active autofilter range');
+      }
+      try {
+        const range = parseA1Range(runtimeSheet.data.autofilter.ref);
+        if (command.column < range.start.column || command.column > range.end.column) {
+          throw new RangeError('sort column is outside the autofilter range');
+        }
+      } catch (cause) {
+        throw invalidCommand('sort autofilter range is invalid', cause);
+      }
+      return;
+    }
+    case 'set-validation':
+      validateSelection(state, command.selection);
+      try {
+        assertValidationRule(command.rule);
+        assertRangeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
+      } catch (cause) {
+        throw invalidCommand('validation rule is invalid', cause);
+      }
+      return;
+    case 'remove-validation':
+      validateSelection(state, command.selection);
+      try {
+        assertRangeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
+      } catch (cause) {
+        throw invalidCommand('validation range is not mutable', cause);
       }
       return;
     case 'undo':
