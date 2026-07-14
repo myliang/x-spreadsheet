@@ -170,6 +170,52 @@ describe('sparse row, column, and cell model helpers', () => {
     expect(deleted.merges).toEqual(['A1:B2']);
   });
 
+  it('shifts every row reference marker combination without touching quotes or identifiers', () => {
+    const formula = '=$A1+A$1+$A$1+A1+AAAA1:B2+C3+b2+"A1"+A1foo+_A1+A1_2';
+    const source = WorkbookState.from({
+      rows: { 1: { cells: { 0: { text: formula, value: 'cached' } } } },
+    }).sheets[0]!.data;
+
+    const inserted = insertRows(source, 0, 2);
+    expect(getCellData(inserted, 3, 0)).toEqual({
+      text: '=$A3+A$3+$A$3+A3+AAAA3:B4+C5+b4+"A1"+A1foo+_A1+A1_2',
+    });
+
+    const deleted = deleteRows(inserted, 0, 1);
+    expect(getCellData(deleted, 1, 0)).toEqual({ text: formula });
+  });
+
+  it('shifts every column reference marker combination and arbitrary-length columns safely', () => {
+    const formula = '=$A1+A$1+$A$1+A1+AAAA1:AAAB2+C3+b2+"A1"+A1foo+_A1+A1_2';
+    const source = WorkbookState.from({
+      rows: { 0: { cells: { 1: { text: formula, value: false } } } },
+    }).sheets[0]!.data;
+
+    const inserted = insertColumns(source, 0, 2);
+    expect(getCellData(inserted, 0, 3)).toEqual({
+      text: '=$C1+C$1+$C$1+C1+AAAC1:AAAD2+E3+d2+"A1"+A1foo+_A1+A1_2',
+    });
+
+    const deleted = deleteColumns(inserted, 0, 1);
+    expect(getCellData(deleted, 0, 1)).toEqual({ text: formula });
+  });
+
+  it('keeps references into deleted regions while shifting references after the boundary', () => {
+    const rowSource = WorkbookState.from({
+      rows: { 3: { cells: { 0: { text: '=A1+A3+A4', value: 0 } } } },
+    }).sheets[0]!.data;
+    const columnSource = WorkbookState.from({
+      rows: { 0: { cells: { 3: { text: '=A1+C1+D1', value: '' } } } },
+    }).sheets[0]!.data;
+
+    expect(getCellData(deleteRows(rowSource, 1, 2), 1, 0)).toEqual({
+      text: '=A1+A3+A2',
+    });
+    expect(getCellData(deleteColumns(columnSource, 1, 2), 0, 1)).toEqual({
+      text: '=A1+C1+B1',
+    });
+  });
+
   it('resizes and hides rows and columns without dropping false, zero, or extension data', () => {
     const source = structuredSheet();
     const next = setColumnHidden(

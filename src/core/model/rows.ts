@@ -29,14 +29,55 @@ function shiftFormula(
   delta: number,
 ): string {
   if (!formula.startsWith('=')) return formula;
-  return formula.replace(/[a-zA-Z]{1,3}\d+/g, word => {
-    const reference = parseA1Reference(word.toUpperCase());
-    const coordinate = axis === 'row' ? reference.row : reference.column;
-    if (coordinate < threshold) return word;
-    return renderA1Reference(axis === 'row'
-      ? { ...reference, row: reference.row + delta }
-      : { ...reference, column: reference.column + delta });
-  });
+  let output = '';
+  let index = 0;
+  let quoted = false;
+
+  while (index < formula.length) {
+    const character = formula[index] as string;
+    if (character === '"') {
+      output += character;
+      if (quoted && formula[index + 1] === '"') {
+        output += '"';
+        index += 2;
+        continue;
+      }
+      quoted = !quoted;
+      index += 1;
+      continue;
+    }
+
+    if (!quoted) {
+      const match = /^(\$?)([A-Z]+)(\$?)([1-9]\d*)/i.exec(formula.slice(index));
+      if (match !== null) {
+        const word = match[0];
+        const before = formula[index - 1];
+        const after = formula[index + word.length];
+        const boundaryBefore = before === undefined || !/[A-Z0-9_$]/i.test(before);
+        const boundaryAfter = after === undefined || !/[A-Z0-9_$]/i.test(after);
+        if (boundaryBefore && boundaryAfter) {
+          const reference = parseA1Reference(word.toUpperCase());
+          const coordinate = axis === 'row' ? reference.row : reference.column;
+          let rendered = coordinate < threshold
+            ? word
+            : renderA1Reference(axis === 'row'
+              ? { ...reference, row: reference.row + delta }
+              : { ...reference, column: reference.column + delta });
+          const column = match[2] as string;
+          if (coordinate >= threshold && column === column.toLowerCase()) {
+            rendered = rendered.replace(/[A-Z]+/, letters => letters.toLowerCase());
+          }
+          output += rendered;
+          index += word.length;
+          continue;
+        }
+      }
+    }
+
+    output += character;
+    index += 1;
+  }
+  return output;
 }
 
 export function shiftCellFormula(
