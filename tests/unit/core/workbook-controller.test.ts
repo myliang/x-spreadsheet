@@ -410,17 +410,19 @@ describe('WorkbookController command boundary', () => {
     expect(subscriber).not.toHaveBeenCalled();
   });
 
-  it('rejects scaffolded but unimplemented Task 9 commands without fake commits', () => {
+  it('routes implemented sheet commands through the same audited commit boundary', () => {
     const controller = new WorkbookController({ name: 'A' });
     const sheet = controller.getSheetIds()[0]!;
     const subscriber = vi.fn();
     controller.subscribe(subscriber);
 
-    expect(() => controller.dispatch({ type: 'rename-sheet', sheet, name: 'B' }, 'ref'))
-      .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
-    expect(controller.getValue()[0]?.name).toBe('A');
-    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
-    expect(subscriber).not.toHaveBeenCalled();
+    const outcome = controller.dispatch({ type: 'rename-sheet', sheet, name: 'B' }, 'ref');
+    expect(outcome).toMatchObject({
+      status: 'committed', commit: { change: { kind: 'sheet', sheet, source: 'ref' } },
+    });
+    expect(controller.getValue()[0]?.name).toBe('B');
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+    expect(subscriber).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the last valid state and runtime IDs when replacement parsing fails', () => {

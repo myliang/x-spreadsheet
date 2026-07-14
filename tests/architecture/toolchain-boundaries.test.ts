@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import viteConfig from '../../vite.config';
@@ -52,6 +52,18 @@ it('keeps the core contract independent of React and browser globals', () => {
     const source = readFileSync(resolve(import.meta.dirname, '../..', file), 'utf8');
 
     expect(source, file).not.toMatch(/from\s+['"]react(?:\/[^'"]*)?['"]/);
+    expect(source, file).not.toMatch(/\b(?:window|document|navigator)\b/);
+  }
+});
+
+it('keeps pure operations independent from the controller mutation boundary', () => {
+  const directory = resolve(import.meta.dirname, '../../src/core/operations');
+  const operationFiles = readdirSync(directory).filter(file => file.endsWith('.ts'));
+
+  expect(operationFiles.sort()).toEqual(['cell.ts', 'merge.ts', 'sheet.ts', 'structure.ts', 'style.ts']);
+  for (const file of operationFiles) {
+    const source = readFileSync(resolve(directory, file), 'utf8');
+    expect(source, file).not.toMatch(/(?:workbook-controller|controller\/)/);
     expect(source, file).not.toMatch(/\b(?:window|document|navigator)\b/);
   }
 });
