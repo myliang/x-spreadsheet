@@ -168,9 +168,20 @@ test('package dry run includes public files only', () => {
 
   assert.deepEqual(paths, [
     'LICENSE',
+    'dist/core/errors/tego-sheet-error.d.ts',
+    'dist/core/errors/tego-sheet-exception.d.ts',
+    'dist/core/index.d.ts',
+    'dist/core/types/changes.d.ts',
+    'dist/core/types/coordinates.d.ts',
+    'dist/core/types/json.d.ts',
+    'dist/core/types/options.d.ts',
+    'dist/core/types/validation.d.ts',
+    'dist/core/types/workbook.d.ts',
     'dist/index.d.ts',
     'dist/tego-sheet.cjs',
+    'dist/tego-sheet.cjs.map',
     'dist/tego-sheet.js',
+    'dist/tego-sheet.js.map',
     'package.json',
     'readme.md',
   ]);
@@ -187,6 +198,7 @@ test('package dry run includes public files only', () => {
 });
 
 test('built entry formats import without browser globals', () => {
+  const expectedRuntimeExports = ['TegoSheetException'];
   const clearBrowserGlobals = `
     for (const name of ['window', 'document', 'navigator']) {
       Reflect.deleteProperty(globalThis, name);
@@ -200,8 +212,10 @@ test('built entry formats import without browser globals', () => {
       '--eval',
       `${clearBrowserGlobals}
        const entry = await import('./dist/tego-sheet.js');
-       if (Object.getOwnPropertyNames(entry).length !== 0) {
-         throw new Error('ESM entry exposes unexpected public exports');
+       const actual = Object.getOwnPropertyNames(entry);
+       const expected = ${JSON.stringify(expectedRuntimeExports)};
+       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+         throw new Error('ESM entry exposes unexpected public exports: ' + actual.join(', '));
        }`,
     ],
     { cwd: packageRoot, encoding: 'utf8' },
@@ -214,8 +228,10 @@ test('built entry formats import without browser globals', () => {
       '--eval',
       `${clearBrowserGlobals}
        const entry = require('./dist/tego-sheet.cjs');
-       if (Object.getOwnPropertyNames(entry).length !== 0) {
-         throw new Error('CJS entry exposes unexpected public exports');
+       const actual = Object.getOwnPropertyNames(entry);
+       const expected = ${JSON.stringify(expectedRuntimeExports)};
+       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+         throw new Error('CJS entry exposes unexpected public exports: ' + actual.join(', '));
        }`,
     ],
     { cwd: packageRoot, encoding: 'utf8' },
