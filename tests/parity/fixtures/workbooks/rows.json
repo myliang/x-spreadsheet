@@ -1,0 +1,62 @@
+{
+  "id": "rows",
+  "input": {
+    "name": "Rows",
+    "rows": {
+      "2": {
+        "cells": {},
+        "height": 42,
+        "style": 1
+      },
+      "7": {
+        "cells": {},
+        "hide": true
+      },
+      "len": 25
+    },
+    "styles": [
+      {
+        "bgcolor": "#f5f5f5"
+      },
+      {
+        "font": {
+          "bold": true
+        }
+      }
+    ]
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Rows",
+      "rows": {
+        "2": {
+          "cells": {},
+          "height": 42,
+          "style": 1
+        },
+        "7": {
+          "cells": {},
+          "hide": true
+        },
+        "len": 25
+      },
+      "styles": [
+        {
+          "bgcolor": "#f5f5f5"
+        },
+        {
+          "font": {
+            "bold": true
+          }
+        }
+      ],
+      "validations": []
+    }
+  ]
+}

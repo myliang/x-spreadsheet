@@ -1,0 +1,77 @@
+{
+  "id": "validations",
+  "input": {
+    "name": "Validations",
+    "validations": [
+      {
+        "mode": "cell",
+        "operator": "be",
+        "refs": [
+          "A1:A3"
+        ],
+        "required": true,
+        "type": "number",
+        "value": [
+          1,
+          10
+        ]
+      },
+      {
+        "mode": "cell",
+        "operator": "in",
+        "refs": [
+          "B1"
+        ],
+        "required": false,
+        "type": "list",
+        "value": [
+          "red",
+          "blue"
+        ]
+      }
+    ]
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Validations",
+      "rows": {
+        "len": 100
+      },
+      "styles": [],
+      "validations": [
+        {
+          "mode": "cell",
+          "operator": "be",
+          "refs": [
+            "A1:A3"
+          ],
+          "required": true,
+          "type": "number",
+          "value": [
+            1,
+            10
+          ]
+        },
+        {
+          "mode": "cell",
+          "operator": "in",
+          "refs": [
+            "B1"
+          ],
+          "required": false,
+          "type": "list",
+          "value": [
+            "red",
+            "blue"
+          ]
+        }
+      ]
+    }
+  ]
+}

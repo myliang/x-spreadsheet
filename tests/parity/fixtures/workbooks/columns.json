@@ -1,0 +1,50 @@
+{
+  "id": "columns",
+  "input": {
+    "cols": {
+      "1": {
+        "style": 0,
+        "width": 180
+      },
+      "4": {
+        "hide": true,
+        "width": 72
+      },
+      "len": 14
+    },
+    "name": "Columns",
+    "styles": [
+      {
+        "align": "right"
+      }
+    ]
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "1": {
+          "style": 0,
+          "width": 180
+        },
+        "4": {
+          "hide": true,
+          "width": 72
+        },
+        "len": 14
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Columns",
+      "rows": {
+        "len": 100
+      },
+      "styles": [
+        {
+          "align": "right"
+        }
+      ],
+      "validations": []
+    }
+  ]
+}

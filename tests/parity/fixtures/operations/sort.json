@@ -1,0 +1,109 @@
+{
+  "displayedNames": [
+    "zebra",
+    "alpha",
+    "mike"
+  ],
+  "id": "sort",
+  "operation": {
+    "ci": 1,
+    "operator": "all",
+    "order": "asc",
+    "value": []
+  },
+  "sheet": {
+    "autofilter": {
+      "filters": [
+        {
+          "ci": 1,
+          "operator": "all",
+          "value": []
+        }
+      ],
+      "ref": "A1:B4",
+      "sort": {
+        "ci": 1,
+        "order": "asc"
+      }
+    },
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Sort",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "text": "id"
+          },
+          "1": {
+            "text": "name"
+          }
+        }
+      },
+      "1": {
+        "cells": {
+          "0": {
+            "text": "1"
+          },
+          "1": {
+            "text": "zebra"
+          }
+        }
+      },
+      "2": {
+        "cells": {
+          "0": {
+            "text": "2"
+          },
+          "1": {
+            "text": "alpha"
+          }
+        }
+      },
+      "3": {
+        "cells": {
+          "0": {
+            "text": "3"
+          },
+          "1": {
+            "text": "mike"
+          }
+        }
+      },
+      "len": 8
+    },
+    "styles": [],
+    "validations": []
+  },
+  "sortedRowMap": [
+    {
+      "from": 1,
+      "to": 1
+    },
+    {
+      "from": 2,
+      "to": 2
+    },
+    {
+      "from": 3,
+      "to": 3
+    }
+  ],
+  "unsortedRowMap": [
+    {
+      "from": 1,
+      "to": 1
+    },
+    {
+      "from": 2,
+      "to": 2
+    },
+    {
+      "from": 3,
+      "to": 3
+    }
+  ]
+}

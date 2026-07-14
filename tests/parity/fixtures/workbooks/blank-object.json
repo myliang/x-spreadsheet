@@ -1,0 +1,20 @@
+{
+  "id": "blank-object",
+  "input": {},
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "sheet1",
+      "rows": {
+        "len": 100
+      },
+      "styles": [],
+      "validations": []
+    }
+  ]
+}

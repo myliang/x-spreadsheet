@@ -1,0 +1,76 @@
+{
+  "id": "multiple-sheets",
+  "input": [
+    {
+      "name": "Alpha",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "text": "alpha"
+            }
+          }
+        },
+        "len": 10
+      }
+    },
+    {
+      "freeze": "B2",
+      "name": "Beta",
+      "rows": {
+        "1": {
+          "cells": {
+            "1": {
+              "text": "beta"
+            }
+          }
+        },
+        "len": 8
+      }
+    }
+  ],
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Alpha",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "text": "alpha"
+            }
+          }
+        },
+        "len": 10
+      },
+      "styles": [],
+      "validations": []
+    },
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "B2",
+      "merges": [],
+      "name": "Beta",
+      "rows": {
+        "1": {
+          "cells": {
+            "1": {
+              "text": "beta"
+            }
+          }
+        },
+        "len": 8
+      },
+      "styles": [],
+      "validations": []
+    }
+  ]
+}

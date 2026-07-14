@@ -1,0 +1,38 @@
+{
+  "build": {
+    "command": "NODE_OPTIONS=--openssl-legacy-provider npm run build",
+    "defaultRuntimeResult": "fails without the OpenSSL legacy provider",
+    "workaround": "NODE_OPTIONS=--openssl-legacy-provider"
+  },
+  "designSpecCommit": "504ccf8",
+  "legacyTest": {
+    "knownFailure": {
+      "actual": "931-+*23+42/+",
+      "expected": "931-+23+*42/+",
+      "test": "infix expression conversion for (9+(3-1))*(2+3)+4/2"
+    },
+    "summary": "134 passing / 1 failing"
+  },
+  "lint": {
+    "errors": 3,
+    "findings": [
+      {
+        "file": "src/component/sheet.js",
+        "line": 340,
+        "rule": "max-len"
+      },
+      {
+        "file": "src/core/alphabet.js",
+        "line": 33,
+        "rule": "keyword-spacing"
+      },
+      {
+        "file": "src/core/alphabet.js",
+        "line": 33,
+        "rule": "no-plusplus"
+      }
+    ],
+    "warnings": 0
+  },
+  "nodeVersion": "v24.16.0"
+}

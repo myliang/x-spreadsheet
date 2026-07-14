@@ -1,0 +1,99 @@
+{
+  "cases": [
+    {
+      "accepted": true,
+      "destination": "A2:A4",
+      "sheet": {
+        "autofilter": {},
+        "cols": {
+          "len": 26
+        },
+        "freeze": "A1",
+        "merges": [],
+        "name": "Autofill numeric",
+        "rows": {
+          "0": {
+            "cells": {
+              "0": {
+                "text": "Item1"
+              }
+            }
+          },
+          "1": {
+            "cells": {
+              "0": {
+                "text": "Item2"
+              }
+            }
+          },
+          "2": {
+            "cells": {
+              "0": {
+                "text": "Item3"
+              }
+            }
+          },
+          "3": {
+            "cells": {
+              "0": {
+                "text": "Item4"
+              }
+            }
+          },
+          "len": 10
+        },
+        "styles": [],
+        "validations": []
+      },
+      "source": "A1"
+    },
+    {
+      "accepted": true,
+      "destination": "B2:B4",
+      "sheet": {
+        "autofilter": {},
+        "cols": {
+          "len": 26
+        },
+        "freeze": "A1",
+        "merges": [],
+        "name": "Autofill formula",
+        "rows": {
+          "0": {
+            "cells": {
+              "1": {
+                "text": "=A1+1"
+              }
+            }
+          },
+          "1": {
+            "cells": {
+              "1": {
+                "text": "=A2+1"
+              }
+            }
+          },
+          "2": {
+            "cells": {
+              "1": {
+                "text": "=A3+1"
+              }
+            }
+          },
+          "3": {
+            "cells": {
+              "1": {
+                "text": "=A4+1"
+              }
+            }
+          },
+          "len": 10
+        },
+        "styles": [],
+        "validations": []
+      },
+      "source": "B1"
+    }
+  ],
+  "id": "autofill"
+}

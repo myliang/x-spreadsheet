@@ -1,0 +1,41 @@
+{
+  "active": true,
+  "frozenHeight": 50,
+  "frozenWidth": 360,
+  "id": "freeze",
+  "operation": {
+    "ci": 3,
+    "ri": 2
+  },
+  "sheet": {
+    "autofilter": {},
+    "cols": {
+      "0": {
+        "width": 80
+      },
+      "1": {
+        "width": 120
+      },
+      "2": {
+        "width": 160
+      },
+      "len": 8
+    },
+    "freeze": "D3",
+    "merges": [],
+    "name": "Freeze",
+    "rows": {
+      "0": {
+        "cells": {},
+        "height": 20
+      },
+      "1": {
+        "cells": {},
+        "height": 30
+      },
+      "len": 12
+    },
+    "styles": [],
+    "validations": []
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "id": "cells",
+  "input": {
+    "name": "Cells",
+    "rows": {
+      "1": {
+        "cells": {
+          "2": {
+            "editable": false,
+            "merge": [
+              1,
+              2
+            ],
+            "printable": false,
+            "style": 0,
+            "text": "=A1+1",
+            "value": 8
+          },
+          "5": {
+            "text": "plain"
+          }
+        }
+      },
+      "len": 20
+    },
+    "styles": [
+      {
+        "format": "number"
+      }
+    ]
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Cells",
+      "rows": {
+        "1": {
+          "cells": {
+            "2": {
+              "editable": false,
+              "merge": [
+                1,
+                2
+              ],
+              "printable": false,
+              "style": 0,
+              "text": "=A1+1",
+              "value": 8
+            },
+            "5": {
+              "text": "plain"
+            }
+          }
+        },
+        "len": 20
+      },
+      "styles": [
+        {
+          "format": "number"
+        }
+      ],
+      "validations": []
+    }
+  ]
+}

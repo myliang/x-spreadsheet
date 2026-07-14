@@ -1,0 +1,92 @@
+{
+  "afterUnmerge": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Merge",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "text": "kept"
+          }
+        }
+      },
+      "1": {
+        "cells": {}
+      },
+      "len": 8
+    },
+    "styles": [],
+    "validations": []
+  },
+  "before": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Merge",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "text": "kept"
+          },
+          "1": {
+            "text": "removed"
+          }
+        }
+      },
+      "1": {
+        "cells": {
+          "0": {
+            "text": "removed too"
+          },
+          "1": {
+            "text": "also removed"
+          }
+        }
+      },
+      "len": 8
+    },
+    "styles": [],
+    "validations": []
+  },
+  "id": "merge",
+  "merged": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [
+      "A1:B2"
+    ],
+    "name": "Merge",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "merge": [
+              1,
+              1
+            ],
+            "text": "kept"
+          }
+        }
+      },
+      "1": {
+        "cells": {}
+      },
+      "len": 8
+    },
+    "styles": [],
+    "validations": []
+  },
+  "range": "A1:B2"
+}

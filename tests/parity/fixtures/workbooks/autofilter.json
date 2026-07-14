@@ -1,0 +1,55 @@
+{
+  "id": "autofilter",
+  "input": {
+    "autofilter": {
+      "filters": [
+        {
+          "ci": 1,
+          "operator": "in",
+          "value": [
+            "open",
+            "closed"
+          ]
+        }
+      ],
+      "ref": "A1:C5",
+      "sort": {
+        "ci": 2,
+        "order": "desc"
+      }
+    },
+    "name": "Autofilter"
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {
+        "filters": [
+          {
+            "ci": 1,
+            "operator": "in",
+            "value": [
+              "open",
+              "closed"
+            ]
+          }
+        ],
+        "ref": "A1:C5",
+        "sort": {
+          "ci": 2,
+          "order": "desc"
+        }
+      },
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Autofilter",
+      "rows": {
+        "len": 100
+      },
+      "styles": [],
+      "validations": []
+    }
+  ]
+}

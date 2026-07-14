@@ -1,0 +1,59 @@
+{
+  "id": "sheet-fields",
+  "input": {
+    "autofilter": {},
+    "cols": {
+      "len": 6
+    },
+    "freeze": "C3",
+    "merges": [
+      "A1:B2"
+    ],
+    "name": "Sheet fields",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "merge": [
+              1,
+              1
+            ],
+            "text": "merged"
+          }
+        }
+      },
+      "len": 12
+    },
+    "styles": [],
+    "validations": []
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 6
+      },
+      "freeze": "C3",
+      "merges": [
+        "A1:B2"
+      ],
+      "name": "Sheet fields",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "merge": [
+                1,
+                1
+              ],
+              "text": "merged"
+            }
+          }
+        },
+        "len": 12
+      },
+      "styles": [],
+      "validations": []
+    }
+  ]
+}

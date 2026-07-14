@@ -1,0 +1,109 @@
+{
+  "id": "formulas",
+  "rendered": [
+    {
+      "ref": "B1",
+      "source": "=SUM(A1:A2)",
+      "value": "5"
+    },
+    {
+      "ref": "C1",
+      "source": "=AVERAGE(A1:A2)",
+      "value": 2.5
+    },
+    {
+      "ref": "D1",
+      "source": "=MAX(A1:A2)",
+      "value": 3
+    },
+    {
+      "ref": "E1",
+      "source": "=MIN(A1:A2)",
+      "value": 2
+    },
+    {
+      "ref": "B2",
+      "source": "=IF(A1<A2, 10, 20)",
+      "value": 10
+    },
+    {
+      "ref": "C2",
+      "source": "=AND(A1<A2, A2>0)",
+      "value": true
+    },
+    {
+      "ref": "D2",
+      "source": "=OR(A1>A2, A2>0)",
+      "value": true
+    },
+    {
+      "ref": "E2",
+      "source": "=CONCAT(\"v\", A1, A2)",
+      "value": "v23"
+    },
+    {
+      "ref": "A3",
+      "source": "=A1+A2*4",
+      "value": "14"
+    }
+  ],
+  "sheet": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Formulas",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "text": "2"
+          },
+          "1": {
+            "text": "=SUM(A1:A2)"
+          },
+          "2": {
+            "text": "=AVERAGE(A1:A2)"
+          },
+          "3": {
+            "text": "=MAX(A1:A2)"
+          },
+          "4": {
+            "text": "=MIN(A1:A2)"
+          }
+        }
+      },
+      "1": {
+        "cells": {
+          "0": {
+            "text": "3"
+          },
+          "1": {
+            "text": "=IF(A1<A2, 10, 20)"
+          },
+          "2": {
+            "text": "=AND(A1<A2, A2>0)"
+          },
+          "3": {
+            "text": "=OR(A1>A2, A2>0)"
+          },
+          "4": {
+            "text": "=CONCAT(\"v\", A1, A2)"
+          }
+        }
+      },
+      "2": {
+        "cells": {
+          "0": {
+            "text": "=A1+A2*4"
+          }
+        }
+      },
+      "len": 12
+    },
+    "styles": [],
+    "validations": []
+  }
+}

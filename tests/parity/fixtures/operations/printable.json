@@ -1,0 +1,33 @@
+{
+  "cell": {
+    "printable": false,
+    "text": "confidential"
+  },
+  "id": "printable",
+  "operation": {
+    "printable": false,
+    "range": "B2"
+  },
+  "sheet": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Printable",
+    "rows": {
+      "1": {
+        "cells": {
+          "1": {
+            "printable": false,
+            "text": "confidential"
+          }
+        }
+      },
+      "len": 8
+    },
+    "styles": [],
+    "validations": []
+  }
+}

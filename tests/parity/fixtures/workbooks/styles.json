@@ -1,0 +1,112 @@
+{
+  "id": "styles",
+  "input": {
+    "name": "Styles",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "style": 0,
+            "text": "styled"
+          }
+        }
+      },
+      "len": 10
+    },
+    "styles": [
+      {
+        "align": "center",
+        "bgcolor": "#ffeeaa",
+        "border": {
+          "bottom": [
+            "dashed",
+            "#444444"
+          ],
+          "left": [
+            "thin",
+            "#111111"
+          ],
+          "right": [
+            "medium",
+            "#333333"
+          ],
+          "top": [
+            "double",
+            "#222222"
+          ]
+        },
+        "color": "#123456",
+        "font": {
+          "bold": true,
+          "italic": true,
+          "name": "Helvetica",
+          "size": 14
+        },
+        "format": "percent",
+        "strike": true,
+        "textwrap": true,
+        "underline": true,
+        "valign": "bottom"
+      }
+    ]
+  },
+  "legacyOutput": [
+    {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "Styles",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "style": 0,
+              "text": "styled"
+            }
+          }
+        },
+        "len": 10
+      },
+      "styles": [
+        {
+          "align": "center",
+          "bgcolor": "#ffeeaa",
+          "border": {
+            "bottom": [
+              "dashed",
+              "#444444"
+            ],
+            "left": [
+              "thin",
+              "#111111"
+            ],
+            "right": [
+              "medium",
+              "#333333"
+            ],
+            "top": [
+              "double",
+              "#222222"
+            ]
+          },
+          "color": "#123456",
+          "font": {
+            "bold": true,
+            "italic": true,
+            "name": "Helvetica",
+            "size": 14
+          },
+          "format": "percent",
+          "strike": true,
+          "textwrap": true,
+          "underline": true,
+          "valign": "bottom"
+        }
+      ],
+      "validations": []
+    }
+  ]
+}

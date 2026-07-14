@@ -1,0 +1,104 @@
+{
+  "afterEdit": {
+    "canRedo": false,
+    "canUndo": true,
+    "sheet": {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "History",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "text": "edited"
+            }
+          }
+        },
+        "len": 10
+      },
+      "styles": [],
+      "validations": []
+    }
+  },
+  "afterRedo": {
+    "canRedo": false,
+    "canUndo": true,
+    "sheet": {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "History",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "text": "edited"
+            }
+          }
+        },
+        "len": 10
+      },
+      "styles": [],
+      "validations": []
+    }
+  },
+  "afterUndo": {
+    "canRedo": true,
+    "canUndo": false,
+    "sheet": {
+      "autofilter": {},
+      "cols": {
+        "len": 26
+      },
+      "freeze": "A1",
+      "merges": [],
+      "name": "History",
+      "rows": {
+        "0": {
+          "cells": {
+            "0": {
+              "text": ""
+            }
+          }
+        },
+        "len": 10
+      },
+      "styles": [],
+      "validations": []
+    }
+  },
+  "before": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "History",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "text": "seed"
+          }
+        }
+      },
+      "len": 10
+    },
+    "styles": [],
+    "validations": []
+  },
+  "id": "history",
+  "operations": [
+    "setCellText(0, 0, \"edited\", \"finished\")",
+    "undo()",
+    "redo()"
+  ]
+}

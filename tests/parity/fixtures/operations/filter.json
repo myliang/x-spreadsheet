@@ -1,0 +1,84 @@
+{
+  "excludedRows": [
+    2
+  ],
+  "id": "filter",
+  "items": {
+    "drop": 1,
+    "keep": 2
+  },
+  "operation": {
+    "ci": 1,
+    "operator": "in",
+    "order": "",
+    "value": [
+      "keep"
+    ]
+  },
+  "sheet": {
+    "autofilter": {
+      "filters": [
+        {
+          "ci": 1,
+          "operator": "in",
+          "value": [
+            "keep"
+          ]
+        }
+      ],
+      "ref": "A1:B4",
+      "sort": null
+    },
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Filter",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "text": "id"
+          },
+          "1": {
+            "text": "status"
+          }
+        }
+      },
+      "1": {
+        "cells": {
+          "0": {
+            "text": "1"
+          },
+          "1": {
+            "text": "keep"
+          }
+        }
+      },
+      "2": {
+        "cells": {
+          "0": {
+            "text": "2"
+          },
+          "1": {
+            "text": "drop"
+          }
+        }
+      },
+      "3": {
+        "cells": {
+          "0": {
+            "text": "3"
+          },
+          "1": {
+            "text": "keep"
+          }
+        }
+      },
+      "len": 8
+    },
+    "styles": [],
+    "validations": []
+  }
+}

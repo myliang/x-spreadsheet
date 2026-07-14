@@ -1,0 +1,101 @@
+{
+  "afterCopyPaste": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Clipboard",
+    "rows": {
+      "0": {
+        "cells": {
+          "0": {
+            "style": 0,
+            "text": "A"
+          },
+          "1": {
+            "text": "B"
+          }
+        }
+      },
+      "2": {
+        "cells": {
+          "0": {
+            "style": 0,
+            "text": "A"
+          },
+          "1": {
+            "text": "B"
+          }
+        }
+      },
+      "len": 10
+    },
+    "styles": [
+      {
+        "font": {
+          "bold": true
+        }
+      }
+    ],
+    "validations": []
+  },
+  "afterCutPaste": {
+    "autofilter": {},
+    "cols": {
+      "len": 26
+    },
+    "freeze": "A1",
+    "merges": [],
+    "name": "Clipboard",
+    "rows": {
+      "0": {
+        "cells": {
+          "2": {
+            "style": 0,
+            "text": "A"
+          },
+          "3": {
+            "text": "B"
+          }
+        }
+      },
+      "2": {
+        "cells": {
+          "0": {
+            "style": 0,
+            "text": "A"
+          },
+          "1": {
+            "text": "B"
+          }
+        }
+      },
+      "len": 10
+    },
+    "styles": [
+      {
+        "font": {
+          "bold": true
+        }
+      }
+    ],
+    "validations": []
+  },
+  "copied": {
+    "range": "A1:B1",
+    "state": "copy"
+  },
+  "copyPasted": true,
+  "cut": {
+    "range": "A1:B1",
+    "state": "cut"
+  },
+  "cutPasted": true,
+  "finalClipboard": {
+    "range": null,
+    "state": "clear"
+  },
+  "id": "clipboard"
+}
