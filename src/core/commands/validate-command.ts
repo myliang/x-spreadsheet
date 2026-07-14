@@ -14,7 +14,7 @@ import {
 } from '../operations/editable';
 import { parseWorkbook } from '../serialization/parse-workbook';
 import { assertCellAddress, assertCellPoint, assertCellRange } from '../types/coordinates';
-import type { SheetId } from '../types/coordinates';
+import type { Selection, SheetId } from '../types/coordinates';
 import type { BorderLine, CellStyle } from '../types/workbook';
 import type { WorkbookCommand } from './workbook-command';
 
@@ -43,23 +43,29 @@ function validatePositiveCount(value: number | undefined): void {
   }
 }
 
-function validateSelection(state: WorkbookState, selection: WorkbookCommand & {
-  readonly selection: { readonly sheet: SheetId; readonly range: unknown; readonly active: unknown };
-}): void {
-  validateSheet(state, selection.selection.sheet);
+function validateSelection(
+  state: WorkbookState,
+  selection: unknown,
+): asserts selection is Selection {
   try {
-    assertCellRange(selection.selection.range);
-    const runtimeSheet = state.get(selection.selection.sheet);
+    if (selection === null || typeof selection !== 'object' || Array.isArray(selection)) {
+      throw new TypeError('selection must be an object');
+    }
+    const value = selection as Record<string, unknown>;
+    if (typeof value.sheet !== 'string' || value.sheet.trim().length === 0) {
+      throw new TypeError('selection sheet must be a non-empty string');
+    }
+    const sheet = value.sheet as SheetId;
+    validateSheet(state, sheet);
+    assertCellRange(value.range);
+    const runtimeSheet = state.get(sheet);
     if (runtimeSheet === null) throw new TypeError('selection sheet does not exist');
-    const range = selection.selection.range as {
-      readonly end: { readonly row: number; readonly column: number };
-    };
-    if (range.end.row >= rowCount(runtimeSheet.data)
-      || range.end.column >= columnCount(runtimeSheet.data)) {
+    if (value.range.end.row >= rowCount(runtimeSheet.data)
+      || value.range.end.column >= columnCount(runtimeSheet.data)) {
       throw new TypeError('selection range exceeds the sheet structure');
     }
-    assertCellPoint(selection.selection.active);
-    if (!containsCell(selection.selection.range as never, selection.selection.active)) {
+    assertCellPoint(value.active);
+    if (!containsCell(value.range, value.active)) {
       throw new TypeError('active cell must be within selection range');
     }
   } catch (cause) {
@@ -125,7 +131,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       }
       return;
     case 'set-style':
-      validateSelection(state, command);
+      validateSelection(state, command.selection);
       if (command.patch === null || typeof command.patch !== 'object' || Array.isArray(command.patch)) {
         throw invalidCommand('Style patch must be an object');
       }
@@ -137,7 +143,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       validateStyleRange(state, command.selection.sheet, command.selection.range);
       return;
     case 'set-border':
-      validateSelection(state, command);
+      validateSelection(state, command.selection);
       if (![
         'none', 'all', 'inside', 'outside', 'horizontal', 'vertical',
         'top', 'bottom', 'left', 'right',
@@ -148,12 +154,12 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       validateStyleRange(state, command.selection.sheet, command.selection.range);
       return;
     case 'clear-format':
-      validateSelection(state, command);
+      validateSelection(state, command.selection);
       validateStyleRange(state, command.selection.sheet, command.selection.range);
       return;
     case 'paint-format':
-      validateSelection(state, { ...command, selection: command.source });
-      validateSelection(state, { ...command, selection: command.target });
+      validateSelection(state, command.source);
+      validateSelection(state, command.target);
       try {
         const target = paintFormatTargetRange(command);
         validateStyleRange(state, command.target.sheet, target);
@@ -222,7 +228,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       }
       return;
     case 'merge':
-      validateSelection(state, command);
+      validateSelection(state, command.selection);
       try {
         assertMergeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
       } catch (cause) {
@@ -230,7 +236,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       }
       return;
     case 'unmerge':
-      validateSelection(state, command);
+      validateSelection(state, command.selection);
       return;
     case 'set-freeze':
       validateSheet(state, command.sheet);

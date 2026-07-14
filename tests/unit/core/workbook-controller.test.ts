@@ -4,7 +4,7 @@ import {
   type ControllerEvent,
 } from '../../../src/core/controller/workbook-controller';
 import { TegoSheetException } from '../../../src/core/errors/tego-sheet-exception';
-import type { CellAddress } from '../../../src/core/types/coordinates';
+import type { CellAddress, SheetId } from '../../../src/core/types/coordinates';
 import { applyCommand } from '../../../src/core/commands/apply-command';
 import { validateCommand } from '../../../src/core/commands/validate-command';
 import { WorkbookState } from '../../../src/core/model/workbook-state';
@@ -440,6 +440,64 @@ describe('WorkbookController command boundary', () => {
     expect(() => controller.dispatch(unknown, 'ref'))
       .toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
     expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+  });
+
+  it.each([
+    ['set-style without selection', (sheet: SheetId) => {
+      void sheet;
+      return { type: 'set-style', patch: { color: 'red' } };
+    }],
+    ['set-border with null selection', (sheet: SheetId) => {
+      void sheet;
+      return { type: 'set-border', selection: null, mode: 'top', line: ['thin', '#000'] };
+    }],
+    ['clear-format with array selection', (sheet: SheetId) => {
+      void sheet;
+      return { type: 'clear-format', selection: [] };
+    }],
+    ['merge without an active point', (sheet: SheetId) => ({
+      type: 'merge', selection: {
+        sheet,
+        range: { start: { row: 0, column: 0 }, end: { row: 1, column: 1 } },
+      },
+    })],
+    ['unmerge with a null range', (sheet: SheetId) => ({
+      type: 'unmerge', selection: { sheet, range: null, active: { row: 0, column: 0 } },
+    })],
+    ['paint-format without source', (sheet: SheetId) => ({
+      type: 'paint-format',
+      target: {
+        sheet,
+        range: { start: { row: 0, column: 0 }, end: { row: 0, column: 0 } },
+        active: { row: 0, column: 0 },
+      },
+    })],
+    ['paint-format with null target', (sheet: SheetId) => ({
+      type: 'paint-format',
+      source: {
+        sheet,
+        range: { start: { row: 0, column: 0 }, end: { row: 0, column: 0 } },
+        active: { row: 0, column: 0 },
+      },
+      target: null,
+    })],
+  ] as const)('rejects malformed runtime selection: %s', (_label, buildCommand) => {
+    const controller = new WorkbookController({
+      vendorSheet: { keep: true },
+      rows: { len: 2, 0: { cells: { 0: { text: 'keep', vendorCell: false } } } },
+      cols: { len: 2 },
+    });
+    const before = controller.getValue();
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+    const command = buildCommand(controller.getSheetIds()[0]!) as never;
+
+    expect(() => controller.dispatch(command, 'ref')).toThrowError(
+      expect.objectContaining({ code: 'INVALID_COMMAND' }),
+    );
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
   });
 
   it('keeps the last valid state and runtime IDs when replacement parsing fails', () => {
