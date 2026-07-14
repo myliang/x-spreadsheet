@@ -138,7 +138,10 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       return;
     case 'set-border':
       validateSelection(state, command);
-      if (!['none', 'all', 'inside', 'outside', 'horizontal', 'vertical'].includes(command.mode)) {
+      if (![
+        'none', 'all', 'inside', 'outside', 'horizontal', 'vertical',
+        'top', 'bottom', 'left', 'right',
+      ].includes(command.mode)) {
         throw invalidCommand('Border mode is invalid');
       }
       if (command.mode !== 'none') validateBorderLine(command.line);

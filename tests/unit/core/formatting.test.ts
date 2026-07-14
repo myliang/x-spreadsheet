@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   addStyle,
   FORMAT_DEFINITIONS,
@@ -8,7 +8,7 @@ import {
 } from '../../../src/core';
 import { WorkbookController } from '../../../src/core/controller/workbook-controller';
 import type { Selection, SheetId } from '../../../src/core/types/coordinates';
-import type { BorderLine, CellBorders, CellStyle } from '../../../src/core';
+import type { BorderLine, BorderMode, CellBorders, CellStyle } from '../../../src/core';
 
 describe('legacy formats', () => {
   it('exposes every approved legacy format in stable order', () => {
@@ -164,7 +164,14 @@ describe('formatting commands', () => {
       styles: [{ font: { bold: true } }],
       rows: {
         0: { cells: { 0: { text: 'source', style: 0, merge: [1, 1] } } },
-        3: { cells: { 3: { text: 'target', vendorCell: false } } },
+        3: { cells: {
+          3: { text: 'target', vendorCell: false },
+          4: { text: 'keep-e4', vendorCell: { id: 'e4' } },
+        } },
+        4: { cells: {
+          3: { text: 'keep-d5', vendorCell: { id: 'd5' } },
+          4: { text: 'keep-e5', vendorCell: { id: 'e5' } },
+        } },
       },
     });
     const sheet = controller.getSheetIds()[0]!;
@@ -183,7 +190,16 @@ describe('formatting commands', () => {
     });
     expect(controller.getValue()[0]!.merges).toEqual(['A1:B2', 'D4:E5']);
     expect(controller.getValue()[0]!.rows?.['3']).toMatchObject({
-      cells: { 3: { text: 'target', style: 0, merge: [1, 1], vendorCell: false } },
+      cells: {
+        3: { text: 'target', style: 0, merge: [1, 1], vendorCell: false },
+        4: { text: 'keep-e4', vendorCell: { id: 'e4' } },
+      },
+    });
+    expect(controller.getValue()[0]!.rows?.['4']).toMatchObject({
+      cells: {
+        3: { text: 'keep-d5', vendorCell: { id: 'd5' } },
+        4: { text: 'keep-e5', vendorCell: { id: 'e5' } },
+      },
     });
   });
 
@@ -216,7 +232,7 @@ describe('formatting commands', () => {
   });
 
   const line = ['thin', '#123'] as const satisfies BorderLine;
-  const borderCases: readonly [string, readonly CellBorders[]][] = [
+  const borderCases: readonly [BorderMode, readonly CellBorders[]][] = [
     ['all', [
       { top: line, right: line, bottom: line, left: line },
       { top: line, right: line, bottom: line, left: line },
@@ -227,6 +243,10 @@ describe('formatting commands', () => {
     ['outside', [{ top: line, left: line }, { top: line, right: line }, { bottom: line, left: line }, { right: line, bottom: line }]],
     ['horizontal', [{ bottom: line }, { bottom: line }, {}, {}]],
     ['vertical', [{ right: line }, {}, { right: line }, {}]],
+    ['top', [{ top: line }, { top: line }, {}, {}]],
+    ['bottom', [{}, {}, { bottom: line }, { bottom: line }]],
+    ['left', [{ left: line }, {}, { left: line }, {}]],
+    ['right', [{}, { right: line }, {}, { right: line }]],
   ];
 
   it.each(borderCases)('applies legacy %s borders in one history entry', (mode, expected) => {
@@ -236,7 +256,7 @@ describe('formatting commands', () => {
     controller.dispatch({
       type: 'set-border',
       selection: selected(sheet, 0, 0, 1, 1),
-      mode: mode as 'all',
+      mode,
       line,
     }, 'toolbar');
 
@@ -306,6 +326,51 @@ describe('formatting commands', () => {
     expect(row1.cells).not.toHaveProperty('0');
     expect(row1.cells).not.toHaveProperty('1');
     expect(anchor?.merge).toEqual([1, 1]);
+  });
+
+  it.each(['top', 'bottom', 'left', 'right'] as const)(
+    'applies legacy %s border to an exact merged selection through its anchor',
+    mode => {
+      const controller = new WorkbookController({
+        merges: ['A1:B2'],
+        rows: { len: 2, 0: { cells: { 0: { merge: [1, 1] } } } },
+        cols: { len: 2 },
+      });
+      const sheet = controller.getSheetIds()[0]!;
+
+      controller.dispatch({
+        type: 'set-border', selection: selected(sheet, 0, 0, 1, 1), mode, line,
+      }, 'toolbar');
+
+      const value = controller.getValue()[0]!;
+      const row0 = value.rows?.['0'] as {
+        readonly cells?: Readonly<Record<string, { readonly style?: number }>>;
+      };
+      const anchor = row0.cells?.['0'];
+      expect(value.styles?.[anchor?.style ?? -1]?.border).toEqual({ [mode]: line });
+      expect(row0.cells).not.toHaveProperty('1');
+      expect(value.rows).not.toHaveProperty('1');
+    },
+  );
+
+  it('keeps paint-format silent when its final canonical data is unchanged', () => {
+    const controller = new WorkbookController({
+      styles: [{ color: 'red' }],
+      rows: { 0: { cells: { 0: { style: 0 }, 1: { style: 0 } } } },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    const before = controller.getValue();
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    expect(controller.dispatch({
+      type: 'paint-format',
+      source: selected(sheet, 0, 0),
+      target: selected(sheet, 0, 1),
+    }, 'toolbar')).toEqual({ status: 'noop' });
+    expect(controller.getValue()).toEqual(before);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
   });
 
   it('streams a large legal range and rejects oversized ranges before allocation', () => {

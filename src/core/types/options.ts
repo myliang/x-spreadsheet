@@ -29,7 +29,17 @@ export interface FilterDefinition {
   readonly value: readonly string[];
 }
 
-export type BorderMode = 'none' | 'all' | 'inside' | 'outside' | 'horizontal' | 'vertical';
+export type BorderMode =
+  | 'none'
+  | 'all'
+  | 'inside'
+  | 'outside'
+  | 'horizontal'
+  | 'vertical'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right';
 
 export type ToolbarAction =
   | { readonly type: 'undo' | 'redo' | 'print' }

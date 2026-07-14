@@ -7,6 +7,7 @@ import {
 } from '../coordinates/ranges';
 import { cloneSheet, getCellData } from '../model/cells';
 import { normalizeStyle } from '../model/styles';
+import { semanticEqual } from '../serialization/semantic-equal';
 import { assertRangeEditable } from './editable';
 import type {
   ClearFormatCommand,
@@ -159,18 +160,6 @@ class StyleBatch {
   }
 
   addMerge(range: CellRange): void {
-    const rows = this.rows();
-    streamRange(range, (row, column) => {
-      if (row === range.start.row && column === range.start.column) return;
-      const rowValue = rows[String(row)];
-      if (rowValue === null || typeof rowValue !== 'object' || Array.isArray(rowValue)) return;
-      const cells = (rowValue as Record<string, unknown>).cells;
-      if (cells === null || typeof cells !== 'object' || Array.isArray(cells)) return;
-      if (Object.hasOwn(cells, String(column))) {
-        delete (cells as Record<string, unknown>)[String(column)];
-        this.changed = true;
-      }
-    });
     const anchor = this.cell(range.start.row, range.start.column, true) as Record<string, unknown>;
     anchor.merge = [
       range.end.row - range.start.row,
@@ -185,9 +174,10 @@ class StyleBatch {
     this.changed = true;
   }
 
-  finish(source: SheetData): SheetData {
+  finish(source: SheetData, detectSemanticNoop = false): SheetData {
     if (!this.changed) return source;
     if (this.stylesChanged) this.mutable.styles = this.styles;
+    if (detectSemanticNoop && semanticEqual(source, this.sheet)) return source;
     return this.sheet;
   }
 
@@ -316,6 +306,18 @@ function borderPatch(
     case 'vertical':
       if (endColumn < range.end.column) border.right = value;
       break;
+    case 'top':
+      if (top) border.top = value;
+      break;
+    case 'bottom':
+      if (bottom) border.bottom = value;
+      break;
+    case 'left':
+      if (left) border.left = value;
+      break;
+    case 'right':
+      if (right) border.right = value;
+      break;
     case 'none':
       break;
   }
@@ -422,7 +424,7 @@ function paintFormat(
     }
   }
   batch.setMerges(merges);
-  return batch.finish(targetSheet);
+  return batch.finish(targetSheet, true);
 }
 
 export function applyStyleOperation(
