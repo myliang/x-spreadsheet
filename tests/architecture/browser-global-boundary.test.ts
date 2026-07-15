@@ -4,6 +4,10 @@ import { resolve } from 'node:path';
 import ts from 'typescript';
 import { expect, it } from 'vitest';
 import { parityManifest } from '../parity/manifest';
+import {
+  ARCHITECTURE_TEST_TIMEOUT_MS,
+  execArchitectureChild,
+} from './helpers/architecture-child-process';
 
 const root = resolve(import.meta.dirname, '../..');
 const browserGlobals = new Set([
@@ -44,13 +48,13 @@ interface ListedSuite {
 
 function listedParityRegistrations(arguments_: readonly string[]): ReadonlyMap<string, ReadonlySet<string>> {
   const cli = resolve(root, 'node_modules/@playwright/test/cli.js');
-  const output = execFileSync(process.execPath, [
+  const output = execArchitectureChild(process.execPath, [
     cli,
     'test',
     ...arguments_,
     '--list',
     '--reporter=json',
-  ], { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+  ], { cwd: root });
   const report = JSON.parse(output) as {
     readonly errors: readonly unknown[];
     readonly suites: readonly ListedSuite[];
@@ -149,4 +153,4 @@ it('[ARCH-8] lists an enabled Playwright registration for every browser and visu
       expect(lanes[lane].get(id)?.size ?? 0, `${lane}:${id}`).toBeGreaterThanOrEqual(1);
     }
   }
-});
+}, ARCHITECTURE_TEST_TIMEOUT_MS);

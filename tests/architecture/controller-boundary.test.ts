@@ -1,10 +1,13 @@
-import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ts from 'typescript';
 import { expect, it } from 'vitest';
 import { WorkbookController } from '../../src/core/controller/workbook-controller';
 import { createControlledReconciler } from '../../src/react/control/controlled-reconciler';
+import {
+  ARCHITECTURE_TEST_TIMEOUT_MS,
+  execArchitectureChild,
+} from './helpers/architecture-child-process';
 
 const root = resolve(import.meta.dirname, '../..');
 
@@ -82,7 +85,7 @@ it('[ARCH-7] preserves runtime IDs and history when a controlled checkpoint is a
 
 it('[ARCH-7] executes controlled acknowledgement preservation in the component runtime', () => {
   const cli = resolve(root, 'node_modules/vitest/vitest.mjs');
-  const output = execFileSync(process.execPath, [
+  const output = execArchitectureChild(process.execPath, [
     cli,
     'run',
     '--project',
@@ -93,9 +96,7 @@ it('[ARCH-7] executes controlled acknowledgement preservation in the component r
     'acknowledges the newest checkpoint|preserves selection, scroll, and active editing across controlled acknowledgement',
   ], {
     cwd: root,
-    encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-    stdio: 'pipe',
   });
   expect(output).toMatch(/Tests\s+2 passed/);
-}, 30_000);
+}, ARCHITECTURE_TEST_TIMEOUT_MS);

@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ts from 'typescript';
@@ -6,8 +5,81 @@ import { expect, it, vi } from 'vitest';
 import { CanvasEngine } from '../../src/engine/canvas/canvas-engine';
 import { ResourceRegistry } from '../../src/engine/interaction/resource-registry';
 import { createCanvasHarness } from '../helpers/canvas-harness';
+import {
+  ARCHITECTURE_TEST_TIMEOUT_MS,
+  execArchitectureChild,
+} from './helpers/architecture-child-process';
 
 const root = resolve(import.meta.dirname, '../..');
+
+const callNames = new Map<string, string>([
+  ['addEventListener', 'listener'],
+  ['removeEventListener', 'listener'],
+  ['requestAnimationFrame', 'animation-frame'],
+  ['cancelAnimationFrame', 'animation-frame'],
+  ['setTimeout', 'timer'],
+  ['clearTimeout', 'timer'],
+  ['setInterval', 'timer'],
+  ['clearInterval', 'timer'],
+  ['subscribe', 'subscription'],
+  ['unsubscribe', 'subscription'],
+  ['createElement', 'overlay'],
+  ['append', 'overlay'],
+  ['appendChild', 'overlay'],
+  ['remove', 'overlay'],
+  ['removeChild', 'overlay'],
+  ['createPortal', 'portal'],
+]);
+const propertyOnly = new Set([
+  'createElement',
+  'append',
+  'appendChild',
+  'remove',
+  'removeChild',
+]);
+
+function expressionName(expression: ts.Expression): string | null {
+  if (ts.isIdentifier(expression)) return expression.text;
+  if (ts.isPropertyAccessExpression(expression)) return expression.name.text;
+  if (
+    ts.isElementAccessExpression(expression)
+    && expression.argumentExpression !== undefined
+    && (ts.isStringLiteral(expression.argumentExpression)
+      || ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression))
+  ) return expression.argumentExpression.text;
+  return null;
+}
+
+function resourcePrimitivesFromSource(source: string, file: string): readonly string[] {
+  const primitives: string[] = [];
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node)) {
+      const name = expressionName(node.expression);
+      const primitive = name === null || (ts.isIdentifier(node.expression) && propertyOnly.has(name))
+        ? undefined
+        : callNames.get(name);
+      if (primitive !== undefined) primitives.push(primitive);
+    }
+    if (ts.isNewExpression(node) && expressionName(node.expression) === 'ResizeObserver') {
+      primitives.push('observer');
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return primitives;
+}
+
+it('classifies bare, property, and element ResizeObserver construction', () => {
+  for (const source of [
+    'new ResizeObserver(() => undefined);',
+    'new window.ResizeObserver(() => undefined);',
+    "new globalThis['ResizeObserver'](() => undefined);",
+  ]) {
+    expect(resourcePrimitivesFromSource(source, 'probe.ts')).toEqual(['observer']);
+  }
+});
 
 it('[ARCH-5] gives each browser resource one idempotent registry disposal', async () => {
   const registry = new ResourceRegistry();
@@ -105,58 +177,9 @@ it('[ARCH-5] confines every section 6.6 browser resource primitive to its sole o
     entries.add(file);
     owners.set(primitive, entries);
   };
-  const callNames = new Map<string, string>([
-    ['addEventListener', 'listener'],
-    ['removeEventListener', 'listener'],
-    ['requestAnimationFrame', 'animation-frame'],
-    ['cancelAnimationFrame', 'animation-frame'],
-    ['setTimeout', 'timer'],
-    ['clearTimeout', 'timer'],
-    ['setInterval', 'timer'],
-    ['clearInterval', 'timer'],
-    ['subscribe', 'subscription'],
-    ['unsubscribe', 'subscription'],
-    ['createElement', 'overlay'],
-    ['append', 'overlay'],
-    ['appendChild', 'overlay'],
-    ['remove', 'overlay'],
-    ['removeChild', 'overlay'],
-    ['createPortal', 'portal'],
-  ]);
-  const propertyOnly = new Set([
-    'createElement',
-    'append',
-    'appendChild',
-    'remove',
-    'removeChild',
-  ]);
   for (const file of files) {
     const source = readFileSync(resolve(root, file), 'utf8');
-    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
-      file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-    const visit = (node: ts.Node): void => {
-      if (ts.isCallExpression(node)) {
-        const expression = node.expression;
-        const name = ts.isIdentifier(expression)
-          ? expression.text
-          : ts.isPropertyAccessExpression(expression)
-            ? expression.name.text
-            : ts.isElementAccessExpression(expression) && ts.isStringLiteral(expression.argumentExpression)
-              ? expression.argumentExpression.text
-              : null;
-        const primitive = name === null || (ts.isIdentifier(expression) && propertyOnly.has(name))
-          ? undefined
-          : callNames.get(name);
-        if (primitive !== undefined) record(primitive, file);
-      }
-      if (
-        ts.isNewExpression(node)
-        && ts.isIdentifier(node.expression)
-        && node.expression.text === 'ResizeObserver'
-      ) record('observer', file);
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
+    for (const primitive of resourcePrimitivesFromSource(source, file)) record(primitive, file);
   }
   const ownership = new Map<string, ReadonlySet<string>>([
     ['listener', new Set([
@@ -197,7 +220,7 @@ it('[ARCH-5] keeps the React disposal cascade ordered and executes the Strict Mo
   );
 
   const cli = resolve(root, 'node_modules/vitest/vitest.mjs');
-  const output = execFileSync(process.execPath, [
+  const output = execArchitectureChild(process.execPath, [
     cli,
     'run',
     '--project',
@@ -205,9 +228,7 @@ it('[ARCH-5] keeps the React disposal cascade ordered and executes the Strict Mo
     'tests/component/strict-mode-cleanup.test.tsx',
   ], {
     cwd: root,
-    encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-    stdio: 'pipe',
   });
   expect(output).toMatch(/Tests\s+4 passed/);
-}, 30_000);
+}, ARCHITECTURE_TEST_TIMEOUT_MS);
