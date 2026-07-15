@@ -36,6 +36,10 @@ export function applyCellOperation(
   return setCellText(sheet, command.address.row, command.address.column, command.text);
 }
 
+function hasClearableContents(cell: CellData): boolean {
+  return (cell.text !== undefined && cell.text !== '') || Object.hasOwn(cell, 'value');
+}
+
 export function clearContents(sheet: SheetData, command: ClearContentsCommand): SheetData {
   assertClearContentsResourceLimit(command);
   assertRangeEditable(sheet, command.selection.range);
@@ -52,7 +56,7 @@ export function clearContents(sheet: SheetData, command: ClearContentsCommand): 
       const rawCell = rowData.cells?.[String(column)];
       if (rawCell === null || typeof rawCell !== 'object' || Array.isArray(rawCell)) continue;
       const cell = rawCell as CellData;
-      if (cell.text === '' && !Object.hasOwn(cell, 'value')) continue;
+      if (!hasClearableContents(cell)) continue;
       changed = true;
       break;
     }
@@ -72,9 +76,9 @@ export function clearContents(sheet: SheetData, command: ClearContentsCommand): 
       const rawCell = rowData.cells?.[String(column)];
       if (rawCell === null || typeof rawCell !== 'object' || Array.isArray(rawCell)) continue;
       const cell = rawCell as CellData;
-      if (cell.text === '' && !Object.hasOwn(cell, 'value')) continue;
+      if (!hasClearableContents(cell)) continue;
       const mutable = cell as CellData as Record<string, unknown>;
-      mutable.text = '';
+      delete mutable.text;
       delete mutable.value;
     }
   }

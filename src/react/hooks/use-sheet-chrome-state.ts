@@ -25,10 +25,11 @@ export interface SheetChromeState<Editor extends ChromeEditor> {
     selection: Selection,
   ) => void;
   readonly closeContextMenu: () => void;
+  readonly closeFilter: () => void;
+  readonly closeValidation: () => void;
+  readonly closePrint: () => void;
   readonly openFilter: () => void;
   readonly openValidation: () => void;
-  readonly setFilterOpen: Dispatch<SetStateAction<boolean>>;
-  readonly setValidationOpen: Dispatch<SetStateAction<boolean>>;
   readonly setPrintOpen: Dispatch<SetStateAction<boolean>>;
   readonly setNotification: Dispatch<SetStateAction<TegoSheetError | null>>;
   readonly togglePaintSource: (selection: Selection) => void;
@@ -47,6 +48,7 @@ function sameSelection(left: Selection, right: Selection): boolean {
 
 export function useSheetChromeState<Editor extends ChromeEditor>(
   isActive: () => boolean,
+  requestSurfaceFocus: () => void,
 ): SheetChromeState<Editor> {
   const [editor, setEditor] = useState<Editor | null>(null);
   const editorRef = useRef<Editor | null>(null);
@@ -78,15 +80,30 @@ export function useSheetChromeState<Editor extends ChromeEditor>(
   ) => {
     if (isActive()) setContextMenu({ point, selection });
   }, [isActive]);
-  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+    requestSurfaceFocus();
+  }, [requestSurfaceFocus]);
+  const closeFilter = useCallback(() => {
+    setFilterOpen(false);
+    requestSurfaceFocus();
+  }, [requestSurfaceFocus]);
+  const closeValidation = useCallback(() => {
+    setValidationOpen(false);
+    requestSurfaceFocus();
+  }, [requestSurfaceFocus]);
+  const closePrint = useCallback(() => {
+    setPrintOpen(false);
+    requestSurfaceFocus();
+  }, [requestSurfaceFocus]);
   const openFilter = useCallback(() => {
-    closeContextMenu();
+    setContextMenu(null);
     setFilterOpen(true);
-  }, [closeContextMenu]);
+  }, []);
   const openValidation = useCallback(() => {
-    closeContextMenu();
+    setContextMenu(null);
     setValidationOpen(true);
-  }, [closeContextMenu]);
+  }, []);
   const togglePaintSource = useCallback((selection: Selection) => {
     const next = paintSourceRef.current === null ? selection : null;
     paintSourceRef.current = next;
@@ -113,10 +130,11 @@ export function useSheetChromeState<Editor extends ChromeEditor>(
     cancelTransient,
     requestContextMenu,
     closeContextMenu,
+    closeFilter,
+    closeValidation,
+    closePrint,
     openFilter,
     openValidation,
-    setFilterOpen,
-    setValidationOpen,
     setPrintOpen,
     setNotification,
     togglePaintSource,

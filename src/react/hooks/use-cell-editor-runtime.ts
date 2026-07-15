@@ -104,7 +104,7 @@ export function useCellEditorRuntime<Runtime extends CellEditorRuntime>(
       ? proposedTarget
       : null;
     let selectionHandled = nextTarget === null;
-    editorRef.current = null;
+    replaceEditor(null);
     const outcome = runtime.dispatcher.dispatchUi(
       { type: 'set-cell-text', address: current.address, text: current.value },
       current.source,

@@ -147,6 +147,11 @@ interface SlotRuntime extends TegoSheetHandleRuntime {
   readonly readOnly: boolean;
 }
 
+interface DialogAuthority {
+  readonly source: 'toolbar' | 'context-menu';
+  readonly selection: Selection | null;
+}
+
 type SlotRuntimeAuthority = TegoSheetRuntimeAuthority<SlotRuntime>;
 
 function uiError(runtime: SlotRuntime, message: string): void {
@@ -330,8 +335,12 @@ function executeAction(
   runtime: SlotRuntime,
   action: ToolbarAction,
   source: 'toolbar' | 'context-menu',
+  selection: Selection | null = runtime.selection,
 ): void {
-  if (disabledToolbarActions(runtime).has(action.type)) {
+  const actionRuntime = selection === runtime.selection
+    ? runtime
+    : { ...runtime, activeSheet: selection?.sheet ?? runtime.activeSheet, selection };
+  if (disabledToolbarActions(actionRuntime).has(action.type)) {
     uiError(runtime, `${source === 'toolbar' ? 'Toolbar' : 'Context-menu'} action "${action.type}" is unavailable`);
     return;
   }
@@ -339,7 +348,7 @@ function executeAction(
     printRuntime(runtime, { paper: 'A4', orientation: 'portrait' });
     return;
   }
-  const command = toolbarCommand(runtime, action);
+  const command = toolbarCommand(actionRuntime, action);
   if (command === null) {
     uiError(runtime, `${source === 'toolbar' ? 'Toolbar' : 'Context-menu'} action "${action.type}" cannot run in the current view`);
     return;
@@ -441,6 +450,7 @@ function Runtime(
   forwardedRef: ForwardedRef<TegoSheetHandle>,
 ) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const focusingSurfaceRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const interactionManagerRef = useRef<InteractionManager | null>(null);
   const [engineSlot] = useState(createEngineAdapterSlot);
@@ -456,6 +466,21 @@ function Runtime(
   const [selection, setSelection] = useState<Selection | null>(null);
   const controller = props.epoch.controller;
   const isActive = props.epoch.isActive;
+  const requestSurfaceFocus = useCallback(() => {
+    const root = rootRef.current;
+    if (
+      !isActive()
+      || root === null
+      || root.ownerDocument.activeElement === root
+      || focusingSurfaceRef.current
+    ) return;
+    focusingSurfaceRef.current = true;
+    try {
+      root.focus({ preventScroll: true });
+    } finally {
+      focusingSurfaceRef.current = false;
+    }
+  }, [isActive]);
   const {
     editor,
     editorRef,
@@ -469,15 +494,16 @@ function Runtime(
     cancelTransient,
     requestContextMenu,
     closeContextMenu,
+    closeFilter,
+    closeValidation,
+    closePrint,
     openFilter,
     openValidation,
-    setFilterOpen,
-    setValidationOpen,
     setPrintOpen,
     setNotification,
     togglePaintSource,
     consumePaintSource,
-  } = useSheetChromeState<ActiveCellEditor>(isActive);
+  } = useSheetChromeState<ActiveCellEditor>(isActive, requestSurfaceFocus);
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
   const runtimeAuthority = useTegoSheetHandle<SlotRuntime>(forwardedRef);
 
@@ -653,6 +679,7 @@ function Runtime(
     requestDelete,
     requestEdit,
     requestFormat,
+    requestSurfaceFocus,
   });
   useCanvasEngine({
     activeSheet,
@@ -750,21 +777,37 @@ function Runtime(
         executeAction(runtime, action, 'context-menu');
     }
   };
-  const dialogSourceRef = useRef<'toolbar' | 'context-menu'>('toolbar');
+  const [filterAuthority, setFilterAuthority] = useState<DialogAuthority | null>(null);
+  const validationAuthorityRef = useRef<DialogAuthority | null>(null);
+  const captureDialogAuthority = (source: DialogAuthority['source']): DialogAuthority | null => {
+    const runtime = runtimeAuthority.committed(renderToken);
+    return runtime === null ? null : {
+      source,
+      selection: runtime.selection === null ? null : clonePublic(runtime.selection),
+    };
+  };
   const openToolbarFilter = () => {
-    dialogSourceRef.current = 'toolbar';
+    const authority = captureDialogAuthority('toolbar');
+    if (authority === null) return;
+    setFilterAuthority(authority);
     openFilter();
   };
   const openToolbarValidation = () => {
-    dialogSourceRef.current = 'toolbar';
+    const authority = captureDialogAuthority('toolbar');
+    if (authority === null) return;
+    validationAuthorityRef.current = authority;
     openValidation();
   };
   const openContextFilter = () => {
-    dialogSourceRef.current = 'context-menu';
+    const authority = captureDialogAuthority('context-menu');
+    if (authority === null) return;
+    setFilterAuthority(authority);
     openFilter();
   };
   const openContextValidation = () => {
-    dialogSourceRef.current = 'context-menu';
+    const authority = captureDialogAuthority('context-menu');
+    if (authority === null) return;
+    validationAuthorityRef.current = authority;
     openValidation();
   };
   const tabActions = {
@@ -818,8 +861,12 @@ function Runtime(
     readOnly: props.readOnly ?? false,
     ...tabActions,
   });
-  const filterValues = filterOpen && selection !== null && activeData !== null
-    ? filterValuesForSelection(activeData, selection)
+  const filterSelection = filterAuthority?.selection ?? selection;
+  const filterSheet = filterSelection === null
+    ? null
+    : activeSheetData(props.epoch.snapshot, filterSelection.sheet);
+  const filterValues = filterOpen && filterSelection !== null && filterSheet !== null
+    ? filterValuesForSelection(filterSheet, filterSelection)
     : [];
   const t = createTranslator(props.locale);
   return (
@@ -842,6 +889,7 @@ function Runtime(
         locale={props.locale}
         editor={editor}
         contextMenu={contextMenu}
+        filterColumn={filterSelection?.active.column ?? null}
         filterValues={filterValues}
         filterOpen={filterOpen}
         notification={notification}
@@ -849,16 +897,23 @@ function Runtime(
         printOpen={printOpen}
         validationOpen={validationOpen}
         onCloseContextMenu={closeContextMenu}
-        onCloseFilter={() => setFilterOpen(false)}
-        onClosePrint={() => setPrintOpen(false)}
-        onCloseValidation={() => setValidationOpen(false)}
+        onCloseFilter={() => {
+          setFilterAuthority(null);
+          closeFilter();
+        }}
+        onClosePrint={closePrint}
+        onCloseValidation={closeValidation}
         onDismissNotification={() => setNotification(null)}
         onExecute={execute}
         onExecuteContext={executeContext}
         onFilter={(filter: FilterDefinition) => {
-          setFilterOpen(false);
+          const authority = filterAuthority;
+          setFilterAuthority(null);
+          closeFilter();
           const runtime = runtimeAuthority.committed(renderToken);
-          if (runtime !== null) executeAction(runtime, { type: 'set-filter', filter }, dialogSourceRef.current);
+          if (runtime !== null && authority !== null) {
+            executeAction(runtime, { type: 'set-filter', filter }, authority.source, authority.selection);
+          }
         }}
         onOpenFilter={openToolbarFilter}
         onOpenContextFilter={openContextFilter}
@@ -866,19 +921,25 @@ function Runtime(
         onOpenValidation={openToolbarValidation}
         onOpenContextValidation={openContextValidation}
         onPrint={(options: PrintWorkbookOptions) => {
-          setPrintOpen(false);
+          closePrint();
           const runtime = runtimeAuthority.committed(renderToken);
           if (runtime !== null) printRuntime(runtime, options);
         }}
         onRemoveValidation={() => {
-          setValidationOpen(false);
+          const authority = validationAuthorityRef.current;
+          closeValidation();
           const runtime = runtimeAuthority.committed(renderToken);
-          if (runtime !== null) executeAction(runtime, { type: 'remove-validation' }, dialogSourceRef.current);
+          if (runtime !== null && authority !== null) {
+            executeAction(runtime, { type: 'remove-validation' }, authority.source, authority.selection);
+          }
         }}
         onValidation={(rule: ValidationRule) => {
-          setValidationOpen(false);
+          const authority = validationAuthorityRef.current;
+          closeValidation();
           const runtime = runtimeAuthority.committed(renderToken);
-          if (runtime !== null) executeAction(runtime, { type: 'set-validation', rule }, dialogSourceRef.current);
+          if (runtime !== null && authority !== null) {
+            executeAction(runtime, { type: 'set-validation', rule }, authority.source, authority.selection);
+          }
         }}
       >
         {sheets.length === 0 ? (

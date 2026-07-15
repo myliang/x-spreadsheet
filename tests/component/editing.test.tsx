@@ -256,6 +256,44 @@ it('does not finish stale Enter selection work after onChange unmounts the sheet
   expect(rendered.container.childElementCount).toBe(0);
 });
 
+it.each(['onChange', 'onCellEdit'] as const)(
+  'closes the editor and preserves the original %s exception after commit',
+  async callback => {
+    const ref = createRef<TegoSheetHandle>();
+    const consumerError = new Error(`${callback} failed`);
+    const callbacks = callback === 'onChange'
+      ? { onChange: () => { throw consumerError; } }
+      : { onCellEdit: () => { throw consumerError; } };
+    const rendered = render(<TegoSheet ref={ref} defaultValue={[{}]} {...callbacks} />);
+    await waitFor(() => expect(ref.current).not.toBeNull());
+    const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+    sizeRoot(root);
+    root.focus();
+    fireEvent.keyDown(root, { key: 'x' });
+    const editor = await rendered.findByRole('textbox', { name: /cell editor/i });
+    fireEvent.change(editor, { target: { value: 'committed before callback failure' } });
+    const reported: unknown[] = [];
+    const capture = (event: ErrorEvent) => {
+      reported.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener('error', capture);
+
+    try {
+      fireEvent.keyDown(editor, { key: 'Enter' });
+    } finally {
+      window.removeEventListener('error', capture);
+    }
+
+    expect(reported).toEqual([consumerError]);
+    expect(rendered.queryByRole('textbox', { name: /cell editor/i })).toBeNull();
+    expect(ref.current!.getValue()[0]!.rows?.['0']).toMatchObject({
+      cells: { 0: { text: 'committed before callback failure' } },
+    });
+    expect(() => rendered.unmount()).not.toThrow();
+  },
+);
+
 it('clears with Delete without reporting a paste event', async () => {
   const ref = createRef<TegoSheetHandle>();
   const onPaste = vi.fn();
@@ -273,7 +311,8 @@ it('clears with Delete without reporting a paste event', async () => {
   fireEvent.focusIn(root);
   fireEvent.keyDown(window, { key: 'Delete' });
 
-  expect(ref.current!.getValue()[0]!.rows?.['0']).toMatchObject({ cells: { 0: { text: '' } } });
+  expect(ref.current!.getValue()[0]!.rows?.['0']).toMatchObject({ cells: { 0: {} } });
+  expect(ref.current!.getValue()[0]!.rows?.['0']).not.toHaveProperty('cells.0.text');
   expect(changes).toEqual(['cell']);
   expect(onPaste).not.toHaveBeenCalled();
 });

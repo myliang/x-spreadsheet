@@ -11,6 +11,23 @@ export interface PrintWorkbookOptions {
   readonly paper: PaperSizeName;
 }
 
+function removePrintNodes(host: HTMLElement, style: HTMLStyleElement): unknown[] {
+  const errors: unknown[] = [];
+  for (const node of [host, style]) {
+    try {
+      node.remove();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  return errors;
+}
+
+function throwCleanupErrors(errors: readonly unknown[]): void {
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) throw new AggregateError(errors, 'Print page cleanup failed');
+}
+
 export function mountPrintPages(
   sheet: SheetData,
   options: PrintWorkbookOptions,
@@ -33,10 +50,19 @@ export function mountPrintPages(
   const style = document.createElement('style');
   style.setAttribute('data-tego-print-style', '');
   style.textContent = `@page { size: ${options.paper} ${options.orientation}; }\n@media print { body > *:not([data-tego-print-pages]) { display: none !important; } }`;
-  document.head.append(style);
-  document.body.append(host);
+  try {
+    document.head.append(style);
+    document.body.append(host);
+  } catch (error) {
+    const cleanupErrors = removePrintNodes(host, style);
+    if (cleanupErrors.length === 0) throw error;
+    throw new AggregateError(
+      [error, ...cleanupErrors],
+      'Print page installation and rollback failed',
+      { cause: error },
+    );
+  }
   return () => {
-    host.remove();
-    style.remove();
+    throwCleanupErrors(removePrintNodes(host, style));
   };
 }

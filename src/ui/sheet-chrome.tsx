@@ -45,6 +45,7 @@ export interface SheetChromeProps {
   readonly children: ReactNode;
   readonly editor: ChromeEditor | null;
   readonly contextMenu: ChromeContextMenu | null;
+  readonly filterColumn: number | null;
   readonly filterValues: readonly string[];
   readonly filterOpen: boolean;
   readonly notification: TegoSheetError | null;
@@ -116,10 +117,10 @@ export function SheetChrome(props: SheetChromeProps) {
           onSave={props.onValidation}
         />
       ) : null}
-      {props.filterOpen && props.toolbar.selection !== null ? (
+      {props.filterOpen && props.filterColumn !== null ? (
         <FilterMenu
           t={t}
-          column={props.toolbar.selection.active.column}
+          column={props.filterColumn}
           values={props.filterValues}
           onClose={props.onCloseFilter}
           onApply={props.onFilter}

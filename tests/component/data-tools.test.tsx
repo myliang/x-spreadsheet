@@ -164,7 +164,7 @@ it('exposes legacy context actions and attributes context-menu mutations to thei
   fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
   menu = rendered.getByRole('menu', { name: /cell actions/i });
   fireEvent.click(within(menu).getByRole('menuitem', { name: /clear contents/i }));
-  expect(ref.current!.getValue()[0]).toMatchObject({ rows: { 0: { cells: { 0: { text: '' } } } } });
+  expect(ref.current!.getValue()[0]).toMatchObject({ rows: { 0: { cells: { 0: {} } } } });
   expect(changes.at(-1)).toMatchObject({ kind: 'cell', source: 'context-menu' });
 
   fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
@@ -258,11 +258,23 @@ it('routes context clipboard modes through the interaction owner and keeps copy 
   await waitFor(() => expect(clipboard.writeText).toHaveBeenLastCalledWith('source'));
   fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
   fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
-  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /^paste$/i }));
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /paste values only/i }));
   await waitFor(() => expect(ref.current!.getValue()[0]).toMatchObject({
     rows: { 0: { cells: { 0: { text: 'source', style: 0 } } } },
   }));
   expect((ref.current!.getValue()[0]!.rows?.['0'] as { cells?: Record<string, unknown> }).cells?.['1'])
+    .toBeUndefined();
+  expect(changes.at(-1)).toMatchObject({ kind: 'clipboard', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /^cut$/i }));
+  fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 170, clientY: 40 });
+  fireEvent.contextMenu(root, { clientX: 170, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /paste format only/i }));
+  await waitFor(() => expect(ref.current!.getValue()[0]).toMatchObject({
+    rows: { 0: { cells: { 1: { text: 'source', style: 0 } } } },
+  }));
+  expect((ref.current!.getValue()[0]!.rows?.['0'] as { cells?: Record<string, unknown> }).cells?.['0'])
     .toBeUndefined();
   expect(changes.at(-1)).toMatchObject({ kind: 'clipboard', source: 'context-menu' });
 

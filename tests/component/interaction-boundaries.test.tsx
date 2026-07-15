@@ -38,7 +38,11 @@ function renderBoundarySheet() {
     <TegoSheet
       ref={ref}
       defaultValue={[{
-        rows: { len: 2, 0: { cells: { 0: { text: 'old' }, 1: { text: 'other' } } } },
+        rows: {
+          len: 2,
+          0: { cells: { 0: { text: 'old' }, 1: { text: 'other' } } },
+          1: { cells: { 1: { text: 'bottom' } } },
+        },
         cols: { len: 2 },
       }]}
       onChange={(_value, change) => changes.push(change)}
@@ -170,6 +174,7 @@ it('closes a focused context menu and restores grid keys when the canvas is pres
   const { ref, rendered, root, selections } = renderBoundarySheet();
   await waitFor(() => expect(ref.current).not.toBeNull());
   const canvas = rendered.container.querySelector<HTMLCanvasElement>('canvas')!;
+  const focusRoot = vi.spyOn(root, 'focus');
   fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
   const menu = rendered.getByRole('menu', { name: /cell actions/i });
   expect(document.activeElement).toBe(menu);
@@ -177,12 +182,34 @@ it('closes a focused context menu and restores grid keys when the canvas is pres
 
   fireEvent.pointerDown(canvas, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
 
+  expect(focusRoot).toHaveBeenCalledOnce();
   expect(document.activeElement).toBe(root);
   expect(rendered.queryByRole('menu', { name: /cell actions/i })).toBeNull();
   fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
   expect(selections).toHaveLength(1);
   expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
 });
+
+it.each(['Escape', 'action'] as const)(
+  'restores grid focus after context-menu %s close',
+  async close => {
+    const { ref, rendered, root, selections } = renderBoundarySheet();
+    await waitFor(() => expect(ref.current).not.toBeNull());
+    fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+    const menu = rendered.getByRole('menu', { name: /cell actions/i });
+    expect(document.activeElement).toBe(menu);
+
+    if (close === 'Escape') fireEvent.keyDown(menu, { key: 'Escape' });
+    else fireEvent.click(within(menu).getByRole('menuitem', { name: /disable export/i }));
+
+    expect(rendered.queryByRole('menu', { name: /cell actions/i })).toBeNull();
+    expect(document.activeElement).toBe(root);
+    selections.length = 0;
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+    expect(selections).toHaveLength(1);
+    expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
+  },
+);
 
 it('restores grid focus after a canvas tap', async () => {
   const { ref, rendered, root, selections } = renderBoundarySheet();
@@ -222,6 +249,25 @@ it('restores grid focus without implicitly closing an explicit modal dialog', as
   expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
 });
 
+it('restores grid focus after explicitly closing a dialog', async () => {
+  const { ref, rendered, root, selections } = renderBoundarySheet();
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  fireEvent.click(rendered.getByRole('button', { name: /data validation/i }));
+  const dialog = rendered.getByRole('dialog', { name: /data validation/i });
+  const type = dialog.querySelector<HTMLSelectElement>('select[name="type"]')!;
+  type.focus();
+  expect(document.activeElement).toBe(type);
+
+  fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
+
+  expect(rendered.queryByRole('dialog', { name: /data validation/i })).toBeNull();
+  expect(document.activeElement).toBe(root);
+  selections.length = 0;
+  fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+  expect(selections).toHaveLength(1);
+  expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
+});
+
 it('keeps dialog controls out of grid selection and applies their action once', async () => {
   const { changes, ref, rendered, selections } = renderBoundarySheet();
   await waitFor(() => expect(ref.current).not.toBeNull());
@@ -246,4 +292,40 @@ it('keeps dialog controls out of grid selection and applies their action once', 
   expect(ref.current!.getValue()[0]!.validations).toEqual([
     expect.objectContaining({ refs: ['A1'], type: 'number' }),
   ]);
+});
+
+it('isolates source and opening selection across interleaved filter and validation dialogs', async () => {
+  const { changes, ref, rendered, root } = renderBoundarySheet();
+  await waitFor(() => expect(ref.current).not.toBeNull());
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu', { name: /cell actions/i }))
+    .getByRole('menuitem', { name: /data validation/i }));
+  const validation = rendered.getByRole('dialog', { name: /data validation/i });
+  fireEvent.change(validation.querySelector('select[name="type"]')!, {
+    target: { value: 'number' },
+  });
+
+  fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 170, clientY: 40 });
+  fireEvent.pointerMove(window, { buttons: 1, clientX: 170, clientY: 70 });
+  fireEvent.pointerUp(window);
+  fireEvent.click(rendered.getByRole('button', { name: /^filter$/i }));
+  const filter = rendered.getByRole('dialog', { name: /^filter$/i });
+  expect(within(filter).getByLabelText('bottom')).toBeTruthy();
+
+  fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 70, clientY: 70 });
+  fireEvent.pointerUp(window);
+  fireEvent.click(within(validation).getByRole('button', { name: /^save$/i }));
+  fireEvent.click(within(filter).getByRole('button', { name: /apply filter/i }));
+
+  expect(changes).toHaveLength(2);
+  expect(changes[0]).toMatchObject({ kind: 'validation', source: 'context-menu' });
+  expect(changes[1]).toMatchObject({ kind: 'filter', source: 'toolbar' });
+  expect(ref.current!.getValue()[0]).toMatchObject({
+    validations: [expect.objectContaining({ refs: ['A1'], type: 'number' })],
+    autofilter: expect.objectContaining({
+      ref: 'B1:B2',
+      filters: [expect.objectContaining({ ci: 1 })],
+    }),
+  });
 });

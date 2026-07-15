@@ -300,7 +300,7 @@ export class InteractionManager {
         type: 'paste-internal',
         source: state.selection,
         target,
-        mode,
+        mode: state.cut ? 'all' : mode,
         cut: state.cut,
       }, source);
       if (state.cut && outcome.status === 'committed') this.internalClipboard = null;

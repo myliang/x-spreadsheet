@@ -34,6 +34,7 @@ export interface InteractionAdapterOptions {
   readonly requestDelete?: (selection: Selection, source: ChangeSource) => void;
   readonly requestEdit?: (point: CellPoint, initialText: string | undefined, source: ChangeSource) => void;
   readonly requestFormat?: (format: 'bold' | 'italic' | 'underline') => void;
+  readonly requestSurfaceFocus?: () => void;
 }
 
 export interface EditorCommitResult {
@@ -144,7 +145,11 @@ export function createInteractionAdapter(
       requestEdit: (point, initialText, source) => options.requestEdit?.(point, initialText, source),
       requestDelete: (selection, source) => options.requestDelete?.(selection, source),
       requestContextMenu: (point, selection) => options.requestContextMenu?.(point, selection),
-      requestSurfaceFocus: () => options.root.focus({ preventScroll: true }),
+      requestSurfaceFocus: () => {
+        if (options.requestSurfaceFocus === undefined) {
+          options.root.focus({ preventScroll: true });
+        } else options.requestSurfaceFocus();
+      },
       requestEnsureVisible(point) {
         options.engine.ensureVisible(point);
         options.onViewportChange?.();

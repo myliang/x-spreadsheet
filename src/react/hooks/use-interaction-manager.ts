@@ -31,6 +31,7 @@ export interface UseInteractionManagerOptions {
   readonly requestDelete?: (selection: Selection, source: ChangeSource) => void;
   readonly requestEdit?: (point: CellPoint, initialText: string | undefined, source: ChangeSource) => void;
   readonly requestFormat?: (format: 'bold' | 'italic' | 'underline') => void;
+  readonly requestSurfaceFocus?: () => void;
 }
 
 export function useInteractionManager(options: UseInteractionManagerOptions): void {
@@ -53,6 +54,7 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     requestDelete,
     requestEdit,
     requestFormat,
+    requestSurfaceFocus,
   } = options;
   const { controller, isActive } = epoch;
   useLayoutEffect(() => {
@@ -84,6 +86,7 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
       requestDelete,
       requestEdit,
       requestFormat,
+      requestSurfaceFocus,
     });
     managerRef.current = manager;
     if (manager !== null && document.activeElement === root) manager.focus();
@@ -111,5 +114,6 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     requestDelete,
     requestEdit,
     requestFormat,
+    requestSurfaceFocus,
   ]);
 }

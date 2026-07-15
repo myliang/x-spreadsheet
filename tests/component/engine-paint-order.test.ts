@@ -67,3 +67,36 @@ it('stages the target selection before callbacks and paints only that target sna
   expect(selectionStrokes.at(-1)?.args.slice(0, 4)).toEqual([160, 25, 100, 25]);
   engine.dispose();
 });
+
+it('stages offscreen selection and scroll together without scheduling an early paint', () => {
+  const frames: FrameRequestCallback[] = [];
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const root = document.createElement('div');
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 180 },
+    clientHeight: { configurable: true, value: 100 },
+  });
+  const canvas = createCanvasHarness();
+  const controller = new WorkbookController({ rows: { len: 2 }, cols: { len: 3 } });
+  const sheet = controller.getSheetIds()[0]!;
+  const engine = createEngineAdapter({
+    root,
+    canvas: canvas.canvas as unknown as HTMLCanvasElement,
+  });
+  engine.render(controller.getSnapshot(), sheet);
+  frames.shift()!(0);
+  canvas.operations.length = 0;
+
+  const target = createSelectionState({ row: 0, column: 2 });
+  engine.stageSelection(target);
+
+  expect(engine.publicSelection()?.active).toEqual({ row: 0, column: 2 });
+  expect(engine.interactionSnapshot()!.viewport.scroll.x).toBeGreaterThan(0);
+  expect(frames).toEqual([]);
+  expect(canvas.operations).toEqual([]);
+  engine.dispose();
+});

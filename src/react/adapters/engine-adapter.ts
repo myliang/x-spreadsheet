@@ -131,7 +131,10 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     if (paintNow) paint();
   };
 
-  const ensureVisible = (point: Readonly<{ readonly row: number; readonly column: number }>) => {
+  const ensureVisible = (
+    point: Readonly<{ readonly row: number; readonly column: number }>,
+    paintNow = true,
+  ) => {
     if (
       disposed
       || viewport === null
@@ -166,7 +169,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     const next = clampScroll({ x, y }, viewport);
     if (next.x !== viewport.scroll.x || next.y !== viewport.scroll.y) {
       viewport = createViewportMetrics(model, { ...viewport, scroll: next });
-      paint();
+      if (paintNow) paint();
     }
     const range = { start: point, end: point };
     return overlayAnchor(range, viewport);
@@ -273,6 +276,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     stageSelection(next) {
       if (disposed || viewport === null || activeSheet === null) return null;
       selection = normalizeSelection(next, viewport.model);
+      ensureVisible(selection.active, false);
       return {
         sheet: activeSheet,
         range: selection.range,
