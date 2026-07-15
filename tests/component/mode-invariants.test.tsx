@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { TegoSheetException } from '../../src/core';
+import { TegoSheetException, type WorkbookInput } from '../../src/core';
 import { renderSheet } from '../helpers/render-sheet';
 
 it('throws a synchronous contract exception for mixed control modes', () => {
@@ -33,4 +33,12 @@ it('throws invalid initial workbook data during initialization', () => {
   expect(() => renderSheet({ defaultValue: { rows: { len: -1 } } })).toThrowError(
     expect.objectContaining({ code: 'INVALID_DATA', recoverable: false }),
   );
+});
+
+it('does not reinterpret explicit null as a missing workbook prop', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+  expect(() => renderSheet({
+    defaultValue: null as unknown as WorkbookInput,
+  })).toThrowError(expect.objectContaining({ code: 'INVALID_DATA' }));
 });

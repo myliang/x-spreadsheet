@@ -195,4 +195,7 @@ export type WorkbookCommand =
   | RedoCommand;
 
 export type CommandResult<Command extends WorkbookCommand> =
-  Command extends AddSheetCommand ? SheetId : void;
+  Command extends AddSheetCommand ? SheetId
+    : Command extends PasteInternalCommand | PasteExternalCommand
+      ? readonly (readonly string[])[]
+      : void;

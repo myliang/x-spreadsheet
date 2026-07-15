@@ -180,7 +180,7 @@ export function applyCommand(
         if (transformed.sheet === target.data) return null;
         return {
           state: state.update(command.target.sheet, () => transformed.sheet),
-          result: undefined,
+          result: transformed.values,
           kind: 'clipboard',
           sheet: command.target.sheet,
           range: transformed.range,
@@ -194,7 +194,7 @@ export function applyCommand(
         if (transformed.sheet === target.data) return null;
         return {
           state: state.update(command.target.sheet, () => transformed.sheet),
-          result: undefined,
+          result: transformed.values,
           kind: 'clipboard',
           sheet: command.target.sheet,
           range: transformed.range,

@@ -3,6 +3,11 @@ import { StrictMode, useMemo, useRef } from 'react';
 import { afterEach } from 'vitest';
 import type { WorkbookCommand } from '../../src/core/commands/workbook-command';
 import type { CommandCommit } from '../../src/core/commands/command-result';
+import type {
+  WorkbookController,
+  WorkbookControllerOptions,
+} from '../../src/core/controller/workbook-controller';
+import type { WorkbookInput } from '../../src/core';
 import type { ChangeSource, Selection } from '../../src/core';
 import {
   createEventDispatcher,
@@ -19,11 +24,15 @@ export interface RenderSheetOptions {
   ) => void;
   readonly schedulePaint?: () => void;
   readonly strict?: boolean;
+  readonly createController?: (
+    input: WorkbookInput,
+    options: WorkbookControllerOptions,
+  ) => WorkbookController;
 }
 
 export interface SheetRuntime {
   readonly dispatcher: EventDispatcher;
-  readonly epoch: ReturnType<typeof useControllerEpoch>;
+  readonly epoch: NonNullable<ReturnType<typeof useControllerEpoch>>;
   dispatchUi: EventDispatcher['dispatchUi'];
   dispatchRef: EventDispatcher['dispatchRef'];
   dispatchUiWithSelection(
@@ -56,35 +65,42 @@ export function renderSheet(
   let runtime: SheetRuntime | null = null;
 
   function BoundaryHarness(props: TegoSheetProps) {
-    const epoch = useControllerEpoch(props);
+    const epoch = useControllerEpoch(props, {
+      createController: options.createController,
+    });
+    const controller = epoch?.controller;
+    const isActive = epoch?.isActive;
     const callbacks = useRef<TegoSheetCallbacks>(callbacksFromProps(props));
     callbacks.current = callbacksFromProps(props);
     const dispatcher = useMemo(
-      () => createEventDispatcher({
-        controller: epoch.controller,
+      () => controller === undefined || isActive === undefined ? null : createEventDispatcher({
+        controller,
         getCallbacks: () => callbacks.current,
+        isActive,
         recordControlledCheckpoint: options.recordControlledCheckpoint,
         schedulePaint: options.schedulePaint,
       }),
-      [epoch.controller],
+      [controller, isActive],
     );
 
-    runtime = {
-      dispatcher,
-      epoch,
-      dispatchUi: dispatcher.dispatchUi,
-      dispatchRef: dispatcher.dispatchRef,
-      dispatchUiWithSelection: (command, source, selection) =>
-        dispatcher.dispatchUi(command, source, { selectionAfterCommit: selection }),
-    };
+    if (epoch !== null && dispatcher !== null) {
+      runtime = {
+        dispatcher,
+        epoch,
+        dispatchUi: dispatcher.dispatchUi,
+        dispatchRef: dispatcher.dispatchRef,
+        dispatchUiWithSelection: (command, source, selection) =>
+          dispatcher.dispatchUi(command, source, { selectionAfterCommit: selection }),
+      };
+    }
 
     return (
       <output
-        data-mode={epoch.mode}
-        data-revision={epoch.snapshot.revision}
-        data-sheets={epoch.snapshot.sheets.length}
+        data-mode={epoch?.mode ?? 'initializing'}
+        data-revision={epoch?.snapshot.revision ?? -1}
+        data-sheets={epoch?.snapshot.sheets.length ?? -1}
       >
-        {JSON.stringify(epoch.snapshot.value)}
+        {JSON.stringify(epoch?.snapshot.value ?? null)}
       </output>
     );
   }

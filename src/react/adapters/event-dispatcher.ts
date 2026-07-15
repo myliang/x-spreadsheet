@@ -6,6 +6,8 @@ import {
   type ActiveSheetChangeEvent,
   type CellEditEvent,
   type ChangeSource,
+  type CellPoint,
+  type CellRange,
   type PasteEvent,
   type Selection,
   type TegoSheetError,
@@ -23,6 +25,7 @@ export type UiDispatchOutcome =
 export interface EventDispatcherOptions {
   readonly controller: WorkbookController;
   readonly getCallbacks: () => TegoSheetCallbacks;
+  readonly isActive?: () => boolean;
   readonly recordControlledCheckpoint?: (
     commit: CommandCommit<unknown, WorkbookCommand>,
   ) => void;
@@ -45,39 +48,94 @@ export interface EventDispatcher {
   readonly reportUiError: (error: TegoSheetError) => void;
 }
 
-function clone<T>(value: T): T {
-  if (Array.isArray(value)) return value.map(item => clone(item)) as T;
-  if (value !== null && typeof value === 'object') {
-    const output: Record<string, unknown> = {};
+function define(output: object, key: string, value: unknown): void {
+  Object.defineProperty(output, key, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  });
+}
+
+function isDomException(value: object): value is DOMException {
+  return typeof DOMException === 'function' && value instanceof DOMException;
+}
+
+function cloneError<T extends Error>(value: T, seen: WeakMap<object, unknown>): T {
+  const output = (isDomException(value)
+    ? new DOMException(value.message, value.name)
+    : new Error(value.message)) as T;
+  seen.set(value, output);
+  if (!isDomException(output)) {
+    output.name = value.name;
+    if (value.stack !== undefined) output.stack = value.stack;
+  }
+  const cause = (value as Error & { readonly cause?: unknown }).cause;
+  if (Object.hasOwn(value, 'cause')) define(output, 'cause', clone(cause, seen));
+  for (const key of Object.keys(value)) {
+    if (key === 'cause') continue;
+    define(output, key, clone((value as unknown as Record<string, unknown>)[key], seen));
+  }
+  return output;
+}
+
+function clone<T>(value: T, seen = new WeakMap<object, unknown>()): T {
+  if (value === null || typeof value !== 'object') return value;
+  const cached = seen.get(value);
+  if (cached !== undefined) return cached as T;
+  if (value instanceof Error || isDomException(value)) return cloneError(value, seen);
+  if (Array.isArray(value)) {
+    const output: unknown[] = new Array(value.length);
+    seen.set(value, output);
     for (const key of Object.keys(value)) {
-      output[key] = clone((value as Record<string, unknown>)[key]);
+      define(output, key, clone((value as unknown as Record<string, unknown>)[key], seen));
     }
     return output as T;
   }
-  return value;
+  const output: Record<string, unknown> = {};
+  seen.set(value, output);
+  for (const key of Object.keys(value)) {
+    define(output, key, clone((value as Record<string, unknown>)[key], seen));
+  }
+  return output as T;
 }
 
-function selectionValues(
-  controller: WorkbookController,
-  selection: Selection,
-): readonly (readonly string[])[] {
-  const rows: string[][] = [];
-  for (let row = selection.range.start.row; row <= selection.range.end.row; row += 1) {
-    const values: string[] = [];
-    for (
-      let column = selection.range.start.column;
-      column <= selection.range.end.column;
-      column += 1
-    ) {
-      values.push(controller.getCellText({ sheet: selection.sheet, row, column }));
-    }
-    rows.push(values);
-  }
-  return rows;
+function inactiveException(): TegoSheetException {
+  return new TegoSheetException({
+    code: 'INVALID_COMMAND',
+    message: 'Controller epoch is inactive',
+    recoverable: true,
+  });
+}
+
+function clipPoint(point: CellPoint, range: CellRange): CellPoint {
+  return {
+    row: Math.min(range.end.row, Math.max(range.start.row, point.row)),
+    column: Math.min(range.end.column, Math.max(range.start.column, point.column)),
+  };
+}
+
+function committedTarget(
+  target: Selection,
+  commit: CommandCommit<unknown, WorkbookCommand>,
+): Selection {
+  const range = commit.change.range ?? target.range;
+  return {
+    sheet: commit.change.sheet,
+    range,
+    active: clipPoint(target.active, range),
+  };
+}
+
+function pasteValues(result: unknown): readonly (readonly string[])[] {
+  return Array.isArray(result) ? result as readonly (readonly string[])[] : [];
 }
 
 export function createEventDispatcher(options: EventDispatcherOptions): EventDispatcher {
   const { controller } = options;
+  const ensureActive = () => {
+    if (options.isActive?.() === false) throw inactiveException();
+  };
 
   const reportUiError = (error: TegoSheetError) => {
     options.getCallbacks().onError?.(clone(error));
@@ -86,7 +144,6 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
   const notifyCommit = (
     commit: CommandCommit<unknown, WorkbookCommand>,
     previousText: string | undefined,
-    internalValues: readonly (readonly string[])[] | undefined,
     notificationOptions: DispatchNotificationOptions,
   ) => {
     const callbacks = options.getCallbacks();
@@ -102,23 +159,23 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
         source: commit.change.source,
       };
       callbacks.onCellEdit?.(clone(event));
-    } else if (commit.command.type === 'paste-external') {
+    } else if (commit.command.type === 'paste-external' && callbacks.onPaste !== undefined) {
       const event: PasteEvent = {
         changeId: commit.change.id,
         source: 'external',
-        target: commit.command.target,
-        values: commit.command.values,
+        target: committedTarget(commit.command.target, commit),
+        values: pasteValues(commit.result),
       };
-      callbacks.onPaste?.(clone(event));
-    } else if (commit.command.type === 'paste-internal') {
+      callbacks.onPaste(clone(event));
+    } else if (commit.command.type === 'paste-internal' && callbacks.onPaste !== undefined) {
       const event: PasteEvent = {
         changeId: commit.change.id,
         source: 'internal',
         sourceSelection: commit.command.source,
-        target: commit.command.target,
-        values: internalValues ?? [],
+        target: committedTarget(commit.command.target, commit),
+        values: pasteValues(commit.result),
       };
-      callbacks.onPaste?.(clone(event));
+      callbacks.onPaste(clone(event));
     }
 
     if (notificationOptions.selectionAfterCommit !== undefined) {
@@ -127,44 +184,55 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     options.schedulePaint?.();
   };
 
-  const dispatch = (
+  const dispatchCore = (
     command: WorkbookCommand,
     source: ChangeSource,
-    notificationOptions: DispatchNotificationOptions = {},
-  ): CommandOutcome<unknown, WorkbookCommand> => {
+  ): {
+    readonly outcome: CommandOutcome<unknown, WorkbookCommand>;
+    readonly previousText: string | undefined;
+  } => {
+    ensureActive();
     const previousText = command.type === 'set-cell-text'
       ? controller.getCellText(command.address)
-      : undefined;
-    const internalValues = command.type === 'paste-internal'
-      ? selectionValues(controller, command.source)
       : undefined;
     const outcome = controller.dispatch(command, source) as CommandOutcome<
       unknown,
       WorkbookCommand
     >;
-    if (outcome.status === 'committed') {
-      notifyCommit(outcome.commit, previousText, internalValues, notificationOptions);
+    return { outcome, previousText };
+  };
+
+  const notify = (
+    dispatched: ReturnType<typeof dispatchCore>,
+    notificationOptions: DispatchNotificationOptions = {},
+  ): CommandOutcome<unknown, WorkbookCommand> => {
+    if (dispatched.outcome.status === 'committed') {
+      notifyCommit(dispatched.outcome.commit, dispatched.previousText, notificationOptions);
     }
-    return outcome;
+    return dispatched.outcome;
   };
 
   return {
     dispatchUi(command, source, notificationOptions) {
+      let dispatched: ReturnType<typeof dispatchCore>;
       try {
-        return dispatch(command, source, notificationOptions);
+        dispatched = dispatchCore(command, source);
       } catch (error) {
         if (!(error instanceof TegoSheetException)) throw error;
         const payload = clone(error.error);
         reportUiError(payload);
         return { status: 'rejected', error: payload };
       }
+      return notify(dispatched, notificationOptions);
     },
     dispatchRef: (command, source = 'ref', notificationOptions) =>
-      dispatch(command, source, notificationOptions),
+      notify(dispatchCore(command, source), notificationOptions),
     emitSelectionChange(selection) {
+      ensureActive();
       options.getCallbacks().onSelectionChange?.(clone(selection));
     },
     emitActiveSheetChange(event) {
+      ensureActive();
       options.getCallbacks().onActiveSheetChange?.(clone(event));
     },
     reportUiError,
