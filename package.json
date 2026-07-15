@@ -58,7 +58,7 @@
     "test:parity-gate": "node scripts/test-parity-gate.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
-    "dev": "vite",
+    "dev": "vite --config demo/vite.config.ts",
     "build": "vite build",
     "build:demo": "tsc --noEmit --project demo/tsconfig.json && vite build --config demo/vite.config.ts"
   },

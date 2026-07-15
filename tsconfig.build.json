@@ -10,5 +10,5 @@
     "types": []
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["legacy", "dist", "node_modules", "tests"]
+  "exclude": ["dist", "node_modules", "tests"]
 }

@@ -23,7 +23,6 @@ export default tseslint.config(
       'demo-dist/**',
       'dist/**',
       'docs/**',
-      'legacy/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',

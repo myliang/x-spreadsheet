@@ -6,8 +6,6 @@ import * as publicApi from '../../src';
 
 const root = resolve(import.meta.dirname, '../..');
 const exactEvidence = new Set([
-  'assets/material_common_sprite82.svg',
-  'assets/sprite.svg',
   'docs/migration-from-x-data-spreadsheet.md',
   'tests/parity/legacy/baseline-meta.json',
   'tests/visual/fonts/NotoSans-Regular.woff2',
@@ -47,8 +45,6 @@ it('classifies only exact architecture evidence as approved and rejects generate
     'tests/visual/fonts/OFL.txt',
     'tests/visual/fonts/README.md',
     'docs/migration-from-x-data-spreadsheet.md',
-    'assets/material_common_sprite82.svg',
-    'assets/sprite.svg',
   ];
   const generated = [
     'docs/superpowers/bundle.js.map',
@@ -117,6 +113,31 @@ it('keeps the removed root legacy tree visible to filesystem and ignore guards',
     { cwd: root },
   );
   expect(ignored.status, 'root legacy must not be hidden by .gitignore').toBe(1);
+});
+
+it('removes obsolete rewrite residue and serves the implemented React demo', () => {
+  for (const obsolete of [
+    'assets/material_common_sprite82.svg',
+    'assets/sprite.svg',
+    'index.html',
+  ]) expect(existsSync(resolve(root, obsolete)), obsolete).toBe(false);
+
+  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
+    readonly scripts?: Readonly<Record<string, string>>;
+  };
+  expect(packageJson.scripts?.dev).toBe('vite --config demo/vite.config.ts');
+
+  for (const file of [
+    'vitest.config.ts',
+    'eslint.config.js',
+    'tsconfig.json',
+    'tsconfig.build.json',
+    'tsconfig.tests.json',
+  ]) {
+    expect(readFileSync(resolve(root, file), 'utf8'), file).not.toMatch(
+      /["']legacy(?:\/\*\*)?["']/,
+    );
+  }
 });
 
 it('keeps the immutable legacy baseline without shipping recapture tooling', () => {

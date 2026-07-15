@@ -103,62 +103,160 @@ function staticName(node: ts.Node | undefined): string | null {
   return null;
 }
 
-function forEachEagerChild(node: ts.Node, visitor: (child: ts.Node) => void): void {
-  if (ts.isFunctionLike(node)) return;
+function decoratorsOf(node: ts.Node): readonly ts.Decorator[] {
+  return ts.canHaveDecorators(node) ? ts.getDecorators(node) ?? [] : [];
+}
+
+function isAmbient(node: ts.Node): boolean {
+  return ts.canHaveModifiers(node)
+    && (ts.getModifiers(node) ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword);
+}
+
+function unwrapped(expression: ts.Expression): ts.Expression {
+  let current = expression;
+  while (
+    ts.isParenthesizedExpression(current)
+    || ts.isAsExpression(current)
+    || ts.isTypeAssertionExpression(current)
+    || ts.isNonNullExpression(current)
+    || ts.isSatisfiesExpression(current)
+  ) current = current.expression;
+  return current;
+}
+
+function invokedFunctionFromCallee(
+  expression: ts.Expression,
+): ts.FunctionExpression | ts.ArrowFunction | null {
+  let callee = unwrapped(expression);
+  if (
+    (ts.isPropertyAccessExpression(callee) || ts.isElementAccessExpression(callee))
+    && ['apply', 'call'].includes(staticName(
+      ts.isPropertyAccessExpression(callee) ? callee.name : callee.argumentExpression,
+    ) ?? '')
+  ) callee = unwrapped(callee.expression);
+  return ts.isFunctionExpression(callee) || ts.isArrowFunction(callee) ? callee : null;
+}
+
+function forEachEagerChild(
+  node: ts.Node,
+  invokedFunctions: WeakSet<ts.FunctionExpression | ts.ArrowFunction>,
+  visitor: (child: ts.Node) => void,
+): void {
+  if (ts.isTypeNode(node) || (node.kind !== ts.SyntaxKind.SourceFile && isAmbient(node))) return;
+  if (ts.isCallExpression(node)) {
+    const invoked = invokedFunctionFromCallee(node.expression);
+    if (invoked !== null) invokedFunctions.add(invoked);
+    visitor(node.expression);
+    for (const argument of node.arguments) visitor(argument);
+    return;
+  }
+  if (ts.isFunctionLike(node)) {
+    if (!ts.isFunctionExpression(node) && !ts.isArrowFunction(node)) return;
+    if (!invokedFunctions.has(node)) return;
+    for (const parameter of node.parameters) visitor(parameter);
+    if (node.body !== undefined) visitor(node.body);
+    return;
+  }
+  if (ts.isParameter(node)) {
+    if (node.initializer !== undefined) visitor(node.initializer);
+    return;
+  }
+  if (ts.isClassStaticBlockDeclaration(node)) {
+    visitor(node.body);
+    return;
+  }
   if (ts.isClassDeclaration(node) || ts.isClassExpression(node)) {
+    for (const decorator of decoratorsOf(node)) visitor(decorator.expression);
     for (const clause of node.heritageClauses ?? []) {
       for (const type of clause.types) visitor(type.expression);
     }
     for (const member of node.members) {
+      for (const decorator of decoratorsOf(member)) visitor(decorator.expression);
+      if (member.name !== undefined && ts.isComputedPropertyName(member.name)) visitor(member.name.expression);
+      if (ts.isFunctionLike(member)) {
+        for (const parameter of member.parameters) {
+          for (const decorator of decoratorsOf(parameter)) visitor(decorator.expression);
+        }
+      }
       const isStatic = (ts.canHaveModifiers(member) ? ts.getModifiers(member) : undefined)
         ?.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword) ?? false;
       if (!isStatic) continue;
       if (ts.isPropertyDeclaration(member) && member.initializer !== undefined) visitor(member.initializer);
-      if (ts.isClassStaticBlockDeclaration(member)) visitor(member.body);
+      if (ts.isClassStaticBlockDeclaration(member)) visitor(member);
     }
     return;
   }
   ts.forEachChild(node, visitor);
 }
 
-function collectBindingNames(name: ts.BindingName, names: Set<string>): void {
-  if (ts.isIdentifier(name)) {
-    names.add(name.text);
-    return;
-  }
-  for (const element of name.elements) {
-    if (!ts.isOmittedExpression(element)) collectBindingNames(element.name, names);
-  }
-}
-
 function eagerBrowserGlobalsFromSource(source: string, file: string): readonly string[] {
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
     file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  interface Binding {
+    readonly aliases: Set<BrowserAlias>;
+  }
   interface Scope {
-    readonly bindings: Map<string, BrowserAlias | null>;
+    readonly bindings: Map<string, Binding>;
+    readonly kind: 'block' | 'root' | 'var';
     readonly parent: Scope | null;
   }
-  const rootScope: Scope = { bindings: new Map(), parent: null };
+  const rootScope: Scope = { bindings: new Map(), kind: 'root', parent: null };
   const scopes = new WeakMap<ts.Node, Scope>();
+  const bindings = new Set<Binding>();
+  const invokedFunctions = new WeakSet<ts.FunctionExpression | ts.ArrowFunction>();
   const buildScopes = (node: ts.Node, parent: Scope): void => {
     if (ts.isTypeNode(node)) return;
-    const scope = ts.isBlock(node) ? { bindings: new Map(), parent } : parent;
+    const blockScope = ts.isBlock(node)
+      || ts.isCaseBlock(node)
+      || ts.isCatchClause(node)
+      || ts.isForStatement(node)
+      || ts.isForInStatement(node)
+      || ts.isForOfStatement(node)
+      || ts.isClassDeclaration(node)
+      || ts.isClassExpression(node);
+    const varScope = ts.isFunctionLike(node) || ts.isClassStaticBlockDeclaration(node);
+    const kind = varScope ? 'var' : blockScope ? 'block' : null;
+    const scope: Scope = kind === null ? parent : { bindings: new Map(), kind, parent };
     scopes.set(node, scope);
-    forEachEagerChild(node, child => buildScopes(child, scope));
+    forEachEagerChild(node, invokedFunctions, child => buildScopes(child, scope));
   };
   buildScopes(sourceFile, rootScope);
   const visit = (node: ts.Node, visitor: (current: ts.Node, scope: Scope) => void): void => {
     if (ts.isTypeNode(node)) return;
     const scope = scopes.get(node)!;
     visitor(node, scope);
-    forEachEagerChild(node, child => visit(child, visitor));
+    forEachEagerChild(node, invokedFunctions, child => visit(child, visitor));
+  };
+  const declareName = (scope: Scope, name: string): Binding => {
+    const existing = scope.bindings.get(name);
+    if (existing !== undefined) return existing;
+    const binding: Binding = { aliases: new Set() };
+    scope.bindings.set(name, binding);
+    bindings.add(binding);
+    return binding;
+  };
+  const declare = (scope: Scope, name: ts.BindingName): void => {
+    if (ts.isIdentifier(name)) {
+      declareName(scope, name.text);
+      return;
+    }
+    for (const element of name.elements) {
+      if (!ts.isOmittedExpression(element)) declare(scope, element.name);
+    }
+  };
+  const variableScope = (node: ts.VariableDeclaration, scope: Scope): Scope => {
+    if (ts.isCatchClause(node.parent)) return scope;
+    const declarationList = ts.isVariableDeclarationList(node.parent) ? node.parent : null;
+    if (declarationList !== null && (declarationList.flags & ts.NodeFlags.BlockScoped) !== 0) return scope;
+    let owner = scope;
+    while (owner.kind === 'block' && owner.parent !== null) owner = owner.parent;
+    return owner;
   };
   visit(sourceFile, (node, scope) => {
-    if (ts.isVariableDeclaration(node)) {
-      const names = new Set<string>();
-      collectBindingNames(node.name, names);
-      for (const name of names) scope.bindings.set(name, null);
-    }
+    if (ts.isVariableDeclaration(node)) declare(variableScope(node, scope), node.name);
+    if (ts.isParameter(node)) declare(scope, node.name);
+    if (ts.isFunctionExpression(node) && node.name !== undefined) declareName(scope, node.name.text);
+    if (ts.isClassExpression(node) && node.name !== undefined) declareName(scope, node.name.text);
     if (
       (ts.isFunctionDeclaration(node)
         || ts.isClassDeclaration(node)
@@ -168,76 +266,106 @@ function eagerBrowserGlobalsFromSource(source: string, file: string): readonly s
         || ts.isNamespaceImport(node)
         || ts.isImportSpecifier(node))
       && node.name !== undefined
-    ) scope.bindings.set(node.name.text, null);
-  });
-  const lookup = (scope: Scope, name: string): { readonly found: boolean; readonly value: BrowserAlias | null } => {
-    for (let current: Scope | null = scope; current !== null; current = current.parent) {
-      if (current.bindings.has(name)) return { found: true, value: current.bindings.get(name)! };
+    ) {
+      const owner = (
+        (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node))
+        && scope.parent !== null
+      )
+        ? scope.parent
+        : scope;
+      declareName(owner, node.name.text);
+      if (ts.isClassDeclaration(node)) declareName(scope, node.name.text);
     }
-    return { found: false, value: null };
+  });
+  const lookup = (scope: Scope, name: string): Binding | undefined => {
+    for (let current: Scope | null = scope; current !== null; current = current.parent) {
+      const binding = current.bindings.get(name);
+      if (binding !== undefined) return binding;
+    }
+    return undefined;
   };
-  const aliasFor = (expression: ts.Expression, scope: Scope): BrowserAlias | undefined => {
+  const aliasesFor = (expression: ts.Expression, scope: Scope): ReadonlySet<BrowserAlias> => {
     if (ts.isIdentifier(expression)) {
       const binding = lookup(scope, expression.text);
-      if (binding.found) return binding.value ?? undefined;
-      if (expression.text === 'globalThis' || expression.text === 'window') return globalObject;
-      return browserGlobals.has(expression.text) ? expression.text : undefined;
+      if (binding !== undefined) return binding.aliases;
+      if (expression.text === 'globalThis' || expression.text === 'window') return new Set([globalObject]);
+      return browserGlobals.has(expression.text) ? new Set([expression.text]) : new Set();
     }
     if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
-      const parent = aliasFor(expression.expression, scope);
       const property = ts.isPropertyAccessExpression(expression)
         ? expression.name.text
         : staticName(expression.argumentExpression);
-      if (parent === undefined || property === null) return undefined;
-      if (parent === globalObject) return browserGlobals.has(property) ? property : undefined;
-      return parent;
+      if (property === null) return new Set();
+      const aliases = new Set<BrowserAlias>();
+      for (const parent of aliasesFor(expression.expression, scope)) {
+        if (parent === globalObject) {
+          if (browserGlobals.has(property)) aliases.add(property);
+        } else {
+          aliases.add(parent);
+        }
+      }
+      return aliases;
     }
     if (ts.isCallExpression(expression)) {
       const binder = expression.expression;
       if (
         (ts.isPropertyAccessExpression(binder) || ts.isElementAccessExpression(binder))
         && staticName(ts.isPropertyAccessExpression(binder) ? binder.name : binder.argumentExpression) === 'bind'
-      ) return aliasFor(binder.expression, scope);
+      ) return aliasesFor(binder.expression, scope);
     }
-    return undefined;
+    return new Set();
   };
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const bind = (scope: Scope, name: string | null, alias: BrowserAlias | undefined): void => {
-      if (name === null || alias === undefined || scope.bindings.get(name) === alias) return;
-      scope.bindings.set(name, alias);
+  const addAliases = (binding: Binding, aliases: Iterable<BrowserAlias>): boolean => {
+    let changed = false;
+    for (const alias of aliases) {
+      if (binding.aliases.has(alias)) continue;
+      binding.aliases.add(alias);
       changed = true;
+    }
+    return changed;
+  };
+  const maximumPasses = Math.max(1, bindings.size * (browserGlobals.size + 1) + 1);
+  for (let pass = 0; pass < maximumPasses; pass += 1) {
+    let changed = false;
+    const bind = (binding: Binding | undefined, aliases: Iterable<BrowserAlias>): void => {
+      if (binding !== undefined) changed = addAliases(binding, aliases) || changed;
     };
     visit(sourceFile, (node, scope) => {
       if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
+        const declarationScope = variableScope(node, scope);
         if (ts.isIdentifier(node.name)) {
-          bind(scope, node.name.text, aliasFor(node.initializer, scope));
+          bind(declarationScope.bindings.get(node.name.text), aliasesFor(node.initializer, scope));
           return;
         }
         if (!ts.isObjectBindingPattern(node.name)) return;
-        const parent = aliasFor(node.initializer, scope);
+        const parents = aliasesFor(node.initializer, scope);
         for (const element of node.name.elements) {
           const property = staticName(element.propertyName ?? element.name);
-          const alias = parent === globalObject && property !== null && browserGlobals.has(property)
-            ? property
-            : parent === globalObject ? undefined : parent;
-          bind(scope, staticName(element.name), alias);
+          const aliases = new Set<BrowserAlias>();
+          if (property !== null) {
+            for (const parent of parents) {
+              if (parent === globalObject) {
+                if (browserGlobals.has(property)) aliases.add(property);
+              } else {
+                aliases.add(parent);
+              }
+            }
+          }
+          const name = staticName(element.name);
+          bind(name === null ? undefined : declarationScope.bindings.get(name), aliases);
         }
       } else if (
         ts.isBinaryExpression(node)
         && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
         && ts.isIdentifier(node.left)
       ) {
-        const target = lookup(scope, node.left.text);
-        if (!target.found) return;
-        for (let owner: Scope | null = scope; owner !== null; owner = owner.parent) {
-          if (!owner.bindings.has(node.left.text)) continue;
-          bind(owner, node.left.text, aliasFor(node.right, scope));
-          break;
-        }
+        bind(lookup(scope, node.left.text), aliasesFor(node.right, scope));
       }
     });
+    if (!changed) break;
+    if (pass === maximumPasses - 1) {
+      throw new Error(`browser alias analysis exceeded ${maximumPasses} monotonic passes`);
+    }
   }
   const found = new Set<string>();
   visit(sourceFile, (node, scope) => {
@@ -251,9 +379,10 @@ function eagerBrowserGlobalsFromSource(source: string, file: string): readonly s
         || (ts.isPropertyAssignment(parent) && parent.name === node)
       ) return;
     }
-    const alias = aliasFor(node, scope);
-    if (alias === globalObject && ts.isIdentifier(node) && node.text === 'window') found.add('window');
-    else if (alias !== undefined && alias !== globalObject) found.add(alias);
+    for (const alias of aliasesFor(node, scope)) {
+      if (alias === globalObject && ts.isIdentifier(node) && node.text === 'window') found.add('window');
+      else if (alias !== globalObject) found.add(alias);
+    }
   });
   return [...found];
 }
@@ -316,6 +445,72 @@ it('keeps browser shadowing lexical instead of suppressing outer global reads', 
       document.createElement('local');
     }
   `, 'local-only.ts')).toEqual([]);
+});
+
+it('terminates and conservatively tracks conflicting browser aliases per lexical binding', () => {
+  expect([...eagerBrowserGlobalsFromSource(`
+    let browserValue = document;
+    browserValue = navigator;
+    {
+      const browserValue = localBrowser;
+      browserValue.location;
+    }
+    browserValue.location;
+  `, 'browser-conflict.ts')].sort()).toEqual(['document', 'navigator']);
+});
+
+it('models eager execution paths without entering lazy or ambient declarations', () => {
+  expect(eagerBrowserGlobalsFromSource(`
+    (() => document.createElement('div'))();
+  `, 'iife.ts')).toEqual(['document']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    class ComputedName {
+      [navigator.userAgent]() {}
+    }
+  `, 'computed-class-name.ts')).toEqual(['navigator']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    @register(document.createElement('div'))
+    class Decorated {}
+  `, 'decorator.ts')).toEqual(['document']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    function lazyFunction() { document.createElement('div'); }
+    const lazyArrow = () => navigator.userAgent;
+    (function document() { document(); })();
+  `, 'lazy-functions.ts')).toEqual([]);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    declare const document: Document;
+    declare function factory(value: typeof navigator): void;
+    declare class Ambient {
+      [document.createElement('div')]: string;
+    }
+  `, 'ambient.ts')).toEqual([]);
+});
+
+it('models wrapped invocation and class-local execution scopes', () => {
+  expect(eagerBrowserGlobalsFromSource(`
+    (function () { document.createElement('div'); }).call(undefined);
+    ((() => navigator.userAgent) as () => string)();
+  `, 'wrapped-iife.ts')).toEqual(['document', 'navigator']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    class StaticShadow {
+      static {
+        var document = localDocument;
+        document.title;
+      }
+    }
+    document.createElement('global');
+  `, 'static-block-var.ts')).toEqual(['document']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    const LocalClass = class document {
+      static value = document.title;
+    };
+  `, 'named-class-expression.ts')).toEqual([]);
 });
 
 it('[ARCH-9] imports the public source entry without creating browser globals', async () => {

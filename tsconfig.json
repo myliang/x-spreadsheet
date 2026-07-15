@@ -26,7 +26,6 @@
     "*.config.ts"
   ],
   "exclude": [
-    "legacy",
     "dist",
     "coverage",
     "node_modules",

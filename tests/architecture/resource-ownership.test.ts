@@ -67,46 +67,175 @@ function boundTarget(expression: ts.Expression): ts.Expression | null {
   return expressionName(binder) === 'bind' ? binder.expression : null;
 }
 
-function resourceReference(
-  expression: ts.Expression,
-  aliases: ReadonlyMap<string, ResourcePrimitive>,
-): ResourcePrimitive | undefined {
-  if (ts.isIdentifier(expression)) {
-    return aliases.get(expression.text)
-      ?? (propertyOnly.has(expression.text) ? undefined : callNames.get(expression.text));
-  }
-  if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
-    const name = expressionName(expression);
-    return name === null ? undefined : callNames.get(name);
-  }
-  const target = boundTarget(expression);
-  return target === null ? undefined : resourceReference(target, aliases);
-}
-
 function bindingName(name: ts.BindingName | ts.PropertyName | undefined): string | null {
   if (name === undefined) return null;
   if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) return name.text;
   return null;
 }
 
-function resourceAliases(sourceFile: ts.SourceFile): ReadonlyMap<string, ResourcePrimitive> {
-  const aliases = new Map<string, ResourcePrimitive>();
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const bind = (name: string | null, primitive: ResourcePrimitive | undefined): void => {
-      if (name === null || primitive === undefined || aliases.get(name) === primitive) return;
-      aliases.set(name, primitive);
-      changed = true;
+interface AliasBinding<Alias> {
+  readonly aliases: Set<Alias>;
+}
+
+interface AliasScope<Alias> {
+  readonly bindings: Map<string, AliasBinding<Alias>>;
+  readonly kind: 'block' | 'root' | 'var';
+  readonly parent: AliasScope<Alias> | null;
+}
+
+interface LexicalAliases<Alias> {
+  readonly bindings: Set<AliasBinding<Alias>>;
+  readonly lookup: (scope: AliasScope<Alias>, name: string) => AliasBinding<Alias> | undefined;
+  readonly scopeForDeclaration: (node: ts.VariableDeclaration, scope: AliasScope<Alias>) => AliasScope<Alias>;
+  readonly visit: (visitor: (node: ts.Node, scope: AliasScope<Alias>) => void) => void;
+}
+
+function createLexicalAliases<Alias>(sourceFile: ts.SourceFile): LexicalAliases<Alias> {
+  const root: AliasScope<Alias> = { bindings: new Map(), kind: 'root', parent: null };
+  const scopes = new WeakMap<ts.Node, AliasScope<Alias>>();
+  const bindings = new Set<AliasBinding<Alias>>();
+  const build = (node: ts.Node, parent: AliasScope<Alias>): void => {
+    const blockScope = ts.isBlock(node)
+      || ts.isCaseBlock(node)
+      || ts.isCatchClause(node)
+      || ts.isForStatement(node)
+      || ts.isForInStatement(node)
+      || ts.isForOfStatement(node)
+      || ts.isClassDeclaration(node)
+      || ts.isClassExpression(node);
+    const varScope = ts.isFunctionLike(node) || ts.isClassStaticBlockDeclaration(node);
+    const kind = varScope ? 'var' : blockScope ? 'block' : null;
+    const scope: AliasScope<Alias> = kind === null
+      ? parent
+      : { bindings: new Map(), kind, parent };
+    scopes.set(node, scope);
+    ts.forEachChild(node, child => build(child, scope));
+  };
+  build(sourceFile, root);
+  const visit = (visitor: (node: ts.Node, scope: AliasScope<Alias>) => void): void => {
+    const walk = (node: ts.Node): void => {
+      visitor(node, scopes.get(node)!);
+      ts.forEachChild(node, walk);
     };
-    const visit = (node: ts.Node): void => {
+    walk(sourceFile);
+  };
+  const lookup = (scope: AliasScope<Alias>, name: string): AliasBinding<Alias> | undefined => {
+    for (let current: AliasScope<Alias> | null = scope; current !== null; current = current.parent) {
+      const binding = current.bindings.get(name);
+      if (binding !== undefined) return binding;
+    }
+    return undefined;
+  };
+  const scopeForDeclaration = (
+    node: ts.VariableDeclaration,
+    scope: AliasScope<Alias>,
+  ): AliasScope<Alias> => {
+    if (ts.isCatchClause(node.parent)) return scope;
+    const declarationList = ts.isVariableDeclarationList(node.parent) ? node.parent : null;
+    if (declarationList !== null && (declarationList.flags & ts.NodeFlags.BlockScoped) !== 0) return scope;
+    let owner = scope;
+    while (owner.kind === 'block' && owner.parent !== null) owner = owner.parent;
+    return owner;
+  };
+  const declare = (scope: AliasScope<Alias>, name: ts.BindingName): void => {
+    if (ts.isIdentifier(name)) {
+      if (scope.bindings.has(name.text)) return;
+      const binding: AliasBinding<Alias> = { aliases: new Set() };
+      scope.bindings.set(name.text, binding);
+      bindings.add(binding);
+      return;
+    }
+    for (const element of name.elements) {
+      if (!ts.isOmittedExpression(element)) declare(scope, element.name);
+    }
+  };
+  visit((node, scope) => {
+    if (ts.isVariableDeclaration(node)) declare(scopeForDeclaration(node, scope), node.name);
+    else if (ts.isParameter(node)) declare(scope, node.name);
+    else if (ts.isFunctionDeclaration(node) && node.name !== undefined) {
+      declare(scope.parent ?? scope, node.name);
+    } else if (ts.isFunctionExpression(node) && node.name !== undefined) {
+      declare(scope, node.name);
+    } else if (ts.isClassDeclaration(node) && node.name !== undefined) {
+      declare(scope.parent ?? scope, node.name);
+      declare(scope, node.name);
+    } else if (ts.isClassExpression(node) && node.name !== undefined) {
+      declare(scope, node.name);
+    } else if (
+      (ts.isEnumDeclaration(node)
+        || ts.isImportClause(node)
+        || ts.isImportEqualsDeclaration(node)
+        || ts.isNamespaceImport(node)
+        || ts.isImportSpecifier(node))
+      && node.name !== undefined
+    ) {
+      declare(scope, node.name);
+    }
+  });
+  return { bindings, lookup, scopeForDeclaration, visit };
+}
+
+function addAliases<Alias>(binding: AliasBinding<Alias>, aliases: Iterable<Alias>): boolean {
+  let changed = false;
+  for (const alias of aliases) {
+    if (binding.aliases.has(alias)) continue;
+    binding.aliases.add(alias);
+    changed = true;
+  }
+  return changed;
+}
+
+function runBoundedDataflow(
+  bindingCount: number,
+  aliasCount: number,
+  scan: () => boolean,
+): void {
+  const maximumPasses = Math.max(1, bindingCount * aliasCount + 1);
+  for (let pass = 0; pass < maximumPasses; pass += 1) {
+    if (!scan()) return;
+  }
+  throw new Error(`alias analysis exceeded ${maximumPasses} monotonic passes`);
+}
+
+function resourcePrimitivesFromSource(source: string, file: string): readonly string[] {
+  const primitives: ResourcePrimitive[] = [];
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const lexical = createLexicalAliases<ResourcePrimitive>(sourceFile);
+  const references = (
+    expression: ts.Expression,
+    scope: AliasScope<ResourcePrimitive>,
+  ): ReadonlySet<ResourcePrimitive> => {
+    if (ts.isIdentifier(expression)) {
+      const binding = lexical.lookup(scope, expression.text);
+      if (binding !== undefined) return binding.aliases;
+      const primitive = propertyOnly.has(expression.text) ? undefined : callNames.get(expression.text);
+      return primitive === undefined ? new Set() : new Set([primitive]);
+    }
+    if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+      const name = expressionName(expression);
+      const primitive = name === null ? undefined : callNames.get(name);
+      return primitive === undefined ? new Set() : new Set([primitive]);
+    }
+    const target = boundTarget(expression);
+    return target === null ? new Set() : references(target, scope);
+  };
+  runBoundedDataflow(lexical.bindings.size, new Set(callNames.values()).size, () => {
+    let changed = false;
+    lexical.visit((node, scope) => {
       if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
+        const declarationScope = lexical.scopeForDeclaration(node, scope);
         if (ts.isIdentifier(node.name)) {
-          bind(node.name.text, resourceReference(node.initializer, aliases));
+          changed = addAliases(declarationScope.bindings.get(node.name.text)!, references(node.initializer, scope))
+            || changed;
         } else if (ts.isObjectBindingPattern(node.name)) {
           for (const element of node.name.elements) {
+            const name = bindingName(element.name);
             const property = bindingName(element.propertyName ?? element.name);
-            bind(bindingName(element.name), property === null ? undefined : callNames.get(property));
+            const primitive = property === null ? undefined : callNames.get(property);
+            if (name !== null && primitive !== undefined) {
+              changed = addAliases(declarationScope.bindings.get(name)!, [primitive]) || changed;
+            }
           }
         }
       } else if (
@@ -114,32 +243,16 @@ function resourceAliases(sourceFile: ts.SourceFile): ReadonlyMap<string, Resourc
         && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
         && ts.isIdentifier(node.left)
       ) {
-        bind(node.left.text, resourceReference(node.right, aliases));
+        const binding = lexical.lookup(scope, node.left.text);
+        if (binding !== undefined) changed = addAliases(binding, references(node.right, scope)) || changed;
       }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
-  }
-  return aliases;
-}
-
-function resourcePrimitivesFromSource(source: string, file: string): readonly string[] {
-  const primitives: string[] = [];
-  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
-    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-  const aliases = resourceAliases(sourceFile);
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node)) {
-      const primitive = resourceReference(node.expression, aliases);
-      if (primitive !== undefined) primitives.push(primitive);
-    }
-    if (ts.isNewExpression(node)) {
-      const primitive = resourceReference(node.expression, aliases);
-      if (primitive !== undefined) primitives.push(primitive);
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
+    });
+    return changed;
+  });
+  lexical.visit((node, scope) => {
+    if (!ts.isCallExpression(node) && !ts.isNewExpression(node)) return;
+    for (const primitive of references(node.expression, scope)) primitives.push(primitive);
+  });
   return primitives;
 }
 
@@ -165,105 +278,83 @@ function ownershipMember(owner: OwnerAlias | undefined, method: string | null): 
 function lifetimeResourcesFromSource(source: string, file: string): readonly ResourcePrimitive[] {
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
     file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-  interface Scope {
-    readonly bindings: Map<string, OwnerAlias | null>;
-    readonly parent: Scope | null;
-  }
-  const rootScope: Scope = { bindings: new Map(), parent: null };
-  const scopes = new WeakMap<ts.Node, Scope>();
-  const buildScopes = (node: ts.Node, parent: Scope): void => {
-    const scope = (ts.isFunctionLike(node) || ts.isBlock(node))
-      ? { bindings: new Map(), parent }
-      : parent;
-    scopes.set(node, scope);
-    ts.forEachChild(node, child => buildScopes(child, scope));
-  };
-  buildScopes(sourceFile, rootScope);
-  const visit = (node: ts.Node, visitor: (current: ts.Node, scope: Scope) => void): void => {
-    const scope = scopes.get(node)!;
-    visitor(node, scope);
-    ts.forEachChild(node, child => visit(child, visitor));
-  };
-  const declare = (scope: Scope, name: ts.BindingName): void => {
-    if (ts.isIdentifier(name)) {
-      scope.bindings.set(name.text, null);
-      return;
-    }
-    for (const element of name.elements) {
-      if (!ts.isOmittedExpression(element)) declare(scope, element.name);
-    }
-  };
-  visit(sourceFile, (node, scope) => {
-    if (ts.isVariableDeclaration(node)) declare(scope, node.name);
+  const lexical = createLexicalAliases<OwnerAlias>(sourceFile);
+  lexical.visit((node, scope) => {
     if (ts.isParameter(node)) {
-      declare(scope, node.name);
       if (!ts.isIdentifier(node.name) || node.type === undefined) return;
       const type = node.type.getText(sourceFile);
-      if (/\bWorkbookController\b/.test(type)) scope.bindings.set(node.name.text, 'controller-object');
-      if (/\bUseCanvasEngineOptions\b/.test(type)) scope.bindings.set(node.name.text, 'canvas-options');
+      const binding = scope.bindings.get(node.name.text)!;
+      if (/\bWorkbookController\b/.test(type)) binding.aliases.add('controller-object');
+      if (/\bUseCanvasEngineOptions\b/.test(type)) binding.aliases.add('canvas-options');
     }
   });
-  const lookup = (scope: Scope, name: string): { readonly owner: Scope | null; readonly value: OwnerAlias | null } => {
-    for (let current: Scope | null = scope; current !== null; current = current.parent) {
-      if (current.bindings.has(name)) return { owner: current, value: current.bindings.get(name)! };
-    }
-    return { owner: null, value: null };
-  };
-  const aliasFor = (expression: ts.Expression, scope: Scope): OwnerAlias | undefined => {
-    if (ts.isIdentifier(expression)) return lookup(scope, expression.text).value ?? undefined;
+  const aliasesFor = (expression: ts.Expression, scope: AliasScope<OwnerAlias>): ReadonlySet<OwnerAlias> => {
+    if (ts.isIdentifier(expression)) return lexical.lookup(scope, expression.text)?.aliases ?? new Set();
     if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
       const property = expressionName(expression);
       if (
         expression.expression.kind === ts.SyntaxKind.ThisKeyword
         && property === 'registry'
-      ) return 'registry-object';
-      return ownershipMember(aliasFor(expression.expression, scope), property);
+      ) return new Set(['registry-object']);
+      const aliases = new Set<OwnerAlias>();
+      for (const owner of aliasesFor(expression.expression, scope)) {
+        const alias = ownershipMember(owner, property);
+        if (alias !== undefined) aliases.add(alias);
+      }
+      return aliases;
     }
     const target = boundTarget(expression);
-    return target === null ? undefined : aliasFor(target, scope);
+    return target === null ? new Set() : aliasesFor(target, scope);
   };
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const bind = (scope: Scope, name: string | null, alias: OwnerAlias | undefined): void => {
-      if (name === null || alias === undefined || scope.bindings.get(name) === alias) return;
-      scope.bindings.set(name, alias);
-      changed = true;
-    };
-    visit(sourceFile, (node, scope) => {
+  runBoundedDataflow(lexical.bindings.size, new Set<OwnerAlias>([
+    ...callNames.values(),
+    'canvas-options',
+    'controller-object',
+    'epoch-object',
+    'registry-object',
+  ]).size, () => {
+    let changed = false;
+    lexical.visit((node, scope) => {
       if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
+        const declarationScope = lexical.scopeForDeclaration(node, scope);
         if (ts.isIdentifier(node.name)) {
-          bind(scope, node.name.text, aliasFor(node.initializer, scope));
+          changed = addAliases(
+            declarationScope.bindings.get(node.name.text)!,
+            aliasesFor(node.initializer, scope),
+          ) || changed;
           return;
         }
         if (!ts.isObjectBindingPattern(node.name)) return;
-        const owner = aliasFor(node.initializer, scope);
+        const owners = aliasesFor(node.initializer, scope);
         for (const element of node.name.elements) {
-          bind(
-            scope,
-            bindingName(element.name),
-            ownershipMember(owner, bindingName(element.propertyName ?? element.name)),
-          );
+          const name = bindingName(element.name);
+          if (name === null) continue;
+          const aliases = new Set<OwnerAlias>();
+          for (const owner of owners) {
+            const alias = ownershipMember(owner, bindingName(element.propertyName ?? element.name));
+            if (alias !== undefined) aliases.add(alias);
+          }
+          changed = addAliases(declarationScope.bindings.get(name)!, aliases) || changed;
         }
       } else if (
         ts.isBinaryExpression(node)
         && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
         && ts.isIdentifier(node.left)
       ) {
-        const target = lookup(scope, node.left.text);
-        if (target.owner !== null) bind(target.owner, node.left.text, aliasFor(node.right, scope));
+        const binding = lexical.lookup(scope, node.left.text);
+        if (binding !== undefined) changed = addAliases(binding, aliasesFor(node.right, scope)) || changed;
       }
     });
-  }
+    return changed;
+  });
   const primitives: ResourcePrimitive[] = [];
-  visit(sourceFile, (node, scope) => {
+  lexical.visit((node, scope) => {
     if (!ts.isCallExpression(node)) return;
-    const primitive = aliasFor(node.expression, scope);
-    if (
-      primitive !== undefined
-      && primitive !== 'canvas-options'
-      && !primitive.endsWith('-object')
-    ) primitives.push(primitive as ResourcePrimitive);
+    for (const alias of aliasesFor(node.expression, scope)) {
+      if (alias !== 'canvas-options' && !alias.endsWith('-object')) {
+        primitives.push(alias as ResourcePrimitive);
+      }
+    }
   });
   return primitives;
 }
@@ -335,6 +426,63 @@ it('resolves owner-object aliases without trusting unrelated receiver names', ()
       source.subscribe(listener);
     }
   `, 'probe.ts')).toEqual(['listener', 'timer', 'subscription']);
+});
+
+it('terminates and conservatively tracks conflicting resource aliases per lexical binding', () => {
+  expect(resourcePrimitivesFromSource(`
+    let acquire = addEventListener;
+    acquire = setTimeout;
+    {
+      const acquire = clearInterval;
+      acquire(timer);
+    }
+    acquire(target, 'click', listener);
+  `, 'resource-conflict.ts')).toEqual(['timer', 'listener', 'timer']);
+
+  expect(lifetimeResourcesFromSource(`
+    let own = this.registry.listen;
+    own = this.registry.timer;
+    {
+      const own = this.registry.observer;
+      own(disconnect);
+    }
+    own(dispose);
+
+    const resources = this.registry;
+    {
+      const resources = unrelatedRegistry;
+      resources.listen(target, 'fake', listener);
+    }
+    resources.listen(target, 'real', listener);
+  `, 'owner-conflict.ts')).toEqual(['observer', 'listener', 'timer', 'listener']);
+
+  expect(resourcePrimitivesFromSource(`
+    function addEventListener() {}
+    {
+      const setTimeout = localTimer;
+      setTimeout();
+    }
+    addEventListener();
+  `, 'declaration-shadows.ts')).toEqual([]);
+});
+
+it('keeps static-block vars and named class expressions in their own resource scopes', () => {
+  expect(resourcePrimitivesFromSource(`
+    class StaticShadow {
+      static {
+        var setTimeout = localTimer;
+        setTimeout();
+      }
+    }
+    setTimeout(callback, 1);
+  `, 'static-block-var.ts')).toEqual(['timer']);
+
+  expect(resourcePrimitivesFromSource(`
+    const LocalClass = class setTimeout {
+      static run() { setTimeout(); }
+    };
+    setTimeout(callback, 1);
+  `, 'named-class-expression.ts')).toEqual(['timer']);
 });
 
 it('[ARCH-5] gives each browser resource one idempotent registry disposal', async () => {
