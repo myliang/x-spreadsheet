@@ -17,24 +17,14 @@ export interface ResizeBoundary {
   readonly boundary: number;
 }
 
-function previousFloat(value: number): number {
-  if (!Number.isFinite(value)) return value;
-  if (value === 0) return -Number.MIN_VALUE;
-  const bits = new DataView(new ArrayBuffer(8));
-  bits.setFloat64(0, value);
-  const encoded = bits.getBigUint64(0);
-  bits.setBigUint64(0, value > 0 ? encoded - 1n : encoded + 1n);
-  return bits.getFloat64(0);
-}
-
 function previousVisible(
   axis: ResizeAxis,
   boundary: number,
   viewport: ViewportMetrics,
 ): number | null {
-  const offset = axis === 'row' ? viewport.model.rowOffset : viewport.model.columnOffset;
-  const indexAt = axis === 'row' ? viewport.model.rowAt : viewport.model.columnAt;
-  return indexAt(previousFloat(offset(boundary)));
+  return axis === 'row'
+    ? viewport.model.previousVisibleRow(boundary)
+    : viewport.model.previousVisibleColumn(boundary);
 }
 
 export function findResizeHandle(

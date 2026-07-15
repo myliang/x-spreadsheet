@@ -31,6 +31,8 @@ export interface GridModelPort {
   readonly columnOffset: (columnBoundary: number) => number;
   readonly rowAt: (contentY: number) => number | null;
   readonly columnAt: (contentX: number) => number | null;
+  readonly previousVisibleRow: (rowBoundary: number) => number | null;
+  readonly previousVisibleColumn: (columnBoundary: number) => number | null;
   readonly mergeAt: (point: CellPoint) => CellRange | null;
 }
 
@@ -97,12 +99,14 @@ interface SparseAxis {
   readonly size: (index: number) => number;
   readonly offset: (boundary: number) => number;
   readonly indexAt: (coordinate: number) => number | null;
+  readonly previousVisible: (boundary: number) => number | null;
 }
 
 interface AxisOverride {
   readonly index: number;
   readonly size: number;
   readonly prefixSizeSum: number;
+  readonly previousVisible: number | null;
 }
 
 type ZeroExtentPolicy = 'last' | 'none';
@@ -142,9 +146,17 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
     return size === fallback ? [] : [{ index, size }];
   }).sort((left, right) => left.index - right.index);
   let overrideSizeSum = 0;
+  let previousOverrideIndex = -1;
+  let lastVisible: number | null = null;
   const overrides = rawOverrides.map(value => {
+    if (fallback > 0 && value.index > previousOverrideIndex + 1) {
+      lastVisible = value.index - 1;
+    }
+    const previousVisible = lastVisible;
+    if (value.size > 0) lastVisible = value.index;
+    previousOverrideIndex = value.index;
     overrideSizeSum += value.size;
-    return { ...value, prefixSizeSum: overrideSizeSum };
+    return { ...value, prefixSizeSum: overrideSizeSum, previousVisible };
   });
   const extent = (count - overrides.length) * fallback + overrideSizeSum;
   if (!Number.isFinite(extent)) {
@@ -182,7 +194,21 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
     const index = Math.min(count - 1, low - 1);
     return size(index) > 0 && coordinate < offset(index + 1) ? index : null;
   };
-  return { size, offset, indexAt };
+  const previousVisible = (boundary: number): number | null => {
+    if (!Number.isSafeInteger(boundary) || boundary < 0 || boundary > count) {
+      throw new RangeError(`${label} boundary is outside the grid`);
+    }
+    if (boundary === 0) return null;
+    const candidate = boundary - 1;
+    const position = upperBound(overrides, boundary);
+    const override = position === 0 ? undefined : overrides[position - 1];
+    if (override?.index === candidate) {
+      return override.size > 0 ? candidate : override.previousVisible;
+    }
+    if (fallback > 0) return candidate;
+    return override?.size === 0 ? override.previousVisible : override?.index ?? null;
+  };
+  return { size, offset, indexAt, previousVisible };
 }
 
 export function createSheetGridModel(
@@ -231,6 +257,8 @@ export function createSheetGridModel(
     columnOffset: columns.offset,
     rowAt: rows.indexAt,
     columnAt: columns.indexAt,
+    previousVisibleRow: rows.previousVisible,
+    previousVisibleColumn: columns.previousVisible,
     mergeAt: (point: CellPoint): CellRange | null => (
       merges.find(merge => containsCell(merge, point)) ?? null
     ),

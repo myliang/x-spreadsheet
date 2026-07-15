@@ -36,6 +36,8 @@ describe('read-only Canvas rendering', () => {
       columnOffset: snapshot.viewport.model.columnOffset,
       rowAt: snapshot.viewport.model.rowAt,
       columnAt: snapshot.viewport.model.columnAt,
+      previousVisibleRow: snapshot.viewport.model.previousVisibleRow,
+      previousVisibleColumn: snapshot.viewport.model.previousVisibleColumn,
       mergeAt: snapshot.viewport.model.mergeAt,
     };
     const harness = createCanvasHarness();

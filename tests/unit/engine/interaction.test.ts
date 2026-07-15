@@ -14,7 +14,7 @@ import {
   type ViewportStateInput,
 } from '../../../src/engine';
 import { ClipboardHarness, DataTransferHarness } from '../../helpers/clipboard-harness';
-import { hiddenRunBefore } from '../../../src/engine/interaction/resize';
+import { findResizeHandle, hiddenRunBefore } from '../../../src/engine/interaction/resize';
 
 class FakeTarget {
   readonly listeners = new Map<string, Set<(event: unknown) => void>>();
@@ -67,6 +67,10 @@ function hugeHiddenRowModel(count: number, hiddenStart: number) {
     if (coordinate < 0 || hiddenStart === 0) return null;
     return Math.min(hiddenStart - 1, Math.floor(coordinate / 25));
   });
+  const previousVisibleRow = vi.fn((boundary: number) => {
+    const index = Math.min(boundary, hiddenStart) - 1;
+    return index < 0 ? null : index;
+  });
   const model: GridModelPort = {
     rowCount: count,
     columnCount: 2,
@@ -77,9 +81,11 @@ function hugeHiddenRowModel(count: number, hiddenStart: number) {
     columnOffset: boundary => boundary * 100,
     rowAt,
     columnAt: coordinate => Math.min(1, Math.max(0, Math.floor(coordinate / 100))),
+    previousVisibleRow,
+    previousVisibleColumn: boundary => boundary === 0 ? null : boundary - 1,
     mergeAt: () => null,
   };
-  return { model, rowAt, rowOffset };
+  return { model, previousVisibleRow, rowAt, rowOffset };
 }
 
 function setup(
@@ -594,8 +600,9 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     const massive = hugeHiddenRowModel(count, 1);
     const massiveViewport = createViewportMetrics(massive.model, { width: 300, height: 200 });
     expect(hiddenRunBefore('row', count, massiveViewport)).toEqual([1, count - 1]);
-    expect(massive.rowOffset).toHaveBeenCalledTimes(1);
-    expect(massive.rowAt).toHaveBeenCalledTimes(1);
+    expect(massive.previousVisibleRow).toHaveBeenCalledTimes(1);
+    expect(massive.rowOffset).not.toHaveBeenCalled();
+    expect(massive.rowAt).not.toHaveBeenCalled();
 
     const initial = hugeHiddenRowModel(count, 0);
     expect(hiddenRunBefore(
@@ -603,24 +610,76 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
       count,
       createViewportMetrics(initial.model, { width: 300, height: 200 }),
     )).toEqual([0, count]);
-    expect(initial.rowOffset).toHaveBeenCalledTimes(1);
-    expect(initial.rowAt).toHaveBeenCalledTimes(1);
+    expect(initial.previousVisibleRow).toHaveBeenCalledTimes(1);
+    expect(initial.rowOffset).not.toHaveBeenCalled();
+    expect(initial.rowAt).not.toHaveBeenCalled();
 
     const visibleBase = createSheetGridModel({ rows: { len: 3 }, cols: { len: 2 } });
-    const visibleRowOffset = vi.fn(visibleBase.rowOffset);
-    const visibleRowAt = vi.fn(visibleBase.rowAt);
+    const visiblePreviousRow = vi.fn(visibleBase.previousVisibleRow);
     const visible: GridModelPort = {
       ...visibleBase,
-      rowOffset: visibleRowOffset,
-      rowAt: visibleRowAt,
+      previousVisibleRow: visiblePreviousRow,
     };
     expect(hiddenRunBefore(
       'row',
       2,
       createViewportMetrics(visible, { width: 300, height: 200 }),
     )).toBeNull();
-    expect(visibleRowOffset).toHaveBeenCalledTimes(1);
-    expect(visibleRowAt).toHaveBeenCalledTimes(1);
+    expect(visiblePreviousRow).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves near-MAX_SAFE visible boundaries and hidden tails by index, not pixel ULP', () => {
+    const count = Number.MAX_SAFE_INTEGER;
+    const visible = createSheetGridModel({ rows: { len: count }, cols: { len: 2 } });
+    expect(hiddenRunBefore(
+      'row',
+      count - 1,
+      createViewportMetrics(visible, { width: 300, height: 200 }),
+    )).toBeNull();
+
+    const hiddenStart = count - 3;
+    const hidden = createSheetGridModel({
+      rows: {
+        len: count,
+        [String(hiddenStart)]: { hide: true },
+        [String(hiddenStart + 1)]: { hide: true },
+        [String(hiddenStart + 2)]: { hide: true },
+      },
+      cols: { len: 2 },
+    });
+    expect(hiddenRunBefore(
+      'row',
+      count,
+      createViewportMetrics(hidden, { width: 300, height: 200 }),
+    )).toEqual([hiddenStart, 3]);
+  });
+
+  it('selects the exact near-MAX_SAFE resize predecessor despite coarse pixel ULP', () => {
+    const boundary = Number.MAX_SAFE_INTEGER - 1;
+    const target = boundary - 1;
+    const huge = target * 25;
+    const model: GridModelPort = {
+      rowCount: 2,
+      columnCount: Number.MAX_SAFE_INTEGER,
+      merges: [],
+      rowHeight: () => 25,
+      columnWidth: () => 25,
+      rowOffset: value => value * 25,
+      columnOffset: value => value >= target ? huge : value * 25,
+      rowAt: coordinate => Math.min(1, Math.max(0, Math.floor(coordinate / 25))),
+      columnAt: coordinate => coordinate >= huge ? target : target - 1,
+      previousVisibleRow: value => value === 0 ? null : value - 1,
+      previousVisibleColumn: value => value === 0 ? null : value - 1,
+      mergeAt: () => null,
+    };
+    const viewport = createViewportMetrics(model, {
+      width: 300,
+      height: 200,
+      scroll: { x: huge, y: 0 },
+    });
+    expect(findResizeHandle({ x: 85, y: 10 }, viewport)).toMatchObject({
+      axis: 'column', boundary, index: target,
+    });
   });
 
   it('prefers synchronous DataTransfer copy/paste without touching navigator clipboard', async () => {
