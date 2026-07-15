@@ -13,7 +13,7 @@ export default defineConfig({
     ['list'],
     [
       './scripts/reporters/playwright-parity-evidence.ts',
-      { lane: 'browser', outputPath: 'test-results/parity/browser.ndjson' },
+      { lane: 'browser', outputPath: 'test-results/parity/browser.ndjson', releaseOnly: true },
     ],
   ],
   retries: 0,

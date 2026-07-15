@@ -1,9 +1,9 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { TestCase as PlaywrightTestCase, TestResult as PlaywrightTestResult } from '@playwright/test/reporter';
 import type { Reporter as VitestReporter } from 'vitest/reporters';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import PlaywrightParityEvidenceReporter from '../../scripts/reporters/playwright-parity-evidence.ts';
 import VitestParityEvidenceReporter from '../../scripts/reporters/vitest-parity-evidence.ts';
 import type { ParityEvidenceRecord } from './manifest-types.ts';
@@ -49,6 +49,28 @@ function playwrightResult(status: PlaywrightTestResult['status']): PlaywrightTes
 }
 
 describe('Vitest parity evidence reporter', () => {
+  it('leaves retained release artifacts untouched during an ordinary development run', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'tego-vitest-retained-release-'));
+    const unit = join(directory, 'test-results/parity/unit.ndjson');
+    const component = join(directory, 'test-results/parity/component.ndjson');
+    mkdirSync(join(directory, 'test-results/parity'), { recursive: true });
+    writeFileSync(unit, 'retained unit release');
+    writeFileSync(component, 'retained component release');
+    vi.stubEnv('TEGO_PARITY_RELEASE_CONTEXT', undefined);
+    try {
+      const reporter = new VitestParityEvidenceReporter({ releaseOnly: true, root: directory });
+      reporter.onTestRunStart([vitestSpecification('unit')]);
+      reporter.onTestCaseResult(vitestCase(directory, 'unit', 'passed'));
+      reporter.onTestRunEnd([], [], 'passed');
+
+      expect(readFileSync(unit, 'utf8')).toBe('retained unit release');
+      expect(readFileSync(component, 'utf8')).toBe('retained component release');
+    } finally {
+      vi.unstubAllEnvs();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it('clears only lanes selected for this invocation and writes actual terminal results', () => {
     const directory = mkdtempSync(join(tmpdir(), 'tego-vitest-reporter-'));
     const unit = join(directory, 'unit.ndjson');
@@ -117,6 +139,29 @@ describe('Vitest parity evidence reporter', () => {
 });
 
 describe('Playwright parity evidence reporter', () => {
+  it('leaves retained release artifacts untouched during an ordinary development run', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'tego-playwright-retained-release-'));
+    const artifact = join(directory, 'browser.ndjson');
+    writeFileSync(artifact, 'retained browser release');
+    vi.stubEnv('TEGO_PARITY_RELEASE_CONTEXT', undefined);
+    try {
+      const reporter = new PlaywrightParityEvidenceReporter({
+        lane: 'browser',
+        outputPath: artifact,
+        releaseOnly: true,
+        root: directory,
+      });
+      reporter.onBegin();
+      reporter.onTestEnd(playwrightCase(directory, 'chromium-desktop'), playwrightResult('passed'));
+      reporter.onEnd({ status: 'passed' });
+
+      expect(readFileSync(artifact, 'utf8')).toBe('retained browser release');
+    } finally {
+      vi.unstubAllEnvs();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it('keeps list output independent while aggregating pass, skip, and failure statuses', () => {
     const directory = mkdtempSync(join(tmpdir(), 'tego-playwright-reporter-'));
     const artifact = join(directory, 'browser.ndjson');

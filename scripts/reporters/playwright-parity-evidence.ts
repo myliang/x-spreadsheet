@@ -17,6 +17,7 @@ export interface PlaywrightParityEvidenceReporterOptions {
   readonly lane: Extract<ParityLane, 'browser' | 'visual'>;
   readonly listOnly?: boolean;
   readonly outputPath: string;
+  readonly releaseOnly?: boolean;
   readonly root?: string;
 }
 
@@ -30,6 +31,7 @@ function evidenceStatus(status: TestResult['status']): EvidenceStatus {
 }
 
 export default class PlaywrightParityEvidenceReporter implements Reporter {
+  private readonly enabled: boolean;
   private hasGlobalError = false;
   private hasTestResult = false;
   private readonly listOnly: boolean;
@@ -39,6 +41,8 @@ export default class PlaywrightParityEvidenceReporter implements Reporter {
   private readonly root: string;
 
   constructor(options: PlaywrightParityEvidenceReporterOptions) {
+    this.enabled = options.releaseOnly !== true
+      || process.env.TEGO_PARITY_RELEASE_CONTEXT !== undefined;
     this.lane = options.lane;
     this.listOnly = options.listOnly ?? process.argv.includes('--list');
     this.outputPath = resolve(options.outputPath);
@@ -46,6 +50,7 @@ export default class PlaywrightParityEvidenceReporter implements Reporter {
   }
 
   onBegin(): void {
+    if (!this.enabled) return;
     this.hasGlobalError = false;
     this.hasTestResult = false;
     this.observations.length = 0;
@@ -53,10 +58,12 @@ export default class PlaywrightParityEvidenceReporter implements Reporter {
   }
 
   onError(): void {
+    if (!this.enabled) return;
     this.hasGlobalError = true;
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
+    if (!this.enabled) return;
     this.hasTestResult = true;
     this.observations.push({
       lane: this.lane,
@@ -68,6 +75,7 @@ export default class PlaywrightParityEvidenceReporter implements Reporter {
   }
 
   onEnd(result: Pick<FullResult, 'status'>): void {
+    if (!this.enabled) return;
     if (!this.hasTestResult) return;
     if (this.hasGlobalError || result.status === 'interrupted' || result.status === 'timedout') return;
     const evidence = aggregateParityEvidence(this.observations);

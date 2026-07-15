@@ -19,7 +19,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     exclude: sharedExcludes,
-    reporters: ['default', new VitestParityEvidenceReporter()],
+    reporters: ['default', new VitestParityEvidenceReporter({ releaseOnly: true })],
     projects: [
       {
         extends: true,

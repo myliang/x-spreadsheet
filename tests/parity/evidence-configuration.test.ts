@@ -30,10 +30,13 @@ it('connects actual Vitest and Playwright runs to the evidence reporters without
   const gate = readFileSync(resolve(root, 'scripts/test-parity-gate.mjs'), 'utf8');
 
   expect(vitest).toMatch(/reporters:\s*\['default',\s*new VitestParityEvidenceReporter/);
+  expect(vitest).toContain('releaseOnly: true');
   expect(browser).toMatch(/reporter:\s*\[[\s\S]*?\['list'\],[\s\S]*?playwright-parity-evidence\.ts/);
   expect(browser).toContain("lane: 'browser'");
+  expect(browser).toContain('releaseOnly: true');
   expect(visual).toMatch(/reporter:\s*\[[\s\S]*?\['list'\],[\s\S]*?playwright-parity-evidence\.ts/);
   expect(visual).toContain("lane: 'visual'");
+  expect(visual).toContain('releaseOnly: true');
   expect(gate).toContain('defaultParityEvidencePaths');
   expect(gate).not.toContain("['test-results/parity-evidence.ndjson']");
 });

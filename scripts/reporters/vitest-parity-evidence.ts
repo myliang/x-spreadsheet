@@ -16,6 +16,7 @@ type TestRunEndReason = Parameters<NonNullable<Reporter['onTestRunEnd']>>[2];
 
 export interface VitestParityEvidenceReporterOptions {
   readonly outputPaths?: Readonly<Record<VitestEvidenceLane, string>>;
+  readonly releaseOnly?: boolean;
   readonly root?: string;
 }
 
@@ -33,12 +34,15 @@ function isEvidenceLane(project: string): project is VitestEvidenceLane {
 }
 
 export default class VitestParityEvidenceReporter implements Reporter {
+  private readonly enabled: boolean;
   private readonly observations: ObservedParityResult[] = [];
   private readonly outputPaths: Readonly<Record<VitestEvidenceLane, string>>;
   private readonly root: string;
   private readonly selectedLanes = new Set<VitestEvidenceLane>();
 
   constructor(options: VitestParityEvidenceReporterOptions = {}) {
+    this.enabled = options.releaseOnly !== true
+      || process.env.TEGO_PARITY_RELEASE_CONTEXT !== undefined;
     this.root = resolve(options.root ?? process.cwd());
     this.outputPaths = options.outputPaths ?? {
       component: resolve(this.root, parityEvidencePaths.component),
@@ -47,6 +51,7 @@ export default class VitestParityEvidenceReporter implements Reporter {
   }
 
   onTestRunStart(specifications: ReadonlyArray<TestSpecification>): void {
+    if (!this.enabled) return;
     this.observations.length = 0;
     this.selectedLanes.clear();
     for (const specification of specifications) {
@@ -57,6 +62,7 @@ export default class VitestParityEvidenceReporter implements Reporter {
   }
 
   onTestCaseResult(testCase: TestCase): void {
+    if (!this.enabled) return;
     const project = testCase.project.name;
     if (!isEvidenceLane(project) || !this.selectedLanes.has(project)) return;
     this.observations.push({
@@ -73,6 +79,7 @@ export default class VitestParityEvidenceReporter implements Reporter {
     unhandledErrors: Parameters<NonNullable<Reporter['onTestRunEnd']>>[1],
     reason: TestRunEndReason,
   ): void {
+    if (!this.enabled) return;
     if (reason === 'interrupted' || unhandledErrors.length > 0) return;
     const evidenceByLane = new Map([...this.selectedLanes].map(lane => [
       lane,
