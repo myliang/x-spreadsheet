@@ -3,7 +3,11 @@ import type { CellPoint, CellRange } from '../../core/types/coordinates';
 import type { CellStyle, SheetData } from '../../core/types/workbook';
 import { frozenQuadrants } from '../geometry/frozen-pane-geometry';
 import type { ViewportMetrics } from '../ports';
-import { configuredCellDefaultStyle, paintCells } from './cell-painter';
+import {
+  configuredCellDefaultStyle,
+  paintCells,
+  paintFilterOverlays,
+} from './cell-painter';
 import { currentDevicePixelRatio, DrawContext } from './draw-context';
 import type {
   CanvasSurfacePort,
@@ -90,6 +94,7 @@ export class CanvasEngine {
       this.draw.withClip(pane, () => {
         if (snapshot.showGrid !== false) paintGrid(this.draw, indexes, viewport);
         paintCells(this.draw, snapshot, cells, formulaBudget, this.defaultStyle);
+        paintFilterOverlays(this.draw, snapshot, indexes.rows, indexes.columns);
         paintSelection(this.draw, snapshot.selection, viewport, pane.kind);
       }, {
         x: viewport.rowHeaderWidth

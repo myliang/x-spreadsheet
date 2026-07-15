@@ -369,6 +369,65 @@ describe('read-only Canvas rendering', () => {
       .toEqual([[0, 0, 50_000, 12_500]]);
   });
 
+  it('aligns unique grid boundaries with scrolled cell rectangles', () => {
+    const sheet: SheetData = { rows: { len: 4 }, cols: { len: 4 } };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 200,
+        height: 50,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+        scroll: { x: 30, y: 10 },
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [69.5, 0.5] });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [69.5, 64.5] });
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [0.5, 14.5] });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [269.5, 14.5] });
+    expect(harness.operations).not.toContainEqual({ name: 'moveTo', args: [99.5, 0.5] });
+    expect(harness.operations).not.toContainEqual({ name: 'moveTo', args: [0.5, 24.5] });
+  });
+
+  it('paints filter dropdowns for blank visible header cells without styling them', () => {
+    const sheet: SheetData = {
+      autofilter: { ref: 'A1:C1' },
+      rows: { len: 1, 0: { cells: { 0: { text: 'materialized' } } } },
+      cols: { len: 3, 0: { width: 30 }, 1: { width: 30 }, 2: { width: 30 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      showGrid: false,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 90,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations.filter(operation => (
+      operation.name === 'set:fillStyle' && operation.args[0] === 'rgba(0, 0, 0, .45)'
+    ))).toHaveLength(3);
+    expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
+      .toEqual([[0, 0, 90, 25], [0.5, 0.5, 28, 23]]);
+  });
+
   it('uses legacy point sizes, character wrapping, and multiline vertical origins', () => {
     const style = (valign: 'top' | 'middle' | 'bottom') => ({
       valign,

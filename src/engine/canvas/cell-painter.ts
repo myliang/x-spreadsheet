@@ -316,7 +316,6 @@ export function paintCells(
   defaultStyle: CellStyle,
 ): void {
   const invalid = new Set((snapshot.invalidCells ?? []).map(point => `${point.row}:${point.column}`));
-  const filter = filterHeaderRange(snapshot.sheet);
   for (const point of cells) {
     if (getCellData(snapshot.sheet, point.row, point.column) === null) continue;
     if (!isMergeAnchor(point, snapshot.viewport)) continue;
@@ -325,7 +324,23 @@ export function paintCells(
     paintCellAppearance(draw, rect, presentation, 1, () => {
       if (invalid.has(`${point.row}:${point.column}`)) marker(draw, rect, 'rgba(255, 0, 0, .65)');
       if (presentation.cell?.editable === false) marker(draw, rect, 'rgba(0, 255, 0, .85)');
-      if (pointInRange(point, filter)) dropdown(draw, rect);
     });
+  }
+}
+
+export function paintFilterOverlays(
+  draw: DrawContext,
+  snapshot: CellPaintSnapshot,
+  visibleRows: readonly number[],
+  visibleColumns: readonly number[],
+): void {
+  const filter = filterHeaderRange(snapshot.sheet);
+  if (filter === null) return;
+  for (const row of visibleRows) {
+    if (row < filter.start.row || row > filter.end.row) continue;
+    for (const column of visibleColumns) {
+      const point = { row, column };
+      if (pointInRange(point, filter)) dropdown(draw, cellRect(point, snapshot.viewport));
+    }
   }
 }

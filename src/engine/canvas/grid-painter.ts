@@ -136,12 +136,13 @@ export function paneGridIndexes(
 
 function boundaries(
   indexes: readonly number[],
-  offset: (boundary: number) => number,
+  rectAt: (index: number) => Readonly<{ start: number; size: number }>,
 ): readonly number[] {
   const values = new Set<number>();
   for (const index of indexes) {
-    values.add(offset(index));
-    values.add(offset(index + 1));
+    const rect = rectAt(index);
+    values.add(rect.start);
+    values.add(rect.start + rect.size);
   }
   return [...values].sort((first, second) => first - second);
 }
@@ -152,23 +153,21 @@ export function paintGrid(
   viewport: ViewportMetrics,
 ): void {
   const firstRow = indexes.rows[0];
-  const lastRow = indexes.rows.at(-1);
   const firstColumn = indexes.columns[0];
-  const lastColumn = indexes.columns.at(-1);
-  if (firstRow === undefined || lastRow === undefined
-    || firstColumn === undefined || lastColumn === undefined) return;
-  const first = cellRect({ row: firstRow, column: firstColumn }, viewport);
-  const last = cellRect({ row: lastRow, column: lastColumn }, viewport);
-  const left = first.left;
-  const top = first.top;
-  const right = last.left + last.width;
-  const bottom = last.top + last.height;
-  const rowBoundaries = boundaries(indexes.rows, boundary => (
-    viewport.columnHeaderHeight + viewport.model.rowOffset(boundary)
-  ));
-  const columnBoundaries = boundaries(indexes.columns, boundary => (
-    viewport.rowHeaderWidth + viewport.model.columnOffset(boundary)
-  ));
+  if (firstRow === undefined || firstColumn === undefined) return;
+  const rowBoundaries = boundaries(indexes.rows, row => {
+    const rect = cellRect({ row, column: firstColumn }, viewport);
+    return { start: rect.top, size: rect.height };
+  });
+  const columnBoundaries = boundaries(indexes.columns, column => {
+    const rect = cellRect({ row: firstRow, column }, viewport);
+    return { start: rect.left, size: rect.width };
+  });
+  const left = columnBoundaries[0];
+  const right = columnBoundaries.at(-1);
+  const top = rowBoundaries[0];
+  const bottom = rowBoundaries.at(-1);
+  if (left === undefined || right === undefined || top === undefined || bottom === undefined) return;
   for (const y of rowBoundaries) {
     draw.line(
       { x: left, y },
