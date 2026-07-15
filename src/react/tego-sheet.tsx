@@ -105,6 +105,7 @@ interface ImperativeRuntime {
 interface ImperativeRuntimeSlot {
   readonly deactivate: () => void;
   readonly require: () => ImperativeRuntime;
+  readonly setActiveSheet: (sheet: SheetId | null) => void;
   readonly update: (runtime: ImperativeRuntime) => void;
 }
 
@@ -121,6 +122,12 @@ function createImperativeRuntimeSlot(): ImperativeRuntimeSlot {
     require() {
       if (current === null || !current.isActive()) throw inactiveRuntime();
       return current;
+    },
+    setActiveSheet(sheet) {
+      const runtime = current;
+      if (runtime === null || !runtime.isActive()) throw inactiveRuntime();
+      current = { ...runtime, activeSheet: sheet };
+      runtime.setActiveSheet(sheet);
     },
     update(runtime) {
       current = runtime;
@@ -169,7 +176,7 @@ function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
       );
       if (typeof result !== 'string') throw invalid('Adding a sheet did not return a sheet ID');
       const sheet = result as SheetId;
-      if (wasEmpty) runtime.setActiveSheet(sheet);
+      if (wasEmpty) slot.setActiveSheet(sheet);
       return sheet;
     },
     deleteSheet(sheet) {
@@ -180,7 +187,7 @@ function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
       if (runtime.activeSheet !== sheet) return;
       const after = runtime.controller.getSnapshot();
       const replacementIndex = Math.min(removedIndex, after.sheets.length - 1);
-      runtime.setActiveSheet(replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id);
+      slot.setActiveSheet(replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id);
     },
     renameSheet(sheet, name) {
       slot.require().dispatcher.dispatchRef({ type: 'rename-sheet', sheet, name }, 'ref');
@@ -189,7 +196,7 @@ function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
       const runtime = slot.require();
       const index = runtime.controller.getSnapshot().sheets.findIndex(item => item.id === sheet);
       if (index < 0) throw invalid(`Unknown sheet ID: ${sheet}`);
-      runtime.setActiveSheet(sheet);
+      slot.setActiveSheet(sheet);
       runtime.dispatcher.emitActiveSheetChange({ sheet, index, source: 'ref' });
     },
     undo() {

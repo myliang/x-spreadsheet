@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { createRef } from 'react';
+import { createRef, startTransition, Suspense } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TegoSheet } from '../../src';
 import type { TegoSheetHandle } from '../../src';
@@ -128,10 +128,20 @@ it('validates initialActiveSheetIndex only against the mount workbook', async ()
 it('selects the next sheet after a middle deletion, then the preceding sheet at the tail', async () => {
   const ref = createRef<TegoSheetHandle>();
   const onSelectionChange = vi.fn();
+  const callbackOrder: string[] = [];
+  const onChange = vi.fn(() => callbackOrder.push('change'));
+  const onActiveSheetChange = vi.fn(() => callbackOrder.push('active'));
   const rendered = render(
-    <TegoSheet ref={ref} defaultValue={[]} onSelectionChange={onSelectionChange} />,
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      onActiveSheetChange={onActiveSheetChange}
+      onChange={onChange}
+      onSelectionChange={onSelectionChange}
+    />,
   );
   await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
   let a!: ReturnType<TegoSheetHandle['addSheet']>;
   let b!: ReturnType<TegoSheetHandle['addSheet']>;
   let c!: ReturnType<TegoSheetHandle['addSheet']>;
@@ -142,10 +152,19 @@ it('selects the next sheet after a middle deletion, then the preceding sheet at 
     b = ref.current!.addSheet('B');
     c = ref.current!.addSheet('C');
   });
-  act(() => ref.current!.activateSheet(b));
+  callbackOrder.length = 0;
+  onChange.mockClear();
+  onActiveSheetChange.mockClear();
   const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
 
-  act(() => ref.current!.deleteSheet(b));
+  act(() => {
+    captured.activateSheet(b);
+    captured.deleteSheet(b);
+  });
+  expect(ref.current).toBe(captured);
+  expect(callbackOrder).toEqual(['active', 'change']);
+  expect(onActiveSheetChange).toHaveBeenCalledOnce();
+  expect(onChange).toHaveBeenCalledOnce();
   fireEvent.focusIn(root);
   fireEvent.keyDown(window, { key: 'ArrowRight' });
   expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(c);
@@ -158,6 +177,95 @@ it('selects the next sheet after a middle deletion, then the preceding sheet at 
   act(() => ref.current!.deleteSheet(a));
   expect(ref.current!.getValue()).toEqual([]);
   expect(rendered.container.querySelector('canvas')).toBeNull();
+});
+
+it('selects the preceding sheet when activating and deleting the tail in one batch', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onSelectionChange = vi.fn();
+  const rendered = render(
+    <TegoSheet ref={ref} defaultValue={[]} onSelectionChange={onSelectionChange} />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+  let b!: ReturnType<TegoSheetHandle['addSheet']>;
+  let c!: ReturnType<TegoSheetHandle['addSheet']>;
+  act(() => {
+    captured.addSheet('A');
+  });
+  act(() => {
+    b = captured.addSheet('B');
+    c = captured.addSheet('C');
+  });
+
+  act(() => {
+    captured.activateSheet(c);
+    captured.deleteSheet(c);
+  });
+  expect(ref.current).toBe(captured);
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(b);
+});
+
+it('can add and delete the first sheet in one imperative batch', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onChange = vi.fn();
+  render(<TegoSheet ref={ref} defaultValue={[]} onChange={onChange} />);
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+
+  act(() => {
+    const added = captured.addSheet('Temporary');
+    captured.deleteSheet(added);
+  });
+
+  expect(ref.current).toBe(captured);
+  expect(captured.getValue()).toEqual([]);
+  expect(onChange).toHaveBeenCalledTimes(2);
+  expect(onChange.mock.calls.map(call => call[1].kind)).toEqual(['sheet', 'sheet']);
+});
+
+it('does not let an aborted render overwrite the committed handle runtime', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const committed = vi.fn();
+  const pending = vi.fn();
+  const suspended = new Promise<never>(() => undefined);
+  let shouldSuspend = false;
+
+  function PendingBoundary() {
+    if (shouldSuspend) throw suspended;
+    return null;
+  }
+  function Mounted({ onChange }: { readonly onChange: typeof committed }) {
+    return (
+      <Suspense fallback={<output data-suspended="" />}>
+        <TegoSheet ref={ref} defaultValue={[]} onChange={onChange} />
+        <PendingBoundary />
+      </Suspense>
+    );
+  }
+
+  const rendered = render(<Mounted onChange={committed} />);
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+  let sheet!: ReturnType<TegoSheetHandle['addSheet']>;
+  act(() => {
+    sheet = captured.addSheet('Committed');
+  });
+  committed.mockClear();
+
+  shouldSuspend = true;
+  act(() => {
+    startTransition(() => rendered.rerender(<Mounted onChange={pending} />));
+  });
+  act(() => {
+    captured.setCellText({ sheet, row: 0, column: 0 }, 'committed runtime');
+  });
+
+  expect(ref.current).toBe(captured);
+  expect(committed).toHaveBeenCalledOnce();
+  expect(pending).not.toHaveBeenCalled();
 });
 
 it('keeps one handle object live for the mounted epoch and deactivates captured handles', async () => {
