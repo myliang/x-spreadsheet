@@ -26,6 +26,10 @@ export interface AppliedCommand {
   readonly undoable: boolean;
 }
 
+export interface ApplyCommandOptions {
+  readonly capturePasteValues?: boolean;
+}
+
 function commandType(command: unknown): string {
   if (command !== null && typeof command === 'object' && 'type' in command) {
     return String(command.type);
@@ -46,6 +50,7 @@ function failure(command: unknown, cause: unknown): never {
 export function applyCommand(
   state: WorkbookState,
   command: Exclude<WorkbookCommand, { readonly type: 'undo' | 'redo' }>,
+  options: ApplyCommandOptions = {},
 ): AppliedCommand | null {
   try {
     switch (command.type) {
@@ -176,6 +181,7 @@ export function applyCommand(
           command.target.range,
           command.mode,
           command.cut,
+          options.capturePasteValues !== false,
         );
         if (transformed.sheet === target.data) return null;
         return {
@@ -190,7 +196,12 @@ export function applyCommand(
       case 'paste-external': {
         const target = state.get(command.target.sheet);
         if (target === null) throw new RangeError(`Unknown sheet ID: ${command.target.sheet}`);
-        const transformed = pasteExternal(target.data, command.target.range, command.values);
+        const transformed = pasteExternal(
+          target.data,
+          command.target.range,
+          command.values,
+          options.capturePasteValues !== false,
+        );
         if (transformed.sheet === target.data) return null;
         return {
           state: state.update(command.target.sheet, () => transformed.sheet),

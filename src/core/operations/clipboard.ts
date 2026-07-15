@@ -258,6 +258,7 @@ export function pasteInternal(
   target: CellRange,
   mode: PasteMode,
   cut = false,
+  captureValues = true,
 ): PasteTransform {
   const range = internalPasteRange(source, target, cut);
   assertClipboardResourceLimit(source);
@@ -318,7 +319,7 @@ export function pasteInternal(
   return {
     sheet: semanticEqual(synchronized, targetSheet) ? targetSheet : synchronized,
     range,
-    values: clipboardMatrix(sourceSheet, source),
+    values: captureValues ? clipboardMatrix(sourceSheet, source) : [],
   };
 }
 
@@ -326,6 +327,7 @@ export function pasteExternal(
   sheet: SheetData,
   target: CellRange,
   values: readonly (readonly string[])[],
+  captureValues = true,
 ): PasteTransform {
   const range = externalPasteRange(target, values);
   assertClipboardResourceLimit(range);
@@ -345,6 +347,6 @@ export function pasteExternal(
   return {
     sheet: semanticEqual(next, sheet) ? sheet : next,
     range,
-    values: normalized.map(row => [...row]),
+    values: captureValues ? normalized.map(row => [...row]) : [],
   };
 }

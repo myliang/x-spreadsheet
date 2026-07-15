@@ -1,4 +1,5 @@
 import { act } from '@testing-library/react';
+import { startTransition } from 'react';
 import { expect, it, vi } from 'vitest';
 import {
   TegoSheetException,
@@ -177,7 +178,7 @@ it('does not convert a consumer TegoSheetException into a UI command failure', (
   );
 });
 
-it('does not pre-read internal paste metadata without an onPaste callback', () => {
+it('does not capture paste result matrices without an onPaste callback', () => {
   const rendered = renderSheet({ defaultValue: [{
     rows: {
       len: 4,
@@ -199,13 +200,26 @@ it('does not pre-read internal paste metadata without an onPaste callback', () =
     active: { row: 2, column: 0 },
   };
 
+  let internalResult: ReturnType<typeof rendered.runtime.dispatchUi> | undefined;
+  let externalResult: ReturnType<typeof rendered.runtime.dispatchUi> | undefined;
   act(() => {
-    rendered.runtime.dispatchUi({
+    internalResult = rendered.runtime.dispatchUi({
       type: 'paste-internal', source, target, mode: 'all', cut: false,
+    }, 'clipboard');
+    externalResult = rendered.runtime.dispatchUi({
+      type: 'paste-external',
+      target: {
+        sheet,
+        range: { start: { row: 3, column: 0 }, end: { row: 3, column: 0 } },
+        active: { row: 3, column: 0 },
+      },
+      values: [['external']],
     }, 'clipboard');
   });
 
   expect(getCellText).not.toHaveBeenCalled();
+  expect(internalResult).toMatchObject({ status: 'committed', commit: { result: [] } });
+  expect(externalResult).toMatchObject({ status: 'committed', commit: { result: [] } });
 });
 
 it.each([
@@ -353,4 +367,79 @@ it('clones cyclic Error and DOMException causes without recursion failure', () =
   expect(clonedDomCause).not.toBe(domCause);
   expect(clonedDomCause.name).toBe('NotAllowedError');
   expect(clonedDomCause.message).toBe('clipboard blocked');
+});
+
+it('keeps committed callbacks during an aborted concurrent render', () => {
+  let suspend = false;
+  const first = vi.fn();
+  const pending = vi.fn();
+  const rendered = renderSheet(
+    { defaultValue: [{}], onChange: first },
+    { suspendWhen: () => suspend },
+  );
+  const dispatcher = rendered.runtime.dispatcher;
+  const sheet = rendered.runtime.epoch.snapshot.sheets[0]!.id;
+
+  suspend = true;
+  act(() => {
+    startTransition(() => {
+      rendered.rerenderProps({ defaultValue: [{}], onChange: pending });
+    });
+  });
+  act(() => {
+    dispatcher.dispatchRef({
+      type: 'set-cell-text',
+      address: { sheet, row: 0, column: 0 },
+      text: 'current callback only',
+    });
+  });
+
+  expect(first).toHaveBeenCalledOnce();
+  expect(pending).not.toHaveBeenCalled();
+});
+
+it('does not deliver errors or events through an inactive dispatcher', () => {
+  const onChange = vi.fn();
+  const onActiveSheetChange = vi.fn();
+  const onError = vi.fn();
+  const onSelectionChange = vi.fn();
+  const rendered = renderSheet({
+    defaultValue: [{}],
+    onActiveSheetChange,
+    onChange,
+    onError,
+    onSelectionChange,
+  });
+  const dispatcher = rendered.runtime.dispatcher;
+  const sheet = rendered.runtime.epoch.snapshot.sheets[0]!.id;
+  const selection: Selection = {
+    sheet,
+    range: { start: { row: 0, column: 0 }, end: { row: 0, column: 0 } },
+    active: { row: 0, column: 0 },
+  };
+  rendered.unmount();
+
+  const command = {
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'inactive',
+  } as const;
+  expect(dispatcher.dispatchUi(command, 'keyboard')).toMatchObject({ status: 'rejected' });
+  expect(() => dispatcher.dispatchRef(command)).toThrow(/inactive/i);
+  dispatcher.reportUiError({
+    code: 'RENDER_FAILED',
+    message: 'inactive error',
+    recoverable: true,
+  });
+  expect(() => dispatcher.emitSelectionChange(selection)).toThrow(/inactive/i);
+  expect(() => dispatcher.emitActiveSheetChange({
+    sheet,
+    index: 0,
+    source: 'ref',
+  })).toThrow(/inactive/i);
+
+  expect(onActiveSheetChange).not.toHaveBeenCalled();
+  expect(onChange).not.toHaveBeenCalled();
+  expect(onError).not.toHaveBeenCalled();
+  expect(onSelectionChange).not.toHaveBeenCalled();
 });

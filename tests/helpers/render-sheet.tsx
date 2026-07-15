@@ -1,5 +1,5 @@
 import { cleanup, render, type RenderResult } from '@testing-library/react';
-import { StrictMode, useMemo, useRef } from 'react';
+import { StrictMode, Suspense, useLayoutEffect, useMemo, useRef } from 'react';
 import { afterEach } from 'vitest';
 import type { WorkbookCommand } from '../../src/core/commands/workbook-command';
 import type { CommandCommit } from '../../src/core/commands/command-result';
@@ -28,6 +28,8 @@ export interface RenderSheetOptions {
     input: WorkbookInput,
     options: WorkbookControllerOptions,
   ) => WorkbookController;
+  readonly onParentLayout?: (runtime: SheetRuntime | null) => void;
+  readonly suspendWhen?: () => boolean;
 }
 
 export interface SheetRuntime {
@@ -63,6 +65,7 @@ export function renderSheet(
   options: RenderSheetOptions = {},
 ): RenderedSheet {
   let runtime: SheetRuntime | null = null;
+  const suspended = new Promise<never>(() => undefined);
 
   function BoundaryHarness(props: TegoSheetProps) {
     const epoch = useControllerEpoch(props, {
@@ -71,7 +74,9 @@ export function renderSheet(
     const controller = epoch?.controller;
     const isActive = epoch?.isActive;
     const callbacks = useRef<TegoSheetCallbacks>(callbacksFromProps(props));
-    callbacks.current = callbacksFromProps(props);
+    useLayoutEffect(() => {
+      callbacks.current = callbacksFromProps(props);
+    });
     const dispatcher = useMemo(
       () => controller === undefined || isActive === undefined ? null : createEventDispatcher({
         controller,
@@ -105,9 +110,26 @@ export function renderSheet(
     );
   }
 
+  function MaybeSuspend() {
+    if (options.suspendWhen?.() === true) throw suspended;
+    return null;
+  }
+
+  function ParentBoundary({ props }: { readonly props: TegoSheetProps }) {
+    useLayoutEffect(() => {
+      options.onParentLayout?.(runtime);
+    }, [props]);
+    return (
+      <Suspense fallback={<output data-suspended="true" />}>
+        <BoundaryHarness {...props} />
+        <MaybeSuspend />
+      </Suspense>
+    );
+  }
+
   const boundary = (props: TegoSheetProps) => options.strict
-    ? <StrictMode><BoundaryHarness {...props} /></StrictMode>
-    : <BoundaryHarness {...props} />;
+    ? <StrictMode><ParentBoundary props={props} /></StrictMode>
+    : <ParentBoundary props={props} />;
   const result = render(boundary(initialProps));
   const rendered = Object.defineProperty(result, 'runtime', {
     enumerable: true,

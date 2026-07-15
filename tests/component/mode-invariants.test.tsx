@@ -42,3 +42,29 @@ it('does not reinterpret explicit null as a missing workbook prop', () => {
     defaultValue: null as unknown as WorkbookInput,
   })).toThrowError(expect.objectContaining({ code: 'INVALID_DATA' }));
 });
+
+it('applies live readOnly before a parent layout effect can dispatch', () => {
+  let shouldDispatch = false;
+  let parentOutcome: ReturnType<typeof rendered.runtime.dispatchUi> | undefined;
+  const rendered = renderSheet(
+    { defaultValue: [{}], readOnly: false },
+    {
+      onParentLayout(runtime) {
+        if (!shouldDispatch || runtime === null) return;
+        parentOutcome = runtime.dispatchUi({
+          type: 'set-cell-text',
+          address: { sheet, row: 0, column: 0 },
+          text: 'must be rejected',
+        }, 'keyboard');
+      },
+    },
+  );
+  const sheet = rendered.runtime.epoch.snapshot.sheets[0]!.id;
+
+  shouldDispatch = true;
+  rendered.rerenderProps({ defaultValue: [{}], readOnly: true });
+  shouldDispatch = false;
+
+  expect(parentOutcome?.status).toBe('rejected');
+  expect(rendered.runtime.epoch.controller.getCellText({ sheet, row: 0, column: 0 })).toBe('');
+});

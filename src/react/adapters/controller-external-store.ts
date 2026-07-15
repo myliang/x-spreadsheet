@@ -29,15 +29,7 @@ export function createControllerExternalStore(
   const connect = () => {
     if (controllerUnsubscribe !== null || disposed) return;
     controllerUnsubscribe = controller.subscribe(event => publish(event.snapshot));
-    const current = controller.getSnapshot();
-    if (
-      current.revision !== snapshot.revision
-      || current.readOnly !== snapshot.readOnly
-      || current.canUndo !== snapshot.canUndo
-      || current.canRedo !== snapshot.canRedo
-    ) {
-      publish(current);
-    }
+    publish(controller.getSnapshot());
   };
 
   const disconnect = () => {

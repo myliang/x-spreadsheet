@@ -133,11 +133,13 @@ function pasteValues(result: unknown): readonly (readonly string[])[] {
 
 export function createEventDispatcher(options: EventDispatcherOptions): EventDispatcher {
   const { controller } = options;
+  const isActive = () => options.isActive?.() !== false;
   const ensureActive = () => {
-    if (options.isActive?.() === false) throw inactiveException();
+    if (!isActive()) throw inactiveException();
   };
 
   const reportUiError = (error: TegoSheetError) => {
+    if (!isActive()) return;
     options.getCallbacks().onError?.(clone(error));
   };
 
@@ -146,9 +148,12 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     previousText: string | undefined,
     notificationOptions: DispatchNotificationOptions,
   ) => {
+    if (!isActive()) return;
     const callbacks = options.getCallbacks();
     options.recordControlledCheckpoint?.(commit);
+    if (!isActive()) return;
     callbacks.onChange?.(clone(commit.value), clone(commit.change));
+    if (!isActive()) return;
 
     if (commit.command.type === 'set-cell-text') {
       const event: CellEditEvent = {
@@ -178,9 +183,11 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
       callbacks.onPaste(clone(event));
     }
 
+    if (!isActive()) return;
     if (notificationOptions.selectionAfterCommit !== undefined) {
       callbacks.onSelectionChange?.(clone(notificationOptions.selectionAfterCommit));
     }
+    if (!isActive()) return;
     options.schedulePaint?.();
   };
 
@@ -195,7 +202,12 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     const previousText = command.type === 'set-cell-text'
       ? controller.getCellText(command.address)
       : undefined;
-    const outcome = controller.dispatch(command, source) as CommandOutcome<
+    const capturePasteValues = (
+      command.type === 'paste-external' || command.type === 'paste-internal'
+    ) && options.getCallbacks().onPaste !== undefined;
+    const outcome = controller.dispatch(command, source, {
+      capturePasteValues,
+    }) as CommandOutcome<
       unknown,
       WorkbookCommand
     >;
@@ -206,7 +218,7 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     dispatched: ReturnType<typeof dispatchCore>,
     notificationOptions: DispatchNotificationOptions = {},
   ): CommandOutcome<unknown, WorkbookCommand> => {
-    if (dispatched.outcome.status === 'committed') {
+    if (dispatched.outcome.status === 'committed' && isActive()) {
       notifyCommit(dispatched.outcome.commit, dispatched.previousText, notificationOptions);
     }
     return dispatched.outcome;
@@ -214,13 +226,16 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
 
   return {
     dispatchUi(command, source, notificationOptions) {
+      if (!isActive()) {
+        return { status: 'rejected', error: clone(inactiveException().error) };
+      }
       let dispatched: ReturnType<typeof dispatchCore>;
       try {
         dispatched = dispatchCore(command, source);
       } catch (error) {
         if (!(error instanceof TegoSheetException)) throw error;
         const payload = clone(error.error);
-        reportUiError(payload);
+        if (isActive()) reportUiError(payload);
         return { status: 'rejected', error: payload };
       }
       return notify(dispatched, notificationOptions);

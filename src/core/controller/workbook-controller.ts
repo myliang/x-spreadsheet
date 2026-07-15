@@ -26,6 +26,8 @@ export interface WorkbookControllerOptions {
 export interface DispatchOptions {
   /** Suppress the document subscription used by controlled replay and restore. */
   readonly notify?: boolean;
+  /** Skip the potentially large paste result when no consumer needs it. */
+  readonly capturePasteValues?: boolean;
 }
 
 export interface ControllerSheetSnapshot {
@@ -180,7 +182,9 @@ export class WorkbookController {
       >;
     }
 
-    const applied = applyCommand(this.state, commandSnapshot);
+    const applied = applyCommand(this.state, commandSnapshot, {
+      capturePasteValues: options.capturePasteValues !== false,
+    });
     if (applied === null) return { status: 'noop' };
 
     const before = this.state;

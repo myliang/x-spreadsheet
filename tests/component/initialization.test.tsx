@@ -124,3 +124,36 @@ it('catches up the external snapshot on delayed first subscribe and reconnect', 
   store.dispose();
   controller.dispose();
 });
+
+it('adopts a same-revision branch after a disconnected checkpoint restore', () => {
+  const controller = new WorkbookController([{}]);
+  const base = controller.checkpoint();
+  const store = createControllerExternalStore(controller);
+  const sheet = controller.getSheetIds()[0]!;
+  const disconnect = store.subscribe(() => undefined);
+  controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'branch A',
+  }, 'ref');
+  expect(store.getSnapshot().revision).toBe(1);
+  disconnect();
+
+  controller.restore(base);
+  controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'branch B',
+  }, 'ref');
+  const listener = vi.fn();
+  store.subscribe(listener);
+
+  expect(store.getSnapshot().revision).toBe(1);
+  expect(store.getSnapshot().value[0]?.rows?.[0]).toMatchObject({
+    cells: { 0: { text: 'branch B' } },
+  });
+  expect(listener).toHaveBeenCalledOnce();
+
+  store.dispose();
+  controller.dispose();
+});

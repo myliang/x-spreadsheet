@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { canonicalizeWorkbook, TegoSheetException } from '../../core';
 import type { WorkbookData, WorkbookInput } from '../../core';
 import {
@@ -153,7 +153,7 @@ export function useControllerEpoch(
     active?.store.getServerSnapshot ?? pendingSnapshot,
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (active === null || !active.isActive()) return;
     active.controller.setReadOnly(props.readOnly ?? false);
     active.store.refresh();
