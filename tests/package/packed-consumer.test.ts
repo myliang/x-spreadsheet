@@ -56,5 +56,6 @@ test('React stays peer-only and package files are publishable outputs', () => {
   assert.equal(files.includes('dist/index.d.ts'), true);
   assert.equal(files.includes('package.json'), true);
   assert.equal(files.includes('readme.md'), true);
+  assert.equal(files.includes('docs/migration-from-x-data-spreadsheet.md'), true);
   assert.equal(files.some(file => file.startsWith('src/') || file.startsWith('legacy/')), false);
 });

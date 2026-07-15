@@ -12,7 +12,7 @@ test('metadata describes a peer-only React package with explicit exports', () =>
   assert.equal(pkg.license, 'MIT');
   assert.deepEqual(pkg.dependencies, {});
   assert.deepEqual(pkg.peerDependencies, { react: '^19.2.7', 'react-dom': '^19.2.7' });
-  assert.deepEqual(pkg.files, ['dist']);
+  assert.deepEqual(pkg.files, ['dist', 'docs/migration-from-x-data-spreadsheet.md']);
   assert.deepEqual(pkg.sideEffects, ['**/*.css']);
   assert.deepEqual(Object.keys(pkg.exports), [
     '.',

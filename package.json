@@ -36,7 +36,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/migration-from-x-data-spreadsheet.md"
   ],
   "sideEffects": [
     "**/*.css"

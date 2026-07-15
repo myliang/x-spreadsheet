@@ -11,26 +11,46 @@ const publicEntries = [
   'tego-sheet/locales/nl',
   'tego-sheet/locales/zh-cn',
 ];
+const browserGlobals = [
+  'window',
+  'document',
+  'navigator',
+  'ResizeObserver',
+  'requestAnimationFrame',
+  'cancelAnimationFrame',
+  'HTMLCanvasElement',
+  'CanvasRenderingContext2D',
+  'OffscreenCanvas',
+];
+
+function ssrProbe(entry: string, loader: string): string {
+  return `
+    const names = ${JSON.stringify(browserGlobals)};
+    for (const name of names) {
+      Reflect.deleteProperty(globalThis, name);
+      if (name in globalThis) throw new Error(name + ' exists before import');
+    }
+    const before = names.map(name => Object.getOwnPropertyDescriptor(globalThis, name));
+    ${loader}(${JSON.stringify(entry)});
+    for (const [index, name] of names.entries()) {
+      if (name in globalThis) throw new Error(name + ' was created during import');
+      const after = Object.getOwnPropertyDescriptor(globalThis, name);
+      if (after !== before[index]) throw new Error(name + ' descriptor changed during import');
+    }
+  `;
+}
 
 test('every ESM and CommonJS public entry imports without browser globals', () => {
   for (const entry of publicEntries) {
     execFileSync(process.execPath, [
       '--input-type=module',
       '--eval',
-      `
-        if ('window' in globalThis || 'document' in globalThis) throw new Error('browser global leaked');
-        await import(${JSON.stringify(entry)});
-        if ('window' in globalThis || 'document' in globalThis) throw new Error('browser global created');
-      `,
+      ssrProbe(entry, 'await import'),
     ], { cwd: consumer, stdio: 'pipe' });
     execFileSync(process.execPath, [
       '--input-type=commonjs',
       '--eval',
-      `
-        if ('window' in globalThis || 'document' in globalThis) throw new Error('browser global leaked');
-        require(${JSON.stringify(entry)});
-        if ('window' in globalThis || 'document' in globalThis) throw new Error('browser global created');
-      `,
+      ssrProbe(entry, 'require'),
     ], { cwd: consumer, stdio: 'pipe' });
   }
 });
