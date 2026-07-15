@@ -92,37 +92,175 @@ function listedParityRegistrations(arguments_: readonly string[]): ReadonlyMap<s
   return registrations;
 }
 
-function eagerBrowserGlobals(file: string): readonly string[] {
-  const source = readFileSync(resolve(root, file), 'utf8');
+const globalObject = Symbol('global-object');
+type BrowserAlias = string | typeof globalObject;
+
+function staticName(node: ts.Node | undefined): string | null {
+  if (
+    node !== undefined
+    && (ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+  ) return node.text;
+  return null;
+}
+
+function visitEager(node: ts.Node, visitor: (current: ts.Node) => void): void {
+  if (ts.isTypeNode(node)) return;
+  visitor(node);
+  if (ts.isFunctionLike(node)) return;
+  if (ts.isClassDeclaration(node) || ts.isClassExpression(node)) {
+    for (const clause of node.heritageClauses ?? []) {
+      for (const type of clause.types) visitEager(type.expression, visitor);
+    }
+    for (const member of node.members) {
+      const isStatic = (ts.canHaveModifiers(member) ? ts.getModifiers(member) : undefined)
+        ?.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword) ?? false;
+      if (!isStatic) continue;
+      if (ts.isPropertyDeclaration(member) && member.initializer !== undefined) {
+        visitEager(member.initializer, visitor);
+      }
+      if (ts.isClassStaticBlockDeclaration(member)) visitEager(member.body, visitor);
+    }
+    return;
+  }
+  ts.forEachChild(node, child => visitEager(child, visitor));
+}
+
+function collectBindingNames(name: ts.BindingName, names: Set<string>): void {
+  if (ts.isIdentifier(name)) {
+    names.add(name.text);
+    return;
+  }
+  for (const element of name.elements) {
+    if (!ts.isOmittedExpression(element)) collectBindingNames(element.name, names);
+  }
+}
+
+function eagerBrowserGlobalsFromSource(source: string, file: string): readonly string[] {
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
     file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-  const found = new Set<string>();
-  const visit = (node: ts.Node): void => {
-    if (ts.isTypeNode(node) || ts.isFunctionLike(node)) return;
-    if (ts.isClassDeclaration(node) || ts.isClassExpression(node)) {
-      for (const clause of node.heritageClauses ?? []) {
-        for (const type of clause.types) visit(type.expression);
-      }
-      for (const member of node.members) {
-        const isStatic = (ts.canHaveModifiers(member) ? ts.getModifiers(member) : undefined)
-          ?.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword) ?? false;
-        if (!isStatic) continue;
-        if (ts.isPropertyDeclaration(member) && member.initializer !== undefined) visit(member.initializer);
-        if (ts.isClassStaticBlockDeclaration(member)) visit(member.body);
-      }
-      return;
+  const declared = new Set<string>();
+  visitEager(sourceFile, node => {
+    if (ts.isVariableDeclaration(node)) collectBindingNames(node.name, declared);
+    if (
+      (ts.isFunctionDeclaration(node)
+        || ts.isClassDeclaration(node)
+        || ts.isEnumDeclaration(node)
+        || ts.isImportClause(node)
+        || ts.isImportEqualsDeclaration(node)
+        || ts.isNamespaceImport(node)
+        || ts.isImportSpecifier(node))
+      && node.name !== undefined
+    ) declared.add(node.name.text);
+  });
+
+  const aliases = new Map<string, BrowserAlias>();
+  const aliasFor = (expression: ts.Expression): BrowserAlias | undefined => {
+    if (ts.isIdentifier(expression)) {
+      const alias = aliases.get(expression.text);
+      if (alias !== undefined) return alias;
+      if (declared.has(expression.text)) return undefined;
+      if (expression.text === 'globalThis' || expression.text === 'window') return globalObject;
+      return browserGlobals.has(expression.text) ? expression.text : undefined;
     }
-    if (ts.isIdentifier(node) && browserGlobals.has(node.text)) found.add(node.text);
-    ts.forEachChild(node, visit);
+    if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+      const parent = aliasFor(expression.expression);
+      const property = ts.isPropertyAccessExpression(expression)
+        ? expression.name.text
+        : staticName(expression.argumentExpression);
+      if (parent === undefined || property === null) return undefined;
+      if (parent === globalObject) return browserGlobals.has(property) ? property : undefined;
+      return parent;
+    }
+    if (ts.isCallExpression(expression)) {
+      const binder = expression.expression;
+      if (
+        (ts.isPropertyAccessExpression(binder) || ts.isElementAccessExpression(binder))
+        && staticName(ts.isPropertyAccessExpression(binder) ? binder.name : binder.argumentExpression) === 'bind'
+      ) return aliasFor(binder.expression);
+    }
+    return undefined;
   };
-  visit(sourceFile);
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const bind = (name: string | null, alias: BrowserAlias | undefined): void => {
+      if (name === null || alias === undefined || aliases.get(name) === alias) return;
+      aliases.set(name, alias);
+      changed = true;
+    };
+    visitEager(sourceFile, node => {
+      if (!ts.isVariableDeclaration(node) || node.initializer === undefined) return;
+      if (ts.isIdentifier(node.name)) {
+        bind(node.name.text, aliasFor(node.initializer));
+        return;
+      }
+      if (!ts.isObjectBindingPattern(node.name)) return;
+      const parent = aliasFor(node.initializer);
+      for (const element of node.name.elements) {
+        const property = staticName(element.propertyName ?? element.name);
+        const alias = parent === globalObject && property !== null && browserGlobals.has(property)
+          ? property
+          : parent === globalObject ? undefined : parent;
+        bind(staticName(element.name), alias);
+      }
+    });
+  }
+
+  const found = new Set<string>();
+  visitEager(sourceFile, node => {
+    if (!ts.isExpression(node)) return;
+    if (ts.isIdentifier(node)) {
+      const parent = node.parent;
+      if (
+        (ts.isPropertyAccessExpression(parent) && parent.name === node)
+        || (ts.isVariableDeclaration(parent) && parent.name === node)
+        || (ts.isBindingElement(parent) && (parent.name === node || parent.propertyName === node))
+        || (ts.isPropertyAssignment(parent) && parent.name === node)
+      ) return;
+    }
+    const alias = aliasFor(node);
+    if (alias === globalObject && ts.isIdentifier(node) && node.text === 'window') found.add('window');
+    else if (alias !== undefined && alias !== globalObject) found.add(alias);
+  });
   return [...found];
+}
+
+function eagerBrowserGlobals(file: string): readonly string[] {
+  return eagerBrowserGlobalsFromSource(readFileSync(resolve(root, file), 'utf8'), file);
 }
 
 it('does not read browser globals while evaluating source modules', () => {
   for (const file of sourceFiles()) {
     expect(eagerBrowserGlobals(file), file).toEqual([]);
   }
+});
+
+it('detects eager browser access through global, property, and destructured aliases', () => {
+  const found = eagerBrowserGlobalsFromSource(`
+    const browser = globalThis;
+    const { document: doc, requestAnimationFrame: raf } = browser;
+    const make = doc.createElement.bind(doc);
+    const storage = browser['localStorage'];
+    const page = window;
+    const navigation = page.navigator;
+    make('div');
+    raf(() => undefined);
+    storage.getItem('key');
+    navigation.userAgent;
+  `, 'probe.ts');
+
+  expect([...found].sort()).toEqual([
+    'document',
+    'localStorage',
+    'navigator',
+    'requestAnimationFrame',
+    'window',
+  ]);
+  expect(eagerBrowserGlobalsFromSource(`
+    const globalThis = { document: localDocument };
+    globalThis.document;
+  `, 'shadowed.ts')).toEqual([]);
 });
 
 it('[ARCH-9] imports the public source entry without creating browser globals', async () => {

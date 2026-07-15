@@ -12,9 +12,19 @@ import {
 
 const root = resolve(import.meta.dirname, '../..');
 
-const callNames = new Map<string, string>([
+type ResourcePrimitive =
+  | 'animation-frame'
+  | 'listener'
+  | 'observer'
+  | 'overlay'
+  | 'portal'
+  | 'subscription'
+  | 'timer';
+
+const callNames = new Map<string, ResourcePrimitive>([
   ['addEventListener', 'listener'],
   ['removeEventListener', 'listener'],
+  ['ResizeObserver', 'observer'],
   ['requestAnimationFrame', 'animation-frame'],
   ['cancelAnimationFrame', 'animation-frame'],
   ['setTimeout', 'timer'],
@@ -50,20 +60,162 @@ function expressionName(expression: ts.Expression): string | null {
   return null;
 }
 
+function boundTarget(expression: ts.Expression): ts.Expression | null {
+  if (!ts.isCallExpression(expression)) return null;
+  const binder = expression.expression;
+  if (!ts.isPropertyAccessExpression(binder) && !ts.isElementAccessExpression(binder)) return null;
+  return expressionName(binder) === 'bind' ? binder.expression : null;
+}
+
+function resourceReference(
+  expression: ts.Expression,
+  aliases: ReadonlyMap<string, ResourcePrimitive>,
+): ResourcePrimitive | undefined {
+  if (ts.isIdentifier(expression)) {
+    return aliases.get(expression.text)
+      ?? (propertyOnly.has(expression.text) ? undefined : callNames.get(expression.text));
+  }
+  if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+    const name = expressionName(expression);
+    return name === null ? undefined : callNames.get(name);
+  }
+  const target = boundTarget(expression);
+  return target === null ? undefined : resourceReference(target, aliases);
+}
+
+function bindingName(name: ts.BindingName | ts.PropertyName | undefined): string | null {
+  if (name === undefined) return null;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) return name.text;
+  return null;
+}
+
+function resourceAliases(sourceFile: ts.SourceFile): ReadonlyMap<string, ResourcePrimitive> {
+  const aliases = new Map<string, ResourcePrimitive>();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const bind = (name: string | null, primitive: ResourcePrimitive | undefined): void => {
+      if (name === null || primitive === undefined || aliases.get(name) === primitive) return;
+      aliases.set(name, primitive);
+      changed = true;
+    };
+    const visit = (node: ts.Node): void => {
+      if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
+        if (ts.isIdentifier(node.name)) {
+          bind(node.name.text, resourceReference(node.initializer, aliases));
+        } else if (ts.isObjectBindingPattern(node.name)) {
+          for (const element of node.name.elements) {
+            const property = bindingName(element.propertyName ?? element.name);
+            bind(bindingName(element.name), property === null ? undefined : callNames.get(property));
+          }
+        }
+      } else if (
+        ts.isBinaryExpression(node)
+        && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+        && ts.isIdentifier(node.left)
+      ) {
+        bind(node.left.text, resourceReference(node.right, aliases));
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return aliases;
+}
+
 function resourcePrimitivesFromSource(source: string, file: string): readonly string[] {
   const primitives: string[] = [];
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
     file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const aliases = resourceAliases(sourceFile);
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
-      const name = expressionName(node.expression);
-      const primitive = name === null || (ts.isIdentifier(node.expression) && propertyOnly.has(name))
-        ? undefined
-        : callNames.get(name);
+      const primitive = resourceReference(node.expression, aliases);
       if (primitive !== undefined) primitives.push(primitive);
     }
-    if (ts.isNewExpression(node) && expressionName(node.expression) === 'ResizeObserver') {
-      primitives.push('observer');
+    if (ts.isNewExpression(node)) {
+      const primitive = resourceReference(node.expression, aliases);
+      if (primitive !== undefined) primitives.push(primitive);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return primitives;
+}
+
+const registryOwnershipMethods = new Map<string, ResourcePrimitive>([
+  ['animationFrame', 'animation-frame'],
+  ['listen', 'listener'],
+  ['observer', 'observer'],
+  ['overlay', 'overlay'],
+  ['subscription', 'subscription'],
+  ['timer', 'timer'],
+]);
+
+function ownershipMember(owner: string | null, method: string | null): ResourcePrimitive | undefined {
+  if (owner === 'registry' && method !== null) return registryOwnershipMethods.get(method);
+  return owner === 'controller' && method === 'subscribe' ? 'subscription' : undefined;
+}
+
+function ownershipReference(
+  expression: ts.Expression,
+  aliases: ReadonlyMap<string, ResourcePrimitive>,
+): ResourcePrimitive | undefined {
+  if (ts.isIdentifier(expression)) return aliases.get(expression.text);
+  const target = boundTarget(expression);
+  if (target !== null) return ownershipReference(target, aliases);
+  if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression)) {
+    return undefined;
+  }
+  return ownershipMember(expressionName(expression.expression), expressionName(expression));
+}
+
+function ownershipAliases(sourceFile: ts.SourceFile): ReadonlyMap<string, ResourcePrimitive> {
+  const aliases = new Map<string, ResourcePrimitive>();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const bind = (name: string | null, primitive: ResourcePrimitive | undefined): void => {
+      if (name === null || primitive === undefined || aliases.get(name) === primitive) return;
+      aliases.set(name, primitive);
+      changed = true;
+    };
+    const visit = (node: ts.Node): void => {
+      if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
+        if (ts.isIdentifier(node.name)) {
+          bind(node.name.text, ownershipReference(node.initializer, aliases));
+        } else if (ts.isObjectBindingPattern(node.name)) {
+          const owner = expressionName(node.initializer);
+          for (const element of node.name.elements) {
+            bind(
+              bindingName(element.name),
+              ownershipMember(owner, bindingName(element.propertyName ?? element.name)),
+            );
+          }
+        }
+      } else if (
+        ts.isBinaryExpression(node)
+        && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+        && ts.isIdentifier(node.left)
+      ) {
+        bind(node.left.text, ownershipReference(node.right, aliases));
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return aliases;
+}
+
+function lifetimeResourcesFromSource(source: string, file: string): readonly ResourcePrimitive[] {
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const aliases = ownershipAliases(sourceFile);
+  const primitives: ResourcePrimitive[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node)) {
+      const primitive = ownershipReference(node.expression, aliases);
+      if (primitive !== undefined) primitives.push(primitive);
     }
     ts.forEachChild(node, visit);
   };
@@ -79,6 +231,40 @@ it('classifies bare, property, and element ResizeObserver construction', () => {
   ]) {
     expect(resourcePrimitivesFromSource(source, 'probe.ts')).toEqual(['observer']);
   }
+});
+
+it('classifies bound and destructured resource aliases as acquisitions', () => {
+  const source = `
+    const browser = globalThis;
+    const add = root.addEventListener.bind(root);
+    const { removeEventListener: remove } = root;
+    const { setTimeout: later, clearTimeout: cancel } = browser;
+    const { createElement: make } = document;
+    add('click', listener);
+    remove('click', listener);
+    later(callback, 1);
+    cancel(timer);
+    make('div');
+  `;
+
+  expect(resourcePrimitivesFromSource(source, 'probe.ts')).toEqual([
+    'listener',
+    'listener',
+    'timer',
+    'timer',
+    'overlay',
+  ]);
+});
+
+it('keeps lifetime-owner wrapper calls visible through ordinary aliases', () => {
+  expect(lifetimeResourcesFromSource(`
+    const ownListener = this.registry.listen.bind(this.registry);
+    const { timer: ownTimer } = this.registry;
+    const { subscribe: connect } = controller;
+    ownListener(root, 'click', listener);
+    ownTimer(cancel);
+    connect(publish);
+  `, 'probe.ts')).toEqual(['listener', 'timer', 'subscription']);
 });
 
 it('[ARCH-5] gives each browser resource one idempotent registry disposal', async () => {
@@ -161,7 +347,7 @@ it('[ARCH-5] cancels the renderer schedule during idempotent engine disposal', (
   expect(harness.animationFrame.cancelled).toHaveLength(1);
 });
 
-it('[ARCH-5] confines every section 6.6 browser resource primitive to its sole owner', () => {
+it('[ARCH-5] separates browser API implementations from section 6.6 lifetime owners', () => {
   const files: string[] = [];
   const visitDirectory = (relative: string): void => {
     for (const entry of readdirSync(resolve(root, relative), { withFileTypes: true })) {
@@ -171,17 +357,27 @@ it('[ARCH-5] confines every section 6.6 browser resource primitive to its sole o
     }
   };
   visitDirectory('src');
-  const owners = new Map<string, Set<string>>();
-  const record = (primitive: string, file: string): void => {
-    const entries = owners.get(primitive) ?? new Set<string>();
+  const apiImplementations = new Map<string, Set<string>>();
+  const lifetimeOwners = new Map<string, Set<string>>();
+  const record = (target: Map<string, Set<string>>, primitive: string, file: string): void => {
+    const entries = target.get(primitive) ?? new Set<string>();
     entries.add(file);
-    owners.set(primitive, entries);
+    target.set(primitive, entries);
   };
   for (const file of files) {
     const source = readFileSync(resolve(root, file), 'utf8');
-    for (const primitive of resourcePrimitivesFromSource(source, file)) record(primitive, file);
+    const implementations = resourcePrimitivesFromSource(source, file);
+    for (const primitive of implementations) record(apiImplementations, primitive, file);
+    for (const primitive of lifetimeResourcesFromSource(source, file)) {
+      record(lifetimeOwners, primitive, file);
+    }
+    for (const primitive of implementations) {
+      if (['animation-frame', 'overlay', 'portal'].includes(primitive)) {
+        record(lifetimeOwners, primitive, file);
+      }
+    }
   }
-  const ownership = new Map<string, ReadonlySet<string>>([
+  const implementationSites = new Map<string, ReadonlySet<string>>([
     ['listener', new Set([
       'src/engine/interaction/resource-registry.ts',
       'src/react/adapters/interaction-adapter.ts',
@@ -205,9 +401,26 @@ it('[ARCH-5] confines every section 6.6 browser resource primitive to its sole o
     ])],
     ['portal', new Set()],
   ]);
-  for (const [primitive, allowed] of ownership) {
-    expect(owners.get(primitive) ?? new Set(), primitive).toEqual(allowed);
+  for (const [primitive, allowed] of implementationSites) {
+    expect(apiImplementations.get(primitive) ?? new Set(), `${primitive} API sites`).toEqual(allowed);
   }
+  const ownership = new Map<string, ReadonlySet<string>>([
+    ['listener', new Set(['src/engine/interaction/interaction-manager.ts'])],
+    ['observer', new Set(['src/engine/interaction/interaction-manager.ts'])],
+    ['animation-frame', new Set(['src/engine/canvas/render-scheduler.ts'])],
+    ['timer', new Set(['src/engine/interaction/interaction-manager.ts'])],
+    ['subscription', new Set([
+      'src/react/adapters/controller-external-store.ts',
+      'src/react/hooks/use-canvas-engine.ts',
+    ])],
+    ['overlay', new Set(['src/ui/print-workbook.ts'])],
+    ['portal', new Set()],
+  ]);
+  for (const [primitive, allowed] of ownership) {
+    expect(lifetimeOwners.get(primitive) ?? new Set(), `${primitive} lifetime owners`).toEqual(allowed);
+  }
+  expect([...(lifetimeOwners.get('subscription') ?? [])].every(file => file.startsWith('src/react/')))
+    .toBe(true);
 });
 
 it('[ARCH-5] keeps the React disposal cascade ordered and executes the Strict Mode cleanup probe', () => {

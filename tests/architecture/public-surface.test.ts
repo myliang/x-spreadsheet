@@ -10,7 +10,6 @@ const exactEvidence = new Set([
   'assets/sprite.svg',
   'docs/migration-from-x-data-spreadsheet.md',
   'tests/parity/legacy/baseline-meta.json',
-  'tests/parity/legacy/capture-atomicity.test.cjs',
   'tests/visual/fonts/NotoSans-Regular.woff2',
   'tests/visual/fonts/OFL.txt',
   'tests/visual/fonts/README.md',
@@ -43,7 +42,6 @@ it('classifies only exact architecture evidence as approved and rejects generate
   const approved = [
     'docs/superpowers/plans/design.md',
     'tests/parity/legacy/baseline-meta.json',
-    'tests/parity/legacy/capture-atomicity.test.cjs',
     'tests/visual/__snapshots__/workbook.png',
     'tests/visual/fonts/NotoSans-Regular.woff2',
     'tests/visual/fonts/OFL.txt',
@@ -119,6 +117,23 @@ it('keeps the removed root legacy tree visible to filesystem and ignore guards',
     { cwd: root },
   );
   expect(ignored.status, 'root legacy must not be hidden by .gitignore').toBe(1);
+});
+
+it('keeps the immutable legacy baseline without shipping recapture tooling', () => {
+  const tracked = trackedFiles();
+  expect(tracked.filter(file => file.startsWith('tests/parity/legacy/'))).toEqual([
+    'tests/parity/legacy/baseline-meta.json',
+  ]);
+  for (const obsolete of [
+    'npmx.txt',
+    'scripts/capture-legacy-parity.cjs',
+    'tests/parity/legacy/capture-atomicity.test.cjs',
+  ]) expect(tracked, obsolete).not.toContain(obsolete);
+  for (const file of tracked.filter(path => path.startsWith('docs/') && path.endsWith('.md'))) {
+    expect(readFileSync(resolve(root, file), 'utf8'), file).not.toMatch(
+      /capture-legacy-parity|capture-atomicity/,
+    );
+  }
 });
 
 it('does not track generated output outside the explicit evidence allowlist', () => {

@@ -158,11 +158,13 @@ it('preserves selection, scroll, and active editing across controlled acknowledg
   expect(selectedColumn).toBe(8);
   ref.current!.setCellText({ sheet: sheet!, row: 0, column: 0 }, 'accepted');
   expect(checkpoint).toBeDefined();
-  fireEvent.wheel(root, { deltaX: 200, deltaY: 0 });
   fireEvent.keyDown(window, { key: 'x' });
   const editor = await rendered.findByRole('textbox', { name: /cell editor/i });
   fireEvent.change(editor, { target: { value: 'draft' } });
   const editorHost = editor.closest<HTMLElement>('.tego-sheet__editor')!;
+  const preScrollLeft = editorHost.style.left;
+  fireEvent.wheel(root, { deltaX: 200, deltaY: 0 });
+  await waitFor(() => expect(editorHost.style.left).not.toBe(preScrollLeft));
   const scrolledLeft = editorHost.style.left;
 
   const acknowledgement = structuredClone(checkpoint!);
@@ -174,11 +176,15 @@ it('preserves selection, scroll, and active editing across controlled acknowledg
       onSelectionChange={onSelectionChange}
     />,
   );
-  expect((rendered.getByRole('textbox', { name: /cell editor/i }) as HTMLTextAreaElement).value).toBe('draft');
-  expect(editorHost.style.left).toBe(scrolledLeft);
+  const currentEditor = rendered.getByRole('textbox', { name: /cell editor/i }) as HTMLTextAreaElement;
+  const currentEditorHost = currentEditor.closest<HTMLElement>('.tego-sheet__editor')!;
+  expect(currentEditor).toBe(editor);
+  expect(currentEditor.value).toBe('draft');
+  expect(currentEditorHost.style.left).toBe(scrolledLeft);
+  expect(document.activeElement).toBe(currentEditor);
   expect(selectedColumn).toBe(8);
 
-  fireEvent.keyDown(editor, { key: 'Escape' });
+  fireEvent.keyDown(currentEditor, { key: 'Escape' });
   fireEvent.keyDown(window, { key: 'ArrowRight' });
   expect(selectedColumn).toBe(9);
   fireEvent.keyDown(window, { key: 'x' });

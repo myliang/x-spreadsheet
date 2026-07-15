@@ -76,51 +76,37 @@ tests/
   architecture/
 demo/
 fixtures/consumer/
-scripts/{capture-legacy-parity,verify-parity-manifest,test-package,test-ssr}.ts
+scripts/{verify-parity-manifest.ts,test-parity-gate.mjs,test-package.mjs,test-ssr.mjs}
 ```
 
-## Task 1: Capture the immutable legacy baseline
+## Task 1: Preserve the immutable legacy baseline
 
 **Files:**
-- Create: `scripts/capture-legacy-parity.cjs`
-- Create: `tests/parity/legacy/baseline-meta.json`
-- Create: `tests/parity/fixtures/workbooks/{blank-object,empty-array,multiple-sheets,sheet-fields,rows,cells,columns,styles,validations,autofilter,sparse-falsy}.json`
-- Create: `tests/parity/fixtures/operations/{history,structure,merge,clipboard,autofill,filter,sort,formulas,freeze,printable}.json`
+- Verify: `tests/parity/legacy/baseline-meta.json`
+- Verify: `tests/parity/fixtures/workbooks/{blank-object,empty-array,multiple-sheets,sheet-fields,rows,cells,columns,styles,validations,autofilter,sparse-falsy}.json`
+- Verify: `tests/parity/fixtures/operations/{history,structure,merge,clipboard,autofill,filter,sort,formulas,freeze,printable}.json`
 
-- [ ] **Step 1: Write the fixture inventory assertion**
+- [ ] **Step 1: Verify the immutable fixture inventory**
 
-Create a temporary Node assertion in `scripts/capture-legacy-parity.cjs` that requires these fixture IDs before writing: `blank-object`, `empty-array`, `multiple-sheets`, `sheet-fields`, `rows`, `cells`, `columns`, `styles`, `validations`, `autofilter`, `sparse-falsy`, `history`, `structure`, `merge`, `clipboard`, `autofill`, `filter`, `sort`, `formulas`, `freeze`, and `printable`.
+Keep the approved JSON fixtures and baseline metadata read-only. The repository does not ship a legacy runtime or a fixture-generation command after the React rewrite.
 
-```js
-const required = new Set(['blank-object', 'empty-array', 'multiple-sheets', 'sheet-fields', 'rows', 'cells', 'columns', 'styles', 'validations', 'autofilter', 'sparse-falsy', 'history', 'structure', 'merge', 'clipboard', 'autofill', 'filter', 'sort', 'formulas', 'freeze', 'printable']);
-const captured = new Map();
-process.on('beforeExit', () => {
-  const missing = [...required].filter(id => !captured.has(id));
-  if (missing.length > 0) throw new Error(`Missing legacy fixtures: ${missing.join(', ')}`);
-});
-```
+- [ ] **Step 2: Run the parity manifest contract tests**
 
-- [ ] **Step 2: Run the capture script and verify the red state**
+Run: `npm exec -- vitest run --project parity tests/parity/manifest-gate.test.ts`
 
-Run: `node -r @babel/register scripts/capture-legacy-parity.cjs`
+Expected: the manifest catalog and immutable fixture references satisfy the parity contract. The release gate separately requires its structured execution artifact.
 
-Expected: FAIL with `Missing legacy fixtures`.
+- [ ] **Step 3: Verify the baseline remains unchanged**
 
-- [ ] **Step 3: Capture legacy operations and metadata**
+Run: `git diff --exit-code tests/parity/legacy tests/parity/fixtures`
 
-Instantiate the existing `DataProxy`, perform the named operations, and write deterministic JSON with sorted object keys. Record commit `504ccf8`, Node version, `134 passing / 1 failing`, the infix mismatch, three lint errors, and the OpenSSL build workaround in `baseline-meta.json`.
+Expected: no fixture or metadata drift.
 
-- [ ] **Step 4: Verify every fixture is parseable and stable**
-
-Run twice: `node -r @babel/register scripts/capture-legacy-parity.cjs && git diff --exit-code tests/parity`
-
-Expected: first run writes fixtures; second run produces no diff.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 Intent: `Lock observable legacy behavior before replacing the runtime`
 
-Tested: fixture inventory, deterministic recapture, existing legacy baseline.
+Tested: fixture inventory, parity manifest contract, immutable legacy baseline.
 
 ## Task 2: Install the parity manifest gate
 
