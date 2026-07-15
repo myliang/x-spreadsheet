@@ -34,6 +34,8 @@ interface InitialEpoch {
   readonly input: WorkbookData;
   readonly mode: ControlMode;
   readonly readOnly: boolean;
+  readonly initialRowCount: number | undefined;
+  readonly initialColumnCount: number | undefined;
 }
 
 interface ActiveEpoch {
@@ -129,15 +131,24 @@ function initialInput(props: Pick<TegoSheetProps, 'value' | 'defaultValue'>): Wo
 }
 
 export function useControllerEpoch(
-  props: Pick<TegoSheetProps, 'value' | 'defaultValue' | 'readOnly'>,
+  props: Pick<TegoSheetProps, 'value' | 'defaultValue' | 'readOnly' | 'options'>,
   runtime: ControllerEpochRuntime = {},
 ): ControllerEpoch | null {
   const currentMode = controlMode(props);
-  const [initial] = useState<InitialEpoch>(() => ({
-    input: canonicalizeWorkbook(initialInput(props)),
-    mode: currentMode,
-    readOnly: props.readOnly ?? false,
-  }));
+  const [initial] = useState<InitialEpoch>(() => {
+    const initialRowCount = props.options?.rows?.initialCount;
+    const initialColumnCount = props.options?.columns?.initialCount;
+    return {
+      input: canonicalizeWorkbook(initialInput(props), {
+        rowCount: initialRowCount,
+        columnCount: initialColumnCount,
+      }),
+      mode: currentMode,
+      readOnly: props.readOnly ?? false,
+      initialRowCount,
+      initialColumnCount,
+    };
+  });
   const createEpochSlot = runtime.createEpochSlot ?? createControllerEpochSlot;
   const [slot] = useState(createEpochSlot);
   const createController = runtime.createController ?? defaultCreateController;
@@ -160,7 +171,11 @@ export function useControllerEpoch(
     let store: ControllerExternalStore | null = null;
     let epoch: ActiveEpoch | null = null;
     try {
-      const createdController = createController(initial.input, { readOnly: initial.readOnly });
+      const createdController = createController(initial.input, {
+        readOnly: initial.readOnly,
+        initialRowCount: initial.initialRowCount,
+        initialColumnCount: initial.initialColumnCount,
+      });
       controller = createdController;
       const createdStore = createControllerExternalStore(createdController);
       store = createdStore;

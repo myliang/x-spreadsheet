@@ -150,7 +150,8 @@ function reportedReference(
 export function createControlledReconciler(
   controller: WorkbookController,
 ): ControlledReconciler {
-  const initialWorkbook = canonicalizeWorkbook(controller.getValue());
+  const defaults = controller.getInitializationDefaults();
+  const initialWorkbook = canonicalizeWorkbook(controller.getValue(), defaults);
   const neverObserved = Symbol('controlled-value-not-observed');
   let observedValue: unknown = neverObserved;
   let pending: PendingCheckpoint[] = [];
@@ -217,7 +218,7 @@ export function createControlledReconciler(
         observedValue,
         acknowledgedKey: base.key,
         pending,
-      }, value);
+      }, value, defaults);
       if (update.kind === 'same-reference') {
         return { refresh: false };
       }

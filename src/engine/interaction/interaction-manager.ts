@@ -91,6 +91,7 @@ export interface InteractionManagerPorts {
   readonly now?: () => number;
   readonly minRowHeight?: number;
   readonly minColumnWidth?: number;
+  readonly contextMenuEnabled?: () => boolean;
 }
 
 export interface InteractionManagerOptions {
@@ -554,6 +555,7 @@ export class InteractionManager {
   }
 
   private contextMenu(event: InteractionEventLike): void {
+    if (this.ports.contextMenuEnabled?.() === false) return;
     const snapshot = this.ports.getSnapshot();
     const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
     if (region === null || !this.ports.commitEditor()) return;

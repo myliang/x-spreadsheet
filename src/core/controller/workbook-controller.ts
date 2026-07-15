@@ -18,9 +18,12 @@ import {
 } from './controller-checkpoint';
 import { History, type HistoryCheckpoint, type HistoryEntry } from './history';
 import { SubscriptionStore } from './subscription-store';
+import type { WorkbookInitializationDefaults } from '../serialization/canonicalize-workbook';
 
 export interface WorkbookControllerOptions {
   readonly readOnly?: boolean;
+  readonly initialRowCount?: number;
+  readonly initialColumnCount?: number;
 }
 
 export interface DispatchOptions {
@@ -113,9 +116,14 @@ export class WorkbookController {
   private changeSequence = 0;
   private readOnly: boolean;
   private disposed = false;
+  private readonly initializationDefaults: Readonly<WorkbookInitializationDefaults>;
 
   constructor(input: WorkbookInput, options: WorkbookControllerOptions = {}) {
-    this.state = WorkbookState.from(input);
+    this.initializationDefaults = Object.freeze({
+      rowCount: options.initialRowCount,
+      columnCount: options.initialColumnCount,
+    });
+    this.state = WorkbookState.from(input, this.initializationDefaults);
     this.readOnly = options.readOnly ?? false;
     this.controllerId = nextControllerId;
     nextControllerId += 1;
@@ -139,6 +147,10 @@ export class WorkbookController {
 
   getSheetIds(): readonly SheetId[] {
     return Object.freeze(this.state.sheets.map(sheet => sheet.id));
+  }
+
+  getInitializationDefaults(): Readonly<WorkbookInitializationDefaults> {
+    return this.initializationDefaults;
   }
 
   getCellText(address: CellAddress): string {

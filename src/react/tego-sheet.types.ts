@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import type {
   ActiveSheetChangeEvent,
   CellAddress,
@@ -10,17 +10,15 @@ import type {
   Selection,
   SheetId,
   SheetOptions,
-  SheetTabsRenderProps,
   TegoSheetError,
-  ToolbarRenderProps,
   ValidationResult,
   WorkbookChange,
   WorkbookData,
   WorkbookInput,
 } from '../core';
+import type { SheetTabsRenderer, ToolbarRenderer } from '../ui/slot-types';
 
-export type ToolbarRenderer = (props: ToolbarRenderProps) => ReactNode;
-export type SheetTabsRenderer = (props: SheetTabsRenderProps) => ReactNode;
+export type { SheetTabsRenderer, ToolbarRenderer } from '../ui/slot-types';
 
 export interface TegoSheetCallbacks {
   readonly onChange?: (value: WorkbookData, change: WorkbookChange) => void;

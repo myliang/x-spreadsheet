@@ -10,6 +10,11 @@ interface KnownField {
   readonly write: FieldWriter;
 }
 
+export interface WorkbookInitializationDefaults {
+  readonly rowCount?: number;
+  readonly columnCount?: number;
+}
+
 class DataValidationError extends Error {}
 
 // Keep recursive validation and canonical cloning below engine stack limits.
@@ -389,7 +394,19 @@ function autofilter(value: unknown, path: string): JsonValue {
   ]);
 }
 
-function sheet(value: unknown, index: number): JsonObject {
+function initializationCount(
+  value: number | undefined,
+  fallback: number,
+  label: string,
+): number {
+  return value === undefined ? fallback : nonNegativeIntegerAt(value, label);
+}
+
+function sheet(
+  value: unknown,
+  index: number,
+  defaults: Readonly<WorkbookInitializationDefaults>,
+): JsonObject {
   const path = `workbook[${index}]`;
   const source = objectAt(value, path);
   const output = knownObject(source, path, [
@@ -411,18 +428,20 @@ function sheet(value: unknown, index: number): JsonObject {
     { name: 'autofilter', write: autofilter },
   ]);
 
-  const defaults: readonly [string, JsonValue][] = [
+  const rowCount = initializationCount(defaults.rowCount, 100, 'initial row count');
+  const columnCount = initializationCount(defaults.columnCount, 26, 'initial column count');
+  const fields: readonly [string, JsonValue][] = [
     ['name', `sheet${index + 1}`],
     ['freeze', 'A1'],
     ['styles', []],
     ['merges', []],
-    ['rows', { len: 100 }],
-    ['cols', { len: 26 }],
+    ['rows', { len: rowCount }],
+    ['cols', { len: columnCount }],
     ['validations', []],
     ['autofilter', {}],
   ];
   const completed: MutableJsonObject = {};
-  for (const [key, fallback] of defaults) {
+  for (const [key, fallback] of fields) {
     define(completed, key, own(output, key) ? output[key] : fallback);
   }
   for (const key of Object.keys(output).filter(key => !own(completed, key)).sort()) {
@@ -430,9 +449,9 @@ function sheet(value: unknown, index: number): JsonObject {
   }
 
   const rows = completed.rows as MutableJsonObject;
-  if (!own(rows, 'len')) define(rows, 'len', 100);
+  if (!own(rows, 'len')) define(rows, 'len', rowCount);
   const cols = completed.cols as MutableJsonObject;
-  if (!own(cols, 'len')) define(cols, 'len', 26);
+  if (!own(cols, 'len')) define(cols, 'len', columnCount);
   return completed;
 }
 
@@ -445,8 +464,15 @@ function invalidData(cause: unknown): TegoSheetException {
   });
 }
 
-export function canonicalizeWorkbook(input: WorkbookInput): WorkbookData {
+export function canonicalizeWorkbook(
+  input: WorkbookInput,
+  defaults: Readonly<WorkbookInitializationDefaults> = {},
+): WorkbookData {
   try {
+    const validatedDefaults = {
+      rowCount: initializationCount(defaults.rowCount, 100, 'initial row count'),
+      columnCount: initializationCount(defaults.columnCount, 26, 'initial column count'),
+    };
     validateJsonGraph(
       input,
       Array.isArray(input) ? 'workbook' : 'workbook[0]',
@@ -456,12 +482,15 @@ export function canonicalizeWorkbook(input: WorkbookInput): WorkbookData {
     const sheets: readonly unknown[] = Array.isArray(input)
       ? arrayAt(input, 'workbook')
       : [input];
-    return sheets.map((item, index) => sheet(item, index));
+    return sheets.map((item, index) => sheet(item, index, validatedDefaults));
   } catch (cause) {
     throw invalidData(cause);
   }
 }
 
-export function canonicalKey(input: WorkbookInput): string {
-  return JSON.stringify(canonicalizeWorkbook(input));
+export function canonicalKey(
+  input: WorkbookInput,
+  defaults: Readonly<WorkbookInitializationDefaults> = {},
+): string {
+  return JSON.stringify(canonicalizeWorkbook(input, defaults));
 }

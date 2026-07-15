@@ -3,6 +3,7 @@ import { serializeWorkbook } from '../serialization/serialize-workbook';
 import type { SheetId } from '../types/coordinates';
 import type { SheetData, WorkbookData, WorkbookInput } from '../types/workbook';
 import { createSheetId } from './sheet-ids';
+import type { WorkbookInitializationDefaults } from '../serialization/canonicalize-workbook';
 
 export interface RuntimeSheet {
   readonly id: SheetId;
@@ -35,18 +36,26 @@ function freezeSheets(sheets: readonly RuntimeSheet[]): readonly RuntimeSheet[] 
 
 export class WorkbookState {
   readonly sheets: readonly RuntimeSheet[];
+  private readonly defaults: Readonly<WorkbookInitializationDefaults>;
 
-  private constructor(sheets: readonly RuntimeSheet[]) {
+  private constructor(
+    sheets: readonly RuntimeSheet[],
+    defaults: Readonly<WorkbookInitializationDefaults>,
+  ) {
     this.sheets = freezeSheets(sheets);
+    this.defaults = Object.freeze({ ...defaults });
     Object.freeze(this);
   }
 
-  static from(input: WorkbookInput): WorkbookState {
-    return new WorkbookState(runtimeSheets(parseWorkbook(input)));
+  static from(
+    input: WorkbookInput,
+    defaults: Readonly<WorkbookInitializationDefaults> = {},
+  ): WorkbookState {
+    return new WorkbookState(runtimeSheets(parseWorkbook(input, defaults)), defaults);
   }
 
   replace(input: WorkbookInput): WorkbookState {
-    return WorkbookState.from(input);
+    return WorkbookState.from(input, this.defaults);
   }
 
   serialize(): WorkbookData {
@@ -66,7 +75,7 @@ export class WorkbookState {
     const sheets = this.sheets.map((sheet, sheetIndex) => (
       sheetIndex === index ? { id: sheet.id, data } : sheet
     ));
-    return new WorkbookState(sheets);
+    return new WorkbookState(sheets, this.defaults);
   }
 
   rename(id: SheetId, name: string): WorkbookState {
@@ -78,12 +87,12 @@ export class WorkbookState {
 
   add(name = `sheet${this.sheets.length + 1}`, id = createSheetId()): WorkbookState {
     if (this.get(id) !== null) throw new RangeError(`Duplicate sheet ID: ${id}`);
-    const data = parseWorkbook({ name })[0] as SheetData;
-    return new WorkbookState([...this.sheets, { id, data }]);
+    const data = parseWorkbook({ name }, this.defaults)[0] as SheetData;
+    return new WorkbookState([...this.sheets, { id, data }], this.defaults);
   }
 
   delete(id: SheetId): WorkbookState {
     if (this.get(id) === null) throw new RangeError(`Unknown sheet ID: ${id}`);
-    return new WorkbookState(this.sheets.filter(sheet => sheet.id !== id));
+    return new WorkbookState(this.sheets.filter(sheet => sheet.id !== id), this.defaults);
   }
 }

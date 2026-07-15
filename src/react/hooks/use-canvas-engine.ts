@@ -15,6 +15,8 @@ export interface UseCanvasEngineOptions {
   readonly onReady: () => void;
   readonly rootRef: RefObject<HTMLDivElement | null>;
   readonly sheetOptions?: SheetOptions;
+  readonly showGrid?: boolean;
+  readonly onSelectionChange?: (selection: import('../../core').Selection | null) => void;
 }
 
 export interface EngineAdapterSlot {
@@ -59,6 +61,8 @@ export function useCanvasEngine(options: UseCanvasEngineOptions): void {
     onReady,
     rootRef,
     sheetOptions,
+    showGrid,
+    onSelectionChange,
   } = options;
   const { controller, isActive } = epoch;
 
@@ -113,6 +117,13 @@ export function useCanvasEngine(options: UseCanvasEngineOptions): void {
 
   useLayoutEffect(() => {
     if (!isActive()) return;
-    engineSlot.get()?.render(epoch.snapshot, activeSheet);
-  }, [activeSheet, engineSlot, epoch.snapshot, isActive]);
+    const engine = engineSlot.get();
+    engine?.render(epoch.snapshot, activeSheet);
+    onSelectionChange?.(engine?.publicSelection() ?? null);
+  }, [activeSheet, engineSlot, epoch.snapshot, isActive, onSelectionChange]);
+
+  useLayoutEffect(() => {
+    if (!isActive()) return;
+    engineSlot.get()?.updateLiveOptions({ showGrid });
+  }, [engineSlot, isActive, showGrid]);
 }

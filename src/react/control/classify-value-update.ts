@@ -4,6 +4,7 @@ import {
   type TegoSheetError,
   type WorkbookData,
   type WorkbookInput,
+  type WorkbookInitializationDefaults,
 } from '../../core';
 import type { PendingCheckpoint } from './pending-checkpoint';
 
@@ -36,11 +37,12 @@ function invalidValue(cause: unknown): TegoSheetError {
 export function classifyValueUpdate(
   state: ValueClassificationState,
   value: WorkbookInput,
+  defaults: Readonly<WorkbookInitializationDefaults> = {},
 ): ValueUpdate {
   if (Object.is(value, state.observedValue)) return { kind: 'same-reference' };
   let workbook: WorkbookData;
   try {
-    workbook = canonicalizeWorkbook(value);
+    workbook = canonicalizeWorkbook(value, defaults);
   } catch (cause) {
     return { kind: 'invalid', error: invalidValue(cause) };
   }

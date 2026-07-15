@@ -1,5 +1,6 @@
 import { useLayoutEffect, type RefObject } from 'react';
 import type { SheetId } from '../../core';
+import type { Selection } from '../../core';
 import type { EventDispatcher } from '../adapters/event-dispatcher';
 import { createInteractionAdapter } from '../adapters/interaction-adapter';
 import type { ControllerEpoch } from './use-controller-epoch';
@@ -12,6 +13,9 @@ export interface UseInteractionManagerOptions {
   readonly engineSlot: EngineAdapterSlot;
   readonly epoch: ControllerEpoch;
   readonly rootRef: RefObject<HTMLDivElement | null>;
+  readonly showContextMenu?: boolean;
+  readonly minimumColumnWidth?: number;
+  readonly onSelectionChange?: (selection: Selection | null) => void;
 }
 
 export function useInteractionManager(options: UseInteractionManagerOptions): void {
@@ -22,6 +26,9 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     engineSlot,
     epoch,
     rootRef,
+    showContextMenu,
+    minimumColumnWidth,
+    onSelectionChange,
   } = options;
   const { controller, isActive } = epoch;
   useLayoutEffect(() => {
@@ -40,7 +47,11 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
       engine,
       root,
       globalTarget: window,
+      contextMenuEnabled: () => showContextMenu !== false,
+      minimumColumnWidth,
+      onSelectionChange,
     });
+    if (manager !== null && document.activeElement === root) manager.focus();
     return () => manager?.dispose();
   }, [
     controller,
@@ -50,5 +61,8 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     engineSlot,
     isActive,
     rootRef,
+    showContextMenu,
+    minimumColumnWidth,
+    onSelectionChange,
   ]);
 }

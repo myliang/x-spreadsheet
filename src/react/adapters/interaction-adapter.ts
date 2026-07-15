@@ -21,6 +21,9 @@ export interface InteractionAdapterOptions {
   readonly engine: EngineAdapter;
   readonly root: HTMLElement;
   readonly globalTarget: Window;
+  readonly contextMenuEnabled?: () => boolean;
+  readonly minimumColumnWidth?: number;
+  readonly onSelectionChange?: (selection: Selection | null) => void;
 }
 
 function rootPort(root: HTMLElement): InteractionRootPort {
@@ -84,7 +87,10 @@ export function createInteractionAdapter(
       setSelection(selection) {
         options.engine.setSelection(selection);
         const current = options.engine.publicSelection();
-        if (current !== null) options.dispatcher.emitSelectionChange(current);
+        if (current !== null) {
+          options.onSelectionChange?.(current);
+          options.dispatcher.emitSelectionChange(current);
+        }
       },
       setScroll: scroll => options.engine.setScroll(scroll),
       dispatch: (command: WorkbookCommand, source) => committed(
@@ -121,6 +127,8 @@ export function createInteractionAdapter(
         // No React overlays exist in the Task 15 runtime.
       },
       requestViewportResize: () => options.engine.recalculateLayout(),
+      contextMenuEnabled: options.contextMenuEnabled,
+      minColumnWidth: options.minimumColumnWidth,
       ...(typeof ResizeObserver === 'undefined' ? {} : {
         observeRoot: (callback: () => void) => observeRoot(options.root, callback),
       }),

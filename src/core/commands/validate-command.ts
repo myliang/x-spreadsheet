@@ -274,6 +274,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       validateIndex(command.column, 'column');
       {
         const sheet = state.get(command.sheet)!;
+        if (command.row === 0 && command.column === 0) return;
         if (command.row >= rowCount(sheet.data) || command.column >= columnCount(sheet.data)) {
           throw invalidCommand('freeze point exceeds the sheet structure');
         }
