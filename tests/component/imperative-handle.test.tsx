@@ -1,7 +1,7 @@
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { TegoSheet, type TegoSheetHandle } from '../../src';
+import { TegoSheet, type TegoSheetError, type TegoSheetHandle } from '../../src';
 import { createCanvasHarness } from '../helpers/canvas-harness';
 
 beforeEach(() => {
@@ -101,4 +101,49 @@ it('invalidates stale sheet IDs and clips active index silently on external repl
   expect(onChange).not.toHaveBeenCalled();
   expect(onActiveSheetChange).not.toHaveBeenCalled();
   expect(onSelectionChange).not.toHaveBeenCalled();
+});
+
+it('reports ref print failures through the latest onError and propagates consumer errors', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const first: TegoSheetError[] = [];
+  const latest: TegoSheetError[] = [];
+  const printFailure = new Error('printer offline');
+  vi.spyOn(window, 'print').mockImplementation(() => {
+    throw printFailure;
+  });
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{ name: 'A' }]}
+      onError={error => first.push(error)}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      onError={error => latest.push(error)}
+    />,
+  );
+
+  expect(() => ref.current!.print()).not.toThrow();
+  expect(first).toEqual([]);
+  expect(latest).toEqual([expect.objectContaining({
+    code: 'PRINT_FAILED',
+    recoverable: true,
+    cause: expect.objectContaining({ name: 'Error', message: 'printer offline' }),
+  })]);
+
+  const consumerFailure = new Error('consumer onError failed');
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      onError={() => {
+        throw consumerFailure;
+      }}
+    />,
+  );
+  expect(() => ref.current!.print()).toThrow(consumerFailure);
 });

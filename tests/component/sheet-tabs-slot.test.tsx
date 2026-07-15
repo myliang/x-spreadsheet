@@ -1,10 +1,13 @@
 import { act, cleanup, render, waitFor } from '@testing-library/react';
+import { createRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   TegoSheet,
   type SheetId,
   type SheetTabsRenderProps,
   type TegoSheetError,
+  type TegoSheetHandle,
 } from '../../src';
 import { createCanvasHarness } from '../helpers/canvas-harness';
 
@@ -123,4 +126,123 @@ it('routes retained stale tab actions to the current onError and makes them iner
   rendered.unmount();
   expect(() => staleActivate(stale)).not.toThrow();
   expect(latestError).toHaveBeenCalledTimes(calls);
+});
+
+it('does not let an outer add overwrite a nested add/delete activation decision', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  let tabs!: SheetTabsRenderProps;
+  let nested = false;
+  render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      sheetTabs={props => {
+        tabs = props;
+        return null;
+      }}
+      onChange={() => {
+        if (nested) return;
+        nested = true;
+        const temporary = ref.current!.addSheet('Temporary');
+        ref.current!.deleteSheet(temporary);
+        const winner = ref.current!.addSheet('Nested winner');
+        ref.current!.activateSheet(winner);
+      }}
+    />,
+  );
+  await waitFor(() => expect(tabs.sheets).toHaveLength(0));
+
+  act(() => tabs.add('Outer'));
+
+  await waitFor(() => expect(tabs.sheets).toHaveLength(2));
+  const active = tabs.sheets.find(sheet => sheet.id === tabs.activeSheet);
+  expect(active?.name).toBe('Nested winner');
+});
+
+it('does not let an outer delete overwrite a reentrant tab activation', async () => {
+  let tabs!: SheetTabsRenderProps;
+  let reenter = false;
+  render(
+    <TegoSheet
+      defaultValue={[{ name: 'A' }, { name: 'B' }, { name: 'C' }]}
+      initialActiveSheetIndex={1}
+      sheetTabs={props => {
+        tabs = props;
+        return null;
+      }}
+      onChange={() => {
+        if (!reenter) return;
+        reenter = false;
+        tabs.activate(tabs.sheets[0]!.id);
+      }}
+    />,
+  );
+  await waitFor(() => expect(tabs.sheets).toHaveLength(3));
+  const b = tabs.sheets[1]!.id;
+  reenter = true;
+
+  act(() => tabs.delete(b));
+
+  expect(tabs.sheets.map(sheet => sheet.name)).toEqual(['A', 'C']);
+  expect(tabs.sheets.find(sheet => sheet.id === tabs.activeSheet)?.name).toBe('A');
+});
+
+it('keeps the latest controlled replacement activation during a reentrant delete', async () => {
+  let tabs!: SheetTabsRenderProps;
+  let replace = false;
+
+  function Host() {
+    const [value, setValue] = useState([{ name: 'A' }, { name: 'B' }, { name: 'C' }]);
+    return (
+      <TegoSheet
+        value={value}
+        initialActiveSheetIndex={1}
+        sheetTabs={props => {
+          tabs = props;
+          return null;
+        }}
+        onChange={() => {
+          if (!replace) return;
+          replace = false;
+          flushSync(() => setValue([{ name: 'R1' }, { name: 'R2' }, { name: 'R3' }]));
+          tabs.activate(tabs.sheets[0]!.id);
+        }}
+      />
+    );
+  }
+
+  render(<Host />);
+  await waitFor(() => expect(tabs.sheets).toHaveLength(3));
+  replace = true;
+  act(() => tabs.delete(tabs.sheets[1]!.id));
+
+  await waitFor(() => expect(tabs.sheets.map(sheet => sheet.name)).toEqual(['R1', 'R2', 'R3']));
+  expect(tabs.sheets.find(sheet => sheet.id === tabs.activeSheet)?.name).toBe('R1');
+});
+
+it('drops add/delete post-dispatch decisions after synchronous unmount', async () => {
+  let tabs!: SheetTabsRenderProps;
+  let hide!: () => void;
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+  function Host() {
+    const [shown, setShown] = useState(true);
+    hide = () => flushSync(() => setShown(false));
+    return shown ? (
+      <TegoSheet
+        defaultValue={[]}
+        sheetTabs={props => {
+          tabs = props;
+          return null;
+        }}
+        onChange={hide}
+      />
+    ) : null;
+  }
+
+  const rendered = render(<Host />);
+  await waitFor(() => expect(tabs.sheets).toHaveLength(0));
+  expect(() => act(() => tabs.add('Unmounting'))).not.toThrow();
+  expect(rendered.container.querySelector('[data-tego-sheet]')).toBeNull();
+  expect(consoleError).not.toHaveBeenCalled();
 });

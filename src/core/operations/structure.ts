@@ -68,7 +68,7 @@ export function structureRange(sheet: SheetData, command: StructureCommand): Cel
   }
 }
 
-function deletionSplitsMerge(
+export function deletionSplitsMerge(
   sheet: SheetData,
   axis: 'row' | 'column',
   start: number,

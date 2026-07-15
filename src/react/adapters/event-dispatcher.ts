@@ -49,6 +49,22 @@ export interface EventDispatcher {
   readonly reportUiError: (error: TegoSheetError) => void;
 }
 
+export function printWorkbook(dispatcher: Pick<EventDispatcher, 'reportUiError'>): void {
+  let failure: unknown;
+  try {
+    window.print();
+    return;
+  } catch (cause) {
+    failure = cause;
+  }
+  dispatcher.reportUiError({
+    code: 'PRINT_FAILED',
+    message: 'Printing the workbook failed',
+    recoverable: true,
+    cause: failure,
+  });
+}
+
 function define(output: object, key: string, value: unknown): void {
   Object.defineProperty(output, key, {
     configurable: true,

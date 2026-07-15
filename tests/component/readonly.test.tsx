@@ -1,7 +1,13 @@
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { createRef } from 'react';
+import { createRef, useLayoutEffect, useRef } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { TegoSheet, type SheetId, type TegoSheetHandle } from '../../src';
+import {
+  TegoSheet,
+  type SheetId,
+  type TegoSheetError,
+  type TegoSheetHandle,
+  type ToolbarRenderProps,
+} from '../../src';
 import { createCanvasHarness } from '../helpers/canvas-harness';
 
 beforeEach(() => {
@@ -61,4 +67,123 @@ it('keeps viewing, selection, navigation and copy available while rejecting ever
     <TegoSheet ref={ref} defaultValue={[]} readOnly={false} onSelectionChange={onSelectionChange} />,
   ));
   expect(() => ref.current!.setCellText({ sheet, row: 0, column: 0 }, 'allowed')).not.toThrow();
+});
+
+it('commits the false-to-true read-only gate before custom child layout commands', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const changes = vi.fn();
+  const errors: TegoSheetError[] = [];
+  const refErrors: unknown[] = [];
+  let toolbar!: ToolbarRenderProps;
+
+  function Probe(props: ToolbarRenderProps) {
+    const ran = useRef(false);
+    useLayoutEffect(() => {
+      if (!props.readOnly || ran.current) return;
+      ran.current = true;
+      const selection = props.selection!;
+      try {
+        ref.current!.setCellText({ sheet: selection.sheet, row: 0, column: 0 }, 'ref leak');
+      } catch (error) {
+        refErrors.push(error);
+      }
+      fireEvent.keyDown(window, { key: 'k' });
+      props.execute({ type: 'set-style', patch: { color: 'slot leak' } });
+    }, [props]);
+    return null;
+  }
+
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{ name: 'A' }]}
+      toolbar={props => {
+        toolbar = props;
+        return <Probe {...props} />;
+      }}
+      onChange={changes}
+      onError={error => errors.push(error)}
+    />,
+  );
+  await waitFor(() => expect(toolbar.selection).not.toBeNull());
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+  const sheet = toolbar.selection!.sheet;
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      readOnly
+      toolbar={props => {
+        toolbar = props;
+        return <Probe {...props} />;
+      }}
+      onChange={changes}
+      onError={error => errors.push(error)}
+    />,
+  );
+
+  expect(refErrors).toHaveLength(1);
+  expect(refErrors[0]).toMatchObject({ code: 'INVALID_COMMAND' });
+  expect(changes).not.toHaveBeenCalled();
+  expect(errors).toEqual([expect.objectContaining({ code: 'INVALID_COMMAND' })]);
+  expect(ref.current!.getCell({ sheet, row: 0, column: 0 })).toBeNull();
+  expect(ref.current!.getCellStyle({ sheet, row: 0, column: 0 }).color).toBeUndefined();
+});
+
+it('commits the true-to-false read-only gate before custom child layout commands', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const refErrors: unknown[] = [];
+  const changes = vi.fn();
+  let toolbar!: ToolbarRenderProps;
+
+  function Probe(props: ToolbarRenderProps) {
+    const ran = useRef(false);
+    useLayoutEffect(() => {
+      if (props.readOnly || ran.current) return;
+      ran.current = true;
+      const selection = props.selection!;
+      try {
+        ref.current!.setCellText({ sheet: selection.sheet, row: 0, column: 0 }, 'allowed');
+      } catch (error) {
+        refErrors.push(error);
+      }
+      props.execute({ type: 'set-style', patch: { color: 'green' } });
+    }, [props]);
+    return null;
+  }
+
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{ name: 'A' }]}
+      readOnly
+      toolbar={props => {
+        toolbar = props;
+        return <Probe {...props} />;
+      }}
+      onChange={changes}
+    />,
+  );
+  await waitFor(() => expect(toolbar.selection).not.toBeNull());
+  const sheet = toolbar.selection!.sheet;
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      readOnly={false}
+      toolbar={props => {
+        toolbar = props;
+        return <Probe {...props} />;
+      }}
+      onChange={changes}
+    />,
+  );
+
+  expect(refErrors).toEqual([]);
+  expect(ref.current!.getCell({ sheet, row: 0, column: 0 })?.text).toBe('allowed');
+  expect(ref.current!.getCellStyle({ sheet, row: 0, column: 0 })).toMatchObject({ color: 'green' });
+  expect(changes).toHaveBeenCalledTimes(2);
 });

@@ -35,6 +35,7 @@ export interface EngineAdapter {
   readonly recalculateLayout: () => void;
   readonly setScroll: (scroll: ScrollState) => void;
   readonly setSelection: (selection: SelectionState) => void;
+  readonly updateReadOnly: (readOnly: boolean) => void;
   readonly updateLiveOptions: (options: Readonly<{ readonly showGrid?: boolean }>) => void;
   readonly dispose: () => void;
 }
@@ -62,6 +63,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
   let viewport: ViewportMetrics | null = null;
   let selection: SelectionState | null = null;
   let disposed = false;
+  let liveReadOnly: boolean | null = null;
   let showGrid = options.showGrid;
 
   const activeIndex = (): number => {
@@ -131,7 +133,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
         viewport,
         selection,
         sheet: activeSheet,
-        readOnly: latestSnapshot.readOnly,
+        readOnly: liveReadOnly ?? latestSnapshot.readOnly,
         epoch: latestSnapshot,
       };
     },
@@ -199,6 +201,10 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       if (disposed || viewport === null) return;
       selection = normalizeSelection(next, viewport.model);
       paint();
+    },
+    updateReadOnly(readOnly) {
+      if (disposed) return;
+      liveReadOnly = readOnly;
     },
     updateLiveOptions(next) {
       if (disposed || showGrid === next.showGrid) return;

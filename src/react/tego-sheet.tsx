@@ -9,12 +9,11 @@ import {
   type ForwardedRef,
 } from 'react';
 import {
-  containsCell,
   parseA1,
   parseA1Range,
+  rangesIntersect,
   selectCellStyle,
   TegoSheetException,
-  type CellStyle,
   type Selection,
   type SheetId,
   type SheetTabsRenderProps,
@@ -22,7 +21,11 @@ import {
   type ToolbarRenderProps,
 } from '../core';
 import type { WorkbookCommand } from '../core/commands/workbook-command';
-import { createEventDispatcher } from './adapters/event-dispatcher';
+import {
+  createEventDispatcher,
+  printWorkbook,
+} from './adapters/event-dispatcher';
+import { deletionSplitsMerge } from '../core/operations/structure';
 import {
   createEngineAdapterSlot,
   useCanvasEngine,
@@ -32,7 +35,11 @@ import {
   type ControllerEpoch,
 } from './hooks/use-controller-epoch';
 import { useInteractionManager } from './hooks/use-interaction-manager';
-import { useTegoSheetHandle } from './hooks/use-tego-sheet-handle';
+import {
+  useTegoSheetHandle,
+  type TegoSheetHandleRuntime,
+  type TegoSheetRuntimeAuthority,
+} from './hooks/use-tego-sheet-handle';
 import {
   useMountOptionWarnings,
   type TegoSheetMountOptions,
@@ -113,35 +120,12 @@ const SELECTION_ACTIONS = new Set<ToolbarAction['type']>([
   'set-validation', 'remove-validation', 'set-filter', 'sort',
 ]);
 
-interface SlotRuntime {
-  readonly activeSheet: SheetId | null;
-  readonly controller: ControllerEpoch['controller'];
-  readonly defaultStyle: CellStyle | undefined;
-  readonly dispatcher: ReturnType<typeof createEventDispatcher>;
-  readonly isActive: () => boolean;
-  readonly readOnly: boolean;
+interface SlotRuntime extends TegoSheetHandleRuntime {
   readonly selection: Selection | null;
-  readonly setActiveSheet: (sheet: SheetId | null) => void;
+  readonly readOnly: boolean;
 }
 
-interface SlotRuntimeStore {
-  readonly deactivate: () => void;
-  readonly get: () => SlotRuntime | null;
-  readonly update: (runtime: SlotRuntime) => void;
-}
-
-function createSlotRuntimeStore(): SlotRuntimeStore {
-  let current: SlotRuntime | null = null;
-  return {
-    deactivate() {
-      current = null;
-    },
-    get: () => current?.isActive() === true ? current : null,
-    update(runtime) {
-      current = runtime;
-    },
-  };
-}
+type SlotRuntimeAuthority = TegoSheetRuntimeAuthority<SlotRuntime>;
 
 function uiError(runtime: SlotRuntime, message: string): void {
   runtime.dispatcher.reportUiError({
@@ -157,14 +141,14 @@ function runtimeSheet(runtime: SlotRuntime) {
   return index < 0 ? null : snapshot.value[index] ?? null;
 }
 
+function runtimeMerges(runtime: SlotRuntime) {
+  return (runtimeSheet(runtime)?.merges ?? []).map(parseA1Range);
+}
+
 function mergedSelection(runtime: SlotRuntime): boolean {
   const selection = runtime.selection;
-  const sheet = runtimeSheet(runtime);
-  if (selection === null || sheet === null) return false;
-  return (sheet.merges ?? []).some(value => {
-    const merge = parseA1Range(value);
-    return containsCell(merge, selection.active);
-  });
+  return selection !== null
+    && runtimeMerges(runtime).some(merge => rangesIntersect(merge, selection.range));
 }
 
 function frozenSheet(runtime: SlotRuntime): boolean {
@@ -175,24 +159,64 @@ function frozenSheet(runtime: SlotRuntime): boolean {
 function disabledToolbarActions(runtime: SlotRuntime): Set<ToolbarAction['type']> {
   const snapshot = runtime.controller.getSnapshot();
   const disabled = new Set<ToolbarAction['type']>();
+  const selection = runtime.selection;
+  const sheet = runtimeSheet(runtime);
   if (runtime.readOnly || snapshot.readOnly) {
     for (const action of MUTATING_ACTIONS) disabled.add(action);
   }
   if (!snapshot.canUndo) disabled.add('undo');
   if (!snapshot.canRedo) disabled.add('redo');
-  if (runtime.selection === null) {
+  if (selection === null) {
     for (const action of SELECTION_ACTIONS) disabled.add(action);
   }
-  if (runtime.activeSheet === null) {
+  if (sheet === null) {
     disabled.add('clear-filter');
+    disabled.add('sort');
     disabled.add('unfreeze');
   }
   const merged = mergedSelection(runtime);
-  if (merged) disabled.add('merge');
-  else disabled.add('unmerge');
+  const singleCell = selection !== null
+    && selection.range.start.row === selection.range.end.row
+    && selection.range.start.column === selection.range.end.column;
+  if (merged || singleCell) disabled.add('merge');
+  if (!merged) disabled.add('unmerge');
   const frozen = frozenSheet(runtime);
   if (frozen) disabled.add('freeze');
   else disabled.add('unfreeze');
+  if (selection?.active.row === 0 && selection.active.column === 0) disabled.add('freeze');
+
+  let filterRange: ReturnType<typeof parseA1Range> | null = null;
+  const filterReference = sheet?.autofilter?.ref;
+  if (filterReference !== undefined) {
+    try {
+      filterRange = parseA1Range(filterReference);
+    } catch {
+      filterRange = null;
+    }
+  }
+  if (filterRange === null) {
+    disabled.add('clear-filter');
+    disabled.add('sort');
+  } else if (
+    selection === null
+    || selection.active.column < filterRange.start.column
+    || selection.active.column > filterRange.end.column
+  ) disabled.add('sort');
+
+  if (selection !== null && sheet !== null) {
+    if (deletionSplitsMerge(
+      sheet,
+      'row',
+      selection.range.start.row,
+      selection.range.end.row,
+    )) disabled.add('delete-row');
+    if (deletionSplitsMerge(
+      sheet,
+      'column',
+      selection.range.start.column,
+      selection.range.end.column,
+    )) disabled.add('delete-column');
+  }
   // Paint format is a two-stage interaction assembled with Task 18 chrome.
   disabled.add('paint-format');
   return disabled;
@@ -283,24 +307,13 @@ function toolbarCommand(runtime: SlotRuntime, action: ToolbarAction): WorkbookCo
   }
 }
 
-function executeToolbar(store: SlotRuntimeStore, action: ToolbarAction): void {
-  const runtime = store.get();
-  if (runtime === null) return;
+function executeToolbar(runtime: SlotRuntime, action: ToolbarAction): void {
   if (disabledToolbarActions(runtime).has(action.type)) {
     uiError(runtime, `Toolbar action "${action.type}" is unavailable`);
     return;
   }
   if (action.type === 'print') {
-    try {
-      window.print();
-    } catch (cause) {
-      runtime.dispatcher.reportUiError({
-        code: 'PRINT_FAILED',
-        message: 'Printing the workbook failed',
-        recoverable: true,
-        cause,
-      });
-    }
+    printWorkbook(runtime.dispatcher);
     return;
   }
   const command = toolbarCommand(runtime, action);
@@ -311,9 +324,9 @@ function executeToolbar(store: SlotRuntimeStore, action: ToolbarAction): void {
   runtime.dispatcher.dispatchUi(command, 'toolbar');
 }
 
-function addSheetFromTabs(store: SlotRuntimeStore, name?: string): void {
-  const runtime = store.get();
-  if (runtime === null) return;
+function addSheetFromTabs(authority: SlotRuntimeAuthority, name?: string): void {
+  const capture = authority.capture();
+  const { runtime } = capture;
   if (runtime.readOnly || runtime.controller.getSnapshot().readOnly) {
     uiError(runtime, 'Sheet tabs cannot add a sheet while the workbook is read-only');
     return;
@@ -327,12 +340,12 @@ function addSheetFromTabs(store: SlotRuntimeStore, name?: string): void {
     wasEmpty
     && outcome.status === 'committed'
     && typeof outcome.commit.result === 'string'
-  ) runtime.setActiveSheet(outcome.commit.result as SheetId);
+  ) authority.compareAndSetActiveSheet(capture, outcome.commit.result as SheetId);
 }
 
-function deleteSheetFromTabs(store: SlotRuntimeStore, sheet: SheetId): void {
-  const runtime = store.get();
-  if (runtime === null) return;
+function deleteSheetFromTabs(authority: SlotRuntimeAuthority, sheet: SheetId): void {
+  const capture = authority.capture();
+  const { runtime } = capture;
   if (runtime.readOnly || runtime.controller.getSnapshot().readOnly) {
     uiError(runtime, 'Sheet tabs cannot delete a sheet while the workbook is read-only');
     return;
@@ -343,12 +356,13 @@ function deleteSheetFromTabs(store: SlotRuntimeStore, sheet: SheetId): void {
   if (outcome.status !== 'committed' || runtime.activeSheet !== sheet) return;
   const after = runtime.controller.getSnapshot();
   const replacementIndex = Math.min(removedIndex, after.sheets.length - 1);
-  runtime.setActiveSheet(replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id);
+  authority.compareAndSetActiveSheet(
+    capture,
+    replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id,
+  );
 }
 
-function renameSheetFromTabs(store: SlotRuntimeStore, sheet: SheetId, name: string): void {
-  const runtime = store.get();
-  if (runtime === null) return;
+function renameSheetFromTabs(runtime: SlotRuntime, sheet: SheetId, name: string): void {
   if (runtime.readOnly || runtime.controller.getSnapshot().readOnly) {
     uiError(runtime, 'Sheet tabs cannot rename a sheet while the workbook is read-only');
     return;
@@ -356,16 +370,18 @@ function renameSheetFromTabs(store: SlotRuntimeStore, sheet: SheetId, name: stri
   runtime.dispatcher.dispatchUi({ type: 'rename-sheet', sheet, name }, 'sheet-tabs');
 }
 
-function activateSheetFromTabs(store: SlotRuntimeStore, sheet: SheetId): void {
-  const runtime = store.get();
-  if (runtime === null) return;
+function activateSheetFromTabs(
+  authority: SlotRuntimeAuthority,
+  runtime: SlotRuntime,
+  sheet: SheetId,
+): void {
   const snapshot = runtime.controller.getSnapshot();
   const index = snapshot.sheets.findIndex(item => item.id === sheet);
   if (index < 0) {
     uiError(runtime, `Unknown sheet ID: ${sheet}`);
     return;
   }
-  runtime.setActiveSheet(sheet);
+  authority.activate(sheet);
   runtime.dispatcher.emitActiveSheetChange({ sheet, index, source: 'sheet-tabs' });
 }
 
@@ -420,14 +436,7 @@ function Runtime(
   }));
   const [selection, setSelection] = useState<Selection | null>(null);
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
-  const [slotRuntime] = useState(createSlotRuntimeStore);
-  const [execute] = useState(() => (action: ToolbarAction) => executeToolbar(slotRuntime, action));
-  const [tabActions] = useState(() => ({
-    add: (name?: string) => addSheetFromTabs(slotRuntime, name),
-    delete: (sheet: SheetId) => deleteSheetFromTabs(slotRuntime, sheet),
-    rename: (sheet: SheetId, name: string) => renameSheetFromTabs(slotRuntime, sheet, name),
-    activate: (sheet: SheetId) => activateSheetFromTabs(slotRuntime, sheet),
-  }));
+  const runtimeAuthority = useTegoSheetHandle<SlotRuntime>(forwardedRef);
 
   const sheets = props.epoch.snapshot.sheets;
   const setActiveSheet = useCallback((sheet: SheetId | null) => {
@@ -469,34 +478,36 @@ function Runtime(
     props.epoch.isActive,
   ]);
 
-  const commitRuntime = useCallback(() => {
-    callbackStore.set(callbacksFromProps(props));
-    slotRuntime.update({
-      activeSheet,
-      controller: props.epoch.controller,
-      defaultStyle: initialOptions.defaultStyle,
-      dispatcher,
-      isActive: props.epoch.isActive,
-      readOnly: props.readOnly ?? false,
-      selection,
-      setActiveSheet,
-    });
-  }, [
+  const renderRuntime: SlotRuntime = {
     activeSheet,
-    callbackStore,
+    controller: props.epoch.controller,
+    defaultStyle: initialOptions.defaultStyle,
     dispatcher,
-    initialOptions.defaultStyle,
-    props,
+    engineSlot,
+    isActive: props.epoch.isActive,
+    readOnly: props.readOnly ?? false,
+    root: null,
     selection,
     setActiveSheet,
-    slotRuntime,
-  ]);
+  };
+  const renderToken = {};
+  const commitRuntime = () => {
+    if (!props.epoch.isActive()) {
+      runtimeAuthority.deactivate();
+      return;
+    }
+    callbackStore.set(callbacksFromProps(props));
+    if (props.epoch.controller.getSnapshot().readOnly !== renderRuntime.readOnly) {
+      props.epoch.controller.setReadOnly(renderRuntime.readOnly);
+      props.epoch.store.refresh();
+    }
+    engineSlot.get()?.updateReadOnly(renderRuntime.readOnly);
+    runtimeAuthority.commit(renderToken, { ...renderRuntime, root: rootRef.current });
+  };
   const rootCallback = useCallback((node: HTMLDivElement | null) => {
     rootRef.current = node;
-    if (node === null) slotRuntime.deactivate();
-    else commitRuntime();
-  }, [commitRuntime, slotRuntime]);
-  useLayoutEffect(() => () => slotRuntime.deactivate(), [slotRuntime]);
+    if (node === null) runtimeAuthority.deactivate();
+  }, [runtimeAuthority]);
 
   if (
     !initialWorkbookWasEmpty
@@ -529,17 +540,6 @@ function Runtime(
     props.epoch,
   ]);
 
-  useTegoSheetHandle(forwardedRef, () => ({
-    activeSheet,
-    controller: props.epoch.controller,
-    defaultStyle: initialOptions.defaultStyle,
-    dispatcher,
-    engineSlot,
-    isActive: props.epoch.isActive,
-    root: rootRef.current,
-    setActiveSheet,
-  }));
-
   // Register this layout cleanup before the canvas cleanup so browser listeners
   // are always released before the engine subscription and render scheduler.
   useInteractionManager({
@@ -570,20 +570,31 @@ function Runtime(
     if (initialOptions.autoFocus === true) rootRef.current?.focus();
   }, [initialOptions.autoFocus]);
 
-  const addFirstSheet = () => {
-    addSheetFromTabs(slotRuntime);
+  const execute = (action: ToolbarAction) => {
+    const runtime = runtimeAuthority.committed(renderToken);
+    if (runtime !== null) executeToolbar(runtime, action);
   };
-
-  const renderRuntime: SlotRuntime = {
-    activeSheet,
-    controller: props.epoch.controller,
-    defaultStyle: initialOptions.defaultStyle,
-    dispatcher,
-    isActive: props.epoch.isActive,
-    readOnly: props.readOnly ?? false,
-    selection,
-    setActiveSheet,
+  const tabActions = {
+    add(name?: string) {
+      if (runtimeAuthority.committed(renderToken) !== null) {
+        addSheetFromTabs(runtimeAuthority, name);
+      }
+    },
+    delete(sheet: SheetId) {
+      if (runtimeAuthority.committed(renderToken) !== null) {
+        deleteSheetFromTabs(runtimeAuthority, sheet);
+      }
+    },
+    rename(sheet: SheetId, name: string) {
+      const runtime = runtimeAuthority.committed(renderToken);
+      if (runtime !== null) renameSheetFromTabs(runtime, sheet, name);
+    },
+    activate(sheet: SheetId) {
+      const runtime = runtimeAuthority.committed(renderToken);
+      if (runtime !== null) activateSheetFromTabs(runtimeAuthority, runtime, sheet);
+    },
   };
+  const addFirstSheet = () => tabActions.add();
   const activeData = runtimeSheet(renderRuntime);
   const activeStyle = selection === null || activeData === null
     ? initialOptions.defaultStyle ?? {}
@@ -633,7 +644,7 @@ function Runtime(
         {sheets.length === 0 ? (
           <div className="tego-sheet__empty" data-empty-workbook="">
             <span>Empty workbook</span>
-            {props.epoch.snapshot.readOnly ? null : (
+            {renderRuntime.readOnly ? null : (
               <button type="button" onClick={addFirstSheet}>Add sheet</button>
             )}
           </div>

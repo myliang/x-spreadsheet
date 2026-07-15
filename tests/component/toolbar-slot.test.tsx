@@ -1,5 +1,12 @@
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { createRef, useLayoutEffect } from 'react';
+import {
+  Component,
+  createRef,
+  startTransition,
+  Suspense,
+  useLayoutEffect,
+  type ReactNode,
+} from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   TegoSheet,
@@ -200,4 +207,192 @@ it('allows active-sheet-only actions when a zero-sized grid has no selection', a
     props.execute({ type: 'clear-filter' });
   });
   expect(changes).toEqual(['structure', 'filter']);
+});
+
+it.each(['suspend', 'throw'] as const)(
+  'does not run toolbar actions from a render that will %s',
+  async mode => {
+    const ref = createRef<TegoSheetHandle>();
+    const changes = vi.fn();
+    const errors = vi.fn();
+    const suspended = new Promise<never>(() => undefined);
+    let attack = false;
+
+    class ErrorBoundary extends Component<{ readonly children: ReactNode }, { failed: boolean }> {
+      state = { failed: false };
+
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+
+      render() {
+        return this.state.failed ? <output data-render-error="" /> : this.props.children;
+      }
+    }
+
+    function AbortAfterSheet() {
+      if (!attack) return null;
+      if (mode === 'suspend') throw suspended;
+      throw new Error('abort pending toolbar render');
+    }
+
+    function Mounted() {
+      const content = (
+        <>
+          <TegoSheet
+            ref={ref}
+            defaultValue={[{ name: 'A' }]}
+            toolbar={props => {
+              if (attack) props.execute({ type: 'set-style', patch: { color: 'aborted' } });
+              return null;
+            }}
+            onChange={changes}
+            onError={errors}
+          />
+          <AbortAfterSheet />
+        </>
+      );
+      return mode === 'suspend'
+        ? <Suspense fallback={<output data-suspended="" />}>{content}</Suspense>
+        : <ErrorBoundary>{content}</ErrorBoundary>;
+    }
+
+    const rendered = render(<Mounted />);
+    await waitFor(() => expect(ref.current).not.toBeNull());
+    const before = ref.current!.getValue();
+    attack = true;
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    act(() => {
+      startTransition(() => rendered.rerender(<Mounted />));
+    });
+
+    expect(changes).not.toHaveBeenCalled();
+    expect(errors).not.toHaveBeenCalled();
+    if (mode === 'suspend') expect(ref.current!.getValue()).toEqual(before);
+  },
+);
+
+it('disables payload-independent actions that are already known to be unavailable', async () => {
+  const baseErrors: TegoSheetError[] = [];
+  const baseChanges = vi.fn();
+  let base!: ToolbarRenderProps;
+  render(
+    <TegoSheet
+      defaultValue={[{ name: 'A', rows: { len: 3 }, cols: { len: 3 } }]}
+      toolbar={props => {
+        base = props;
+        return null;
+      }}
+      onChange={baseChanges}
+      onError={error => baseErrors.push(error)}
+    />,
+  );
+  await waitFor(() => expect(base.selection).not.toBeNull());
+  for (const type of ['merge', 'freeze', 'clear-filter', 'sort'] as const) {
+    expect(base.disabledActions.has(type), type).toBe(true);
+    const before = baseErrors.length;
+    act(() => {
+      if (type === 'sort') base.execute({ type, order: 'asc' });
+      else base.execute({ type });
+    });
+    expect(baseErrors, type).toHaveLength(before + 1);
+    expect(baseErrors.at(-1)).toMatchObject({ code: 'INVALID_COMMAND' });
+  }
+  expect(baseChanges).not.toHaveBeenCalled();
+
+  const overlapErrors: TegoSheetError[] = [];
+  const overlapChanges = vi.fn();
+  let overlap!: ToolbarRenderProps;
+  const overlapRender = render(
+    <TegoSheet
+      defaultValue={[{ name: 'Overlap', rows: { len: 3 }, cols: { len: 3 }, merges: ['B1:C2'] }]}
+      toolbar={props => {
+        overlap = props;
+        return null;
+      }}
+      onChange={overlapChanges}
+      onError={error => overlapErrors.push(error)}
+    />,
+  );
+  await waitFor(() => expect(overlap.selection).not.toBeNull());
+  const overlapRoot = overlapRender.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(overlapRoot);
+  fireEvent.keyDown(window, { key: 'ArrowRight', shiftKey: true });
+  expect(overlap.disabledActions.has('merge')).toBe(true);
+  act(() => overlap.execute({ type: 'merge' }));
+  expect(overlapErrors).toHaveLength(1);
+  expect(overlapChanges).not.toHaveBeenCalled();
+
+  const sortErrors: TegoSheetError[] = [];
+  const sortChanges = vi.fn();
+  let outsideFilter!: ToolbarRenderProps;
+  render(
+    <TegoSheet
+      defaultValue={[{
+        name: 'Filter',
+        rows: { len: 3 },
+        cols: { len: 3 },
+        autofilter: { ref: 'B1:C3', filters: [] },
+      }]}
+      toolbar={props => {
+        outsideFilter = props;
+        return null;
+      }}
+      onChange={sortChanges}
+      onError={error => sortErrors.push(error)}
+    />,
+  );
+  await waitFor(() => expect(outsideFilter.selection).not.toBeNull());
+  expect(outsideFilter.disabledActions.has('sort')).toBe(true);
+  act(() => outsideFilter.execute({ type: 'sort', order: 'asc' }));
+  expect(sortErrors).toHaveLength(1);
+  expect(sortChanges).not.toHaveBeenCalled();
+
+  const rowErrors: TegoSheetError[] = [];
+  const rowChanges = vi.fn();
+  let rowDelete!: ToolbarRenderProps;
+  const rowRender = render(
+    <TegoSheet
+      defaultValue={[{ name: 'Rows', rows: { len: 4 }, cols: { len: 3 }, merges: ['A2:A3'] }]}
+      toolbar={props => {
+        rowDelete = props;
+        return null;
+      }}
+      onChange={rowChanges}
+      onError={error => rowErrors.push(error)}
+    />,
+  );
+  await waitFor(() => expect(rowDelete.selection).not.toBeNull());
+  const rowRoot = rowRender.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(rowRoot);
+  fireEvent.keyDown(window, { key: 'ArrowDown' });
+  fireEvent.keyDown(window, { key: ' ', shiftKey: true });
+  expect(rowDelete.disabledActions.has('delete-row')).toBe(true);
+  act(() => rowDelete.execute({ type: 'delete-row' }));
+  expect(rowErrors).toHaveLength(1);
+  expect(rowChanges).not.toHaveBeenCalled();
+
+  const columnErrors: TegoSheetError[] = [];
+  const columnChanges = vi.fn();
+  let columnDelete!: ToolbarRenderProps;
+  const columnRender = render(
+    <TegoSheet
+      defaultValue={[{ name: 'Columns', rows: { len: 3 }, cols: { len: 4 }, merges: ['B1:C1'] }]}
+      toolbar={props => {
+        columnDelete = props;
+        return null;
+      }}
+      onChange={columnChanges}
+      onError={error => columnErrors.push(error)}
+    />,
+  );
+  await waitFor(() => expect(columnDelete.selection).not.toBeNull());
+  const columnRoot = columnRender.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(columnRoot);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  fireEvent.keyDown(window, { key: ' ', ctrlKey: true });
+  expect(columnDelete.disabledActions.has('delete-column')).toBe(true);
+  act(() => columnDelete.execute({ type: 'delete-column' }));
+  expect(columnErrors).toHaveLength(1);
+  expect(columnChanges).not.toHaveBeenCalled();
 });

@@ -15,7 +15,10 @@ import {
 } from '../../core';
 import type { WorkbookCommand } from '../../core/commands/workbook-command';
 import type { ControllerEpoch } from './use-controller-epoch';
-import type { EventDispatcher } from '../adapters/event-dispatcher';
+import {
+  printWorkbook,
+  type EventDispatcher,
+} from '../adapters/event-dispatcher';
 import type { EngineAdapterSlot } from './use-canvas-engine';
 import type { TegoSheetHandle } from '../tego-sheet.types';
 
@@ -47,36 +50,57 @@ export interface TegoSheetHandleRuntime {
   readonly setActiveSheet: (sheet: SheetId | null) => void;
 }
 
-interface RuntimeCapture {
+export interface RuntimeCapture<Runtime extends TegoSheetHandleRuntime> {
   readonly activeDecisionVersion: number;
-  readonly runtime: TegoSheetHandleRuntime;
+  readonly runtime: Runtime;
 }
 
-interface RuntimeSlot {
-  readonly capture: () => RuntimeCapture;
-  readonly compareAndSetActiveSheet: (capture: RuntimeCapture, sheet: SheetId | null) => boolean;
+export interface TegoSheetRuntimeAuthority<Runtime extends TegoSheetHandleRuntime> {
+  readonly capture: () => RuntimeCapture<Runtime>;
+  readonly commit: (token: object, runtime: Runtime) => void;
+  readonly committed: (token: object) => Runtime | null;
+  readonly compareAndSetActiveSheet: (
+    capture: RuntimeCapture<Runtime>,
+    sheet: SheetId | null,
+  ) => boolean;
   readonly deactivate: () => void;
-  readonly require: () => TegoSheetHandleRuntime;
-  readonly setActiveSheet: (sheet: SheetId | null) => void;
-  readonly update: (runtime: TegoSheetHandleRuntime) => void;
+  readonly require: () => Runtime;
+  readonly activate: (sheet: SheetId | null) => void;
 }
 
-function createRuntimeSlot(): RuntimeSlot {
-  let current: TegoSheetHandleRuntime | null = null;
+function createRuntimeAuthority<Runtime extends TegoSheetHandleRuntime>(): TegoSheetRuntimeAuthority<Runtime> {
+  let current: Runtime | null = null;
   let activeDecisionVersion = 0;
+  const committedTokens = new WeakSet<object>();
   const requireRuntime = () => {
     if (current === null || !current.isActive()) {
       throw invalid('TegoSheet handle runtime is inactive');
     }
     return current;
   };
-  const applyActiveSheet = (runtime: TegoSheetHandleRuntime, sheet: SheetId | null) => {
+  const applyActiveSheet = (runtime: Runtime, sheet: SheetId | null) => {
     activeDecisionVersion += 1;
     current = { ...runtime, activeSheet: sheet };
     runtime.setActiveSheet(sheet);
   };
   return {
     capture: () => ({ activeDecisionVersion, runtime: requireRuntime() }),
+    commit(token, runtime) {
+      if (
+        current !== null
+        && (
+          current.controller !== runtime.controller
+          || current.activeSheet !== runtime.activeSheet
+        )
+      ) activeDecisionVersion += 1;
+      current = runtime;
+      committedTokens.add(token);
+    },
+    committed(token) {
+      if (!committedTokens.has(token)) return null;
+      const runtime = current;
+      return runtime?.isActive() === true ? runtime : null;
+    },
     compareAndSetActiveSheet(capture, sheet) {
       const runtime = current;
       if (
@@ -93,11 +117,8 @@ function createRuntimeSlot(): RuntimeSlot {
       current = null;
     },
     require: requireRuntime,
-    setActiveSheet(sheet) {
+    activate(sheet) {
       applyActiveSheet(requireRuntime(), sheet);
-    },
-    update(runtime) {
-      current = runtime;
     },
   };
 }
@@ -109,19 +130,21 @@ function runtimeSheet(runtime: TegoSheetHandleRuntime, address: CellAddress) {
   return snapshot.value[index]!;
 }
 
-function createStableHandle(slot: RuntimeSlot): TegoSheetHandle {
+function createStableHandle<Runtime extends TegoSheetHandleRuntime>(
+  authority: TegoSheetRuntimeAuthority<Runtime>,
+): TegoSheetHandle {
   return {
     focus() {
-      slot.require().root?.focus();
+      authority.require().root?.focus();
     },
-    getValue: () => slot.require().controller.getValue(),
+    getValue: () => authority.require().controller.getValue(),
     getCell(address) {
-      const runtime = slot.require();
+      const runtime = authority.require();
       runtime.controller.getCellText(address);
       return selectCell(runtimeSheet(runtime, address), address.row, address.column);
     },
     getCellStyle(address) {
-      const runtime = slot.require();
+      const runtime = authority.require();
       runtime.controller.getCellText(address);
       return selectCellStyle(
         runtimeSheet(runtime, address),
@@ -131,10 +154,10 @@ function createStableHandle(slot: RuntimeSlot): TegoSheetHandle {
       );
     },
     setCellText(address, text) {
-      slot.require().dispatcher.dispatchRef({ type: 'set-cell-text', address, text }, 'ref');
+      authority.require().dispatcher.dispatchRef({ type: 'set-cell-text', address, text }, 'ref');
     },
     addSheet(name) {
-      const capture = slot.capture();
+      const capture = authority.capture();
       const { runtime } = capture;
       const wasEmpty = runtime.controller.getSnapshot().sheets.length === 0;
       const result = committedResult(
@@ -144,11 +167,11 @@ function createStableHandle(slot: RuntimeSlot): TegoSheetHandle {
       );
       if (typeof result !== 'string') throw invalid('Adding a sheet did not return a sheet ID');
       const sheet = result as SheetId;
-      if (wasEmpty) slot.compareAndSetActiveSheet(capture, sheet);
+      if (wasEmpty) authority.compareAndSetActiveSheet(capture, sheet);
       return sheet;
     },
     deleteSheet(sheet) {
-      const capture = slot.capture();
+      const capture = authority.capture();
       const { runtime } = capture;
       const before = runtime.controller.getSnapshot();
       const removedIndex = before.sheets.findIndex(item => item.id === sheet);
@@ -156,47 +179,43 @@ function createStableHandle(slot: RuntimeSlot): TegoSheetHandle {
       if (runtime.activeSheet !== sheet) return;
       const after = runtime.controller.getSnapshot();
       const replacementIndex = Math.min(removedIndex, after.sheets.length - 1);
-      slot.compareAndSetActiveSheet(
+      authority.compareAndSetActiveSheet(
         capture,
         replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id,
       );
     },
     renameSheet(sheet, name) {
-      slot.require().dispatcher.dispatchRef({ type: 'rename-sheet', sheet, name }, 'ref');
+      authority.require().dispatcher.dispatchRef({ type: 'rename-sheet', sheet, name }, 'ref');
     },
     activateSheet(sheet) {
-      const runtime = slot.require();
+      const runtime = authority.require();
       const index = runtime.controller.getSnapshot().sheets.findIndex(item => item.id === sheet);
       if (index < 0) throw invalid(`Unknown sheet ID: ${sheet}`);
-      slot.setActiveSheet(sheet);
+      authority.activate(sheet);
       runtime.dispatcher.emitActiveSheetChange({ sheet, index, source: 'ref' });
     },
     undo() {
-      slot.require().dispatcher.dispatchRef({ type: 'undo' }, 'ref');
+      authority.require().dispatcher.dispatchRef({ type: 'undo' }, 'ref');
     },
     redo() {
-      slot.require().dispatcher.dispatchRef({ type: 'redo' }, 'ref');
+      authority.require().dispatcher.dispatchRef({ type: 'redo' }, 'ref');
     },
-    validate: () => slot.require().controller.validate(),
+    validate: () => authority.require().controller.validate(),
     print() {
-      slot.require();
-      window.print();
+      printWorkbook(authority.require().dispatcher);
     },
     recalculateLayout() {
-      slot.require().engineSlot.get()?.recalculateLayout();
+      authority.require().engineSlot.get()?.recalculateLayout();
     },
   };
 }
 
-export function useTegoSheetHandle(
+export function useTegoSheetHandle<Runtime extends TegoSheetHandleRuntime>(
   forwardedRef: ForwardedRef<TegoSheetHandle>,
-  getRuntime: () => TegoSheetHandleRuntime,
-): void {
-  const [slot] = useState(createRuntimeSlot);
-  const [handle] = useState(() => createStableHandle(slot));
-  useLayoutEffect(() => {
-    slot.update(getRuntime());
-  });
-  useLayoutEffect(() => () => slot.deactivate(), [slot]);
+): TegoSheetRuntimeAuthority<Runtime> {
+  const [authority] = useState(createRuntimeAuthority<Runtime>);
+  const [handle] = useState(() => createStableHandle(authority));
+  useLayoutEffect(() => () => authority.deactivate(), [authority]);
   useImperativeHandle(forwardedRef, () => handle, [handle]);
+  return authority;
 }
