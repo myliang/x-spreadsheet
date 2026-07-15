@@ -231,7 +231,8 @@ function paintCellContent(
     visualScale,
   );
   const x = textX(rect, style, visualScale);
-  const lineHeight = fontPixelSize(style, visualScale) + 2 * visualScale;
+  const fontSize = fontPixelSize(style, visualScale);
+  const lineHeight = fontSize + 2 * visualScale;
   const textHeight = (lines.length - 1) * lineHeight;
   const padding = 5 * visualScale;
   const firstY = style.valign === 'top'
@@ -254,14 +255,24 @@ function paintCellContent(
         ? x - width
         : x;
     if (style.underline === true) {
+      const underlineY = style.valign === 'top'
+        ? y + fontSize + 2 * visualScale
+        : style.valign === 'bottom'
+          ? y
+          : y + fontSize / 2;
       draw.line(
-        { x: startX, y: y + 2 * visualScale },
-        { x: startX + width, y: y + 2 * visualScale },
+        { x: startX, y: underlineY },
+        { x: startX + width, y: underlineY },
         { color: style.color ?? '#0a0a0a', scale: visualScale },
       );
     }
     if (style.strike === true) {
-      draw.line({ x: startX, y }, { x: startX + width, y }, {
+      const strikeY = style.valign === 'top'
+        ? y + fontSize / 2 + 2 * visualScale
+        : style.valign === 'bottom'
+          ? y - fontSize / 2
+          : y;
+      draw.line({ x: startX, y: strikeY }, { x: startX + width, y: strikeY }, {
         color: style.color ?? '#0a0a0a',
         scale: visualScale,
       });

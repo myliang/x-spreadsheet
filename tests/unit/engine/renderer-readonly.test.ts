@@ -320,6 +320,74 @@ describe('read-only Canvas rendering', () => {
     ]);
   });
 
+  it('places underline and strike lines on legacy vertical coordinates', () => {
+    const decorationStyle = (
+      valign: 'top' | 'middle' | 'bottom',
+      decoration: 'underline' | 'strike',
+    ) => ({
+      valign,
+      color: decoration === 'underline' ? '#aa0000' : '#00aa00',
+      font: { size: 12 },
+      [decoration]: true,
+    });
+    const sheet: SheetData = {
+      styles: [
+        decorationStyle('top', 'underline'),
+        decorationStyle('middle', 'underline'),
+        decorationStyle('bottom', 'underline'),
+        decorationStyle('top', 'strike'),
+        decorationStyle('middle', 'strike'),
+        decorationStyle('bottom', 'strike'),
+      ],
+      rows: {
+        len: 1,
+        0: {
+          height: 40,
+          cells: Object.fromEntries(Array.from({ length: 6 }, (_, column) => [
+            column,
+            { text: 'A', style: column },
+          ])),
+        },
+      },
+      cols: {
+        len: 6,
+        ...Object.fromEntries(Array.from({ length: 6 }, (_, column) => [column, { width: 30 }])),
+      },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 180,
+        height: 40,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    const decorationLines = (color: string) => harness.operations.flatMap((operation, index) => {
+      if (operation.name !== 'set:strokeStyle' || operation.args[0] !== color) return [];
+      const move = harness.operations.slice(index).find(candidate => candidate.name === 'moveTo');
+      const line = harness.operations.slice(index).find(candidate => candidate.name === 'lineTo');
+      return move === undefined || line === undefined ? [] : [[move.args, line.args]];
+    });
+    expect(decorationLines('#aa0000')).toEqual([
+      [[5, 23], [12, 23]],
+      [[35, 28], [42, 28]],
+      [[65, 35], [72, 35]],
+    ]);
+    expect(decorationLines('#00aa00')).toEqual([
+      [[95, 15], [102, 15]],
+      [[125, 20], [132, 20]],
+      [[155, 27], [162, 27]],
+    ]);
+  });
+
   it.each([
     {
       label: 'rows',
