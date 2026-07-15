@@ -244,8 +244,13 @@ test('package dry run includes public files only', () => {
     'dist/engine/viewport/viewport-state.d.ts',
     'dist/index.d.ts',
     'dist/react/adapters/controller-external-store.d.ts',
+    'dist/react/adapters/engine-adapter.d.ts',
     'dist/react/adapters/event-dispatcher.d.ts',
+    'dist/react/adapters/interaction-adapter.d.ts',
+    'dist/react/hooks/use-canvas-engine.d.ts',
     'dist/react/hooks/use-controller-epoch.d.ts',
+    'dist/react/hooks/use-interaction-manager.d.ts',
+    'dist/react/tego-sheet.d.ts',
     'dist/react/tego-sheet.types.d.ts',
     'dist/tego-sheet.cjs',
     'dist/tego-sheet.cjs.map',
@@ -267,7 +272,7 @@ test('package dry run includes public files only', () => {
 });
 
 test('built entry formats import without browser globals', () => {
-  const expectedRuntimeExports = ['TegoSheetException'];
+  const expectedRuntimeExports = ['TegoSheet', 'TegoSheetException'];
   const clearBrowserGlobals = `
     for (const name of ['window', 'document', 'navigator']) {
       Reflect.deleteProperty(globalThis, name);

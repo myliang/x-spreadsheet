@@ -50,6 +50,7 @@ export type {
   WorkbookInput,
 } from './core';
 export { TegoSheetException } from './core';
+export { TegoSheet } from './react/tego-sheet';
 export type {
   SheetTabsRenderer,
   TegoSheetHandle,
