@@ -47,6 +47,7 @@ export interface ResizeRowCommand {
   readonly sheet: SheetId;
   readonly row: number;
   readonly height: number;
+  readonly count?: number;
 }
 
 export interface HideRowCommand {
@@ -54,6 +55,7 @@ export interface HideRowCommand {
   readonly sheet: SheetId;
   readonly row: number;
   readonly hidden: boolean;
+  readonly count?: number;
 }
 
 export interface ResizeColumnCommand {
@@ -61,6 +63,7 @@ export interface ResizeColumnCommand {
   readonly sheet: SheetId;
   readonly column: number;
   readonly width: number;
+  readonly count?: number;
 }
 
 export interface HideColumnCommand {
@@ -68,6 +71,7 @@ export interface HideColumnCommand {
   readonly sheet: SheetId;
   readonly column: number;
   readonly hidden: boolean;
+  readonly count?: number;
 }
 
 export interface MergeCommand {

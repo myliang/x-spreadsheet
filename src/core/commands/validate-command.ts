@@ -215,6 +215,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       if (!Number.isFinite(command.height) || command.height < 0) {
         throw invalidCommand('height must be a non-negative finite number');
       }
+      validatePositiveCount(command.count);
       try {
         assertStructureCommand(state.get(command.sheet)!.data, command);
       } catch (cause) {
@@ -225,6 +226,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       validateSheet(state, command.sheet);
       validateIndex(command.row, 'row');
       if (typeof command.hidden !== 'boolean') throw invalidCommand('hidden must be a boolean');
+      validatePositiveCount(command.count);
       try {
         assertStructureCommand(state.get(command.sheet)!.data, command);
       } catch (cause) {
@@ -237,6 +239,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       if (!Number.isFinite(command.width) || command.width < 0) {
         throw invalidCommand('width must be a non-negative finite number');
       }
+      validatePositiveCount(command.count);
       try {
         assertStructureCommand(state.get(command.sheet)!.data, command);
       } catch (cause) {
@@ -247,6 +250,7 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
       validateSheet(state, command.sheet);
       validateIndex(command.column, 'column');
       if (typeof command.hidden !== 'boolean') throw invalidCommand('hidden must be a boolean');
+      validatePositiveCount(command.count);
       try {
         assertStructureCommand(state.get(command.sheet)!.data, command);
       } catch (cause) {

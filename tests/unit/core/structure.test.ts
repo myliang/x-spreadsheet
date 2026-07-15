@@ -4,6 +4,74 @@ import { WorkbookController } from '../../../src/core/controller/workbook-contro
 import type { WorkbookInput } from '../../../src/core/types/workbook';
 
 describe('row and column structure operations', () => {
+  it('applies an isolated contiguous resize with one commit and undo checkpoint', () => {
+    const controller = new WorkbookController({
+      rows: { len: 6 },
+      cols: { len: 6 },
+    });
+    const sheet = controller.getSheetIds()[0]!;
+    const outcome = controller.dispatch({
+      type: 'set-row-height',
+      sheet,
+      row: 2,
+      count: 3,
+      height: 41,
+    }, 'pointer');
+
+    expect(outcome).toMatchObject({
+      status: 'committed',
+      commit: {
+        command: { row: 2, count: 3 },
+        change: {
+          kind: 'structure',
+          range: { start: { row: 2, column: 0 }, end: { row: 4, column: 5 } },
+        },
+      },
+    });
+    expect(controller.historySize.undo).toBe(1);
+    expect(controller.getValue()[0]?.rows).toMatchObject({
+      2: { height: 41 }, 3: { height: 41 }, 4: { height: 41 },
+    });
+    controller.undo();
+    expect(controller.getValue()[0]?.rows).toEqual({ len: 6 });
+  });
+
+  it('supports contiguous column resize and row/column hide as no-op-aware atomic commands', () => {
+    const controller = new WorkbookController({ rows: { len: 4 }, cols: { len: 4 } });
+    const sheet = controller.getSheetIds()[0]!;
+
+    controller.dispatch({ type: 'set-column-width', sheet, column: 1, count: 2, width: 88 }, 'pointer');
+    controller.dispatch({ type: 'set-row-hidden', sheet, row: 0, count: 2, hidden: true }, 'pointer');
+    controller.dispatch({ type: 'set-column-hidden', sheet, column: 2, count: 2, hidden: true }, 'pointer');
+    const before = controller.historySize.undo;
+    expect(controller.dispatch({
+      type: 'set-column-hidden', sheet, column: 2, count: 2, hidden: true,
+    }, 'pointer')).toEqual({ status: 'noop' });
+    expect(controller.historySize.undo).toBe(before);
+  });
+
+  it('rejects invalid counts, out-of-bounds and read-only contiguous commands atomically', () => {
+    const controller = new WorkbookController({ rows: { len: 3 }, cols: { len: 3 } });
+    const sheet = controller.getSheetIds()[0]!;
+    const invalid = [
+      { type: 'set-row-height', sheet, row: 0, count: 0, height: 20 },
+      { type: 'set-row-height', sheet, row: 1, count: 3, height: 20 },
+      { type: 'set-column-width', sheet, column: -1, count: 1, width: 20 },
+      { type: 'set-row-hidden', sheet, row: 0, count: Number.NaN, hidden: true },
+      { type: 'set-column-hidden', sheet, column: 0, count: 1, hidden: 'yes' },
+    ] as const;
+    for (const command of invalid) {
+      expect(() => controller.dispatch(command as never, 'pointer')).toThrow();
+    }
+    expect(controller.historySize.undo).toBe(0);
+    expect(controller.getValue()[0]).toMatchObject({ rows: { len: 3 }, cols: { len: 3 } });
+
+    controller.setReadOnly(true);
+    expect(() => controller.dispatch({
+      type: 'set-row-height', sheet, row: 0, count: 2, height: 20,
+    }, 'pointer')).toThrowError(/read-only/i);
+    expect(controller.historySize.undo).toBe(0);
+  });
   it('@parity:structure.row-column-operations matches the captured insert/delete stages', () => {
     const controller = new WorkbookController(
       structureFixture.stages[0]!.sheet as unknown as WorkbookInput,

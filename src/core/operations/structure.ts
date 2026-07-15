@@ -3,10 +3,9 @@ import {
   deleteColumns,
   getColumnData,
   insertColumns,
-  setColumnHidden,
-  setColumnWidth,
 } from '../model/columns';
-import { deleteRows, getRowData, insertRows, setRowHeight, setRowHidden } from '../model/rows';
+import { deleteRows, getRowData, insertRows } from '../model/rows';
+import { cloneSheet } from '../model/cells';
 import type {
   HideColumnCommand,
   HideRowCommand,
@@ -16,6 +15,8 @@ import type {
 } from '../commands/workbook-command';
 import type { CellRange } from '../types/coordinates';
 import type { SheetData } from '../types/workbook';
+
+export const MAX_STRUCTURE_AXIS_CHANGES = 250_000;
 
 export type StructureCommand =
   | IndexedSheetCommand
@@ -44,7 +45,10 @@ export function structureRange(sheet: SheetData, command: StructureCommand): Cel
     case 'set-row-hidden':
       return {
         start: { row: command.row, column: 0 },
-        end: { row: command.row, column: Math.max(0, columnCount(sheet) - 1) },
+        end: {
+          row: command.row + (command.count ?? 1) - 1,
+          column: Math.max(0, columnCount(sheet) - 1),
+        },
       };
     case 'insert-column':
     case 'delete-column':
@@ -56,7 +60,10 @@ export function structureRange(sheet: SheetData, command: StructureCommand): Cel
     case 'set-column-hidden':
       return {
         start: { row: 0, column: command.column },
-        end: { row: Math.max(0, rowCount(sheet) - 1), column: command.column },
+        end: {
+          row: Math.max(0, rowCount(sheet) - 1),
+          column: command.column + (command.count ?? 1) - 1,
+        },
       };
   }
 }
@@ -78,6 +85,11 @@ function deletionSplitsMerge(
 }
 
 export function assertStructureCommand(sheet: SheetData, command: StructureCommand): void {
+  if ('count' in command && (command.count ?? 1) > MAX_STRUCTURE_AXIS_CHANGES) {
+    throw new RangeError(
+      `structure workload exceeds the ${MAX_STRUCTURE_AXIS_CHANGES}-index operation limit`,
+    );
+  }
   switch (command.type) {
     case 'insert-row':
       if (command.index > rowCount(sheet)) throw new RangeError('row insertion index exceeds row count');
@@ -109,11 +121,15 @@ export function assertStructureCommand(sheet: SheetData, command: StructureComma
     }
     case 'set-row-height':
     case 'set-row-hidden':
-      if (command.row >= rowCount(sheet)) throw new RangeError('row exceeds row count');
+      if (command.row + (command.count ?? 1) > rowCount(sheet)) {
+        throw new RangeError('row exceeds row count');
+      }
       return;
     case 'set-column-width':
     case 'set-column-hidden':
-      if (command.column >= columnCount(sheet)) throw new RangeError('column exceeds column count');
+      if (command.column + (command.count ?? 1) > columnCount(sheet)) {
+        throw new RangeError('column exceeds column count');
+      }
       return;
   }
 }
@@ -130,24 +146,84 @@ export function applyStructureOperation(sheet: SheetData, command: StructureComm
       command.index + (command.count ?? 1) - 1,
     );
     case 'set-row-height':
-      return getRowData(sheet, command.row)?.height === command.height
-        ? sheet
-        : setRowHeight(sheet, command.row, command.height);
-    case 'set-row-hidden':
-      return (command.hidden
-        ? getRowData(sheet, command.row)?.hide === true
-        : getRowData(sheet, command.row)?.hide === undefined)
-        ? sheet
-        : setRowHidden(sheet, command.row, command.hidden);
+      return updateRows(sheet, command.row, command.count ?? 1, row => ({
+        ...row,
+        height: command.height,
+      }));
+    case 'set-row-hidden': return updateRows(sheet, command.row, command.count ?? 1, row => {
+      const next = { ...row } as Record<string, unknown>;
+      if (command.hidden) next.hide = true;
+      else delete next.hide;
+      return next;
+    });
     case 'set-column-width':
-      return getColumnData(sheet, command.column)?.width === command.width
-        ? sheet
-        : setColumnWidth(sheet, command.column, command.width);
-    case 'set-column-hidden':
-      return (command.hidden
-        ? getColumnData(sheet, command.column)?.hide === true
-        : getColumnData(sheet, command.column)?.hide === undefined)
-        ? sheet
-        : setColumnHidden(sheet, command.column, command.hidden);
+      return updateColumns(sheet, command.column, command.count ?? 1, column => ({
+        ...column,
+        width: command.width,
+      }));
+    case 'set-column-hidden': return updateColumns(
+      sheet,
+      command.column,
+      command.count ?? 1,
+      column => {
+        const next = { ...column } as Record<string, unknown>;
+        if (command.hidden) next.hide = true;
+        else delete next.hide;
+        return next;
+      },
+    );
   }
+}
+
+function shallowEqual(left: Record<string, unknown>, right: Record<string, unknown>): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  return leftKeys.length === rightKeys.length
+    && leftKeys.every(key => Object.is(left[key], right[key]));
+}
+
+function updateRows(
+  sheet: SheetData,
+  start: number,
+  count: number,
+  update: (row: Record<string, unknown>) => Record<string, unknown>,
+): SheetData {
+  let rows: Record<string, unknown> | null = null;
+  let cloned: SheetData | null = null;
+  for (let offset = 0; offset < count; offset += 1) {
+    const index = start + offset;
+    const current = (getRowData(sheet, index) ?? {}) as Record<string, unknown>;
+    const next = update(current);
+    if (shallowEqual(current, next)) continue;
+    if (rows === null) {
+      cloned = cloneSheet(sheet);
+      rows = { ...(cloned.rows ?? { len: 100 }) };
+    }
+    const clonedCurrent = (rows[String(index)] ?? {}) as Record<string, unknown>;
+    rows[String(index)] = update(clonedCurrent);
+  }
+  return rows === null ? sheet : { ...cloned!, rows } as SheetData;
+}
+
+function updateColumns(
+  sheet: SheetData,
+  start: number,
+  count: number,
+  update: (column: Record<string, unknown>) => Record<string, unknown>,
+): SheetData {
+  let columns: Record<string, unknown> | null = null;
+  let cloned: SheetData | null = null;
+  for (let offset = 0; offset < count; offset += 1) {
+    const index = start + offset;
+    const current = (getColumnData(sheet, index) ?? {}) as Record<string, unknown>;
+    const next = update(current);
+    if (shallowEqual(current, next)) continue;
+    if (columns === null) {
+      cloned = cloneSheet(sheet);
+      columns = { ...(cloned.cols ?? { len: 26 }) };
+    }
+    const clonedCurrent = (columns[String(index)] ?? {}) as Record<string, unknown>;
+    columns[String(index)] = update(clonedCurrent);
+  }
+  return columns === null ? sheet : { ...cloned!, cols: columns } as SheetData;
 }

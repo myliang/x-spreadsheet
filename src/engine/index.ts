@@ -25,12 +25,14 @@ export {
 } from './viewport/scroll-state';
 export {
   createSelectionState,
+  createRangeSelection,
   extendSelection,
   moveSelection,
   normalizeSelection,
 } from './viewport/selection-state';
 export type {
   SelectionDirection,
+  SelectionKind,
   SelectionState,
 } from './viewport/selection-state';
 export {
@@ -68,6 +70,20 @@ export {
   createPrintLayout,
   renderPrintPage,
 } from './canvas/print-renderer';
+export { ResourceRegistry } from './interaction/resource-registry';
+export type { EventTargetPort } from './interaction/resource-registry';
+export { createInteractionManager, InteractionManager } from './interaction/interaction-manager';
+export type {
+  FormatRequest,
+  InteractionDispatchOutcome,
+  InteractionManagerOptions,
+  InteractionManagerPorts,
+  InteractionRootPort,
+  InteractionSnapshot,
+  ResizePreview,
+} from './interaction/interaction-manager';
+export type { ClipboardPort, DataTransferPort } from './interaction/clipboard';
+export type { ResizeAxis, ResizeHandle } from './interaction/resize';
 export type {
   PaperOrientation,
   PaperSizeName,
