@@ -53,4 +53,22 @@ describe('DrawContext', () => {
     expect(harness.canvas.style).toEqual(initialCanvas.style);
     expect(harness.operations).toEqual([]);
   });
+
+  it('rejects a backing area above the 67108864-pixel limit atomically', () => {
+    const harness = createCanvasHarness();
+    const draw = new DrawContext(harness.canvas, 1, harness.measurement);
+    const initialCanvas = {
+      width: harness.canvas.width,
+      height: harness.canvas.height,
+      style: { ...harness.canvas.style },
+    };
+
+    expect(() => draw.resize(8_193, 8_193)).toThrowError(
+      new RangeError('canvas backing area exceeds the 67108864-pixel limit'),
+    );
+    expect(harness.canvas.width).toBe(initialCanvas.width);
+    expect(harness.canvas.height).toBe(initialCanvas.height);
+    expect(harness.canvas.style).toEqual(initialCanvas.style);
+    expect(harness.operations).toEqual([]);
+  });
 });

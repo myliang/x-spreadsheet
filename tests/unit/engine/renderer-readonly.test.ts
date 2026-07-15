@@ -358,10 +358,11 @@ describe('read-only Canvas rendering', () => {
     engine.render({
       sheet,
       viewport: createViewportMetrics(createSheetGridModel(sheet, {
-        defaultColumnWidth: 32,
+        defaultColumnWidth: 16,
+        defaultRowHeight: 16,
       }), {
-        width: 16_000,
-        height: 12_500,
+        width: 8_000,
+        height: 8_000,
         rowHeaderWidth: 0,
         columnHeaderHeight: 0,
       }),
@@ -371,7 +372,7 @@ describe('read-only Canvas rendering', () => {
     expect(harness.operations.filter(operation => operation.name === 'stroke').length)
       .toBeLessThanOrEqual(2_004);
     expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
-      .toEqual([[0, 0, 16_000, 12_500]]);
+      .toEqual([[0, 0, 8_000, 8_000]]);
   });
 
   it('returns only materialized cells from a large empty sparse pane', () => {
@@ -399,6 +400,36 @@ describe('read-only Canvas rendering', () => {
     expect(indexes.columns).toHaveLength(500);
     expect(cells).toEqual([]);
     expect(numericRowLookups).toBeLessThanOrEqual(indexes.rows.length + indexes.columns.length);
+  });
+
+  it('bounds offscreen sparse cell-key scans without materializing every entry', () => {
+    const cells: Record<string, object> = {};
+    const emptyCell = Object.freeze({});
+    for (let column = 1_000; column < 251_001; column += 1) cells[column] = emptyCell;
+    const sheet = {
+      rows: { len: 1, 0: { cells } },
+      cols: { len: 300_000 },
+    } as unknown as SheetData;
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      devicePixelRatio: 1,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 100,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+
+    expect(() => harness.animationFrame.flush()).toThrow(
+      'visible canvas sparse cell scan exceeds the 250000-entry limit',
+    );
   });
 
   it('does not enumerate materialized rows outside the visible sparse pane', () => {
@@ -511,6 +542,55 @@ describe('read-only Canvas rendering', () => {
     expect(() => harness.animationFrame.flush()).toThrow(
       'visible canvas row axis exceeds the 250000-index limit',
     );
+  });
+
+  it('keeps the previous frame untouched when pane planning exceeds a resource budget', () => {
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      devicePixelRatio: 1,
+      measurement: harness.measurement,
+    });
+    const validSheet: SheetData = {
+      rows: { len: 1, 0: { cells: { 0: { text: 'valid' } } } },
+      cols: { len: 1 },
+    };
+    engine.render({
+      sheet: validSheet,
+      viewport: createViewportMetrics(createSheetGridModel(validSheet), {
+        width: 200,
+        height: 50,
+      }),
+    });
+    harness.animationFrame.flush();
+    const previous = {
+      width: harness.canvas.width,
+      height: harness.canvas.height,
+      style: { ...harness.canvas.style },
+      operations: [...harness.operations],
+    };
+    const oversizedSheet: SheetData = { rows: { len: 250_001 }, cols: { len: 1 } };
+
+    engine.render({
+      sheet: oversizedSheet,
+      viewport: createViewportMetrics(createSheetGridModel(oversizedSheet, {
+        defaultRowHeight: 1 / 250_001,
+      }), {
+        width: 100,
+        height: 1,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+        freeze: { row: 250_001, column: 0 },
+      }),
+    });
+
+    expect(() => harness.animationFrame.flush()).toThrow(
+      'visible canvas row axis exceeds the 250000-index limit',
+    );
+    expect(harness.canvas.width).toBe(previous.width);
+    expect(harness.canvas.height).toBe(previous.height);
+    expect(harness.canvas.style).toEqual(previous.style);
+    expect(harness.operations).toEqual(previous.operations);
   });
 
   it('aligns unique grid boundaries with scrolled cell rectangles', () => {

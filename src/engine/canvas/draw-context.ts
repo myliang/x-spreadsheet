@@ -31,6 +31,7 @@ export interface DrawLineOptions {
 }
 
 const MAX_CANVAS_BACKING_DIMENSION = 16_384;
+const MAX_CANVAS_BACKING_PIXELS = 67_108_864;
 
 function finite(value: number, label: string): number {
   if (!Number.isFinite(value)) throw new RangeError(`${label} must be finite`);
@@ -95,6 +96,11 @@ export class DrawContext {
     if (width < 0 || height < 0) throw new RangeError('canvas size must be non-negative');
     const backingWidth = backingDimension(width, this.devicePixelRatio, 'width');
     const backingHeight = backingDimension(height, this.devicePixelRatio, 'height');
+    if (backingWidth * backingHeight > MAX_CANVAS_BACKING_PIXELS) {
+      throw new RangeError(
+        `canvas backing area exceeds the ${MAX_CANVAS_BACKING_PIXELS}-pixel limit`,
+      );
+    }
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     this.canvas.width = backingWidth;

@@ -8,6 +8,24 @@ import type { DrawContext } from './draw-context';
 
 const MAX_VISIBLE_CELLS = 250_000;
 const MAX_VISIBLE_AXIS_INDEXES = 250_000;
+const MAX_SPARSE_CELL_SCANS = 250_000;
+
+export interface SparseCellScanBudget {
+  remaining: number;
+}
+
+export function createSparseCellScanBudget(): SparseCellScanBudget {
+  return { remaining: MAX_SPARSE_CELL_SCANS };
+}
+
+function consumeSparseCellScan(budget: SparseCellScanBudget): void {
+  if (budget.remaining <= 0) {
+    throw new RangeError(
+      `visible canvas sparse cell scan exceeds the ${MAX_SPARSE_CELL_SCANS}-entry limit`,
+    );
+  }
+  budget.remaining -= 1;
+}
 
 type Axis = 'row' | 'column';
 
@@ -112,6 +130,7 @@ export function paneCells(
   viewport: ViewportMetrics,
   indexes: PaneGridIndexes,
   sheet: Readonly<SheetData>,
+  scanBudget: SparseCellScanBudget = createSparseCellScanBudget(),
 ): readonly CellPoint[] {
   const { rows, columns } = indexes;
   const points: CellPoint[] = [];
@@ -133,7 +152,10 @@ export function paneCells(
     if (rowData === null) continue;
     const cells = indexedObject(rowData.cells);
     if (cells === null) continue;
-    for (const [columnKey, cellValue] of Object.entries(cells)) {
+    for (const columnKey in cells) {
+      consumeSparseCellScan(scanBudget);
+      if (!Object.prototype.hasOwnProperty.call(cells, columnKey)) continue;
+      const cellValue = cells[columnKey];
       const column = sparseIndex(columnKey, viewport.model.columnCount);
       if (column !== null && visibleColumns.has(column) && indexedObject(cellValue) !== null) {
         add({ row, column });

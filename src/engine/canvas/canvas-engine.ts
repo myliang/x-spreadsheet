@@ -13,7 +13,12 @@ import type {
   CanvasSurfacePort,
   TextMeasurementPort,
 } from './draw-context';
-import { paintGrid, paneCells, paneGridIndexes } from './grid-painter';
+import {
+  createSparseCellScanBudget,
+  paintGrid,
+  paneCells,
+  paneGridIndexes,
+} from './grid-painter';
 import { paintHeaders } from './header-painter';
 import { RenderScheduler } from './render-scheduler';
 import type { AnimationFramePort } from './render-scheduler';
@@ -81,16 +86,20 @@ export class CanvasEngine {
     const snapshot = this.latest;
     if (snapshot === null || this.disposed) return;
     const { viewport } = snapshot;
-    this.draw.resize(viewport.width, viewport.height);
-    this.draw.clear(viewport.width, viewport.height);
     const visibleRows = new Set<number>();
     const visibleColumns = new Set<number>();
-    const formulaBudget = createFormulaEvaluationBudget(250_000);
-    for (const pane of frozenQuadrants(viewport.freeze, viewport)) {
+    const scanBudget = createSparseCellScanBudget();
+    const plans = frozenQuadrants(viewport.freeze, viewport).map(pane => {
       const indexes = paneGridIndexes(pane, viewport);
-      const cells = paneCells(pane, viewport, indexes, snapshot.sheet);
+      const cells = paneCells(pane, viewport, indexes, snapshot.sheet, scanBudget);
       for (const row of indexes.rows) visibleRows.add(row);
       for (const column of indexes.columns) visibleColumns.add(column);
+      return { pane, indexes, cells };
+    });
+    this.draw.resize(viewport.width, viewport.height);
+    this.draw.clear(viewport.width, viewport.height);
+    const formulaBudget = createFormulaEvaluationBudget(250_000);
+    for (const { pane, indexes, cells } of plans) {
       this.draw.withClip(pane, () => {
         if (snapshot.showGrid !== false) paintGrid(this.draw, indexes, viewport);
         paintCells(this.draw, snapshot, cells, formulaBudget, this.defaultStyle);
