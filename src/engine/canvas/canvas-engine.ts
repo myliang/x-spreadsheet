@@ -43,6 +43,7 @@ export interface CanvasEngineOptions {
   readonly defaultStyle?: CellStyle;
   readonly devicePixelRatio?: number;
   readonly measurement?: TextMeasurementPort;
+  readonly onRenderError?: (cause: unknown) => void;
 }
 
 function canvasMeasurement(canvas: CanvasSurfacePort): TextMeasurementPort {
@@ -62,12 +63,14 @@ function canvasMeasurement(canvas: CanvasSurfacePort): TextMeasurementPort {
 export class CanvasEngine {
   private readonly draw: DrawContext;
   private readonly defaultStyle: CellStyle;
+  private readonly onRenderError: ((cause: unknown) => void) | undefined;
   private readonly scheduler: RenderScheduler;
   private latest: CanvasRenderSnapshot | null = null;
   private disposed = false;
 
   constructor(canvas: CanvasSurfacePort, options: Readonly<CanvasEngineOptions> = {}) {
     this.defaultStyle = configuredCellDefaultStyle(options.defaultStyle);
+    this.onRenderError = options.onRenderError;
     this.draw = new DrawContext(
       canvas,
       options.devicePixelRatio ?? currentDevicePixelRatio(),
@@ -79,7 +82,17 @@ export class CanvasEngine {
   render(snapshot: CanvasRenderSnapshot): void {
     if (this.disposed) return;
     this.latest = snapshot;
-    this.scheduler.schedule(() => this.paintLatest());
+    this.scheduler.schedule(() => this.paintScheduled());
+  }
+
+  private paintScheduled(): void {
+    try {
+      this.paintLatest();
+    } catch (cause) {
+      this.latest = null;
+      if (this.onRenderError === undefined) throw cause;
+      this.onRenderError(cause);
+    }
   }
 
   private paintLatest(): void {

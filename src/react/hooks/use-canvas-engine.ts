@@ -1,4 +1,4 @@
-import { useLayoutEffect, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 import type { LocaleDefinition, SheetId, SheetOptions } from '../../core';
 import type { ControllerEpoch } from './use-controller-epoch';
 import {
@@ -17,6 +17,7 @@ export interface UseCanvasEngineOptions {
   readonly sheetOptions?: SheetOptions;
   readonly showGrid?: boolean;
   readonly locale?: LocaleDefinition;
+  readonly onRenderError?: (cause: unknown) => void;
   readonly onSelectionChange?: (selection: import('../../core').Selection | null) => void;
 }
 
@@ -62,11 +63,17 @@ export function useCanvasEngine(options: UseCanvasEngineOptions): void {
     onReady,
     rootRef,
     locale,
+    onRenderError,
     sheetOptions,
     showGrid,
     onSelectionChange,
   } = options;
   const { controller, isActive } = epoch;
+  const onRenderErrorRef = useRef(onRenderError);
+
+  useLayoutEffect(() => {
+    onRenderErrorRef.current = onRenderError;
+  }, [onRenderError]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -81,6 +88,11 @@ export function useCanvasEngine(options: UseCanvasEngineOptions): void {
         canvas,
         sheetOptions,
         locale,
+        onRenderError: cause => {
+          const handler = onRenderErrorRef.current;
+          if (handler === undefined) throw cause;
+          handler(cause);
+        },
       });
       engineSlot.set(adapter);
       adapter.refresh(controller.getSnapshot());

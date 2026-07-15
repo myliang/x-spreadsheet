@@ -54,7 +54,7 @@ export const parityManifest: readonly ParityRow[] = [
     id: 'view',
     unit: { assertions: ['view.frozen-geometry'] },
     component: { assertions: ['view.scroll-sync'] },
-    browser: { assertions: ['view.zoom-scroll'] },
+    browser: { assertions: ['view.zoom-scroll', 'view.render-recovery'] },
     visual: { assertions: ['view.frozen-panes'] },
   },
   {

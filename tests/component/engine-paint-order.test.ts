@@ -100,3 +100,52 @@ it('@parity:view.scroll-sync stages offscreen selection and scroll together with
   expect(canvas.operations).toEqual([]);
   engine.dispose();
 });
+
+it('suppresses repeated paints for a failed controller snapshot and retries on explicit layout recovery', () => {
+  const frames: FrameRequestCallback[] = [];
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const root = document.createElement('div');
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 180 },
+    clientHeight: { configurable: true, value: 100 },
+  });
+  const canvas = createCanvasHarness();
+  const context = canvas.canvas.getContext('2d')!;
+  const failure = new Error('paint failed');
+  Object.defineProperty(context, 'clearRect', {
+    configurable: true,
+    value: () => { throw failure; },
+  });
+  const controller = new WorkbookController({ rows: { len: 2 }, cols: { len: 3 } });
+  const sheet = controller.getSheetIds()[0]!;
+  const onRenderError = vi.fn();
+  const engine = createEngineAdapter({
+    root,
+    canvas: canvas.canvas as unknown as HTMLCanvasElement,
+    onRenderError,
+  });
+  const snapshot = controller.getSnapshot();
+
+  engine.render(snapshot, sheet);
+  expect(() => frames.shift()!(0)).not.toThrow();
+  expect(onRenderError).toHaveBeenCalledOnce();
+  expect(onRenderError).toHaveBeenCalledWith(failure);
+
+  engine.setSelection(createSelectionState({ row: 0, column: 1 }));
+  engine.render(snapshot, sheet);
+  expect(frames).toEqual([]);
+
+  Object.defineProperty(context, 'clearRect', {
+    configurable: true,
+    value: vi.fn(),
+  });
+  engine.recalculateLayout();
+  expect(frames).toHaveLength(1);
+  expect(() => frames.shift()!(1)).not.toThrow();
+  expect(onRenderError).toHaveBeenCalledOnce();
+  engine.dispose();
+});

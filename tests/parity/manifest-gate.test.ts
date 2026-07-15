@@ -87,7 +87,7 @@ const expectedCatalog: readonly CatalogRow[] = [
     id: 'view',
     unit: ['view.frozen-geometry'],
     component: ['view.scroll-sync'],
-    browser: ['view.zoom-scroll'],
+    browser: ['view.zoom-scroll', 'view.render-recovery'],
     visual: ['view.frozen-panes'],
   },
   {
@@ -690,7 +690,7 @@ test('@parity:manifest.catalog is complete and uses stable assertion prefixes', 
   assert.equal(projection.length, 19);
   assert.equal(
     projection.flatMap((row) => lanes.flatMap((lane) => row[lane] ?? [])).length,
-    63,
+    64,
   );
   assert.equal(
     projection.flatMap((row) => lanes.map((lane) => row[lane])).filter((lane) => lane === null)

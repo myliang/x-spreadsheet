@@ -9,6 +9,26 @@ interface ResourceCounts {
   readonly timers: number;
 }
 
+test('@parity:view.render-recovery routes a real Canvas frame failure through the public recovery channel', async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeClearRect = CanvasRenderingContext2D.prototype.clearRect;
+    let failed = false;
+    CanvasRenderingContext2D.prototype.clearRect = function(x, y, width, height) {
+      if (!failed) {
+        failed = true;
+        throw new Error('browser canvas clear failed');
+      }
+      nativeClearRect.call(this, x, y, width, height);
+    };
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByTestId('error')).toContainText('"code":"RENDER_FAILED"');
+  await expect(page.getByTestId('error')).toContainText('"recoverable":true');
+  await expect(page.locator('[role="status"][data-error-code="RENDER_FAILED"]')).toBeVisible();
+});
+
 test('@parity:correction.resource-cleanup returns every owned browser resource to baseline', async ({ page }) => {
   await page.addInitScript(() => {
     const activeListeners = new Map<string, EventTarget>();

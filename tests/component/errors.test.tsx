@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TegoSheet } from '../../src';
 import { createCanvasHarness } from '../helpers/canvas-harness';
@@ -42,4 +42,35 @@ it('reports a recoverable UI failure through the latest callback and default not
     recoverable: true,
   }));
   expect(rendered.getByRole('status').textContent).toMatch(/unavailable|read-only/i);
+});
+
+it('routes animation-frame render failures through onError and the default notification', () => {
+  const failure = new Error('canvas clear failed');
+  const context = createCanvasHarness().canvas.getContext('2d')!;
+  Object.defineProperty(context, 'clearRect', {
+    configurable: true,
+    value: () => { throw failure; },
+  });
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => context);
+  let frame: FrameRequestCallback | undefined;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frame = callback;
+    return 7;
+  });
+  const onError = vi.fn();
+  const rendered = render(<TegoSheet defaultValue={[{}]} onError={onError} />);
+
+  expect(frame).toBeDefined();
+  act(() => {
+    expect(() => frame!(0)).not.toThrow();
+  });
+
+  expect(onError).toHaveBeenCalledOnce();
+  expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+    code: 'RENDER_FAILED',
+    message: 'Rendering the workbook failed',
+    recoverable: true,
+    cause: expect.objectContaining({ message: failure.message }),
+  }));
+  expect(rendered.getByRole('status').getAttribute('data-error-code')).toBe('RENDER_FAILED');
 });

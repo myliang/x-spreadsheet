@@ -561,6 +561,14 @@ function Runtime(
     props.controlled.recordCheckpoint,
     setNotification,
   ]);
+  const reportRenderError = useCallback((cause: unknown) => {
+    dispatcher.reportUiError({
+      code: 'RENDER_FAILED',
+      message: 'Rendering the workbook failed',
+      recoverable: true,
+      cause,
+    });
+  }, [dispatcher]);
 
   const renderRuntime: SlotRuntime = {
     activeSheet,
@@ -700,6 +708,7 @@ function Runtime(
     epoch: props.epoch,
     locale: props.locale,
     onReady: signalEngineReady,
+    onRenderError: reportRenderError,
     onSelectionChange: setSelection,
     rootRef,
     sheetOptions: initialOptions,

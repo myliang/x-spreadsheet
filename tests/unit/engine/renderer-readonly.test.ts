@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CanvasEngine,
   createSheetGridModel,
@@ -421,10 +421,12 @@ describe('read-only Canvas rendering', () => {
       cols: { len: 300_000 },
     } as unknown as SheetData;
     const harness = createCanvasHarness();
+    const onRenderError = vi.fn();
     const engine = new CanvasEngine(harness.canvas, {
       animationFrame: harness.animationFrame,
       devicePixelRatio: 1,
       measurement: harness.measurement,
+      onRenderError,
     });
 
     engine.render({
@@ -437,9 +439,45 @@ describe('read-only Canvas rendering', () => {
       }),
     });
 
-    expect(() => harness.animationFrame.flush()).toThrow(
-      'visible canvas sparse cell scan exceeds the 250000-entry limit',
-    );
+    expect(() => harness.animationFrame.flush()).not.toThrow();
+    expect(onRenderError).toHaveBeenCalledOnce();
+    expect(onRenderError.mock.calls[0]![0]).toEqual(expect.objectContaining({
+      message: 'visible canvas sparse cell scan exceeds the 250000-entry limit',
+    }));
+    expect(harness.animationFrame.pending).toBe(0);
+  });
+
+  it('does not swallow failures thrown by the render recovery callback', () => {
+    const paintFailure = new Error('paint failed');
+    const consumerFailure = new Error('consumer onRenderError failed');
+    const harness = createCanvasHarness();
+    Object.defineProperty(harness.canvas.getContext('2d')!, 'clearRect', {
+      configurable: true,
+      value: () => { throw paintFailure; },
+    });
+    const sheet = { rows: { len: 1 }, cols: { len: 1 } } as SheetData;
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      devicePixelRatio: 1,
+      measurement: harness.measurement,
+      onRenderError: cause => {
+        expect(cause).toBe(paintFailure);
+        throw consumerFailure;
+      },
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 100,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+
+    expect(() => harness.animationFrame.flush()).toThrow(consumerFailure);
+    expect(harness.animationFrame.pending).toBe(0);
   });
 
   it('does not enumerate materialized rows outside the visible sparse pane', () => {

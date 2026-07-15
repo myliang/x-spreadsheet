@@ -28,6 +28,7 @@ import {
 export interface EngineAdapterOptions {
   readonly root: HTMLElement;
   readonly canvas: HTMLCanvasElement;
+  readonly onRenderError?: (cause: unknown) => void;
   readonly sheetOptions?: SheetOptions;
   readonly showGrid?: boolean;
   readonly locale?: LocaleDefinition;
@@ -70,10 +71,18 @@ function clippedFreeze(value: string | undefined): { readonly row: number; reado
 }
 
 export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapter {
+  let latestSnapshot: ControllerSnapshot | null = null;
+  let failedSnapshot: ControllerSnapshot | null = null;
   const engine = new CanvasEngine(options.canvas, {
     defaultStyle: options.sheetOptions?.defaultStyle,
+    ...(options.onRenderError === undefined ? {} : {
+      onRenderError: (cause: unknown) => {
+        if (latestSnapshot === null || failedSnapshot === latestSnapshot) return;
+        failedSnapshot = latestSnapshot;
+        options.onRenderError?.(cause);
+      },
+    }),
   });
-  let latestSnapshot: ControllerSnapshot | null = null;
   let activeSheet: SheetId | null = null;
   let viewport: ViewportMetrics | null = null;
   let selection: SelectionState | null = null;
@@ -87,7 +96,12 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
   };
 
   const paint = () => {
-    if (disposed || latestSnapshot === null || viewport === null) return;
+    if (
+      disposed
+      || latestSnapshot === null
+      || failedSnapshot === latestSnapshot
+      || viewport === null
+    ) return;
     const index = activeIndex();
     const sheet = index < 0 ? undefined : latestSnapshot.value[index];
     if (sheet === undefined) return;
@@ -265,6 +279,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       rebuild();
     },
     recalculateLayout() {
+      failedSnapshot = null;
       rebuild();
     },
     setScroll(scroll) {
@@ -300,6 +315,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       if (disposed) return;
       disposed = true;
       latestSnapshot = null;
+      failedSnapshot = null;
       viewport = null;
       selection = null;
       engine.dispose();
