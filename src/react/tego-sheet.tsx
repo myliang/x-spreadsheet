@@ -277,11 +277,9 @@ function Runtime(
   const [initialSheetCount] = useState(() => props.epoch.snapshot.sheets.length);
   const initialWorkbookWasEmpty = initialSheetCount === 0;
   const [activeRequest, setActiveRequest] = useState(() => ({
-    decision: 0,
     index: initialWorkbookWasEmpty ? 0 : initialActiveSheetIndex,
     sheet: null as SheetId | null,
   }));
-  const replacementVersion = useRef(props.controlled.replacementVersion);
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
   const [runtimeSlot] = useState(createImperativeRuntimeSlot);
   const [handle] = useState(() => createStableHandle(runtimeSlot));
@@ -298,7 +296,7 @@ function Runtime(
         : props.epoch.controller.getSheetIds().findIndex(candidate => candidate === sheet);
       const nextIndex = index < 0 ? current.index : index;
       if (current.sheet === sheet && current.index === nextIndex) return current;
-      return { decision: current.decision + 1, index: nextIndex, sheet };
+      return { index: nextIndex, sheet };
     });
   }, [props.epoch.controller]);
   const activeSheet = sheets.length === 0
@@ -306,6 +304,9 @@ function Runtime(
     : sheets.some(sheet => sheet.id === activeRequest.sheet)
       ? activeRequest.sheet
       : sheets[Math.min(activeRequest.index, sheets.length - 1)]?.id ?? sheets[0]!.id;
+  const clippedActiveIndex = activeSheet === null
+    ? 0
+    : Math.max(0, sheets.findIndex(sheet => sheet.id === activeSheet));
 
   const dispatcher = useMemo(() => createEventDispatcher({
     controller: props.epoch.controller,
@@ -342,24 +343,20 @@ function Runtime(
   useLayoutEffect(() => {
     if (
       !props.epoch.isActive()
-      || replacementVersion.current === props.controlled.replacementVersion
+      || (activeRequest.sheet === activeSheet && activeRequest.index === clippedActiveIndex)
     ) return;
-    replacementVersion.current = props.controlled.replacementVersion;
-    const capturedDecision = activeRequest.decision;
-    const clippedIndex = activeSheet === null
-      ? 0
-      : Math.max(0, sheets.findIndex(sheet => sheet.id === activeSheet));
-    // A genuine replacement is an external state transition. The functional
-    // guard preserves any explicit active-sheet decision made in the same commit stack.
-    setActiveRequest(current => current.decision !== capturedDecision
+    const capturedRequest = activeRequest;
+    // The controller's committed sheet set is external state; identity CAS prevents
+    // this synchronization from overwriting a newer explicit active-sheet decision.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveRequest(current => current !== capturedRequest
       ? current
-      : { ...current, index: clippedIndex, sheet: activeSheet });
+      : { index: clippedActiveIndex, sheet: activeSheet });
   }, [
-    activeRequest.decision,
+    activeRequest,
     activeSheet,
-    props.controlled.replacementVersion,
+    clippedActiveIndex,
     props.epoch,
-    sheets,
   ]);
 
   useLayoutEffect(() => {

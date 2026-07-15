@@ -350,6 +350,122 @@ it('persists a clipped active index across shrink-expand and empty-expand replac
   });
 });
 
+it('persists the clipped active index after rollback removes an optimistic sheet', async () => {
+  const base: WorkbookInput = [{ name: 'A' }];
+  const expanded: WorkbookInput = [{ name: 'E0' }, { name: 'E1' }];
+  const onSelectionChange = vi.fn<(selection: Selection) => void>();
+  const ref = createRef<TegoSheetHandle>();
+  const rendered = render(
+    <TegoSheet ref={ref} value={base} onSelectionChange={onSelectionChange} />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  act(() => {
+    const optimistic = ref.current!.addSheet('Optimistic');
+    ref.current!.activateSheet(optimistic);
+  });
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={structuredClone(base)}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  expect(ref.current!.getValue()).toHaveLength(1);
+
+  rendered.rerender(
+    <TegoSheet ref={ref} value={expanded} onSelectionChange={onSelectionChange} />,
+  );
+  const retained = activeSelection(rendered.container, onSelectionChange);
+  act(() => ref.current!.setCellText({
+    sheet: retained.sheet,
+    row: 0,
+    column: 0,
+  }, 'rollback stayed clipped'));
+  expect(ref.current!.getValue()[0]?.rows?.[0]).toMatchObject({
+    cells: { 0: { text: 'rollback stayed clipped' } },
+  });
+  expect(ref.current!.getValue()[1]?.rows?.[0]).toBeUndefined();
+});
+
+it('persists the clipped active index after replay truncation removes an optimistic sheet', async () => {
+  const value: WorkbookInput = [];
+  const expanded: WorkbookInput = [{ name: 'E0' }, { name: 'E1' }];
+  const onChange = vi.fn<(value: WorkbookData) => void>();
+  const onError = vi.fn();
+  const onSelectionChange = vi.fn<(selection: Selection) => void>();
+  const ref = createRef<TegoSheetHandle>();
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      value={value}
+      onChange={onChange}
+      onError={onError}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  act(() => {
+    ref.current!.addSheet('Acknowledged');
+  });
+  const acknowledged = structuredClone(onChange.mock.lastCall![0]);
+  act(() => {
+    const optimistic = ref.current!.addSheet('Dropped tail');
+    ref.current!.activateSheet(optimistic);
+  });
+
+  const originalDispatch = WorkbookController.prototype.dispatch;
+  let rejectReplay = true;
+  vi.spyOn(WorkbookController.prototype, 'dispatch').mockImplementation(function (
+    this: WorkbookController,
+    command,
+    source,
+    options,
+  ) {
+    if (rejectReplay && options?.notify === false && command.type === 'add-sheet') {
+      rejectReplay = false;
+      throw new TegoSheetException({
+        code: 'INVALID_COMMAND',
+        message: 'injected active-sheet replay truncation',
+        recoverable: true,
+      });
+    }
+    return originalDispatch.call(this, command, source, options) as never;
+  });
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={acknowledged}
+      onChange={onChange}
+      onError={onError}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  expect(ref.current!.getValue()).toEqual(acknowledged);
+  expect(onError).toHaveBeenCalledOnce();
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={expanded}
+      onChange={onChange}
+      onError={onError}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  const retained = activeSelection(rendered.container, onSelectionChange);
+  act(() => ref.current!.setCellText({
+    sheet: retained.sheet,
+    row: 0,
+    column: 0,
+  }, 'truncation stayed clipped'));
+  expect(ref.current!.getValue()[0]?.rows?.[0]).toMatchObject({
+    cells: { 0: { text: 'truncation stayed clipped' } },
+  });
+  expect(ref.current!.getValue()[1]?.rows?.[0]).toBeUndefined();
+});
+
 it('does not overwrite an explicit active-sheet decision made in the replacement commit stack', async () => {
   const initial = Array.from({ length: 6 }, (_, index) => ({ name: `S${index}` }));
   const replacement: WorkbookInput = [{ name: 'R0' }, { name: 'R1' }];

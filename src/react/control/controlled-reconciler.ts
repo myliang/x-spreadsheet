@@ -23,7 +23,6 @@ interface AcknowledgedBase {
 
 export interface ReconciliationResult {
   readonly refresh: boolean;
-  readonly replaced: boolean;
   readonly error?: TegoSheetError;
 }
 
@@ -220,14 +219,13 @@ export function createControlledReconciler(
         pending,
       }, value);
       if (update.kind === 'same-reference') {
-        return { refresh: false, replaced: false };
+        return { refresh: false };
       }
       observedValue = value;
       if (update.kind === 'invalid') {
         const duplicate = reportedReference(invalidObjects, invalidPrimitives, value);
         return {
           refresh: false,
-          replaced: false,
           ...(duplicate ? {} : { error: update.error }),
         };
       }
@@ -240,14 +238,14 @@ export function createControlledReconciler(
         };
         pending = [];
         notificationVersion += 1;
-        return { refresh: true, replaced: true };
+        return { refresh: true };
       }
       if (update.kind === 'rollback') {
-        if (pending.length === 0) return { refresh: false, replaced: false };
+        if (pending.length === 0) return { refresh: false };
         controller.restore(base.checkpoint);
         pending = [];
         notificationVersion += 1;
-        return { refresh: true, replaced: false };
+        return { refresh: true };
       }
 
       const acknowledged = pending[update.through]!;
@@ -263,7 +261,6 @@ export function createControlledReconciler(
       if (replayed.error !== undefined) notificationVersion += 1;
       return {
         refresh: true,
-        replaced: false,
         ...(replayed.error === undefined ? {} : { error: replayed.error }),
       };
     },
