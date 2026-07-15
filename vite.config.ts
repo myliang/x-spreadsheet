@@ -48,7 +48,10 @@ export default defineConfig({
       cssFileName: 'styles',
       entry: {
         index: resolve(import.meta.dirname, 'src/index.ts'),
-        'locales/index': resolve(import.meta.dirname, 'src/locales/index.ts'),
+        'locales/en': resolve(import.meta.dirname, 'src/locales/en.ts'),
+        'locales/de': resolve(import.meta.dirname, 'src/locales/de.ts'),
+        'locales/nl': resolve(import.meta.dirname, 'src/locales/nl.ts'),
+        'locales/zh-cn': resolve(import.meta.dirname, 'src/locales/zh-cn.ts'),
       },
       fileName: (format, entryName) => {
         const extension = format === 'es' ? 'js' : 'cjs';

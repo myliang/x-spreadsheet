@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { TegoSheet } from 'tego-sheet';
-import { de, en } from 'tego-sheet/locales';
+import { de } from 'tego-sheet/locales/de';
+import { en } from 'tego-sheet/locales/en';
 import 'tego-sheet/styles.css';
 import { visualFixture } from '../../fixtures';
 import './visual.css';

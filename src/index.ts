@@ -52,7 +52,6 @@ export type {
   WorkbookInput,
 } from './core';
 export { TegoSheetException } from './core';
-export { de, en, nl, resolveLocale, zhCN } from './locales';
 export { TegoSheet } from './react/tego-sheet';
 export type {
   SheetTabsRenderer,

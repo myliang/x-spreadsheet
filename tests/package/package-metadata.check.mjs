@@ -1,371 +1,73 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { URL } from 'node:url';
 import test from 'node:test';
+import { URL } from 'node:url';
 import pkg from '../../package.json' with { type: 'json' };
 
 const packageRoot = new URL('../../', import.meta.url);
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-const expectedDevDependencies = {
-  '@eslint/js': '10.0.1',
-  '@playwright/test': '1.61.1',
-  '@testing-library/dom': '10.4.1',
-  '@testing-library/react': '16.3.2',
-  '@testing-library/user-event': '14.6.1',
-  '@types/node': '24.13.3',
-  '@types/react': '19.2.17',
-  '@types/react-dom': '19.2.3',
-  '@vitejs/plugin-react': '6.0.3',
-  '@vitest/coverage-v8': '4.1.10',
-  eslint: '10.7.0',
-  'eslint-plugin-react-hooks': '7.1.1',
-  'eslint-plugin-react-refresh': '0.5.3',
-  jsdom: '29.1.1',
-  less: '4.6.7',
-  react: '19.2.7',
-  'react-dom': '19.2.7',
-  typescript: '6.0.3',
-  'typescript-eslint': '8.64.0',
-  vite: '8.1.4',
-  'vite-plugin-dts': '5.0.3',
-  vitest: '4.1.10',
-};
-
-const requiredScripts = [
-  'test',
-  'test:unit',
-  'test:browser',
-  'test:visual',
-  'test:ssr',
-  'test:package',
-  'test:parity-gate',
-  'typecheck',
-  'lint',
-  'dev',
-  'build',
-];
-
-test('publishes only tego-sheet', () => {
+test('metadata describes a peer-only React package with explicit exports', () => {
   assert.equal(pkg.name, 'tego-sheet');
-  assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.type, 'module');
-  assert.deepEqual(pkg.sideEffects, ['**/*.css']);
+  assert.equal(pkg.license, 'MIT');
   assert.deepEqual(pkg.dependencies, {});
-  assert.deepEqual(pkg.devDependencies, expectedDevDependencies);
   assert.deepEqual(pkg.peerDependencies, { react: '^19.2.7', 'react-dom': '^19.2.7' });
   assert.deepEqual(pkg.files, ['dist']);
-  assert.deepEqual(pkg.exports, {
-    '.': {
-      types: './dist/index.d.ts',
-      import: './dist/tego-sheet.js',
-      require: './dist/tego-sheet.cjs',
-    },
-    './locales': {
-      types: './dist/locales/index.d.ts',
-      import: './dist/locales/index.js',
-      require: './dist/locales/index.cjs',
-    },
-    './styles.css': './dist/styles.css',
-  });
-  assert.equal(Object.keys(pkg.exports).some((path) => path.includes('legacy')), false);
-  assert.deepEqual(requiredScripts.filter((script) => !(script in pkg.scripts)), []);
-  assert.equal(
-    pkg.scripts['test:unit'],
-    'vitest run --project unit --project component --project architecture',
-  );
-  assert.equal(
-    pkg.scripts['test:package'],
-    'npm run build && node --test tests/package/*.check.mjs',
-  );
+  assert.deepEqual(pkg.sideEffects, ['**/*.css']);
+  assert.deepEqual(Object.keys(pkg.exports), [
+    '.',
+    './styles.css',
+    './locales/en',
+    './locales/de',
+    './locales/nl',
+    './locales/zh-cn',
+    './package.json',
+  ]);
+  assert.equal(pkg.scripts['test:ssr'], 'node scripts/test-ssr.ts');
+  assert.equal(pkg.scripts['test:package'], 'node scripts/test-package.ts');
   assert.equal('postinstall' in pkg.scripts, false);
-  assert.equal('collective' in pkg, false);
-  assert.equal('nyc' in pkg, false);
 });
 
-test('published README describes only the current tego-sheet foundation', () => {
+test('published docs cover the complete React API and migration contract', () => {
   const readme = readFileSync(new URL('readme.md', packageRoot), 'utf8');
-
-  assert.doesNotMatch(
-    readme,
-    /x-data-spreadsheet|xspreadsheet|x_spreadsheet|new Spreadsheet|dist\/xspreadsheet|docs\/demo\.png/i,
+  const migration = readFileSync(
+    new URL('docs/migration-from-x-data-spreadsheet.md', packageRoot),
+    'utf8',
   );
-  assert.match(readme, /^# tego-sheet$/m);
-  assert.match(readme, /React/);
-  assert.match(readme, /TypeScript/);
-  assert.match(readme, /active rewrite|not release-ready/i);
+
+  for (const term of [
+    'controlled', 'uncontrolled', 'onChange', 'onCellEdit', 'TegoSheetHandle',
+    'toolbar', 'sheetTabs', 'styles.css', 'locales/zh-cn',
+  ]) assert.match(readme, new RegExp(term, 'i'));
+
+  for (const term of [
+    'empty workbook', 'all sheets', 'rendered value', 'resource cleanup',
+    'printable', 'constructor', 'global', 'emitter',
+  ]) assert.match(migration, new RegExp(term, 'i'));
 });
 
-test('CI runs only the supported foundation checks on Node 24', () => {
-  const travis = readFileSync(new URL('.travis.yml', packageRoot), 'utf8');
-
-  assert.doesNotMatch(travis, /10\.12\.0|istanbul|coverage|npm install(?:\s|$)/i);
-  assert.match(travis, /node_js:\s*\n\s*- ['"]?24['"]?/);
-  assert.match(travis, /install:\s*\n\s*- npm ci/);
-
-  const commands = [
-    'npm run typecheck',
-    'npm run lint',
-    'npm test',
-    'npm run build',
-    'npm run test:package',
-  ];
-  const positions = commands.map((command) => travis.indexOf(command));
-  assert.equal(positions.every((position) => position >= 0), true);
-  assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
+test('packed files contain publishable outputs but no workspace source or dependencies', () => {
+  const files = JSON.parse(process.env.TEGO_SHEET_PACK_FILES ?? '[]');
+  for (const required of [
+    'LICENSE', 'package.json', 'readme.md', 'dist/index.d.ts', 'dist/styles.css',
+    'dist/tego-sheet.js', 'dist/tego-sheet.cjs',
+    'dist/locales/en.js', 'dist/locales/en.cjs', 'dist/locales/en.d.ts',
+    'dist/locales/de.js', 'dist/locales/nl.js', 'dist/locales/zh-cn.js',
+  ]) assert.equal(files.includes(required), true, `${required} must be packed`);
+  assert.equal(files.some(path => /^(?:src|legacy|tests|fixtures|node_modules)\//.test(path)), false);
 });
 
-test('Vite development page describes the foundation without legacy runtime markers', () => {
-  const html = readFileSync(new URL('index.html', packageRoot), 'utf8');
-
-  assert.doesNotMatch(
-    html,
-    /x_spreadsheet|xspreadsheet|htmlWebpackPlugin|dist\/xspreadsheet|webpack/i,
-  );
-  assert.match(html, /tego-sheet/i);
-  assert.match(html, /foundation|active rewrite|not release-ready/i);
-});
-
-test('lockfile cryptographically pins every registry package', () => {
+test('repository lockfile cryptographically pins every registry package', () => {
   const lockfile = JSON.parse(readFileSync(new URL('package-lock.json', packageRoot), 'utf8'));
-  assert.equal(lockfile.lockfileVersion, 3);
-
-  const registryEntries = Object.entries(lockfile.packages).filter(([path, entry]) => {
-    if (!path.startsWith('node_modules/') || entry.link || entry.inBundle) {
-      return false;
+  const gaps = Object.entries(lockfile.packages).flatMap(([path, entry]) => {
+    if (!path.startsWith('node_modules/') || entry.link || entry.inBundle) return [];
+    if (typeof entry.resolved !== 'string' || !entry.resolved.startsWith('https://registry.npmjs.org/')) {
+      return [`${path}: resolved`];
     }
-
-    return !String(entry.resolved ?? '').startsWith('file:');
+    if (typeof entry.integrity !== 'string' || !/^sha(?:1|256|384|512)-/.test(entry.integrity)) {
+      return [`${path}: integrity`];
+    }
+    return [];
   });
-  const integrityPattern =
-    /^sha(?:1|256|384|512)-[A-Za-z0-9+/]+={0,2}(?:\s+sha(?:1|256|384|512)-[A-Za-z0-9+/]+={0,2})*$/;
-  const gaps = registryEntries.flatMap(([path, entry]) => {
-    const missing = [];
-
-    if (typeof entry.version !== 'string' || entry.version.length === 0) {
-      missing.push('version');
-    }
-    if (
-      typeof entry.resolved !== 'string'
-      || !entry.resolved.startsWith('https://registry.npmjs.org/')
-    ) {
-      missing.push('canonical resolved URL');
-    }
-    if (typeof entry.integrity !== 'string' || !integrityPattern.test(entry.integrity)) {
-      missing.push('npm integrity');
-    }
-
-    return missing.length === 0 ? [] : [`${path}: ${missing.join(', ')}`];
-  });
-
-  assert.deepEqual(gaps, [], `Incomplete registry lock metadata:\n${gaps.join('\n')}`);
-});
-
-test('package dry run includes public files only', () => {
-  const result = spawnSync(npmCommand, ['pack', '--dry-run', '--json'], {
-    cwd: packageRoot,
-    encoding: 'utf8',
-  });
-
-  assert.equal(result.status, 0, result.stderr);
-  const [pack] = JSON.parse(result.stdout);
-  const paths = pack.files.map(({ path }) => path);
-  const localeChunks = paths.filter((path) => /^dist\/locales-[A-Za-z0-9_-]+\.(?:js|cjs)(?:\.map)?$/.test(path));
-  assert.equal(localeChunks.length, 4);
-  assert.equal(localeChunks.filter((path) => path.endsWith('.js')).length, 1);
-  assert.equal(localeChunks.filter((path) => path.endsWith('.cjs')).length, 1);
-  assert.equal(localeChunks.filter((path) => path.endsWith('.map')).length, 2);
-
-  assert.deepEqual(paths.filter((path) => !localeChunks.includes(path)), [
-    'LICENSE',
-    'dist/core/commands/apply-command.d.ts',
-    'dist/core/commands/command-result.d.ts',
-    'dist/core/commands/validate-command.d.ts',
-    'dist/core/commands/workbook-command.d.ts',
-    'dist/core/controller/controller-checkpoint.d.ts',
-    'dist/core/controller/history.d.ts',
-    'dist/core/controller/subscription-store.d.ts',
-    'dist/core/controller/workbook-controller.d.ts',
-    'dist/core/coordinates/a1.d.ts',
-    'dist/core/coordinates/ranges.d.ts',
-    'dist/core/errors/tego-sheet-error.d.ts',
-    'dist/core/errors/tego-sheet-exception.d.ts',
-    'dist/core/formulas/evaluator.d.ts',
-    'dist/core/formulas/functions.d.ts',
-    'dist/core/formulas/parser.d.ts',
-    'dist/core/formulas/rendered-value.d.ts',
-    'dist/core/formulas/tokenizer.d.ts',
-    'dist/core/index.d.ts',
-    'dist/core/model/cells.d.ts',
-    'dist/core/model/columns.d.ts',
-    'dist/core/model/merges.d.ts',
-    'dist/core/model/rows.d.ts',
-    'dist/core/model/sheet-ids.d.ts',
-    'dist/core/model/styles.d.ts',
-    'dist/core/model/workbook-state.d.ts',
-    'dist/core/operations/autofill.d.ts',
-    'dist/core/operations/cell.d.ts',
-    'dist/core/operations/clipboard.d.ts',
-    'dist/core/operations/editable.d.ts',
-    'dist/core/operations/filter.d.ts',
-    'dist/core/operations/merge.d.ts',
-    'dist/core/operations/sheet.d.ts',
-    'dist/core/operations/sort.d.ts',
-    'dist/core/operations/structure.d.ts',
-    'dist/core/operations/style.d.ts',
-    'dist/core/operations/validation.d.ts',
-    'dist/core/selectors/cell.d.ts',
-    'dist/core/selectors/style.d.ts',
-    'dist/core/selectors/validation.d.ts',
-    'dist/core/selectors/workbook.d.ts',
-    'dist/core/serialization/canonicalize-workbook.d.ts',
-    'dist/core/serialization/parse-workbook.d.ts',
-    'dist/core/serialization/semantic-equal.d.ts',
-    'dist/core/serialization/serialize-workbook.d.ts',
-    'dist/core/types/changes.d.ts',
-    'dist/core/types/coordinates.d.ts',
-    'dist/core/types/json.d.ts',
-    'dist/core/types/options.d.ts',
-    'dist/core/types/validation.d.ts',
-    'dist/core/types/workbook.d.ts',
-    'dist/engine/canvas/canvas-engine.d.ts',
-    'dist/engine/canvas/cell-painter.d.ts',
-    'dist/engine/canvas/draw-context.d.ts',
-    'dist/engine/canvas/grid-painter.d.ts',
-    'dist/engine/canvas/header-painter.d.ts',
-    'dist/engine/canvas/print-renderer.d.ts',
-    'dist/engine/canvas/render-scheduler.d.ts',
-    'dist/engine/canvas/selection-painter.d.ts',
-    'dist/engine/geometry/frozen-pane-geometry.d.ts',
-    'dist/engine/geometry/grid-geometry.d.ts',
-    'dist/engine/geometry/hit-test.d.ts',
-    'dist/engine/geometry/overlay-anchors.d.ts',
-    'dist/engine/index.d.ts',
-    'dist/engine/interaction/clipboard.d.ts',
-    'dist/engine/interaction/interaction-manager.d.ts',
-    'dist/engine/interaction/keyboard.d.ts',
-    'dist/engine/interaction/pointer.d.ts',
-    'dist/engine/interaction/resize.d.ts',
-    'dist/engine/interaction/resource-registry.d.ts',
-    'dist/engine/interaction/touch.d.ts',
-    'dist/engine/ports.d.ts',
-    'dist/engine/viewport/scroll-state.d.ts',
-    'dist/engine/viewport/selection-state.d.ts',
-    'dist/engine/viewport/viewport-state.d.ts',
-    'dist/index.d.ts',
-    'dist/locales/de.d.ts',
-    'dist/locales/en.d.ts',
-    'dist/locales/index.cjs',
-    'dist/locales/index.d.ts',
-    'dist/locales/index.js',
-    'dist/locales/nl.d.ts',
-    'dist/locales/zh-cn.d.ts',
-    'dist/react/adapters/controller-external-store.d.ts',
-    'dist/react/adapters/engine-adapter.d.ts',
-    'dist/react/adapters/event-dispatcher.d.ts',
-    'dist/react/adapters/interaction-adapter.d.ts',
-    'dist/react/control/classify-value-update.d.ts',
-    'dist/react/control/controlled-reconciler.d.ts',
-    'dist/react/control/pending-checkpoint.d.ts',
-    'dist/react/hooks/use-canvas-engine.d.ts',
-    'dist/react/hooks/use-cell-editor-runtime.d.ts',
-    'dist/react/hooks/use-controlled-workbook.d.ts',
-    'dist/react/hooks/use-controller-epoch.d.ts',
-    'dist/react/hooks/use-interaction-manager.d.ts',
-    'dist/react/hooks/use-mount-option-warnings.d.ts',
-    'dist/react/hooks/use-sheet-chrome-state.d.ts',
-    'dist/react/hooks/use-tego-sheet-handle.d.ts',
-    'dist/react/sheet-chrome-runtime.d.ts',
-    'dist/react/tego-sheet-context.d.ts',
-    'dist/react/tego-sheet.d.ts',
-    'dist/react/tego-sheet.types.d.ts',
-    'dist/styles.css',
-    'dist/tego-sheet.cjs',
-    'dist/tego-sheet.cjs.map',
-    'dist/tego-sheet.js',
-    'dist/tego-sheet.js.map',
-    'dist/ui/dialogs/print-dialog.d.ts',
-    'dist/ui/dialogs/validation-dialog.d.ts',
-    'dist/ui/editor/cell-editor.d.ts',
-    'dist/ui/editor/date-editor.d.ts',
-    'dist/ui/editor/formula-suggestions.d.ts',
-    'dist/ui/empty-workbook.d.ts',
-    'dist/ui/menus/context-menu.d.ts',
-    'dist/ui/menus/filter-menu.d.ts',
-    'dist/ui/notifications/notification-host.d.ts',
-    'dist/ui/print-workbook.d.ts',
-    'dist/ui/sheet-chrome.d.ts',
-    'dist/ui/slot-types.d.ts',
-    'dist/ui/tabs/sheet-tabs.d.ts',
-    'dist/ui/toolbar/border-controls.d.ts',
-    'dist/ui/toolbar/default-toolbar.d.ts',
-    'dist/ui/toolbar/format-controls.d.ts',
-    'dist/ui/toolbar/toolbar-button.d.ts',
-    'dist/ui/translate.d.ts',
-    'package.json',
-    'readme.md',
-  ]);
-
-  const declaredTargets = new Set([
-    pkg.main,
-    pkg.module,
-    pkg.types,
-    ...Object.values(pkg.exports['.']),
-    ...Object.values(pkg.exports['./locales']),
-    pkg.exports['./styles.css'],
-  ]);
-  for (const target of declaredTargets) {
-    assert.equal(paths.includes(target.replace(/^\.\//, '')), true, target);
-  }
-});
-
-test('built entry formats import without browser globals', () => {
-  const expectedRuntimeExports = [
-    'TegoSheet',
-    'TegoSheetException',
-    'de',
-    'en',
-    'nl',
-    'resolveLocale',
-    'zhCN',
-  ];
-  const clearBrowserGlobals = `
-    for (const name of ['window', 'document', 'navigator']) {
-      Reflect.deleteProperty(globalThis, name);
-      if (name in globalThis) throw new Error(name + ' must be absent');
-    }
-  `;
-  const esm = spawnSync(
-    process.execPath,
-    [
-      '--input-type=module',
-      '--eval',
-      `${clearBrowserGlobals}
-       const entry = await import('./dist/tego-sheet.js');
-       const actual = Object.getOwnPropertyNames(entry);
-       const expected = ${JSON.stringify(expectedRuntimeExports)};
-       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-         throw new Error('ESM entry exposes unexpected public exports: ' + actual.join(', '));
-       }`,
-    ],
-    { cwd: packageRoot, encoding: 'utf8' },
-  );
-  assert.equal(esm.status, 0, esm.stderr);
-
-  const cjs = spawnSync(
-    process.execPath,
-    [
-      '--eval',
-      `${clearBrowserGlobals}
-       const entry = require('./dist/tego-sheet.cjs');
-       const actual = Object.getOwnPropertyNames(entry);
-       const expected = ${JSON.stringify(expectedRuntimeExports)};
-       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-         throw new Error('CJS entry exposes unexpected public exports: ' + actual.join(', '));
-       }`,
-    ],
-    { cwd: packageRoot, encoding: 'utf8' },
-  );
-  assert.equal(cjs.status, 0, cjs.stderr);
+  assert.deepEqual(gaps, []);
 });

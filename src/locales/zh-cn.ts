@@ -157,5 +157,3 @@ export const zhCN: LocaleDefinition = {
     },
   },
 };
-
-export default zhCN;

@@ -10,6 +10,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: 'tego-sheet/locales/zh-cn',
+        replacement: resolve(repositoryRoot, 'src/locales/zh-cn.ts'),
+      },
+      {
         find: 'tego-sheet/styles.css',
         replacement: resolve(repositoryRoot, 'src/ui/styles/index.less'),
       },

@@ -11,7 +11,8 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: 'tego-sheet/styles.css', replacement: resolve(projectRoot, 'src/ui/styles/index.less') },
-      { find: 'tego-sheet/locales', replacement: resolve(projectRoot, 'src/locales/index.ts') },
+      { find: 'tego-sheet/locales/de', replacement: resolve(projectRoot, 'src/locales/de.ts') },
+      { find: 'tego-sheet/locales/en', replacement: resolve(projectRoot, 'src/locales/en.ts') },
       { find: 'tego-sheet', replacement: resolve(projectRoot, 'src/index.ts') },
     ],
   },

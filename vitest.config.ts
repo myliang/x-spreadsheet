@@ -9,6 +9,8 @@ const sharedExcludes = [
   'playwright-report/**',
   'test-results/**',
   'tests/**/*.check.*',
+  'tests/package/**/*.test.*',
+  'tests/ssr/public-entrypoints.test.ts',
   'tests/browser/**',
   'tests/visual/**',
 ];

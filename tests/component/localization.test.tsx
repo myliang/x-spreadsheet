@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { de, nl, TegoSheet } from '../../src';
+import { TegoSheet } from '../../src';
+import { de, nl } from '../../src/locales';
 import { createCanvasHarness } from '../helpers/canvas-harness';
 import { FormulaSuggestions } from '../../src/ui/editor/formula-suggestions';
 import { createTranslator } from '../../src/ui/translate';

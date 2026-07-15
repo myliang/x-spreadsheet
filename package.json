@@ -12,12 +12,28 @@
       "import": "./dist/tego-sheet.js",
       "require": "./dist/tego-sheet.cjs"
     },
-    "./locales": {
-      "types": "./dist/locales/index.d.ts",
-      "import": "./dist/locales/index.js",
-      "require": "./dist/locales/index.cjs"
+    "./styles.css": "./dist/styles.css",
+    "./locales/en": {
+      "types": "./dist/locales/en.d.ts",
+      "import": "./dist/locales/en.js",
+      "require": "./dist/locales/en.cjs"
     },
-    "./styles.css": "./dist/styles.css"
+    "./locales/de": {
+      "types": "./dist/locales/de.d.ts",
+      "import": "./dist/locales/de.js",
+      "require": "./dist/locales/de.cjs"
+    },
+    "./locales/nl": {
+      "types": "./dist/locales/nl.d.ts",
+      "import": "./dist/locales/nl.js",
+      "require": "./dist/locales/nl.cjs"
+    },
+    "./locales/zh-cn": {
+      "types": "./dist/locales/zh-cn.d.ts",
+      "import": "./dist/locales/zh-cn.js",
+      "require": "./dist/locales/zh-cn.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
@@ -36,8 +52,8 @@
     "test:unit": "vitest run --project unit --project component --project architecture",
     "test:browser": "playwright test tests/browser",
     "test:visual": "playwright test --config playwright.visual.config.ts",
-    "test:ssr": "vitest run tests/ssr tests/unit/bootstrap.test.ts",
-    "test:package": "npm run build && node --test tests/package/*.check.mjs",
+    "test:ssr": "node scripts/test-ssr.ts",
+    "test:package": "node scripts/test-package.ts",
     "test:parity-gate": "node --test tests/parity/manifest-gate.check.ts && node scripts/verify-parity-manifest.ts test-results/parity-evidence.ndjson",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",

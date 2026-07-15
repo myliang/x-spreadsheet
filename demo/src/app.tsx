@@ -1,12 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   TegoSheet,
-  zhCN,
   type TegoSheetHandle,
   type ToolbarRenderer,
   type WorkbookData,
   type WorkbookInput,
 } from 'tego-sheet';
+import { zhCN } from 'tego-sheet/locales/zh-cn';
 
 const legacyWorkbook: WorkbookData = [{
   name: 'Budget',

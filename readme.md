@@ -1,35 +1,111 @@
 # tego-sheet
 
-`tego-sheet` is an in-progress React and TypeScript spreadsheet library rewrite.
+`tego-sheet` is a React, TypeScript, and Canvas spreadsheet component. It keeps the sparse workbook JSON used by x-data-spreadsheet while replacing the constructor, global locale registry, and event emitter with a React-only API.
 
-> **Status:** The repository currently provides only the modern package, test, and SSR-safe build foundation. The public React spreadsheet API is still being implemented, so this package is not release-ready and does not yet expose runtime component behavior.
-
-## Peer requirements
-
-Consumers will need compatible React peers:
-
-- `react` `^19.2.7`
-- `react-dom` `^19.2.7`
-
-## Development
+## Install
 
 ```sh
-npm install
-npm run typecheck
-npm run lint
-npm test
-npm run build
+npm install tego-sheet react react-dom
 ```
 
-The library build produces ESM, CommonJS, and TypeScript declarations. Importing the current entry is safe in server-side environments and does not evaluate browser globals.
+Import the component and its explicitly exported stylesheet:
 
-## Design
+```tsx
+import { TegoSheet } from 'tego-sheet';
+import 'tego-sheet/styles.css';
 
-The rewrite architecture and implementation sequence are documented in:
+export function Workbook() {
+  return <TegoSheet defaultValue={[]} />;
+}
+```
 
-- [`docs/superpowers/specs/2026-07-13-tego-sheet-react-rewrite-design.md`](docs/superpowers/specs/2026-07-13-tego-sheet-react-rewrite-design.md)
-- [`docs/superpowers/plans/2026-07-14-tego-sheet-react-rewrite.md`](docs/superpowers/plans/2026-07-14-tego-sheet-react-rewrite.md)
+## Uncontrolled and controlled workbooks
 
-## License
+`defaultValue` initializes an uncontrolled workbook. The component then owns edits; `onChange` still receives an isolated workbook and typed change metadata.
 
-MIT
+```tsx
+import { TegoSheet, type WorkbookData } from 'tego-sheet';
+
+const initial: WorkbookData = [{
+  name: 'Budget',
+  rows: { 0: { cells: { 0: { text: 'Item' }, 1: { text: 'Amount' } } } },
+}];
+
+export function Uncontrolled() {
+  return <TegoSheet defaultValue={initial} onChange={(next, change) => {
+    console.log(change.kind, next);
+  }} />;
+}
+```
+
+Use `value` when the parent owns the accepted workbook. Keep the same `value` reference for unrelated renders; supply a new value to accept, reject, or replace optimistic edits.
+
+```tsx
+import { useState } from 'react';
+import { TegoSheet, type WorkbookData } from 'tego-sheet';
+
+export function Controlled() {
+  const [value, setValue] = useState<WorkbookData>([]);
+  return <TegoSheet value={value} onChange={setValue} />;
+}
+```
+
+Do not pass both `value` and `defaultValue`, and do not switch modes after mount.
+
+## Callbacks and ref commands
+
+The public callbacks are `onChange`, `onActiveSheetChange`, `onSelectionChange`, `onCellEdit`, `onPaste`, and `onError`. They observe committed state; failed commands do not produce success callbacks.
+
+`TegoSheetHandle` exposes `focus`, `getValue`, `getCell`, `getCellStyle`, `setCellText`, sheet add/delete/rename/activate commands, `undo`, `redo`, `validate`, `print`, and `recalculateLayout`. It never exposes the controller, Canvas engine, or mutable internal objects. Synchronous programmer-contract failures are instances of the public `TegoSheetException` class; recoverable browser failures use `onError`.
+
+```tsx
+import { useRef } from 'react';
+import { TegoSheet, type TegoSheetHandle } from 'tego-sheet';
+
+export function WithRef() {
+  const sheet = useRef<TegoSheetHandle>(null);
+  return <>
+    <button onClick={() => sheet.current?.undo()}>Undo</button>
+    <TegoSheet ref={sheet} defaultValue={[]} onCellEdit={event => console.log(event.text)} />
+  </>;
+}
+```
+
+## Toolbar and sheet-tab slots
+
+Set `toolbar` or `sheetTabs` to `false` to hide that region, use the default by omitting the prop, or pass a typed renderer. Slot renderers receive a read-only view model and typed actions, never implementation objects.
+
+```tsx
+import { TegoSheet, type ToolbarRenderer } from 'tego-sheet';
+
+const toolbar: ToolbarRenderer = state => (
+  <button disabled={!state.canUndo} onClick={() => state.execute({ type: 'undo' })}>
+    Undo
+  </button>
+);
+
+export function CustomChrome() {
+  return <TegoSheet defaultValue={[]} toolbar={toolbar} sheetTabs={false} />;
+}
+```
+
+## Locales
+
+Locales are isolated per component. Import only the dictionary you use; English remains the recursive fallback for partial custom messages.
+
+```tsx
+import { TegoSheet } from 'tego-sheet';
+import { zhCN } from 'tego-sheet/locales/zh-cn';
+
+export function ChineseWorkbook() {
+  return <TegoSheet defaultValue={[]} locale={zhCN} />;
+}
+```
+
+The public locale subpaths are `tego-sheet/locales/en`, `/de`, `/nl`, and `/zh-cn`. No aggregate locale entry or internal source subpath is public.
+
+## Legacy workbook JSON
+
+Existing sparse sheet, row, column, cell, style, merge, validation, filter, and extension-key data can be passed directly through `value` or `defaultValue`. `getValue()` and `onChange` return the compatible serialized shape. Runtime `SheetId` values are opaque UI identities and are never added to the JSON.
+
+See [Migration from x-data-spreadsheet](docs/migration-from-x-data-spreadsheet.md) for option mappings, the five intentional correctness fixes, and removal of the old imperative API.

@@ -5,11 +5,6 @@ it('imports the library entry without browser globals', async () => {
 
   expect(Object.getOwnPropertyNames(entry)).toEqual([
     'TegoSheetException',
-    'de',
-    'en',
-    'nl',
-    'resolveLocale',
-    'zhCN',
     'TegoSheet',
   ]);
 });

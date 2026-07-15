@@ -152,5 +152,3 @@ export const nl: LocaleDefinition = {
     },
   },
 };
-
-export default nl;

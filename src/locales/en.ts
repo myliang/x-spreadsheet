@@ -157,5 +157,3 @@ export const en: LocaleDefinition = {
     },
   },
 };
-
-export default en;
