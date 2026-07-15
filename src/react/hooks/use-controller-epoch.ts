@@ -27,6 +27,7 @@ export interface ControllerEpochRuntime {
     input: WorkbookInput,
     options: WorkbookControllerOptions,
   ) => WorkbookController;
+  readonly createEpochSlot?: () => ControllerEpochSlot;
 }
 
 interface InitialEpoch {
@@ -42,7 +43,7 @@ interface ActiveEpoch {
   readonly isActive: () => boolean;
 }
 
-interface EpochSlot {
+export interface ControllerEpochSlot {
   readonly activate: (epoch: ActiveEpoch) => void;
   readonly deactivate: (epoch: ActiveEpoch) => void;
   readonly getSnapshot: () => ActiveEpoch | null;
@@ -56,13 +57,24 @@ const defaultCreateController = (
   options: WorkbookControllerOptions,
 ) => new WorkbookController(input, options);
 
-function createEpochSlot(): EpochSlot {
+export function createControllerEpochSlot(): ControllerEpochSlot {
   let snapshot: ActiveEpoch | null = null;
   const listeners = new Set<() => void>();
   const publish = () => {
+    let firstError: unknown;
+    let failed = false;
     for (const listener of [...listeners]) {
-      if (listeners.has(listener)) listener();
+      if (!listeners.has(listener)) continue;
+      try {
+        listener();
+      } catch (error) {
+        if (!failed) {
+          failed = true;
+          firstError = error;
+        }
+      }
     }
+    if (failed) throw firstError;
   };
   return {
     activate(epoch) {
@@ -82,25 +94,17 @@ function createEpochSlot(): EpochSlot {
   };
 }
 
-function disposeEpoch(
-  store: ControllerExternalStore,
-  controller: WorkbookController,
-): void {
-  const errors: unknown[] = [];
+function attempt(errors: unknown[], operation: () => void): void {
   try {
-    store.dispose();
+    operation();
   } catch (error) {
     errors.push(error);
   }
-  try {
-    controller.dispose();
-  } catch (error) {
-    errors.push(error);
-  }
+}
+
+function throwCollected(errors: readonly unknown[], message: string): never {
   if (errors.length === 1) throw errors[0];
-  if (errors.length > 1) {
-    throw new AggregateError(errors, 'Controller epoch cleanup failed');
-  }
+  throw new AggregateError(errors, message);
 }
 
 function contractViolation(message: string): TegoSheetException {
@@ -134,6 +138,7 @@ export function useControllerEpoch(
     mode: currentMode,
     readOnly: props.readOnly ?? false,
   }));
+  const createEpochSlot = runtime.createEpochSlot ?? createControllerEpochSlot;
   const [slot] = useState(createEpochSlot);
   const createController = runtime.createController ?? defaultCreateController;
 
@@ -151,20 +156,49 @@ export function useControllerEpoch(
 
   useEffect(() => {
     let activeFlag = true;
-    const controller = createController(initial.input, { readOnly: initial.readOnly });
-    const store = createControllerExternalStore(controller);
-    const epoch: ActiveEpoch = {
-      controller,
-      store,
-      mode: initial.mode,
-      isActive: () => activeFlag,
-    };
-    slot.activate(epoch);
-    return () => {
+    let controller: WorkbookController | null = null;
+    let store: ControllerExternalStore | null = null;
+    let epoch: ActiveEpoch | null = null;
+    try {
+      const createdController = createController(initial.input, { readOnly: initial.readOnly });
+      controller = createdController;
+      const createdStore = createControllerExternalStore(createdController);
+      store = createdStore;
+      const createdEpoch: ActiveEpoch = {
+        controller: createdController,
+        store: createdStore,
+        mode: initial.mode,
+        isActive: () => activeFlag,
+      };
+      epoch = createdEpoch;
+      slot.activate(createdEpoch);
+      return () => {
+        activeFlag = false;
+        const errors: unknown[] = [];
+        attempt(errors, () => slot.deactivate(createdEpoch));
+        attempt(errors, () => createdStore.dispose());
+        attempt(errors, () => createdController.dispose());
+        if (errors.length > 0) {
+          throwCollected(errors, 'Controller epoch cleanup failed');
+        }
+      };
+    } catch (error) {
       activeFlag = false;
-      slot.deactivate(epoch);
-      disposeEpoch(store, controller);
-    };
+      const errors: unknown[] = [error];
+      if (epoch !== null) {
+        const activatedEpoch = epoch;
+        attempt(errors, () => slot.deactivate(activatedEpoch));
+      }
+      if (store !== null) {
+        const createdStore = store;
+        attempt(errors, () => createdStore.dispose());
+      }
+      if (controller !== null) {
+        const createdController = controller;
+        attempt(errors, () => createdController.dispose());
+      }
+      throwCollected(errors, 'Controller epoch setup failed');
+    }
   }, [createController, initial, slot]);
 
   const snapshot = useSyncExternalStore<ControllerSnapshot | null>(

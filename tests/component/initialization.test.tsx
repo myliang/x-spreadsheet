@@ -10,8 +10,82 @@ import {
   createControllerExternalStore,
   type ControllerExternalStore,
 } from '../../src/react/adapters/controller-external-store';
-import { useControllerEpoch } from '../../src/react/hooks/use-controller-epoch';
+import {
+  createControllerEpochSlot,
+  useControllerEpoch,
+} from '../../src/react/hooks/use-controller-epoch';
 import { renderSheet } from '../helpers/render-sheet';
+
+type ActiveEpochLike = Pick<
+  NonNullable<ReturnType<typeof useControllerEpoch>>,
+  'controller' | 'store' | 'mode' | 'isActive'
+>;
+
+interface TestEpochSlot {
+  activate(epoch: ActiveEpochLike): void;
+  deactivate(epoch: ActiveEpochLike): void;
+  getSnapshot(): ActiveEpochLike | null;
+  subscribe(listener: () => void): () => void;
+}
+
+function createTestEpochSlot(): TestEpochSlot {
+  let snapshot: ActiveEpochLike | null = null;
+  const listeners = new Set<() => void>();
+  const publish = () => {
+    for (const listener of [...listeners]) {
+      if (listeners.has(listener)) listener();
+    }
+  };
+  return {
+    activate(epoch) {
+      snapshot = epoch;
+      publish();
+    },
+    deactivate(epoch) {
+      if (snapshot !== epoch) return;
+      snapshot = null;
+      publish();
+    },
+    getSnapshot: () => snapshot,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
+it('commits slot transitions and drains listeners before rethrowing the first error', () => {
+  const controller = new WorkbookController([{}]);
+  const store = createControllerExternalStore(controller);
+  const slot = createControllerEpochSlot();
+  const epoch: ActiveEpochLike = {
+    controller,
+    store,
+    mode: 'uncontrolled',
+    isActive: () => true,
+  };
+  const activateError = new Error('activate listener failed');
+  const deactivateError = new Error('deactivate listener failed');
+  let listenerError = activateError;
+  const first = vi.fn(() => {
+    throw listenerError;
+  });
+  const second = vi.fn();
+  slot.subscribe(first);
+  slot.subscribe(second);
+
+  expect(() => slot.activate(epoch)).toThrow(activateError);
+  expect(slot.getSnapshot()).toBe(epoch);
+  expect(second).toHaveBeenCalledOnce();
+
+  listenerError = deactivateError;
+  expect(() => slot.deactivate(epoch)).toThrow(deactivateError);
+  expect(slot.getSnapshot()).toBeNull();
+  expect(second).toHaveBeenCalledTimes(2);
+
+  store.dispose();
+  controller.dispose();
+});
 
 it('initializes a single blank sheet from an empty object', () => {
   const rendered = renderSheet({ defaultValue: {} });
@@ -82,6 +156,223 @@ it('creates no controller for an aborted render and disposes every Strict Mode e
   expect(disposed).toBe(1);
   mounted.unmount();
   expect(disposed).toBe(2);
+});
+
+it('rolls back an activated epoch when a slot listener throws during setup', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const activateError = new Error('activate listener failed');
+  const slot = createTestEpochSlot();
+  let throwsRemaining = 1;
+  slot.subscribe(() => {
+    if (throwsRemaining > 0) {
+      throwsRemaining -= 1;
+      throw activateError;
+    }
+  });
+  let controller: WorkbookController | undefined;
+  let activatedEpoch: ActiveEpochLike | undefined;
+  const dispose = vi.fn();
+  const activate = slot.activate.bind(slot);
+  slot.activate = epoch => {
+    activatedEpoch = epoch;
+    activate(epoch);
+  };
+  const createController = (input: WorkbookInput, options: WorkbookControllerOptions) => {
+    controller = new WorkbookController(input, options);
+    const actualDispose = controller.dispose.bind(controller);
+    controller.dispose = () => {
+      dispose();
+      actualDispose();
+    };
+    return controller;
+  };
+  const runtime = {
+    createController,
+    createEpochSlot: () => slot,
+  };
+
+  function Mounted() {
+    useControllerEpoch({ defaultValue: [{}] }, runtime);
+    return null;
+  }
+
+  let unmount: (() => void) | undefined;
+  let thrown: unknown;
+  try {
+    unmount = render(<Mounted />).unmount;
+  } catch (error) {
+    thrown = error;
+  }
+  if (thrown === undefined) unmount?.();
+
+  expect(thrown).toBe(activateError);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(slot.getSnapshot()).toBeNull();
+  expect(activatedEpoch?.isActive()).toBe(false);
+  expect(() => controller?.validate()).toThrow(/disposed/i);
+});
+
+it('disposes a created controller when initial store snapshot construction fails', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const snapshotError = new Error('initial snapshot failed');
+  let controller: WorkbookController | undefined;
+  const dispose = vi.fn();
+  const createController = (input: WorkbookInput, options: WorkbookControllerOptions) => {
+    controller = new WorkbookController(input, options);
+    controller.getSnapshot = () => {
+      throw snapshotError;
+    };
+    const actualDispose = controller.dispose.bind(controller);
+    controller.dispose = () => {
+      dispose();
+      actualDispose();
+    };
+    return controller;
+  };
+
+  function Mounted() {
+    useControllerEpoch({ defaultValue: [{}] }, { createController });
+    return null;
+  }
+
+  expect(() => render(<Mounted />)).toThrow(snapshotError);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(() => controller?.validate()).toThrow(/disposed/i);
+});
+
+it('preserves setup and both resource cleanup errors in order', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const activateError = new Error('activate failed');
+  const storeDisposeError = new Error('store dispose failed');
+  const controllerDisposeError = new Error('controller dispose failed');
+  const slot = createTestEpochSlot();
+  let throwsRemaining = 1;
+  slot.subscribe(() => {
+    if (throwsRemaining > 0) {
+      throwsRemaining -= 1;
+      throw activateError;
+    }
+  });
+  let controller: WorkbookController | undefined;
+  let activatedEpoch: ActiveEpochLike | undefined;
+  const activate = slot.activate.bind(slot);
+  slot.activate = epoch => {
+    activatedEpoch = epoch;
+    const actualStoreDispose = epoch.store.dispose.bind(epoch.store);
+    (epoch.store as { dispose: () => void }).dispose = () => {
+      actualStoreDispose();
+      throw storeDisposeError;
+    };
+    activate(epoch);
+  };
+  const dispose = vi.fn();
+  const createController = (input: WorkbookInput, options: WorkbookControllerOptions) => {
+    controller = new WorkbookController(input, options);
+    const actualDispose = controller.dispose.bind(controller);
+    controller.dispose = () => {
+      dispose();
+      actualDispose();
+      throw controllerDisposeError;
+    };
+    return controller;
+  };
+  const runtime = {
+    createController,
+    createEpochSlot: () => slot,
+  };
+
+  function Mounted() {
+    useControllerEpoch({ defaultValue: [{}] }, runtime);
+    return null;
+  }
+
+  let unmount: (() => void) | undefined;
+  let thrown: unknown;
+  try {
+    unmount = render(<Mounted />).unmount;
+  } catch (error) {
+    thrown = error;
+  }
+  if (thrown === undefined) {
+    try {
+      unmount?.();
+    } catch {
+      // The pre-fix path reaches normal teardown instead of failing setup.
+    }
+  }
+  expect(thrown).toBeInstanceOf(AggregateError);
+  expect((thrown as AggregateError).errors).toEqual([
+    activateError,
+    storeDisposeError,
+    controllerDisposeError,
+  ]);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(slot.getSnapshot()).toBeNull();
+  expect(activatedEpoch?.isActive()).toBe(false);
+  expect(() => controller?.validate()).toThrow(/disposed/i);
+});
+
+it('attempts slot and both resource cleanups after making the epoch inactive', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const deactivateError = new Error('deactivate listener failed');
+  const storeDisposeError = new Error('store dispose failed');
+  const controllerDisposeError = new Error('controller dispose failed');
+  const slot = createTestEpochSlot();
+  let throwOnDeactivate = false;
+  let activeDuringDeactivate: boolean | undefined;
+  let epoch: ActiveEpochLike | undefined;
+  slot.subscribe(() => {
+    if (throwOnDeactivate && slot.getSnapshot() === null) {
+      activeDuringDeactivate = epoch?.isActive();
+      throw deactivateError;
+    }
+  });
+  const dispose = vi.fn();
+  const createController = (input: WorkbookInput, options: WorkbookControllerOptions) => {
+    const controller = new WorkbookController(input, options);
+    const actualDispose = controller.dispose.bind(controller);
+    controller.dispose = () => {
+      dispose();
+      actualDispose();
+      throw controllerDisposeError;
+    };
+    return controller;
+  };
+  const runtime = {
+    createController,
+    createEpochSlot: () => slot,
+  };
+
+  function Mounted() {
+    const active = useControllerEpoch({ defaultValue: [{}] }, runtime);
+    if (active !== null) epoch = active;
+    return null;
+  }
+
+  const mounted = render(<Mounted />);
+  if (epoch === undefined) throw new Error('epoch did not activate');
+  const actualStoreDispose = epoch.store.dispose.bind(epoch.store);
+  (epoch.store as { dispose: () => void }).dispose = () => {
+    actualStoreDispose();
+    throw storeDisposeError;
+  };
+  throwOnDeactivate = true;
+  let thrown: unknown;
+  try {
+    mounted.unmount();
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toBeInstanceOf(AggregateError);
+  expect((thrown as AggregateError).errors).toEqual([
+    deactivateError,
+    storeDisposeError,
+    controllerDisposeError,
+  ]);
+  expect(activeDuringDeactivate).toBe(false);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(() => epoch?.controller.validate()).toThrow(/disposed/i);
 });
 
 it('makes an unmounted epoch synchronously inactive', () => {
