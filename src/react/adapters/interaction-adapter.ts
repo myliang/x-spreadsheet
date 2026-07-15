@@ -46,8 +46,26 @@ export interface EditorSelectionTarget {
   readonly state: SelectionState;
 }
 
-function rootPort(root: HTMLElement): InteractionRootPort {
-  return root as unknown as InteractionRootPort;
+function rootPort(root: HTMLElement, surface: HTMLElement): InteractionRootPort {
+  return {
+    addEventListener: (type, listener, options) => root.addEventListener(
+      type,
+      listener as EventListener,
+      options as boolean | AddEventListenerOptions | undefined,
+    ),
+    removeEventListener: (type, listener, options) => root.removeEventListener(
+      type,
+      listener as EventListener,
+      options as boolean | EventListenerOptions | undefined,
+    ),
+    contains: target => contains(root, target),
+    getBoundingClientRect: () => {
+      const rect = surface.getBoundingClientRect();
+      return surface.clientWidth > 0 || surface.clientHeight > 0 || rect.width > 0 || rect.height > 0
+        ? rect
+        : root.getBoundingClientRect();
+    },
+  };
 }
 
 function contains(root: HTMLElement, target: unknown): boolean {
@@ -107,7 +125,7 @@ export function createInteractionAdapter(
   });
   return createInteractionManager({
     ports: {
-      root: rootPort(options.root),
+      root: rootPort(options.root, options.surface),
       globalTarget: options.globalTarget as unknown as InteractionRootPort,
       clipboard: clipboardPort(),
       getSnapshot: () => {
@@ -172,7 +190,7 @@ export function createInteractionAdapter(
       },
       minColumnWidth: options.minimumColumnWidth,
       ...(typeof ResizeObserver === 'undefined' ? {} : {
-        observeRoot: (callback: () => void) => observeRoot(options.root, callback),
+        observeRoot: (callback: () => void) => observeRoot(options.surface, callback),
       }),
       setTimer(callback, delay) {
         const id = options.globalTarget.setTimeout(callback, delay);

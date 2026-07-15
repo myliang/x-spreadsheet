@@ -39,5 +39,11 @@ export default defineConfig({
     timezoneId: 'UTC',
     trace: 'retain-on-failure',
   },
+  webServer: {
+    command: 'pnpm exec vite --config tests/browser/harness/vite.config.ts',
+    port: 4173,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
   workers: 1,
 });

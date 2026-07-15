@@ -19,12 +19,15 @@ export function FilterMenu(props: {
             <input
               type="checkbox"
               checked={selected.has(value)}
-              onChange={event => setSelected(current => {
+              onChange={event => {
+                const checked = event.currentTarget.checked;
+                setSelected(current => {
                 const next = new Set(current);
-                if (event.currentTarget.checked) next.add(value);
+                if (checked) next.add(value);
                 else next.delete(value);
                 return next;
-              })}
+                });
+              }}
             />
             {value || props.t('filter.empty', 'Empty')}
           </label>

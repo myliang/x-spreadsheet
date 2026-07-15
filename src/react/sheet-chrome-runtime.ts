@@ -5,6 +5,7 @@ import type {
   SheetData,
   SheetId,
 } from '../core';
+import { parseA1Range } from '../core';
 import {
   mountPrintPages,
   type PrintWorkbookOptions,
@@ -22,8 +23,20 @@ export function filterValuesForSelection(
   sheet: SheetData,
   selection: Selection,
 ): readonly string[] {
+  let range = selection.range;
+  if (sheet.autofilter?.ref !== undefined) {
+    try {
+      const filterRange = parseA1Range(sheet.autofilter.ref);
+      if (
+        selection.active.column >= filterRange.start.column
+        && selection.active.column <= filterRange.end.column
+      ) range = filterRange;
+    } catch {
+      // Invalid imported filter references remain inert until replaced by a valid command.
+    }
+  }
   const values = new Set<string>();
-  for (let row = selection.range.start.row + 1; row <= selection.range.end.row; row += 1) {
+  for (let row = range.start.row + 1; row <= range.end.row; row += 1) {
     const rawRow = sheet.rows?.[String(row)];
     const rowRecord = rawRow !== null && typeof rawRow === 'object' && !Array.isArray(rawRow)
       ? rawRow as Readonly<Record<string, unknown>>

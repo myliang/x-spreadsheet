@@ -53,11 +53,14 @@ export interface EngineAdapter {
 
 const MAX_CLIPBOARD_CELLS = 250_000;
 
-function dimensions(root: HTMLElement): { readonly width: number; readonly height: number } {
-  const rect = root.getBoundingClientRect();
+function dimensions(surface: HTMLElement, fallback: HTMLElement): { readonly width: number; readonly height: number } {
+  const rect = typeof surface.getBoundingClientRect === 'function'
+    ? surface.getBoundingClientRect()
+    : undefined;
+  const fallbackRect = fallback.getBoundingClientRect();
   return {
-    width: Math.max(0, root.clientWidth || rect.width || 0),
-    height: Math.max(0, root.clientHeight || rect.height || 0),
+    width: Math.max(0, surface.clientWidth || rect?.width || fallback.clientWidth || fallbackRect.width || 0),
+    height: Math.max(0, surface.clientHeight || rect?.height || fallback.clientHeight || fallbackRect.height || 0),
   };
 }
 
@@ -111,7 +114,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     });
     const previousScroll = viewport?.scroll ?? { x: 0, y: 0 };
     viewport = createViewportMetrics(model, {
-      ...dimensions(options.root),
+      ...dimensions(options.canvas, options.root),
       rowHeaderWidth: options.sheetOptions?.rowHeaderWidth,
       scroll: previousScroll,
       freeze: clippedFreeze(sheet.freeze),

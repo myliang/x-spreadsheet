@@ -2,10 +2,11 @@ import type { WorkbookCommand } from '../../core/commands/workbook-command';
 import { invalidCommand } from '../../core/commands/validate-command';
 import { MAX_STRUCTURE_AXIS_CHANGES } from '../../core/operations/structure';
 import type { ChangeSource } from '../../core/types/changes';
-import type { CellPoint, Selection, SheetId } from '../../core/types/coordinates';
+import type { CellPoint, CellRange, Selection, SheetId } from '../../core/types/coordinates';
 import { TegoSheetException } from '../../core/errors/tego-sheet-exception';
 import { parseClipboardMatrix, type PasteMode } from '../../core/operations/clipboard';
 import { clampScroll, scrollBy } from '../viewport/scroll-state';
+import { overlayAnchor } from '../geometry/overlay-anchors';
 import {
   createRangeSelection,
   createSelectionState,
@@ -115,7 +116,13 @@ interface ResizeDrag {
   size: number;
 }
 
-type DragState = PointerDrag | ResizeDrag;
+interface AutofillDrag {
+  readonly mode: 'autofill';
+  readonly source: Selection;
+  target: CellRange | null;
+}
+
+type DragState = PointerDrag | ResizeDrag | AutofillDrag;
 
 interface InteractionEventLike {
   readonly altKey?: boolean;
@@ -199,6 +206,42 @@ function previousFloat(value: number): number {
   const bits = floatBits.getBigUint64(0);
   floatBits.setBigUint64(0, value > 0 ? bits - 1n : bits + 1n);
   return floatBits.getFloat64(0);
+}
+
+function fillHandleHit(point: Readonly<{ x: number; y: number }>, snapshot: InteractionSnapshot): boolean {
+  const anchor = overlayAnchor(snapshot.selection.range, snapshot.viewport);
+  if (anchor === null) return false;
+  const right = anchor.left + anchor.width;
+  const bottom = anchor.top + anchor.height;
+  return Math.abs(point.x - right) <= 6 && Math.abs(point.y - bottom) <= 6;
+}
+
+function autofillTarget(source: CellRange, point: CellPoint): CellRange | null {
+  if (point.row > source.end.row) {
+    return {
+      start: { row: source.end.row + 1, column: source.start.column },
+      end: { row: point.row, column: source.end.column },
+    };
+  }
+  if (point.row < source.start.row) {
+    return {
+      start: { row: point.row, column: source.start.column },
+      end: { row: source.start.row - 1, column: source.end.column },
+    };
+  }
+  if (point.column > source.end.column) {
+    return {
+      start: { row: source.start.row, column: source.end.column + 1 },
+      end: { row: source.end.row, column: point.column },
+    };
+  }
+  if (point.column < source.start.column) {
+    return {
+      start: { row: source.start.row, column: point.column },
+      end: { row: source.end.row, column: source.start.column - 1 },
+    };
+  }
+  return null;
 }
 
 export class InteractionManager {
@@ -486,6 +529,17 @@ export class InteractionManager {
     this.focused = true;
     const snapshot = this.ports.getSnapshot();
     const point = localPoint(event, this.ports.root);
+    if (fillHandleHit(point, snapshot) && !snapshot.readOnly) {
+      if (!this.ports.commitEditor()) return;
+      this.ports.requestSurfaceFocus();
+      this.drag = {
+        mode: 'autofill',
+        source: publicSelection(snapshot),
+        target: null,
+      };
+      event.preventDefault?.();
+      return;
+    }
     const handle = findResizeHandle(point, snapshot.viewport);
     if (handle !== null && !snapshot.readOnly) {
       if (!this.ports.commitEditor()) return;
@@ -522,6 +576,13 @@ export class InteractionManager {
   private pointerMove(event: InteractionEventLike): void {
     if (this.drag === null || event.buttons === 0) return;
     const snapshot = this.ports.getSnapshot();
+    if (this.drag.mode === 'autofill') {
+      const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
+      if (region?.kind === 'cell') {
+        this.drag.target = autofillTarget(this.drag.source.range, region.cell);
+      }
+      return;
+    }
     if (this.drag.mode === 'selection') {
       const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
       if (region !== null) {
@@ -545,6 +606,24 @@ export class InteractionManager {
   }
 
   private pointerUp(): void {
+    if (this.drag?.mode === 'autofill') {
+      const drag = this.drag;
+      this.drag = null;
+      if (drag.target === null) return;
+      const snapshot = this.ports.getSnapshot();
+      if (snapshot.readOnly) return;
+      this.ports.dispatch({
+        type: 'autofill',
+        source: drag.source,
+        target: {
+          sheet: drag.source.sheet,
+          range: drag.target,
+          active: drag.target.end,
+        },
+        mode: 'all',
+      }, 'pointer');
+      return;
+    }
     if (this.drag?.mode !== 'resize') {
       this.drag = null;
       return;
@@ -790,13 +869,13 @@ export class InteractionManager {
   private clipboardEvent(event: InteractionEventLike, cut: boolean): void {
     if (!this.focused || this.isChromeEvent(event)) return;
     if (cut && this.ports.getSnapshot().readOnly) return;
-    void this.copy(event.clipboardData, cut);
+    void this.copy(event.clipboardData ?? undefined, cut);
     event.preventDefault?.();
   }
 
   private pasteEvent(event: InteractionEventLike): void {
     if (!this.focused || this.isChromeEvent(event) || this.ports.getSnapshot().readOnly) return;
-    void this.paste(event.clipboardData);
+    void this.paste(event.clipboardData ?? undefined);
     event.preventDefault?.();
   }
 
