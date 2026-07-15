@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useCallback,
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
@@ -28,6 +29,10 @@ import {
   type ControllerEpoch,
 } from './hooks/use-controller-epoch';
 import { useInteractionManager } from './hooks/use-interaction-manager';
+import {
+  useControlledWorkbook,
+  type ControlledWorkbookRuntime,
+} from './hooks/use-controlled-workbook';
 import type {
   TegoSheetCallbacks,
   TegoSheetHandle,
@@ -255,6 +260,7 @@ function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
 }
 
 interface RuntimeProps extends TegoSheetProps {
+  readonly controlled: ControlledWorkbookRuntime;
   readonly epoch: ControllerEpoch;
 }
 
@@ -270,7 +276,10 @@ function Runtime(
   const [initialActiveSheetIndex] = useState(() => props.initialActiveSheetIndex ?? 0);
   const [initialSheetCount] = useState(() => props.epoch.snapshot.sheets.length);
   const initialWorkbookWasEmpty = initialSheetCount === 0;
-  const [requestedActiveSheet, setActiveSheet] = useState<SheetId | null>(null);
+  const [activeRequest, setActiveRequest] = useState(() => ({
+    index: initialWorkbookWasEmpty ? 0 : initialActiveSheetIndex,
+    sheet: null as SheetId | null,
+  }));
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
   const [runtimeSlot] = useState(createImperativeRuntimeSlot);
   const [handle] = useState(() => createStableHandle(runtimeSlot));
@@ -280,16 +289,28 @@ function Runtime(
   });
 
   const sheets = props.epoch.snapshot.sheets;
+  const setActiveSheet = useCallback((sheet: SheetId | null) => {
+    setActiveRequest(current => {
+      const index = sheet === null
+        ? current.index
+        : props.epoch.controller.getSheetIds().findIndex(candidate => candidate === sheet);
+      const nextIndex = index < 0 ? current.index : index;
+      if (current.sheet === sheet && current.index === nextIndex) return current;
+      return { index: nextIndex, sheet };
+    });
+  }, [props.epoch.controller]);
   const activeSheet = sheets.length === 0
     ? null
-    : sheets.some(sheet => sheet.id === requestedActiveSheet)
-      ? requestedActiveSheet
-      : sheets[initialWorkbookWasEmpty ? 0 : initialActiveSheetIndex]?.id ?? sheets[0]!.id;
+    : sheets.some(sheet => sheet.id === activeRequest.sheet)
+      ? activeRequest.sheet
+      : sheets[Math.min(activeRequest.index, sheets.length - 1)]?.id ?? sheets[0]!.id;
 
   const dispatcher = useMemo(() => createEventDispatcher({
     controller: props.epoch.controller,
     getCallbacks: callbackStore.get,
+    getControlledNotificationVersion: props.controlled.getNotificationVersion,
     isActive: props.epoch.isActive,
+    recordControlledCheckpoint: props.controlled.recordCheckpoint,
     schedulePaint: () => engineSlot.get()?.render(
       props.epoch.controller.getSnapshot(),
       activeSheet,
@@ -298,6 +319,8 @@ function Runtime(
     activeSheet,
     callbackStore,
     engineSlot,
+    props.controlled.getNotificationVersion,
+    props.controlled.recordCheckpoint,
     props.epoch.controller,
     props.epoch.isActive,
   ]);
@@ -333,6 +356,7 @@ function Runtime(
     props.epoch.controller,
     props.epoch.isActive,
     runtimeSlot,
+    setActiveSheet,
   ]);
   useLayoutEffect(() => () => runtimeSlot.deactivate(), [runtimeSlot]);
 
@@ -394,6 +418,11 @@ export const TegoSheet = forwardRef<TegoSheetHandle, TegoSheetProps>(function Te
   ref,
 ) {
   const epoch = useControllerEpoch(props);
+  const controlled = useControlledWorkbook({
+    epoch,
+    value: props.value,
+    onError: props.onError,
+  });
   if (epoch === null) {
     return (
       <div
@@ -404,7 +433,7 @@ export const TegoSheet = forwardRef<TegoSheetHandle, TegoSheetProps>(function Te
       />
     );
   }
-  return <ForwardedRuntime {...props} epoch={epoch} ref={ref} />;
+  return <ForwardedRuntime {...props} controlled={controlled} epoch={epoch} ref={ref} />;
 });
 
 TegoSheet.displayName = 'TegoSheet';

@@ -24,10 +24,16 @@ export interface WorkbookControllerOptions {
 }
 
 export interface DispatchOptions {
+  /** Run an internal atomic observer after commit construction and before subscriptions publish. */
+  readonly beforeNotify?: (
+    commit: CommandCommit<unknown, WorkbookCommand>,
+  ) => void;
   /** Suppress the document subscription used by controlled replay and restore. */
   readonly notify?: boolean;
   /** Skip the potentially large paste result when no consumer needs it. */
   readonly capturePasteValues?: boolean;
+  /** Preserve the originally exposed runtime ID while replaying a pending add-sheet command. */
+  readonly replayAddSheetId?: SheetId;
 }
 
 export interface ControllerSheetSnapshot {
@@ -184,6 +190,7 @@ export class WorkbookController {
 
     const applied = applyCommand(this.state, commandSnapshot, {
       capturePasteValues: options.capturePasteValues !== false,
+      replayAddSheetId: options.replayAddSheetId,
     });
     if (applied === null) return { status: 'noop' };
 
@@ -210,6 +217,7 @@ export class WorkbookController {
       change,
       applied.result as CommandResult<Command>,
     );
+    options.beforeNotify?.(commit as CommandCommit<unknown, WorkbookCommand>);
     this.publish(commit, options);
     return { status: 'committed', commit };
   }
@@ -294,6 +302,7 @@ export class WorkbookController {
       entry.metadata.change.range,
     );
     const commit = this.createCommit(command, change, undefined);
+    options.beforeNotify?.(commit as CommandCommit<unknown, WorkbookCommand>);
     this.publish(commit, options);
     return { status: 'committed', commit };
   }

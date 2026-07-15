@@ -24,6 +24,7 @@ export type UiDispatchOutcome =
 
 export interface EventDispatcherOptions {
   readonly controller: WorkbookController;
+  readonly getControlledNotificationVersion?: () => number;
   readonly getCallbacks: () => TegoSheetCallbacks;
   readonly isActive?: () => boolean;
   readonly recordControlledCheckpoint?: (
@@ -146,14 +147,16 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
   const notifyCommit = (
     commit: CommandCommit<unknown, WorkbookCommand>,
     previousText: string | undefined,
+    controlledNotificationVersion: number | undefined,
     notificationOptions: DispatchNotificationOptions,
   ) => {
     if (!isActive()) return;
     const callbacks = options.getCallbacks();
-    options.recordControlledCheckpoint?.(commit);
-    if (!isActive()) return;
+    const decisionIsCurrent = () => controlledNotificationVersion === undefined
+      || options.getControlledNotificationVersion?.() === controlledNotificationVersion;
+    if (!decisionIsCurrent()) return;
     callbacks.onChange?.(clone(commit.value), clone(commit.change));
-    if (!isActive()) return;
+    if (!isActive() || !decisionIsCurrent()) return;
 
     if (commit.command.type === 'set-cell-text') {
       const event: CellEditEvent = {
@@ -183,11 +186,11 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
       callbacks.onPaste(clone(event));
     }
 
-    if (!isActive()) return;
+    if (!isActive() || !decisionIsCurrent()) return;
     if (notificationOptions.selectionAfterCommit !== undefined) {
       callbacks.onSelectionChange?.(clone(notificationOptions.selectionAfterCommit));
     }
-    if (!isActive()) return;
+    if (!isActive() || !decisionIsCurrent()) return;
     options.schedulePaint?.();
   };
 
@@ -195,6 +198,7 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     command: WorkbookCommand,
     source: ChangeSource,
   ): {
+    readonly controlledNotificationVersion: number | undefined;
     readonly outcome: CommandOutcome<unknown, WorkbookCommand>;
     readonly previousText: string | undefined;
   } => {
@@ -205,13 +209,18 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     const capturePasteValues = (
       command.type === 'paste-external' || command.type === 'paste-internal'
     ) && options.getCallbacks().onPaste !== undefined;
+    let controlledNotificationVersion: number | undefined;
     const outcome = controller.dispatch(command, source, {
       capturePasteValues,
+      beforeNotify(commit) {
+        options.recordControlledCheckpoint?.(commit);
+        controlledNotificationVersion = options.getControlledNotificationVersion?.();
+      },
     }) as CommandOutcome<
       unknown,
       WorkbookCommand
     >;
-    return { outcome, previousText };
+    return { controlledNotificationVersion, outcome, previousText };
   };
 
   const notify = (
@@ -219,7 +228,12 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
     notificationOptions: DispatchNotificationOptions = {},
   ): CommandOutcome<unknown, WorkbookCommand> => {
     if (dispatched.outcome.status === 'committed' && isActive()) {
-      notifyCommit(dispatched.outcome.commit, dispatched.previousText, notificationOptions);
+      notifyCommit(
+        dispatched.outcome.commit,
+        dispatched.previousText,
+        dispatched.controlledNotificationVersion,
+        notificationOptions,
+      );
     }
     return dispatched.outcome;
   };

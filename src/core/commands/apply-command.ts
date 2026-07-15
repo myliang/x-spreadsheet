@@ -28,6 +28,7 @@ export interface AppliedCommand {
 
 export interface ApplyCommandOptions {
   readonly capturePasteValues?: boolean;
+  readonly replayAddSheetId?: SheetId;
 }
 
 function commandType(command: unknown): string {
@@ -160,7 +161,7 @@ export function applyCommand(
       case 'add-sheet':
       case 'delete-sheet':
       case 'rename-sheet': {
-        const applied = applySheetOperation(state, command);
+        const applied = applySheetOperation(state, command, options.replayAddSheetId);
         if (applied.state === state) return null;
         return {
           state: applied.state,

@@ -36,12 +36,13 @@ export function assertSheetName(
 export function applySheetOperation(
   state: WorkbookState,
   command: SheetCommand,
+  addSheetId?: SheetId,
 ): { readonly state: WorkbookState; readonly sheet: SheetId; readonly result: SheetId | undefined } {
   switch (command.type) {
     case 'add-sheet': {
       const name = command.name ?? nextSheetName(state);
       assertSheetName(state, name);
-      const next = state.add(name);
+      const next = state.add(name, addSheetId);
       const sheet = next.sheets[next.sheets.length - 1]!.id;
       return { state: next, sheet, result: sheet };
     }

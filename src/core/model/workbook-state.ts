@@ -76,9 +76,10 @@ export class WorkbookState {
     return this.update(id, sheet => ({ ...sheet, name }) as unknown as SheetData);
   }
 
-  add(name = `sheet${this.sheets.length + 1}`): WorkbookState {
+  add(name = `sheet${this.sheets.length + 1}`, id = createSheetId()): WorkbookState {
+    if (this.get(id) !== null) throw new RangeError(`Duplicate sheet ID: ${id}`);
     const data = parseWorkbook({ name })[0] as SheetData;
-    return new WorkbookState([...this.sheets, { id: createSheetId(), data }]);
+    return new WorkbookState([...this.sheets, { id, data }]);
   }
 
   delete(id: SheetId): WorkbookState {
