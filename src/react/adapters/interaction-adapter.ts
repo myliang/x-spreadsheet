@@ -41,6 +41,25 @@ function committed(outcome: ReturnType<EventDispatcher['dispatchUi']>): Interact
   return { status: outcome.status === 'committed' ? 'committed' : 'noop' };
 }
 
+function observeRoot(root: HTMLElement, callback: () => void): () => void {
+  const observer = new ResizeObserver(callback);
+  try {
+    observer.observe(root);
+  } catch (cause) {
+    try {
+      observer.disconnect();
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [cause, cleanupError],
+        'ResizeObserver setup and rollback cleanup failed',
+        { cause },
+      );
+    }
+    throw cause;
+  }
+  return () => observer.disconnect();
+}
+
 export function createInteractionAdapter(
   options: InteractionAdapterOptions,
 ): InteractionManager | null {
@@ -103,11 +122,7 @@ export function createInteractionAdapter(
       },
       requestViewportResize: () => options.engine.recalculateLayout(),
       ...(typeof ResizeObserver === 'undefined' ? {} : {
-        observeRoot(callback: () => void) {
-          const observer = new ResizeObserver(callback);
-          observer.observe(options.root);
-          return () => observer.disconnect();
-        },
+        observeRoot: (callback: () => void) => observeRoot(options.root, callback),
       }),
       setTimer(callback, delay) {
         const id = options.globalTarget.setTimeout(callback, delay);

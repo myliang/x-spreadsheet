@@ -183,3 +183,77 @@ it('cleans runtime resources in the specified ownership order', async () => {
     'controller',
   ]);
 });
+
+it('disconnects a partially registered ResizeObserver and drains manager listeners', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const observeError = new Error('observe failed after registration');
+  let activeObservers = 0;
+  const disconnect = vi.fn(() => {
+    activeObservers -= 1;
+  });
+  vi.stubGlobal('ResizeObserver', class {
+    observe(): void {
+      activeObservers += 1;
+      throw observeError;
+    }
+    disconnect = disconnect;
+  });
+  vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1));
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const actualAdd = EventTarget.prototype.addEventListener;
+  const actualRemove = EventTarget.prototype.removeEventListener;
+  let managedAdds = 0;
+  let managedRemoves = 0;
+  vi.spyOn(EventTarget.prototype, 'addEventListener').mockImplementation(function (
+    this: EventTarget,
+    type,
+    listener,
+    options,
+  ) {
+    actualAdd.call(this, type, listener, options);
+    if (this instanceof HTMLElement && this.matches('[data-tego-sheet]')) managedAdds += 1;
+  });
+  vi.spyOn(EventTarget.prototype, 'removeEventListener').mockImplementation(function (
+    this: EventTarget,
+    type,
+    listener,
+    options,
+  ) {
+    actualRemove.call(this, type, listener, options);
+    if (this instanceof HTMLElement && this.matches('[data-tego-sheet]')) managedRemoves += 1;
+  });
+
+  expect(() => render(<TegoSheet defaultValue={[{}]} />)).toThrow(observeError);
+  expect(disconnect).toHaveBeenCalledOnce();
+  expect(activeObservers).toBe(0);
+  expect(managedAdds).toBeGreaterThan(0);
+  expect(managedRemoves).toBe(managedAdds);
+});
+
+it('preserves observer setup and rollback failures in one aggregate', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const observeError = new Error('observe failed');
+  const disconnectError = new Error('disconnect failed');
+  const disconnect = vi.fn(() => {
+    throw disconnectError;
+  });
+  vi.stubGlobal('ResizeObserver', class {
+    observe(): void {
+      throw observeError;
+    }
+    disconnect = disconnect;
+  });
+  vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1));
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+
+  let thrown: unknown;
+  try {
+    render(<TegoSheet defaultValue={[{}]} />);
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toBeInstanceOf(AggregateError);
+  expect((thrown as AggregateError).errors).toEqual([observeError, disconnectError]);
+  expect(disconnect).toHaveBeenCalledOnce();
+});

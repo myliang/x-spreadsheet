@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TegoSheet } from '../../src';
@@ -102,4 +102,103 @@ it('rejects an invalid mount-only active sheet index as a contract error', () =>
     code: 'INVALID_COMMAND',
     recoverable: false,
   }));
+});
+
+it('validates initialActiveSheetIndex only against the mount workbook', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onSelectionChange = vi.fn();
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{ name: 'A' }, { name: 'B' }]}
+      initialActiveSheetIndex={1}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  const initialB = onSelectionChange.mock.lastCall?.[0].sheet;
+
+  expect(() => ref.current!.deleteSheet(initialB)).not.toThrow();
+  expect(ref.current!.getValue().map(sheet => sheet.name)).toEqual(['A']);
+});
+
+it('selects the next sheet after a middle deletion, then the preceding sheet at the tail', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onSelectionChange = vi.fn();
+  const rendered = render(
+    <TegoSheet ref={ref} defaultValue={[]} onSelectionChange={onSelectionChange} />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  let a!: ReturnType<TegoSheetHandle['addSheet']>;
+  let b!: ReturnType<TegoSheetHandle['addSheet']>;
+  let c!: ReturnType<TegoSheetHandle['addSheet']>;
+  act(() => {
+    a = ref.current!.addSheet('A');
+  });
+  act(() => {
+    b = ref.current!.addSheet('B');
+    c = ref.current!.addSheet('C');
+  });
+  act(() => ref.current!.activateSheet(b));
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+
+  act(() => ref.current!.deleteSheet(b));
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(c);
+
+  act(() => ref.current!.deleteSheet(c));
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(a);
+
+  act(() => ref.current!.deleteSheet(a));
+  expect(ref.current!.getValue()).toEqual([]);
+  expect(rendered.container.querySelector('canvas')).toBeNull();
+});
+
+it('keeps one handle object live for the mounted epoch and deactivates captured handles', async () => {
+  const firstChange = vi.fn();
+  const latestChange = vi.fn();
+  const ref = createRef<TegoSheetHandle>();
+  const rendered = render(
+    <TegoSheet ref={ref} defaultValue={[]} onChange={firstChange} />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+  const a = captured.addSheet('A');
+  expect(ref.current).toBe(captured);
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{ name: 'ignored' }]}
+      options={{ defaultStyle: { color: '#123456' } }}
+      onChange={latestChange}
+    />,
+  );
+  expect(ref.current).toBe(captured);
+  captured.setCellText({ sheet: a, row: 0, column: 0 }, 'latest');
+  expect(ref.current).toBe(captured);
+  expect(firstChange).toHaveBeenCalledOnce();
+  expect(latestChange).toHaveBeenCalledOnce();
+
+  const b = captured.addSheet('B');
+  captured.activateSheet(b);
+  captured.deleteSheet(b);
+  captured.recalculateLayout();
+  expect(ref.current).toBe(captured);
+  expect(captured.getValue().map(sheet => sheet.name)).toEqual(['A']);
+
+  const changesBeforeUnmount = latestChange.mock.calls.length;
+  rendered.unmount();
+  expect(ref.current).toBeNull();
+  expect(() => captured.setCellText({ sheet: a, row: 0, column: 0 }, 'late')).toThrow(
+    /inactive/i,
+  );
+  expect(() => captured.addSheet('late')).toThrow(/inactive/i);
+  expect(latestChange).toHaveBeenCalledTimes(changesBeforeUnmount);
 });

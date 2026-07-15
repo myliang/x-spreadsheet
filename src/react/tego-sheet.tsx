@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useCallback,
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
@@ -13,8 +12,8 @@ import {
   selectCell,
   selectCellStyle,
   TegoSheetException,
-  type ActiveSheetChangeEvent,
   type CellAddress,
+  type CellStyle,
   type ChangeSource,
   type SheetId,
 } from '../core';
@@ -92,6 +91,124 @@ function committedResult(
   return outcome.status === 'committed' ? outcome.commit.result : undefined;
 }
 
+interface ImperativeRuntime {
+  readonly activeSheet: SheetId | null;
+  readonly controller: ControllerEpoch['controller'];
+  readonly defaultStyle: CellStyle | undefined;
+  readonly dispatcher: ReturnType<typeof createEventDispatcher>;
+  readonly engineSlot: ReturnType<typeof createEngineAdapterSlot>;
+  readonly isActive: () => boolean;
+  readonly root: HTMLDivElement | null;
+  readonly setActiveSheet: (sheet: SheetId | null) => void;
+}
+
+interface ImperativeRuntimeSlot {
+  readonly deactivate: () => void;
+  readonly require: () => ImperativeRuntime;
+  readonly update: (runtime: ImperativeRuntime) => void;
+}
+
+function inactiveRuntime(): TegoSheetException {
+  return invalid('TegoSheet handle runtime is inactive');
+}
+
+function createImperativeRuntimeSlot(): ImperativeRuntimeSlot {
+  let current: ImperativeRuntime | null = null;
+  return {
+    deactivate() {
+      current = null;
+    },
+    require() {
+      if (current === null || !current.isActive()) throw inactiveRuntime();
+      return current;
+    },
+    update(runtime) {
+      current = runtime;
+    },
+  };
+}
+
+function runtimeSheet(runtime: ImperativeRuntime, address: CellAddress) {
+  const snapshot = runtime.controller.getSnapshot();
+  const index = snapshot.sheets.findIndex(sheet => sheet.id === address.sheet);
+  if (index < 0) throw invalid(`Unknown sheet ID: ${address.sheet}`);
+  return snapshot.value[index]!;
+}
+
+function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
+  return {
+    focus() {
+      slot.require().root?.focus();
+    },
+    getValue: () => slot.require().controller.getValue(),
+    getCell(address) {
+      const runtime = slot.require();
+      runtime.controller.getCellText(address);
+      return selectCell(runtimeSheet(runtime, address), address.row, address.column);
+    },
+    getCellStyle(address) {
+      const runtime = slot.require();
+      runtime.controller.getCellText(address);
+      return selectCellStyle(
+        runtimeSheet(runtime, address),
+        address.row,
+        address.column,
+        runtime.defaultStyle,
+      );
+    },
+    setCellText(address, text) {
+      slot.require().dispatcher.dispatchRef({ type: 'set-cell-text', address, text }, 'ref');
+    },
+    addSheet(name) {
+      const runtime = slot.require();
+      const wasEmpty = runtime.controller.getSnapshot().sheets.length === 0;
+      const result = committedResult(
+        runtime.dispatcher,
+        name === undefined ? { type: 'add-sheet' } : { type: 'add-sheet', name },
+        'ref',
+      );
+      if (typeof result !== 'string') throw invalid('Adding a sheet did not return a sheet ID');
+      const sheet = result as SheetId;
+      if (wasEmpty) runtime.setActiveSheet(sheet);
+      return sheet;
+    },
+    deleteSheet(sheet) {
+      const runtime = slot.require();
+      const before = runtime.controller.getSnapshot();
+      const removedIndex = before.sheets.findIndex(item => item.id === sheet);
+      runtime.dispatcher.dispatchRef({ type: 'delete-sheet', sheet }, 'ref');
+      if (runtime.activeSheet !== sheet) return;
+      const after = runtime.controller.getSnapshot();
+      const replacementIndex = Math.min(removedIndex, after.sheets.length - 1);
+      runtime.setActiveSheet(replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id);
+    },
+    renameSheet(sheet, name) {
+      slot.require().dispatcher.dispatchRef({ type: 'rename-sheet', sheet, name }, 'ref');
+    },
+    activateSheet(sheet) {
+      const runtime = slot.require();
+      const index = runtime.controller.getSnapshot().sheets.findIndex(item => item.id === sheet);
+      if (index < 0) throw invalid(`Unknown sheet ID: ${sheet}`);
+      runtime.setActiveSheet(sheet);
+      runtime.dispatcher.emitActiveSheetChange({ sheet, index, source: 'ref' });
+    },
+    undo() {
+      slot.require().dispatcher.dispatchRef({ type: 'undo' }, 'ref');
+    },
+    redo() {
+      slot.require().dispatcher.dispatchRef({ type: 'redo' }, 'ref');
+    },
+    validate: () => slot.require().controller.validate(),
+    print() {
+      slot.require();
+      window.print();
+    },
+    recalculateLayout() {
+      slot.require().engineSlot.get()?.recalculateLayout();
+    },
+  };
+}
+
 interface RuntimeProps extends TegoSheetProps {
   readonly epoch: ControllerEpoch;
 }
@@ -106,9 +223,12 @@ function Runtime(
   const [callbackStore] = useState(() => createCallbackStore(callbacksFromProps(props)));
   const [initialOptions] = useState(() => props.options);
   const [initialActiveSheetIndex] = useState(() => props.initialActiveSheetIndex ?? 0);
-  const [initialWorkbookWasEmpty] = useState(() => props.epoch.snapshot.sheets.length === 0);
+  const [initialSheetCount] = useState(() => props.epoch.snapshot.sheets.length);
+  const initialWorkbookWasEmpty = initialSheetCount === 0;
   const [requestedActiveSheet, setActiveSheet] = useState<SheetId | null>(null);
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
+  const [runtimeSlot] = useState(createImperativeRuntimeSlot);
+  const [handle] = useState(() => createStableHandle(runtimeSlot));
 
   useLayoutEffect(() => {
     callbackStore.set(callbacksFromProps(props));
@@ -139,15 +259,37 @@ function Runtime(
 
   if (
     !initialWorkbookWasEmpty
-    && sheets.length > 0
+    && initialSheetCount > 0
     && (
       !Number.isSafeInteger(initialActiveSheetIndex)
       || initialActiveSheetIndex < 0
-      || initialActiveSheetIndex >= sheets.length
+      || initialActiveSheetIndex >= initialSheetCount
     )
   ) {
     throw contractViolation('initialActiveSheetIndex must refer to an initial sheet');
   }
+
+  useLayoutEffect(() => {
+    runtimeSlot.update({
+      activeSheet,
+      controller: props.epoch.controller,
+      defaultStyle: initialOptions?.defaultStyle,
+      dispatcher,
+      engineSlot,
+      isActive: props.epoch.isActive,
+      root: rootRef.current,
+      setActiveSheet,
+    });
+  }, [
+    activeSheet,
+    dispatcher,
+    engineSlot,
+    initialOptions?.defaultStyle,
+    props.epoch.controller,
+    props.epoch.isActive,
+    runtimeSlot,
+  ]);
+  useLayoutEffect(() => () => runtimeSlot.deactivate(), [runtimeSlot]);
 
   // Register this layout cleanup before the canvas cleanup so browser listeners
   // are always released before the engine subscription and render scheduler.
@@ -170,94 +312,7 @@ function Runtime(
     sheetOptions: initialOptions,
   });
 
-  const emitActiveSheet = useCallback((
-    sheet: SheetId,
-    source: ActiveSheetChangeEvent['source'],
-  ) => {
-    const index = props.epoch.controller.getSnapshot().sheets.findIndex(item => item.id === sheet);
-    if (index < 0) throw invalid(`Unknown sheet ID: ${sheet}`);
-    setActiveSheet(sheet);
-    dispatcher.emitActiveSheetChange({ sheet, index, source });
-  }, [dispatcher, props.epoch.controller]);
-
-  const addSheet = useCallback((name: string | undefined, source: ChangeSource): SheetId => {
-    const wasEmpty = props.epoch.controller.getSnapshot().sheets.length === 0;
-    const result = committedResult(
-      dispatcher,
-      name === undefined ? { type: 'add-sheet' } : { type: 'add-sheet', name },
-      source,
-    );
-    if (typeof result !== 'string') throw invalid('Adding a sheet did not return a sheet ID');
-    const sheet = result as SheetId;
-    if (wasEmpty) setActiveSheet(sheet);
-    return sheet;
-  }, [dispatcher, props.epoch.controller]);
-
-  const requireSheet = useCallback((address: CellAddress) => {
-    const snapshot = props.epoch.controller.getSnapshot();
-    const index = snapshot.sheets.findIndex(sheet => sheet.id === address.sheet);
-    if (index < 0) throw invalid(`Unknown sheet ID: ${address.sheet}`);
-    return snapshot.value[index]!;
-  }, [props.epoch.controller]);
-
-  useImperativeHandle(forwardedRef, () => ({
-    focus() {
-      rootRef.current?.focus();
-    },
-    getValue: () => props.epoch.controller.getValue(),
-    getCell(address) {
-      props.epoch.controller.getCellText(address);
-      return selectCell(requireSheet(address), address.row, address.column);
-    },
-    getCellStyle(address) {
-      props.epoch.controller.getCellText(address);
-      return selectCellStyle(
-        requireSheet(address),
-        address.row,
-        address.column,
-        props.options?.defaultStyle,
-      );
-    },
-    setCellText(address, text) {
-      dispatcher.dispatchRef({ type: 'set-cell-text', address, text }, 'ref');
-    },
-    addSheet: name => addSheet(name, 'ref'),
-    deleteSheet(sheet) {
-      const before = props.epoch.controller.getSnapshot();
-      const removedIndex = before.sheets.findIndex(item => item.id === sheet);
-      dispatcher.dispatchRef({ type: 'delete-sheet', sheet }, 'ref');
-      if (activeSheet !== sheet) return;
-      const after = props.epoch.controller.getSnapshot();
-      const replacement = after.sheets[Math.min(Math.max(removedIndex - 1, 0), after.sheets.length - 1)];
-      setActiveSheet(replacement?.id ?? null);
-    },
-    renameSheet(sheet, name) {
-      dispatcher.dispatchRef({ type: 'rename-sheet', sheet, name }, 'ref');
-    },
-    activateSheet: sheet => emitActiveSheet(sheet, 'ref'),
-    undo() {
-      dispatcher.dispatchRef({ type: 'undo' }, 'ref');
-    },
-    redo() {
-      dispatcher.dispatchRef({ type: 'redo' }, 'ref');
-    },
-    validate: () => props.epoch.controller.validate(),
-    print() {
-      window.print();
-    },
-    recalculateLayout() {
-      engineSlot.get()?.recalculateLayout();
-    },
-  }), [
-    activeSheet,
-    addSheet,
-    dispatcher,
-    emitActiveSheet,
-    engineSlot,
-    props.epoch.controller,
-    props.options?.defaultStyle,
-    requireSheet,
-  ]);
+  useImperativeHandle(forwardedRef, () => handle, [handle]);
 
   const addFirstSheet = () => {
     const outcome = dispatcher.dispatchUi({ type: 'add-sheet' }, 'sheet-tabs');
