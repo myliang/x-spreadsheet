@@ -225,7 +225,7 @@ it('does not apply a stale Tab selection when onChange synchronously replaces co
   const editor = await rendered.findByRole('textbox', { name: /cell editor/i });
   fireEvent.change(editor, { target: { value: 'draft' } });
 
-  fireEvent.keyDown(window, { key: 'Tab' });
+  fireEvent.keyDown(editor, { key: 'Tab' });
 
   await waitFor(() => expect(rendered.getByRole('tab', { name: 'Replacement' })).toBeTruthy());
   expect(selections).not.toHaveBeenCalled();
@@ -251,7 +251,7 @@ it('does not finish stale Enter selection work after onChange unmounts the sheet
   const editor = await rendered.findByRole('textbox', { name: /cell editor/i });
   fireEvent.change(editor, { target: { value: 'draft' } });
 
-  expect(() => fireEvent.keyDown(window, { key: 'Enter' })).not.toThrow();
+  expect(() => fireEvent.keyDown(editor, { key: 'Enter' })).not.toThrow();
   expect(selections).not.toHaveBeenCalled();
   expect(rendered.container.childElementCount).toBe(0);
 });

@@ -20,6 +20,7 @@ export interface UseInteractionManagerOptions {
   readonly managerRef: RefObject<InteractionManager | null>;
   readonly epoch: ControllerEpoch;
   readonly rootRef: RefObject<HTMLDivElement | null>;
+  readonly surfaceRef: RefObject<HTMLCanvasElement | null>;
   readonly showContextMenu?: boolean;
   readonly minimumColumnWidth?: number;
   readonly onSelectionChange?: (selection: Selection | null) => void;
@@ -41,6 +42,7 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     managerRef,
     epoch,
     rootRef,
+    surfaceRef,
     showContextMenu,
     minimumColumnWidth,
     onSelectionChange,
@@ -55,9 +57,11 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
   const { controller, isActive } = epoch;
   useLayoutEffect(() => {
     const root = rootRef.current;
+    const surface = surfaceRef.current;
     const engine = engineSlot.get();
     if (
       root === null
+      || surface === null
       || engine === null
       || !isActive()
       || typeof window === 'undefined'
@@ -68,6 +72,7 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
       dispatcher,
       engine,
       root,
+      surface,
       globalTarget: window,
       contextMenuEnabled: () => showContextMenu !== false,
       minimumColumnWidth,
@@ -95,6 +100,7 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     managerRef,
     isActive,
     rootRef,
+    surfaceRef,
     showContextMenu,
     minimumColumnWidth,
     onSelectionChange,

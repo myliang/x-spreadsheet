@@ -270,8 +270,8 @@ describe('ResourceRegistry', () => {
       },
     });
     const touch = { clientX: 100, clientY: 100 };
-    root.emit('touchstart', { touches: [touch] });
-    root.emit('touchend', { changedTouches: [touch], touches: [] });
+    root.emit('touchstart', { target: root, touches: [touch] });
+    root.emit('touchend', { target: root, changedTouches: [touch], touches: [] });
     root.emit('pointerdown', { button: 0, buttons: 1, clientX: 160, clientY: 10, target: root });
 
     expect(() => manager.dispose()).toThrowError(AggregateError);

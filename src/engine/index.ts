@@ -80,6 +80,7 @@ export type {
   InteractionManagerPorts,
   InteractionRootPort,
   InteractionSnapshot,
+  InteractionTargetKind,
   ResizePreview,
 } from './interaction/interaction-manager';
 export type { ClipboardPort, DataTransferPort } from './interaction/clipboard';

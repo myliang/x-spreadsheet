@@ -67,6 +67,8 @@ export interface ResizePreview {
   readonly size: number;
 }
 
+export type InteractionTargetKind = 'surface' | 'chrome' | 'outside';
+
 export interface InteractionManagerPorts {
   readonly root: InteractionRootPort;
   readonly globalTarget: EventTargetPort;
@@ -92,6 +94,7 @@ export interface InteractionManagerPorts {
   readonly minRowHeight?: number;
   readonly minColumnWidth?: number;
   readonly contextMenuEnabled?: () => boolean;
+  readonly classifyInteractionTarget?: (target: unknown) => InteractionTargetKind;
 }
 
 export interface InteractionManagerOptions {
@@ -175,8 +178,16 @@ function appendCleanupError(errors: unknown[], error: unknown): void {
   else errors.push(error);
 }
 
+function targetInside(root: InteractionRootPort, target: unknown): boolean {
+  try {
+    return root.contains(target);
+  } catch {
+    return false;
+  }
+}
+
 function currentTargetInside(root: InteractionRootPort, event: InteractionEventLike): boolean {
-  return root.contains(event.target);
+  return targetInside(root, event.target);
 }
 
 function previousFloat(value: number): number {
@@ -392,36 +403,44 @@ export class InteractionManager {
 
   private bind(): void {
     const { root, globalTarget } = this.ports;
-    this.registry.listen(root, 'focusin', () => { this.focused = true; });
+    const surface = (handler: (event: InteractionEventLike) => void) => (value: unknown) => {
+      const event = eventLike(value);
+      if (this.isInteractionSurfaceEvent(event)) handler(event);
+    };
+    this.registry.listen(root, 'focusin', value => {
+      const event = eventLike(value);
+      if (this.isInteractionSurfaceEvent(event)) this.focused = true;
+      else if (this.isChromeEvent(event)) this.relinquishToChrome();
+      else this.blur();
+    });
     this.registry.listen(root, 'focusout', value => {
       const event = eventLike(value);
-      if (!root.contains(event.relatedTarget)) this.blur();
+      if (!targetInside(root, event.relatedTarget)) this.blur();
     });
-    this.registry.listen(root, 'pointerdown', event => this.pointerDown(eventLike(event)));
-    this.registry.listen(root, 'dblclick', event => this.doubleClick(eventLike(event)));
-    this.registry.listen(root, 'contextmenu', event => this.contextMenu(eventLike(event)));
-    this.registry.listen(root, 'wheel', event => this.wheel(eventLike(event)));
-    this.registry.listen(root, 'touchstart', value => {
-      const event = eventLike(value);
+    this.registry.listen(root, 'pointerdown', surface(event => this.pointerDown(event)));
+    this.registry.listen(root, 'dblclick', surface(event => this.doubleClick(event)));
+    this.registry.listen(root, 'contextmenu', surface(event => this.contextMenu(event)));
+    this.registry.listen(root, 'wheel', surface(event => this.wheel(event)));
+    this.registry.listen(root, 'touchstart', surface(event => {
       this.focused = true;
       this.touch.startGesture(event.touches ?? []);
-    });
-    this.registry.listen(root, 'touchmove', value => {
-      const event = eventLike(value);
+    }));
+    this.registry.listen(root, 'touchmove', surface(event => {
       if (this.touch.moveGesture(event.touches ?? []) === true) event.preventDefault?.();
-    });
-    this.registry.listen(root, 'touchend', value => {
-      const event = eventLike(value);
+    }));
+    this.registry.listen(root, 'touchend', surface(event => {
       this.touch.endGesture(event.changedTouches ?? [], event.touches ?? []);
-    });
-    this.registry.listen(root, 'touchcancel', () => this.touch.cancel());
+    }));
+    this.registry.listen(root, 'touchcancel', surface(() => this.touch.cancel()));
     this.registry.listen(globalTarget, 'pointerdown', value => {
       const event = eventLike(value);
-      if (!currentTargetInside(root, event)) this.blur();
+      if (this.isChromeEvent(event)) this.relinquishToChrome();
+      else if (!this.isInteractionSurfaceEvent(event)) this.blur();
     });
     this.registry.listen(globalTarget, 'touchstart', value => {
       const event = eventLike(value);
-      if (!currentTargetInside(root, event)) this.blur();
+      if (this.isChromeEvent(event)) this.relinquishToChrome();
+      else if (!this.isInteractionSurfaceEvent(event)) this.blur();
     });
     this.registry.listen(globalTarget, 'pointermove', event => this.pointerMove(eventLike(event)));
     this.registry.listen(globalTarget, 'pointerup', () => this.pointerUp());
@@ -432,6 +451,24 @@ export class InteractionManager {
     this.registry.listen(globalTarget, 'copy', event => this.clipboardEvent(eventLike(event), false));
     this.registry.listen(globalTarget, 'cut', event => this.clipboardEvent(eventLike(event), true));
     this.registry.listen(globalTarget, 'paste', event => this.pasteEvent(eventLike(event)));
+  }
+
+  private isInteractionSurfaceEvent(event: InteractionEventLike): boolean {
+    return this.classifyInteractionTarget(event) === 'surface';
+  }
+
+  private isChromeEvent(event: InteractionEventLike): boolean {
+    return this.classifyInteractionTarget(event) === 'chrome';
+  }
+
+  private classifyInteractionTarget(event: InteractionEventLike): InteractionTargetKind {
+    return this.ports.classifyInteractionTarget?.(event.target)
+      ?? (currentTargetInside(this.ports.root, event) ? 'surface' : 'outside');
+  }
+
+  private relinquishToChrome(): void {
+    this.focused = false;
+    this.cancelDrag(false);
   }
 
   private setSelection(selection: SelectionState, source: 'keyboard' | 'pointer' | 'touch'): boolean {
@@ -522,7 +559,7 @@ export class InteractionManager {
     }, 'pointer');
   }
 
-  private cancelDrag(): void {
+  private cancelDrag(cancelTransient = true): void {
     const drag = this.drag;
     this.drag = null;
     if (drag === null) return;
@@ -534,10 +571,12 @@ export class InteractionManager {
         errors.push(error);
       }
     }
-    try {
-      this.ports.requestCancelTransient();
-    } catch (error) {
-      errors.push(error);
+    if (cancelTransient) {
+      try {
+        this.ports.requestCancelTransient();
+      } catch (error) {
+        errors.push(error);
+      }
     }
     if (errors.length > 0) throw new AggregateError(errors, 'Failed to cancel transient interactions');
   }
@@ -583,7 +622,7 @@ export class InteractionManager {
   }
 
   private keyDown(event: InteractionEventLike): void {
-    if (!this.focused || isEditableEventTarget(event)) return;
+    if (!this.focused || this.isChromeEvent(event) || isEditableEventTarget(event)) return;
     const snapshot = this.ports.getSnapshot();
     const modifier = event.ctrlKey === true || event.metaKey === true;
     const key = String(event.key ?? '');
@@ -745,14 +784,14 @@ export class InteractionManager {
   }
 
   private clipboardEvent(event: InteractionEventLike, cut: boolean): void {
-    if (!this.focused) return;
+    if (!this.focused || this.isChromeEvent(event)) return;
     if (cut && this.ports.getSnapshot().readOnly) return;
     void this.copy(event.clipboardData, cut);
     event.preventDefault?.();
   }
 
   private pasteEvent(event: InteractionEventLike): void {
-    if (!this.focused || this.ports.getSnapshot().readOnly) return;
+    if (!this.focused || this.isChromeEvent(event) || this.ports.getSnapshot().readOnly) return;
     void this.paste(event.clipboardData);
     event.preventDefault?.();
   }

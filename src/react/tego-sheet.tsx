@@ -642,6 +642,7 @@ function Runtime(
     managerRef: interactionManagerRef,
     epoch: props.epoch,
     rootRef,
+    surfaceRef: canvasRef,
     showContextMenu: props.options?.showContextMenu,
     minimumColumnWidth: initialOptions.columns?.minimumWidth,
     onSelectionChange: setSelection,

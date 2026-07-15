@@ -370,6 +370,77 @@ describe('InteractionManager pointer and selection behavior', () => {
 });
 
 describe('InteractionManager keyboard, wheel, and focus behavior', () => {
+  it('centrally rejects chrome descendants across delegated input event families', () => {
+    const commit = vi.fn(() => true);
+    const edit = vi.fn();
+    const menu = vi.fn();
+    const scroll = vi.fn();
+    const harness = setup({
+      commitEditor: commit,
+      requestContextMenu: menu,
+      requestEdit: edit,
+      setScroll: scroll,
+    });
+    const chrome = new FakeTarget();
+    chrome.parent = harness.root;
+    Object.defineProperty(harness.ports, 'classifyInteractionTarget', {
+      configurable: true,
+      value: (target: unknown) => target === harness.root
+        ? 'surface'
+        : harness.root.contains(target) ? 'chrome' : 'outside',
+    });
+    harness.root.emit('focusin');
+
+    const pointer = harness.root.emit('pointerdown', { target: chrome, clientX: 220, clientY: 80 });
+    harness.root.emit('dblclick', { target: chrome, clientX: 220, clientY: 80 });
+    const context = harness.root.emit('contextmenu', { target: chrome, clientX: 220, clientY: 80 });
+    const wheel = harness.root.emit('wheel', { target: chrome, deltaX: 0, deltaY: 10 });
+    harness.root.emit('touchstart', { target: chrome, touches: [{ clientX: 220, clientY: 80 }] });
+    harness.root.emit('touchend', {
+      target: chrome,
+      changedTouches: [{ clientX: 220, clientY: 80 }],
+      touches: [],
+    });
+    const key = harness.globalTarget.emit('keydown', { target: chrome, key: 'ArrowRight' });
+    const copy = harness.globalTarget.emit('copy', {
+      target: chrome,
+      clipboardData: new DataTransferHarness(),
+    });
+
+    expect(harness.selections).toEqual([]);
+    expect(commit).not.toHaveBeenCalled();
+    expect(edit).not.toHaveBeenCalled();
+    expect(menu).not.toHaveBeenCalled();
+    expect(scroll).not.toHaveBeenCalled();
+    for (const event of [pointer, context, wheel, key, copy]) {
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    }
+
+    harness.root.emit('focusin', { target: harness.root });
+    const surfaceKey = harness.globalTarget.emit('keydown', {
+      target: harness.root,
+      key: 'ArrowRight',
+    });
+    expect(harness.snapshot().selection.active).toEqual({ row: 0, column: 2 });
+    expect(surfaceKey.preventDefault).toHaveBeenCalledOnce();
+    harness.manager.dispose();
+  });
+
+  it('classifies non-Node global event targets without throwing', () => {
+    const harness = setup();
+    harness.root.emit('focusin');
+
+    expect(() => harness.globalTarget.emit('keydown', {
+      target: Object.freeze({ kind: 'window-like' }),
+      key: 'ArrowRight',
+    })).not.toThrow();
+    expect(() => harness.root.emit('focusout', {
+      relatedTarget: Object.freeze({ kind: 'window-like' }),
+    })).not.toThrow();
+
+    harness.manager.dispose();
+  });
+
   it('is focus scoped, ignores editor/IME targets, and only prevents handled keys', () => {
     const harness = setup();
     const outside = harness.globalTarget.emit('keydown', { key: 'ArrowRight' });

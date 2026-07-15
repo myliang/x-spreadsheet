@@ -22,6 +22,7 @@ export interface InteractionAdapterOptions {
   readonly dispatcher: EventDispatcher;
   readonly engine: EngineAdapter;
   readonly root: HTMLElement;
+  readonly surface: HTMLElement;
   readonly globalTarget: Window;
   readonly contextMenuEnabled?: () => boolean;
   readonly minimumColumnWidth?: number;
@@ -46,6 +47,14 @@ export interface EditorSelectionTarget {
 
 function rootPort(root: HTMLElement): InteractionRootPort {
   return root as unknown as InteractionRootPort;
+}
+
+function contains(root: HTMLElement, target: unknown): boolean {
+  try {
+    return root.contains(target as Node | null);
+  } catch {
+    return false;
+  }
 }
 
 function clipboardPort(): ClipboardPort | undefined {
@@ -150,6 +159,11 @@ export function createInteractionAdapter(
         options.onViewportChange?.();
       },
       contextMenuEnabled: options.contextMenuEnabled,
+      classifyInteractionTarget(target) {
+        if (target === options.root || target === options.surface) return 'surface';
+        if (!contains(options.root, target)) return 'outside';
+        return contains(options.surface, target) ? 'surface' : 'chrome';
+      },
       minColumnWidth: options.minimumColumnWidth,
       ...(typeof ResizeObserver === 'undefined' ? {} : {
         observeRoot: (callback: () => void) => observeRoot(options.root, callback),
