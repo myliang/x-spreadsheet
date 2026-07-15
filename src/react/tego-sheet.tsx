@@ -102,7 +102,17 @@ interface ImperativeRuntime {
   readonly setActiveSheet: (sheet: SheetId | null) => void;
 }
 
+interface ImperativeRuntimeCapture {
+  readonly activeDecisionVersion: number;
+  readonly runtime: ImperativeRuntime;
+}
+
 interface ImperativeRuntimeSlot {
+  readonly capture: () => ImperativeRuntimeCapture;
+  readonly compareAndSetActiveSheet: (
+    capture: ImperativeRuntimeCapture,
+    sheet: SheetId | null,
+  ) => boolean;
   readonly deactivate: () => void;
   readonly require: () => ImperativeRuntime;
   readonly setActiveSheet: (sheet: SheetId | null) => void;
@@ -115,19 +125,42 @@ function inactiveRuntime(): TegoSheetException {
 
 function createImperativeRuntimeSlot(): ImperativeRuntimeSlot {
   let current: ImperativeRuntime | null = null;
+  let activeDecisionVersion = 0;
+  const requireRuntime = () => {
+    if (current === null || !current.isActive()) throw inactiveRuntime();
+    return current;
+  };
+  const applyActiveSheet = (runtime: ImperativeRuntime, sheet: SheetId | null) => {
+    activeDecisionVersion += 1;
+    current = { ...runtime, activeSheet: sheet };
+    runtime.setActiveSheet(sheet);
+  };
   return {
+    capture() {
+      return { activeDecisionVersion, runtime: requireRuntime() };
+    },
+    compareAndSetActiveSheet(capture, sheet) {
+      const runtime = current;
+      if (
+        runtime === null
+        || !runtime.isActive()
+        || runtime.controller !== capture.runtime.controller
+        || activeDecisionVersion !== capture.activeDecisionVersion
+      ) return false;
+      applyActiveSheet(runtime, sheet);
+      return true;
+    },
     deactivate() {
+      activeDecisionVersion += 1;
       current = null;
     },
     require() {
-      if (current === null || !current.isActive()) throw inactiveRuntime();
-      return current;
+      return requireRuntime();
     },
     setActiveSheet(sheet) {
       const runtime = current;
       if (runtime === null || !runtime.isActive()) throw inactiveRuntime();
-      current = { ...runtime, activeSheet: sheet };
-      runtime.setActiveSheet(sheet);
+      applyActiveSheet(runtime, sheet);
     },
     update(runtime) {
       current = runtime;
@@ -167,7 +200,8 @@ function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
       slot.require().dispatcher.dispatchRef({ type: 'set-cell-text', address, text }, 'ref');
     },
     addSheet(name) {
-      const runtime = slot.require();
+      const capture = slot.capture();
+      const { runtime } = capture;
       const wasEmpty = runtime.controller.getSnapshot().sheets.length === 0;
       const result = committedResult(
         runtime.dispatcher,
@@ -176,18 +210,22 @@ function createStableHandle(slot: ImperativeRuntimeSlot): TegoSheetHandle {
       );
       if (typeof result !== 'string') throw invalid('Adding a sheet did not return a sheet ID');
       const sheet = result as SheetId;
-      if (wasEmpty) slot.setActiveSheet(sheet);
+      if (wasEmpty) slot.compareAndSetActiveSheet(capture, sheet);
       return sheet;
     },
     deleteSheet(sheet) {
-      const runtime = slot.require();
+      const capture = slot.capture();
+      const { runtime } = capture;
       const before = runtime.controller.getSnapshot();
       const removedIndex = before.sheets.findIndex(item => item.id === sheet);
       runtime.dispatcher.dispatchRef({ type: 'delete-sheet', sheet }, 'ref');
       if (runtime.activeSheet !== sheet) return;
       const after = runtime.controller.getSnapshot();
       const replacementIndex = Math.min(removedIndex, after.sheets.length - 1);
-      slot.setActiveSheet(replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id);
+      slot.compareAndSetActiveSheet(
+        capture,
+        replacementIndex < 0 ? null : after.sheets[replacementIndex]!.id,
+      );
     },
     renameSheet(sheet, name) {
       slot.require().dispatcher.dispatchRef({ type: 'rename-sheet', sheet, name }, 'ref');

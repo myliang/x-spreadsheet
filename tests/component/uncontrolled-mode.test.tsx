@@ -179,6 +179,195 @@ it('selects the next sheet after a middle deletion, then the preceding sheet at 
   expect(rendered.container.querySelector('canvas')).toBeNull();
 });
 
+it('preserves an active-sheet decision made reentrantly from a delete callback', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onSelectionChange = vi.fn();
+  const callbackOrder: string[] = [];
+  let reenter = false;
+  let a!: ReturnType<TegoSheetHandle['addSheet']>;
+  let b!: ReturnType<TegoSheetHandle['addSheet']>;
+  let c!: ReturnType<TegoSheetHandle['addSheet']>;
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      onActiveSheetChange={() => callbackOrder.push('active')}
+      onChange={() => {
+        callbackOrder.push('change');
+        if (reenter) ref.current!.activateSheet(a);
+      }}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+  act(() => {
+    a = captured.addSheet('A');
+    b = captured.addSheet('B');
+    c = captured.addSheet('C');
+    captured.activateSheet(b);
+  });
+  callbackOrder.length = 0;
+  reenter = true;
+
+  act(() => captured.deleteSheet(b));
+
+  expect(ref.current).toBe(captured);
+  expect(callbackOrder).toEqual(['change', 'active']);
+  expect(captured.getValue().map(sheet => sheet.name)).toEqual(['A', 'C']);
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(a);
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).not.toBe(c);
+});
+
+it('preserves a nested add-and-activate decision made from the first add callback', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onSelectionChange = vi.fn();
+  const callbackOrder: string[] = [];
+  let nested = false;
+  let b!: ReturnType<TegoSheetHandle['addSheet']>;
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      onActiveSheetChange={() => callbackOrder.push('active')}
+      onChange={(_value, change) => {
+        callbackOrder.push(`change:${change.kind}`);
+        if (nested) return;
+        nested = true;
+        b = ref.current!.addSheet('B');
+        ref.current!.activateSheet(b);
+      }}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+
+  let a!: ReturnType<TegoSheetHandle['addSheet']>;
+  act(() => {
+    a = captured.addSheet('A');
+  });
+
+  expect(ref.current).toBe(captured);
+  expect(callbackOrder).toEqual(['change:sheet', 'change:sheet', 'active']);
+  expect(captured.getValue().map(sheet => sheet.name)).toEqual(['A', 'B']);
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(b);
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).not.toBe(a);
+});
+
+it('treats reentrant activation of the default as a decision before later reentrancy', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onSelectionChange = vi.fn();
+  const callbackOrder: string[] = [];
+  let nested = false;
+  let b!: ReturnType<TegoSheetHandle['addSheet']>;
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[]}
+      onActiveSheetChange={() => {
+        callbackOrder.push('active');
+        if (b === undefined) {
+          b = ref.current!.addSheet('B');
+          ref.current!.activateSheet(b);
+        }
+      }}
+      onChange={(_value, change) => {
+        callbackOrder.push('change');
+        if (!nested) {
+          nested = true;
+          ref.current!.activateSheet(change.sheet);
+        }
+      }}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+
+  let a!: ReturnType<TegoSheetHandle['addSheet']>;
+  act(() => {
+    a = captured.addSheet('A');
+  });
+
+  expect(ref.current).toBe(captured);
+  expect(callbackOrder).toEqual(['change', 'active', 'change', 'active']);
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).toBe(b);
+  expect(onSelectionChange.mock.lastCall?.[0].sheet).not.toBe(a);
+});
+
+it('does not apply a late default after an onChange callback unmounts the sheet', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const onChange = vi.fn(() => rendered.unmount());
+  const rendered = render(<TegoSheet ref={ref} defaultValue={[]} onChange={onChange} />);
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+
+  let added!: ReturnType<TegoSheetHandle['addSheet']>;
+  expect(() => {
+    act(() => {
+      added = captured.addSheet('A');
+    });
+  }).not.toThrow();
+
+  expect(typeof added).toBe('string');
+  expect(onChange).toHaveBeenCalledOnce();
+  expect(ref.current).toBeNull();
+});
+
+it('does not apply a late replacement after a delete callback unmounts the sheet', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  let unmountOnChange = false;
+  const onChange = vi.fn(() => {
+    if (unmountOnChange) rendered.unmount();
+  });
+  const rendered = render(<TegoSheet ref={ref} defaultValue={[]} onChange={onChange} />);
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+  let b!: ReturnType<TegoSheetHandle['addSheet']>;
+  act(() => {
+    captured.addSheet('A');
+    b = captured.addSheet('B');
+    captured.activateSheet(b);
+  });
+  onChange.mockClear();
+  unmountOnChange = true;
+
+  expect(() => {
+    act(() => captured.deleteSheet(b));
+  }).not.toThrow();
+
+  expect(onChange).toHaveBeenCalledOnce();
+  expect(ref.current).toBeNull();
+});
+
+it('preserves a consumer exception when its onChange callback also unmounts the sheet', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const consumerError = new Error('consumer callback failed');
+  const onChange = vi.fn(() => {
+    rendered.unmount();
+    throw consumerError;
+  });
+  const rendered = render(<TegoSheet ref={ref} defaultValue={[]} onChange={onChange} />);
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const captured = ref.current!;
+
+  expect(() => {
+    act(() => captured.addSheet('A'));
+  }).toThrow(consumerError);
+  expect(onChange).toHaveBeenCalledOnce();
+  expect(ref.current).toBeNull();
+});
+
 it('selects the preceding sheet when activating and deleting the tail in one batch', async () => {
   const ref = createRef<TegoSheetHandle>();
   const onSelectionChange = vi.fn();
