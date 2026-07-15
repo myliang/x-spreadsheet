@@ -1,11 +1,11 @@
 import type { Locator, Page } from '@playwright/test';
 import type { VisualMaskName } from './fixtures/types';
 
-const maskLocators: Record<VisualMaskName, (page: Page) => Locator> = {
-  'blinking-caret': page => page.locator('.tego-sheet__editor textarea'),
-  'native-scrollbars': page => page.locator('.tego-sheet__context-menu, .tego-sheet__filter-menu'),
-};
+export const visualMaskSelectors = {
+  'blinking-caret': '[data-visual-mask="blinking-caret"]',
+  'native-scrollbars': '[data-visual-mask="native-scrollbars"]',
+} as const satisfies Record<VisualMaskName, string>;
 
 export function namedMasks(page: Page, names: readonly VisualMaskName[]): readonly Locator[] {
-  return names.map(name => maskLocators[name](page));
+  return names.map(name => page.locator(visualMaskSelectors[name]));
 }

@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { visualFixtures } from './fixtures';
 import { namedMasks } from './masks';
+import {
+  geometryParityToken,
+  printableCellsParityToken,
+  visualParityByFixture,
+} from './parity';
 
 interface Rect {
   readonly height: number;
@@ -75,6 +80,16 @@ async function cellCenter(page: Page, row: number, column: number) {
   return { x: box.x + 60 + column * 100 + 50, y: box.y + 25 + row * 25 + 12.5 };
 }
 
+async function preparePrintPreview(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Print', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Print' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Paper').selectOption('A5');
+  await dialog.getByLabel('Orientation').selectOption('landscape');
+  await dialog.getByRole('button', { name: 'Print', exact: true }).click();
+  await expect(page.locator('[data-visual-print-page="1"]')).toBeVisible();
+}
+
 async function prepareScreenshot(page: Page, fixture: string, touch: boolean): Promise<void> {
   const canvas = page.locator('.tego-sheet__canvas');
   switch (fixture) {
@@ -103,8 +118,7 @@ async function prepareScreenshot(page: Page, fixture: string, touch: boolean): P
       return;
     }
     case 'print-preview': {
-      await page.getByRole('button', { name: 'Print', exact: true }).click();
-      await expect(page.getByRole('dialog', { name: 'Print' })).toBeVisible();
+      await preparePrintPreview(page);
       return;
     }
     case 'touch-interaction': {
@@ -118,7 +132,7 @@ async function prepareScreenshot(page: Page, fixture: string, touch: boolean): P
   }
 }
 
-test('geometry gate is green before any screenshot comparison', async ({ page }) => {
+test(`${geometryParityToken} geometry gate is green before any screenshot comparison`, async ({ page }) => {
   await openFixture(page, 'default-workbook');
   const canvas = page.locator('.tego-sheet__canvas');
   const canvasBox = await canvas.boundingBox();
@@ -206,11 +220,34 @@ test('geometry gate is green before any screenshot comparison', async ({ page })
 });
 
 for (const fixture of visualFixtures) {
-  test(`visual fixture: ${fixture.name}`, async ({ page }, testInfo) => {
+  test(`${visualParityByFixture[fixture.name]} visual fixture: ${fixture.name}`, async ({ page }, testInfo) => {
     await openFixture(page, fixture.name);
     await prepareScreenshot(page, fixture.name, testInfo.project.name.startsWith('touch-'));
-    await expect(page.locator('[data-tego-sheet]')).toHaveScreenshot(`${fixture.name}.png`, {
+    const screenshot = fixture.name === 'print-preview'
+      ? page.locator('[data-visual-print-page="1"]')
+      : page.locator('[data-tego-sheet]');
+    await expect(screenshot).toHaveScreenshot(`${fixture.name}.png`, {
       mask: [...namedMasks(page, fixture.masks ?? [])],
     });
   });
 }
+
+test(`${printableCellsParityToken} printable cells are preserved while private cells are omitted`, async ({ page }) => {
+  await openFixture(page, 'print-preview');
+  await preparePrintPreview(page);
+  const printSnapshot = await page.evaluate(() => window.__tegoVisual.printSnapshot);
+  expect(printSnapshot).not.toBeNull();
+  expect(printSnapshot?.css).toContain('@page { size: A5 landscape; }');
+  expect(printSnapshot?.pages).toHaveLength(1);
+  expect(printSnapshot?.texts).toContain('Print report');
+  expect(printSnapshot?.texts).toContain('Visible');
+  expect(printSnapshot?.texts).not.toContain('private');
+  expect(printSnapshot?.fills).toContainEqual(expect.objectContaining({
+    fill: '#e8f1ff',
+    height: 32,
+    width: 388,
+  }));
+  expect(printSnapshot?.strokes).toBeGreaterThan(0);
+  await expect(page.locator('[data-visual-print-crop="printable-cells"]'))
+    .toHaveScreenshot('printable-cells-visual.png');
+});

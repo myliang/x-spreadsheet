@@ -56,3 +56,22 @@ body {
 .visual-harness .tego-sheet textarea {
   caret-color: transparent;
 }
+
+[data-visual-print-preview] {
+  position: absolute;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  justify-content: start;
+  gap: 16px;
+  padding: 16px;
+  overflow: auto;
+  background: #dfe3e8;
+}
+
+[data-visual-print-page],
+[data-visual-print-crop] {
+  display: block;
+  background: #fff;
+}
