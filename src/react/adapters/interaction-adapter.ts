@@ -144,6 +144,7 @@ export function createInteractionAdapter(
       requestEdit: (point, initialText, source) => options.requestEdit?.(point, initialText, source),
       requestDelete: (selection, source) => options.requestDelete?.(selection, source),
       requestContextMenu: (point, selection) => options.requestContextMenu?.(point, selection),
+      requestSurfaceFocus: () => options.root.focus({ preventScroll: true }),
       requestEnsureVisible(point) {
         options.engine.ensureVisible(point);
         options.onViewportChange?.();

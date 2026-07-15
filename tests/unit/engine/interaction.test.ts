@@ -134,6 +134,7 @@ function setup(
     requestEdit: vi.fn(),
     requestDelete: vi.fn(),
     requestContextMenu: vi.fn(),
+    requestSurfaceFocus: vi.fn(),
     requestEnsureVisible: vi.fn(),
     requestResizePreview: vi.fn(),
     requestFormat: vi.fn(),
@@ -210,6 +211,7 @@ describe('InteractionManager pointer and selection behavior', () => {
         order.push('commit');
         return true;
       },
+      requestSurfaceFocus: () => order.push('focus'),
       setSelection: selection => order.push(`select:${selection.range.end.row},${selection.range.end.column}`),
     });
 
@@ -217,7 +219,7 @@ describe('InteractionManager pointer and selection behavior', () => {
     harness.globalTarget.emit('pointermove', { clientX: 271, clientY: 121, buttons: 1 });
     harness.globalTarget.emit('pointerup', { buttons: 0 });
 
-    expect(order).toEqual(['commit', 'select:1,1', 'select:3,3']);
+    expect(order).toEqual(['commit', 'focus', 'select:1,1', 'select:3,3']);
     harness.manager.dispose();
   });
 
@@ -960,7 +962,12 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
   it('supports tap, double-tap, dominant swipe, threshold, cancel and multitouch', () => {
     let now = 0;
     const edit = vi.fn();
-    const harness = setup({ now: () => now, requestEdit: edit }, { width: 260, height: 125 });
+    const focus = vi.fn();
+    const harness = setup({
+      now: () => now,
+      requestEdit: edit,
+      requestSurfaceFocus: focus,
+    }, { width: 260, height: 125 });
     const touch = (x: number, y: number) => ({ clientX: x, clientY: y });
     harness.root.emit('touchstart', { touches: [touch(71, 46)] });
     harness.root.emit('touchend', { changedTouches: [touch(71, 46)], touches: [] });
@@ -979,6 +986,7 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     harness.root.emit('touchstart', { touches: [touch(1, 1), touch(2, 2)] });
     harness.root.emit('touchend', { changedTouches: [touch(1, 1)], touches: [] });
     expect(edit).toHaveBeenCalledOnce();
+    expect(focus).toHaveBeenCalledTimes(2);
     harness.manager.dispose();
   });
 

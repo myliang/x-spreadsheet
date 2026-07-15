@@ -82,6 +82,7 @@ export interface InteractionManagerPorts {
   readonly requestEdit: (point: CellPoint, initialText: string | undefined, source: 'keyboard' | 'pointer' | 'touch') => void;
   readonly requestDelete: (selection: Selection, source: 'keyboard') => void;
   readonly requestContextMenu: (point: Readonly<{ x: number; y: number }>, selection: Selection) => void;
+  readonly requestSurfaceFocus: () => void;
   readonly requestEnsureVisible: (point: CellPoint) => void;
   readonly requestResizePreview: (preview: ResizePreview | null) => void;
   readonly requestFormat: (format: FormatRequest) => void;
@@ -488,6 +489,7 @@ export class InteractionManager {
     const handle = findResizeHandle(point, snapshot.viewport);
     if (handle !== null && !snapshot.readOnly) {
       if (!this.ports.commitEditor()) return;
+      this.ports.requestSurfaceFocus();
       const range = resizeRange(handle, snapshot.selection);
       if (range[1] > MAX_STRUCTURE_AXIS_CHANGES) {
         this.ports.requestError(invalidCommand(
@@ -511,6 +513,7 @@ export class InteractionManager {
       ? extendToRegion(snapshot.selection, region, snapshot.viewport)
       : selectionForRegion(region, snapshot.viewport);
     if (!this.ports.commitEditor(selection)) return;
+    this.ports.requestSurfaceFocus();
     this.setSelection(selection, 'pointer');
     this.drag = { mode: 'selection' };
     event.preventDefault?.();
@@ -777,6 +780,7 @@ export class InteractionManager {
     if (region === null) return;
     const selection = selectionForRegion(region, snapshot.viewport);
     if (!this.ports.commitEditor(selection)) return;
+    this.ports.requestSurfaceFocus();
     this.setSelection(selection, 'touch');
     if (double && region.kind === 'cell' && !snapshot.readOnly) {
       this.ports.requestEdit(selection.active, undefined, 'touch');

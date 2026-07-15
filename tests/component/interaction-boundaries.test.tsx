@@ -146,6 +146,82 @@ it('keeps root and canvas targets on the explicit grid interaction surface', asy
   expect(selections.at(-1)?.active).toEqual({ row: 0, column: 0 });
 });
 
+it('restores DOM and keyboard ownership when the canvas is pressed after toolbar focus', async () => {
+  const { ref, rendered, root, selections } = renderBoundarySheet();
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const canvas = rendered.container.querySelector<HTMLCanvasElement>('canvas')!;
+  const bold = rendered.getByRole('button', { name: /^bold$/i });
+  const focusRoot = vi.spyOn(root, 'focus');
+  bold.focus();
+  expect(document.activeElement).toBe(bold);
+  selections.length = 0;
+
+  fireEvent.pointerDown(canvas, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
+
+  expect(focusRoot).toHaveBeenCalledOnce();
+  expect(focusRoot).toHaveBeenCalledWith({ preventScroll: true });
+  expect(document.activeElement).toBe(root);
+  fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+  expect(selections).toHaveLength(1);
+  expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
+});
+
+it('closes a focused context menu and restores grid keys when the canvas is pressed', async () => {
+  const { ref, rendered, root, selections } = renderBoundarySheet();
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const canvas = rendered.container.querySelector<HTMLCanvasElement>('canvas')!;
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  const menu = rendered.getByRole('menu', { name: /cell actions/i });
+  expect(document.activeElement).toBe(menu);
+  selections.length = 0;
+
+  fireEvent.pointerDown(canvas, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
+
+  expect(document.activeElement).toBe(root);
+  expect(rendered.queryByRole('menu', { name: /cell actions/i })).toBeNull();
+  fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+  expect(selections).toHaveLength(1);
+  expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
+});
+
+it('restores grid focus after a canvas tap', async () => {
+  const { ref, rendered, root, selections } = renderBoundarySheet();
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const canvas = rendered.container.querySelector<HTMLCanvasElement>('canvas')!;
+  const bold = rendered.getByRole('button', { name: /^bold$/i });
+  bold.focus();
+  selections.length = 0;
+  const touch = { clientX: 70, clientY: 40 };
+
+  fireEvent.touchStart(canvas, { touches: [touch] });
+  fireEvent.touchEnd(canvas, { changedTouches: [touch], touches: [] });
+
+  expect(document.activeElement).toBe(root);
+  fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+  expect(selections).toHaveLength(1);
+  expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
+});
+
+it('restores grid focus without implicitly closing an explicit modal dialog', async () => {
+  const { ref, rendered, root, selections } = renderBoundarySheet();
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const canvas = rendered.container.querySelector<HTMLCanvasElement>('canvas')!;
+  fireEvent.click(rendered.getByRole('button', { name: /data validation/i }));
+  const dialog = rendered.getByRole('dialog', { name: /data validation/i });
+  const type = dialog.querySelector<HTMLSelectElement>('select[name="type"]')!;
+  type.focus();
+  expect(document.activeElement).toBe(type);
+  selections.length = 0;
+
+  fireEvent.pointerDown(canvas, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
+
+  expect(document.activeElement).toBe(root);
+  expect(rendered.getByRole('dialog', { name: /data validation/i })).toBe(dialog);
+  fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+  expect(selections).toHaveLength(1);
+  expect(selections[0]!.active).toEqual({ row: 0, column: 1 });
+});
+
 it('keeps dialog controls out of grid selection and applies their action once', async () => {
   const { changes, ref, rendered, selections } = renderBoundarySheet();
   await waitFor(() => expect(ref.current).not.toBeNull());
