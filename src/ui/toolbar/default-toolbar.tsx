@@ -2,7 +2,7 @@ import type { ToolbarAction, ToolbarRenderProps } from '../../core';
 import type { Translate } from '../translate';
 import { BorderControls } from './border-controls';
 import { FormatControls } from './format-controls';
-import { ToolbarButton } from './toolbar-button';
+import { ToolbarButton, type ToolbarIconName } from './toolbar-button';
 
 export interface DefaultToolbarProps {
   readonly toolbar: ToolbarRenderProps;
@@ -15,10 +15,24 @@ export interface DefaultToolbarProps {
 
 export function DefaultToolbar(props: DefaultToolbarProps) {
   const { toolbar, t } = props;
+  const icons: Partial<Record<ToolbarAction['type'], ToolbarIconName>> = {
+    undo: 'undo',
+    redo: 'redo',
+    print: 'print',
+    'paint-format': 'paint',
+    'clear-format': 'clear',
+    merge: 'merge',
+    unmerge: 'merge',
+    freeze: 'freeze',
+    unfreeze: 'freeze',
+    'clear-filter': 'filter',
+    sort: 'sort',
+  };
   const button = (action: ToolbarAction, label: string, active?: boolean) => (
     <ToolbarButton
       key={`${action.type}-${label}`}
       {...(active === undefined ? {} : { active })}
+      {...(icons[action.type] === undefined ? {} : { icon: icons[action.type] })}
       disabled={toolbar.disabledActions.has(action.type)}
       onClick={() => toolbar.execute(action)}
     >{label}</ToolbarButton>
@@ -28,7 +42,7 @@ export function DefaultToolbar(props: DefaultToolbarProps) {
     <div className="tego-sheet__toolbar" data-tego-toolbar="default" role="toolbar" aria-label={t('toolbar.label', 'Spreadsheet toolbar')}>
       {button({ type: 'undo' }, t('toolbar.undo', 'Undo'))}
       {button({ type: 'redo' }, t('toolbar.redo', 'Redo'))}
-      <ToolbarButton disabled={toolbar.disabledActions.has('print')} onClick={props.onOpenPrint}>
+      <ToolbarButton icon="print" disabled={toolbar.disabledActions.has('print')} onClick={props.onOpenPrint}>
         {t('toolbar.print', 'Print')}
       </ToolbarButton>
       {button({ type: 'paint-format' }, t('toolbar.paintFormat', 'Paint format'), props.paintFormatActive)}
@@ -41,10 +55,10 @@ export function DefaultToolbar(props: DefaultToolbarProps) {
       {button({ type: toolbar.frozen ? 'unfreeze' : 'freeze' }, toolbar.frozen
         ? t('toolbar.unfreeze', 'Unfreeze')
         : t('toolbar.freeze', 'Freeze'), toolbar.frozen)}
-      <ToolbarButton disabled={mutating} onClick={props.onOpenValidation}>
+      <ToolbarButton icon="validation" disabled={mutating} onClick={props.onOpenValidation}>
         {t('toolbar.validation', 'Data validation')}
       </ToolbarButton>
-      <ToolbarButton disabled={mutating} onClick={props.onOpenFilter}>
+      <ToolbarButton icon="filter" disabled={mutating} onClick={props.onOpenFilter}>
         {t('toolbar.filter', 'Filter')}
       </ToolbarButton>
       {button({ type: 'clear-filter' }, t('toolbar.clearFilter', 'Clear filter'))}

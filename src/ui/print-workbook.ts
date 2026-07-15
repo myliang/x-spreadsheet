@@ -11,6 +11,44 @@ export interface PrintWorkbookOptions {
   readonly paper: PaperSizeName;
 }
 
+interface HiddenPrintSibling {
+  readonly element: Element;
+  readonly wasHidden: boolean;
+}
+
+function hidePrintSiblings(): readonly HiddenPrintSibling[] {
+  const hidden: HiddenPrintSibling[] = [];
+  try {
+    for (const element of document.body.children) {
+      const sibling = { element, wasHidden: element.hasAttribute('hidden') };
+      hidden.push(sibling);
+      element.setAttribute('hidden', '');
+    }
+    return hidden;
+  } catch (error) {
+    const rollbackErrors = restorePrintSiblings(hidden);
+    if (rollbackErrors.length === 0) throw error;
+    throw new AggregateError(
+      [error, ...rollbackErrors],
+      'Print sibling isolation and rollback both failed',
+      { cause: error },
+    );
+  }
+}
+
+function restorePrintSiblings(siblings: readonly HiddenPrintSibling[]): unknown[] {
+  const errors: unknown[] = [];
+  for (const sibling of siblings) {
+    if (sibling.wasHidden) continue;
+    try {
+      sibling.element.removeAttribute('hidden');
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  return errors;
+}
+
 function removePrintNodes(host: HTMLElement, style: HTMLStyleElement): unknown[] {
   const errors: unknown[] = [];
   for (const node of [host, style]) {
@@ -39,7 +77,7 @@ export function mountPrintPages(
     defaultStyle,
   });
   const host = document.createElement('div');
-  host.className = 'tego-sheet__print-pages';
+  host.className = 'tego-sheet tego-sheet__print-pages';
   host.setAttribute('data-tego-print-pages', '');
   for (const page of layout.pages) {
     const canvas = document.createElement('canvas');
@@ -49,12 +87,19 @@ export function mountPrintPages(
   }
   const style = document.createElement('style');
   style.setAttribute('data-tego-print-style', '');
-  style.textContent = `@page { size: ${options.paper} ${options.orientation}; }\n@media print { body > *:not([data-tego-print-pages]) { display: none !important; } }`;
+  style.textContent = `@page { size: ${options.paper} ${options.orientation}; }`;
+  // printWorkbook mounts and cleans synchronously. Remembering the prior hidden
+  // attribute also makes nested mounts safe when they are released in LIFO order.
+  let hiddenSiblings: readonly HiddenPrintSibling[] = [];
   try {
     document.head.append(style);
+    hiddenSiblings = hidePrintSiblings();
     document.body.append(host);
   } catch (error) {
-    const cleanupErrors = removePrintNodes(host, style);
+    const cleanupErrors = [
+      ...removePrintNodes(host, style),
+      ...restorePrintSiblings(hiddenSiblings),
+    ];
     if (cleanupErrors.length === 0) throw error;
     throw new AggregateError(
       [error, ...cleanupErrors],
@@ -63,6 +108,9 @@ export function mountPrintPages(
     );
   }
   return () => {
-    throwCleanupErrors(removePrintNodes(host, style));
+    throwCleanupErrors([
+      ...removePrintNodes(host, style),
+      ...restorePrintSiblings(hiddenSiblings),
+    ]);
   };
 }

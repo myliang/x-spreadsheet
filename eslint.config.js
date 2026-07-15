@@ -20,6 +20,7 @@ export default tseslint.config(
       '.nyc_output/**',
       '.worktrees/**',
       'coverage/**',
+      'demo-dist/**',
       'dist/**',
       'docs/**',
       'legacy/**',

@@ -62,6 +62,7 @@ test('publishes only tego-sheet', () => {
       import: './dist/tego-sheet.js',
       require: './dist/tego-sheet.cjs',
     },
+    './styles.css': './dist/styles.css',
   });
   assert.equal(Object.keys(pkg.exports).some((path) => path.includes('legacy')), false);
   assert.deepEqual(requiredScripts.filter((script) => !(script in pkg.scripts)), []);
@@ -243,6 +244,11 @@ test('package dry run includes public files only', () => {
     'dist/engine/viewport/selection-state.d.ts',
     'dist/engine/viewport/viewport-state.d.ts',
     'dist/index.d.ts',
+    'dist/locales/de.d.ts',
+    'dist/locales/en.d.ts',
+    'dist/locales/index.d.ts',
+    'dist/locales/nl.d.ts',
+    'dist/locales/zh-cn.d.ts',
     'dist/react/adapters/controller-external-store.d.ts',
     'dist/react/adapters/engine-adapter.d.ts',
     'dist/react/adapters/event-dispatcher.d.ts',
@@ -262,6 +268,7 @@ test('package dry run includes public files only', () => {
     'dist/react/tego-sheet-context.d.ts',
     'dist/react/tego-sheet.d.ts',
     'dist/react/tego-sheet.types.d.ts',
+    'dist/styles.css',
     'dist/tego-sheet.cjs',
     'dist/tego-sheet.cjs.map',
     'dist/tego-sheet.js',
@@ -293,6 +300,7 @@ test('package dry run includes public files only', () => {
     pkg.module,
     pkg.types,
     ...Object.values(pkg.exports['.']),
+    pkg.exports['./styles.css'],
   ]);
   for (const target of declaredTargets) {
     assert.equal(paths.includes(target.replace(/^\.\//, '')), true, target);
@@ -300,7 +308,15 @@ test('package dry run includes public files only', () => {
 });
 
 test('built entry formats import without browser globals', () => {
-  const expectedRuntimeExports = ['TegoSheet', 'TegoSheetException'];
+  const expectedRuntimeExports = [
+    'TegoSheet',
+    'TegoSheetException',
+    'de',
+    'en',
+    'nl',
+    'resolveLocale',
+    'zhCN',
+  ];
   const clearBrowserGlobals = `
     for (const name of ['window', 'document', 'navigator']) {
       Reflect.deleteProperty(globalThis, name);

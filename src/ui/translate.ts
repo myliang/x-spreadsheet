@@ -1,4 +1,5 @@
 import type { LocaleDefinition, LocaleMessages } from '../core';
+import { resolveLocale } from '../locales';
 
 export type Translate = (path: string, fallback: string) => string;
 
@@ -14,5 +15,6 @@ function message(messages: LocaleMessages, path: string): string | undefined {
 }
 
 export function createTranslator(locale: LocaleDefinition | undefined): Translate {
-  return (path, fallback) => locale === undefined ? fallback : message(locale.messages, path) ?? fallback;
+  const resolved = resolveLocale(locale);
+  return (path, fallback) => message(resolved.messages, path) ?? fallback;
 }

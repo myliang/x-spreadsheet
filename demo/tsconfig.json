@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "tego-sheet": ["../src/index.ts"],
+      "tego-sheet/styles.css": ["../src/ui/styles/index.less"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "../src/styles.d.ts"
+  ],
+  "exclude": []
+}

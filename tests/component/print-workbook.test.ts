@@ -79,3 +79,42 @@ it('aggregates installation and every rollback failure in operation order', () =
   ]);
   expect((thrown as Error & { cause?: unknown }).cause).toBe(installationFailure);
 });
+
+it('rolls back already hidden host siblings when isolation fails midway', () => {
+  const first = document.createElement('main');
+  const second = document.createElement('aside');
+  document.body.append(first, second);
+  const failure = new Error('second sibling refused hidden');
+  const setAttribute = second.setAttribute.bind(second);
+  vi.spyOn(second, 'setAttribute').mockImplementation((name, value) => {
+    if (name === 'hidden') throw failure;
+    setAttribute(name, value);
+  });
+
+  expect(() => mountPrintPages(sheet, { paper: 'A4', orientation: 'portrait' }))
+    .toThrow(failure);
+
+  expect(first.hasAttribute('hidden')).toBe(false);
+  expect(second.hasAttribute('hidden')).toBe(false);
+  expect(document.querySelector('[data-tego-print-pages]')).toBeNull();
+  expect(document.querySelector('[data-tego-print-style]')).toBeNull();
+  first.remove();
+  second.remove();
+});
+
+it('preserves prior host visibility across nested LIFO print mounts', () => {
+  const host = document.createElement('main');
+  document.body.append(host);
+  const cleanupFirst = mountPrintPages(sheet, { paper: 'A4', orientation: 'portrait' });
+  const firstPages = document.querySelector<HTMLElement>('[data-tego-print-pages]')!;
+  const cleanupSecond = mountPrintPages(sheet, { paper: 'A5', orientation: 'landscape' });
+
+  expect(host.hasAttribute('hidden')).toBe(true);
+  expect(firstPages.hasAttribute('hidden')).toBe(true);
+  cleanupSecond();
+  expect(host.hasAttribute('hidden')).toBe(true);
+  expect(firstPages.hasAttribute('hidden')).toBe(false);
+  cleanupFirst();
+  expect(host.hasAttribute('hidden')).toBe(false);
+  host.remove();
+});

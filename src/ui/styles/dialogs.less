@@ -1,0 +1,146 @@
+.tego-sheet .tego-sheet__context-menu {
+  z-index: 100;
+  display: grid;
+  min-width: 184px;
+  max-height: min(70vh, 480px);
+  padding: 4px 0;
+  overflow-y: auto;
+  border: 1px solid #e0e2e4;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 1px 2px 5px 2px rgb(51 51 51 / 15%);
+}
+
+.tego-sheet .tego-sheet__context-menu button {
+  min-height: 28px;
+  padding: 5px 12px;
+  border: 0;
+  color: #343a40;
+  background: transparent;
+  text-align: left;
+  white-space: nowrap;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tego-sheet .tego-sheet__context-menu button:hover:not(:disabled) {
+  background: #f5f7fa;
+}
+
+.tego-sheet .tego-sheet__context-menu button:disabled {
+  color: #a8adb4;
+  cursor: default;
+}
+
+.tego-sheet .tego-sheet__dialog {
+  position: absolute;
+  z-index: 120;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  gap: 10px;
+  min-width: 300px;
+  max-width: min(92%, 480px);
+  max-height: 88%;
+  padding: 16px;
+  overflow: auto;
+  border: 1px solid #e0e2e4;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 24%);
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+}
+
+.tego-sheet .tego-sheet__filter-menu {
+  position: absolute;
+  z-index: 110;
+  top: 48px;
+  right: 10px;
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+  max-height: min(70%, 420px);
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid #e0e2e4;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 1px 2px 5px 2px rgb(51 51 51 / 15%);
+}
+
+.tego-sheet .tego-sheet__dialog label {
+  display: grid;
+  gap: 4px;
+  color: #4b5563;
+}
+
+.tego-sheet .tego-sheet__filter-menu label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 26px;
+}
+
+.tego-sheet .tego-sheet__dialog input {
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 1px solid #d8dce1;
+  border-radius: 2px;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.tego-sheet .tego-sheet__dialog select {
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 1px solid #d8dce1;
+  border-radius: 2px;
+  background: #fff;
+  font: inherit;
+}
+
+.tego-sheet .tego-sheet__dialog button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #d8dce1;
+  border-radius: 2px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tego-sheet .tego-sheet__filter-menu button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #d8dce1;
+  border-radius: 2px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tego-sheet .tego-sheet__notification {
+  position: absolute;
+  z-index: 130;
+  right: 12px;
+  bottom: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(420px, 88%);
+  padding: 9px 12px;
+  border-radius: 2px;
+  color: #fff;
+  background: #343a40;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 22%);
+}
+
+.tego-sheet .tego-sheet__notification button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}

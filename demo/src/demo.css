@@ -1,0 +1,99 @@
+:root {
+  color: #1f2937;
+  background: #f4f6f8;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+button, select, textarea {
+  font: inherit;
+}
+
+.demo-page {
+  display: grid;
+  gap: 28px;
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 36px 0 72px;
+}
+
+.demo-page section {
+  padding: 20px;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgb(15 23 42 / 6%);
+}
+
+.demo-page h1, .demo-page h2, .demo-page p {
+  margin-top: 0;
+}
+
+.demo-kicker {
+  color: #1678c2;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.demo-section-heading, .demo-json-tools, .demo-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.demo-json-tools {
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.demo-json-tools textarea {
+  min-height: 120px;
+  flex: 1 1 auto;
+  padding: 10px;
+  border: 1px solid #cfd5dc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.demo-json-tools div, .demo-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.demo-json-tools button, .demo-toolbar button {
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 1px solid #cfd5dc;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.demo-sheet-frame {
+  height: 460px;
+}
+
+.demo-sheet-frame--compact {
+  height: 320px;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 860px) {
+  .demo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-section-heading, .demo-json-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

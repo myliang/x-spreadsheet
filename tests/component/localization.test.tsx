@@ -16,7 +16,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('uses English fallback, live recursive message overlays, and per-instance locale isolation', async () => {
+it('@parity:locale.switch-language uses live recursive overlays with per-instance isolation', async () => {
   const rendered = render(
     <>
       <TegoSheet

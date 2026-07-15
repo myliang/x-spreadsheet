@@ -22,6 +22,7 @@ export default defineConfig({
   ],
   build: {
     lib: {
+      cssFileName: 'styles',
       entry: resolve(import.meta.dirname, 'src/index.ts'),
       fileName: (format) => (format === 'es' ? 'tego-sheet.js' : 'tego-sheet.cjs'),
       formats: ['es', 'cjs'],

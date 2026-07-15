@@ -1,0 +1,66 @@
+.tego-sheet .tego-sheet__tabs {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 36px;
+  padding: 3px 6px;
+  border-top: 1px solid #e9e9e9;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.tego-sheet .tego-sheet__tabs [role='tablist'] {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.tego-sheet .tego-sheet__tab-item {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  border-radius: 2px;
+  background: #f6f7f8;
+}
+
+.tego-sheet .tego-sheet__tabs button {
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 0;
+  color: #4b5563;
+  background: transparent;
+  white-space: nowrap;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tego-sheet .tego-sheet__tabs button[role='tab'][aria-selected='true'] {
+  color: #1678c2;
+  background: #eaf2ff;
+  box-shadow: inset 0 -2px #2185d0;
+}
+
+.tego-sheet .tego-sheet__tabs button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.tego-sheet .tego-sheet__tabs input {
+  width: 112px;
+  height: 28px;
+  padding: 3px 7px;
+  border: 1px solid #4b89ff;
+  border-radius: 2px;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.tego-sheet [data-tego-sheet-tabs='custom'] {
+  flex: 0 0 auto;
+  border-top: 1px solid #e9e9e9;
+}

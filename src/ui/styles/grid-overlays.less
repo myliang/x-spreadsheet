@@ -1,0 +1,133 @@
+.tego-sheet .tego-sheet__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.tego-sheet .tego-sheet__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  vertical-align: bottom;
+  touch-action: none;
+  outline: none;
+}
+
+.tego-sheet .tego-sheet__editor {
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  border: 2px solid #4b89ff;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 18%);
+  box-sizing: border-box;
+}
+
+.tego-sheet .tego-sheet__editor[data-clipped='true'] {
+  overflow: hidden;
+}
+
+.tego-sheet .tego-sheet__editor textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 100%;
+  margin: 0;
+  padding: 3px 5px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  box-sizing: border-box;
+  font: 400 13px/1.25 Arial, 'Lato', 'Source Sans Pro', Roboto, Helvetica, sans-serif;
+}
+
+.tego-sheet .tego-sheet__editor input[type='date'] {
+  min-width: 136px;
+  border: 0;
+  outline: 0;
+  font: inherit;
+}
+
+.tego-sheet .tego-sheet__formula-suggestions {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 2px);
+  left: -2px;
+  display: grid;
+  min-width: 180px;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid #e0e2e4;
+  background: #fff;
+  box-shadow: 1px 2px 5px 2px rgb(51 51 51 / 15%);
+}
+
+.tego-sheet .tego-sheet__formula-suggestions button {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 0;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tego-sheet .tego-sheet__formula-suggestions button:hover {
+  background: #f5f7fa;
+}
+
+.tego-sheet .tego-sheet__empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  color: #6b7280;
+  background: #fafafa;
+}
+
+.tego-sheet .tego-sheet__empty button {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid #2185d0;
+  border-radius: 2px;
+  color: #fff;
+  background: #2185d0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tego-sheet.tego-sheet__print-pages {
+  display: none;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+}
+
+.tego-sheet.tego-sheet__print-pages canvas {
+  display: block;
+  margin: 0 auto 12px;
+  background: #fff;
+  box-shadow: 0 1px 8px rgb(0 0 0 / 18%);
+  break-after: page;
+}
+
+@media print {
+  .tego-sheet.tego-sheet__print-pages {
+    display: block;
+  }
+
+  .tego-sheet.tego-sheet__print-pages canvas {
+    margin: 0;
+    box-shadow: none;
+  }
+}

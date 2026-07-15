@@ -49,21 +49,25 @@ export function FormatControls({ toolbar, t }: FormatControlsProps) {
         })}
       />
       <ToolbarButton
+        icon="bold"
         active={font.bold === true}
         disabled={disabled}
         onClick={() => setStyle({ type: 'set-style', patch: { font: { ...font, bold: font.bold !== true } } })}
       >{t('toolbar.bold', 'Bold')}</ToolbarButton>
       <ToolbarButton
+        icon="italic"
         active={font.italic === true}
         disabled={disabled}
         onClick={() => setStyle({ type: 'set-style', patch: { font: { ...font, italic: font.italic !== true } } })}
       >{t('toolbar.italic', 'Italic')}</ToolbarButton>
       <ToolbarButton
+        icon="underline"
         active={style.underline === true}
         disabled={disabled}
         onClick={() => setStyle({ type: 'set-style', patch: { underline: style.underline !== true } })}
       >{t('toolbar.underline', 'Underline')}</ToolbarButton>
       <ToolbarButton
+        icon="strike"
         active={style.strike === true}
         disabled={disabled}
         onClick={() => setStyle({ type: 'set-style', patch: { strike: style.strike !== true } })}
@@ -109,6 +113,7 @@ export function FormatControls({ toolbar, t }: FormatControlsProps) {
         <option value="bottom">{t('toolbar.alignBottom', 'Bottom')}</option>
       </select>
       <ToolbarButton
+        icon="wrap"
         active={style.textwrap === true}
         disabled={disabled}
         onClick={() => setStyle({ type: 'set-style', patch: { textwrap: style.textwrap !== true } })}

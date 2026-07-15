@@ -11,7 +11,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/tego-sheet.js",
       "require": "./dist/tego-sheet.cjs"
-    }
+    },
+    "./styles.css": "./dist/styles.css"
   },
   "files": [
     "dist"
@@ -36,7 +37,8 @@
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "build:demo": "tsc --noEmit --project demo/tsconfig.json && vite build --config demo/vite.config.ts"
   },
   "keywords": [
     "react",
