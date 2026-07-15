@@ -69,7 +69,7 @@ describe('read-only Canvas rendering', () => {
     expect(harness.operations).toContainEqual({ name: 'fillText', args: ['1,234.00', 145, 40] });
     expect(harness.operations.some(operation => (
       operation.name === 'fillText' && operation.args[0] === '1235'
-    ))).toBe(true);
+    ))).toBe(false);
     expect(harness.operations.some(operation => (
       operation.name === 'fillText' && operation.args[0] === 'screen-only'
     ))).toBe(true);
@@ -151,7 +151,7 @@ describe('read-only Canvas rendering', () => {
     harness.animationFrame.flush();
 
     expect(harness.operations).toContainEqual({ name: 'fillText', args: ['1,234.00', 145, 40] });
-    expect(harness.operations).toContainEqual({ name: 'fillText', args: ['1235', 105, 44] });
+    expect(harness.operations).not.toContainEqual({ name: 'fillText', args: ['1235', 105, 44] });
     expect(harness.operations.filter(operation => operation.name === 'translate')).toEqual([
       { name: 'translate', args: [60, 25] },
       { name: 'translate', args: [10, 25] },

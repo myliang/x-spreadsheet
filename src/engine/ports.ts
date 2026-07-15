@@ -1,4 +1,5 @@
 import { containsCell, parseA1Range } from '../core/coordinates/ranges';
+import { filteredRows } from '../core/operations/filter';
 import type { CellPoint, CellRange } from '../core/types/coordinates';
 import type { ColumnData, RowData, SheetData } from '../core/types/workbook';
 
@@ -135,16 +136,24 @@ function createSparseAxis<T extends { readonly hide?: boolean }>(
   sizeOf: (data: T) => number | undefined,
   label: 'row' | 'column',
   zeroExtentPolicy: ZeroExtentPolicy,
+  forcedHidden: readonly number[] = [],
 ): SparseAxis {
-  const rawOverrides = Object.entries(collection ?? {}).flatMap(([key, value]) => {
+  const overrideSizes = new Map<number, number>();
+  for (const [key, value] of Object.entries(collection ?? {})) {
     const index = sparseIndex(key, count);
     const data = indexedObject<T>(value);
-    if (index === null || data === null) return [];
+    if (index === null || data === null) continue;
     const size = data.hide === true
       ? 0
       : overrideSize(sizeOf(data), fallback, `${label} size`);
-    return size === fallback ? [] : [{ index, size }];
-  }).sort((left, right) => left.index - right.index);
+    if (size !== fallback) overrideSizes.set(index, size);
+  }
+  for (const index of forcedHidden) {
+    if (Number.isSafeInteger(index) && index >= 0 && index < count) overrideSizes.set(index, 0);
+  }
+  const rawOverrides = [...overrideSizes.entries()]
+    .map(([index, size]) => ({ index, size }))
+    .sort((left, right) => left.index - right.index);
   let overrideSizeSum = 0;
   let previousOverrideIndex = -1;
   let lastVisible: number | null = null;
@@ -230,6 +239,12 @@ export function createSheetGridModel(
   const merges = Object.freeze((sheet.merges ?? []).map(value => (
     frozenRange(parseA1Range(value))
   )));
+  let filtered: readonly number[] = [];
+  try {
+    filtered = filteredRows(sheet);
+  } catch {
+    // Invalid imported filter metadata stays inert until a valid command replaces it.
+  }
   const rows = createSparseAxis<RowData>(
     sheet.rows,
     rowCount,
@@ -237,6 +252,7 @@ export function createSheetGridModel(
     data => data.height,
     'row',
     defaultRowHeight > 0 ? 'last' : 'none',
+    filtered,
   );
   const columns = createSparseAxis<ColumnData>(
     sheet.cols,

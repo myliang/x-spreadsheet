@@ -105,6 +105,30 @@ describe('DOM-free grid geometry', () => {
     });
   });
 
+  it('collapses rows excluded by the active autofilter', () => {
+    const sheet: SheetData = {
+      rows: {
+        len: 4,
+        0: { cells: { 0: { text: 'Kind' } } },
+        1: { cells: { 0: { text: 'odd' } } },
+        2: { cells: { 0: { text: 'even' } } },
+        3: { cells: { 0: { text: 'odd' } } },
+      },
+      cols: { len: 1 },
+      autofilter: {
+        ref: 'A1:A4',
+        filters: [{ ci: 0, operator: 'in', value: ['even'] }],
+      },
+    };
+    const model = createSheetGridModel(sheet);
+    const metrics = createViewportMetrics(model, { width: 200, height: 150 });
+
+    expect(model.rowHeight(1)).toBe(0);
+    expect(model.rowHeight(2)).toBe(25);
+    expect(model.rowHeight(3)).toBe(0);
+    expect(hitTest({ x: 70, y: 62 }, metrics)).toEqual({ row: 2, column: 0 });
+  });
+
   it('reserves row and column headers and clips hits to the viewport', () => {
     const metrics = createViewportMetrics(
       createSheetGridModel({ rows: { len: 4 }, cols: { len: 4 } }),

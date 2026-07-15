@@ -53,6 +53,27 @@ export function filterValuesForSelection(
   return [...values];
 }
 
+export function filterCommandSelection(
+  sheet: SheetData,
+  selection: Selection,
+): Selection {
+  if (sheet.autofilter?.ref === undefined) return selection;
+  try {
+    const range = parseA1Range(sheet.autofilter.ref);
+    if (
+      selection.active.column < range.start.column
+      || selection.active.column > range.end.column
+    ) return selection;
+    return {
+      ...selection,
+      active: { row: range.start.row, column: selection.active.column },
+      range,
+    };
+  } catch {
+    return selection;
+  }
+}
+
 export function mountActiveSheetPrint(
   snapshot: ControllerSnapshot,
   activeSheet: SheetId | null,

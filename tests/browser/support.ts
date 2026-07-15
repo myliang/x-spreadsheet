@@ -26,6 +26,41 @@ export async function selectCell(page: Page, row: number, column: number): Promi
   await page.mouse.click(point.x, point.y);
 }
 
+export async function dragCells(
+  page: Page,
+  start: Readonly<{ readonly row: number; readonly column: number }>,
+  end: Readonly<{ readonly row: number; readonly column: number }>,
+): Promise<void> {
+  const from = await cellPoint(page, start.row, start.column);
+  const to = await cellPoint(page, end.row, end.column);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y);
+  await page.mouse.up();
+}
+
+export async function openCellMenu(page: Page, row: number, column: number): Promise<void> {
+  const point = await cellPoint(page, row, column);
+  await page.mouse.click(point.x, point.y, { button: 'right' });
+  await expect(page.getByRole('menu', { name: 'Cell actions' })).toBeVisible();
+}
+
+export async function dispatchClipboard(
+  page: Page,
+  type: 'copy' | 'cut' | 'paste',
+  text?: string,
+): Promise<void> {
+  await page.evaluate(({ eventType, value }) => {
+    const event = new Event(eventType, { bubbles: true, cancelable: true });
+    if (value !== undefined) {
+      const transfer = new DataTransfer();
+      transfer.setData('text/plain', value);
+      Object.defineProperty(event, 'clipboardData', { value: transfer });
+    }
+    window.dispatchEvent(event);
+  }, { eventType: type, value: text });
+}
+
 export async function selection(page: Page) {
   return JSON.parse(await page.getByTestId('selection').textContent() ?? 'null') as {
     active: { row: number; column: number };

@@ -73,6 +73,7 @@ import {
 } from '../ui/print-workbook';
 import {
   activeSheetData,
+  filterCommandSelection,
   filterValuesForSelection,
   mountActiveSheetPrint,
 } from './sheet-chrome-runtime';
@@ -324,8 +325,14 @@ function toolbarCommand(runtime: SlotRuntime, action: ToolbarAction): WorkbookCo
       return { type: 'set-validation', selection, rule: action.rule };
     case 'remove-validation':
       return { type: 'remove-validation', selection };
-    case 'set-filter':
-      return { type: 'set-filter', selection, filter: action.filter };
+    case 'set-filter': {
+      const sheetData = runtimeSheet(runtime);
+      return {
+        type: 'set-filter',
+        selection: sheetData === null ? selection : filterCommandSelection(sheetData, selection),
+        filter: action.filter,
+      };
+    }
     case 'sort':
       return { type: 'sort', sheet, column: active.column, order: action.order };
   }

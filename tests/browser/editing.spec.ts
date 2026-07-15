@@ -19,4 +19,13 @@ test('@parity:editing.ime-input keeps composition in the editor until explicit c
   await page.keyboard.press('Enter');
   const value = await capture(page) as Array<{ rows?: Record<string, { cells?: Record<string, { text?: string }> }> }>;
   expect(value[0]?.rows?.['1']?.cells?.['0']?.text).toBe('漢字');
+
+  await page.getByRole('button', { name: 'Toggle read only' }).click();
+  await selectCell(page, 1, 0);
+  await page.locator('[data-tego-sheet]').focus();
+  await page.keyboard.press('F2');
+  await expect(page.getByRole('textbox', { name: 'Cell editor' })).toHaveCount(0);
+  await page.keyboard.type('blocked');
+  const readOnlyValue = await capture(page) as Array<{ rows?: Record<string, { cells?: Record<string, { text?: string }> }> }>;
+  expect(readOnlyValue[0]?.rows?.['1']?.cells?.['0']?.text).toBe('漢字');
 });

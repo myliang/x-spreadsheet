@@ -13,4 +13,15 @@ test('@parity:selection.pointer-drag selects the exact canvas range under browse
     active: { row: 3, column: 2 },
     range: { start: { row: 1, column: 1 }, end: { row: 3, column: 2 } },
   });
+  await page.mouse.click(end.x, end.y);
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(() => selection(page)).toMatchObject({
+    active: { row: 3, column: 1 },
+    range: { start: { row: 3, column: 1 }, end: { row: 3, column: 1 } },
+  });
+  await page.keyboard.press('Shift+ArrowUp');
+  await expect.poll(() => selection(page)).toMatchObject({
+    active: { row: 2, column: 1 },
+    range: { start: { row: 2, column: 1 }, end: { row: 3, column: 1 } },
+  });
 });
