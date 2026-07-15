@@ -7,9 +7,11 @@ import {
   createSheetGridModel,
   createViewportMetrics,
   normalizeSelection,
+  type GridModelPort,
   type InteractionManagerPorts,
   type InteractionSnapshot,
   type SelectionState,
+  type ViewportStateInput,
 } from '../../../src/engine';
 import { ClipboardHarness, DataTransferHarness } from '../../helpers/clipboard-harness';
 
@@ -60,12 +62,13 @@ class FakeTarget {
 
 function setup(
   overrides: Partial<InteractionManagerPorts> = {},
-  viewportSize: Readonly<{ width: number; height: number }> = { width: 700, height: 400 },
+  viewportSize: Readonly<ViewportStateInput> = { width: 700, height: 400 },
+  modelOverride?: GridModelPort,
 ) {
   const root = new FakeTarget();
   const globalTarget = new FakeTarget();
   const clipboard = new ClipboardHarness();
-  const model = createSheetGridModel({
+  const model = modelOverride ?? createSheetGridModel({
     rows: { len: 6, 1: { hide: true }, 3: { height: 40 } },
     cols: { len: 6, 1: { hide: true }, 3: { width: 140 } },
     merges: ['A1:B2', 'B2:C3'],
@@ -219,6 +222,69 @@ describe('InteractionManager pointer and selection behavior', () => {
       kind: 'all',
       active: { row: 0, column: 0 },
       range: { start: { row: 0, column: 0 }, end: { row: 5, column: 5 } },
+    });
+    harness.manager.dispose();
+  });
+
+  it('extends header selections across rows and columns during window-level drags', () => {
+    const harness = setup();
+
+    harness.root.emit('pointerdown', { clientX: 20, clientY: 46 });
+    harness.globalTarget.emit('pointermove', { clientX: 20, clientY: 121, buttons: 1 });
+    expect(normalizeSelection(
+      harness.snapshot().selection,
+      harness.snapshot().viewport.model,
+    )).toMatchObject({
+      kind: 'row',
+      anchor: { row: 0, column: 0 },
+      focus: { row: 3, column: 5 },
+      active: { row: 0, column: 0 },
+      range: { start: { row: 0, column: 0 }, end: { row: 3, column: 5 } },
+    });
+    harness.globalTarget.emit('pointerup', { buttons: 0 });
+
+    harness.root.emit('pointerdown', { clientX: 71, clientY: 30 });
+    harness.globalTarget.emit('pointermove', { clientX: 340, clientY: 30, buttons: 1 });
+    expect(normalizeSelection(
+      harness.snapshot().selection,
+      harness.snapshot().viewport.model,
+    )).toMatchObject({
+      kind: 'column',
+      anchor: { row: 0, column: 0 },
+      focus: { row: 5, column: 3 },
+      active: { row: 0, column: 0 },
+      range: { start: { row: 0, column: 0 }, end: { row: 5, column: 3 } },
+    });
+    harness.manager.dispose();
+  });
+
+  it('shift-extends header selections from the existing anchor without losing a legal active cell', () => {
+    const harness = setup();
+
+    harness.root.emit('pointerdown', { clientX: 20, clientY: 116 });
+    harness.globalTarget.emit('pointerup', { buttons: 0 });
+    harness.root.emit('pointerdown', { clientX: 20, clientY: 46, shiftKey: true });
+    expect(normalizeSelection(
+      harness.snapshot().selection,
+      harness.snapshot().viewport.model,
+    )).toMatchObject({
+      kind: 'row',
+      anchor: { row: 3, column: 0 },
+      active: { row: 3, column: 0 },
+      range: { start: { row: 0, column: 0 }, end: { row: 3, column: 5 } },
+    });
+
+    harness.root.emit('pointerdown', { clientX: 340, clientY: 30 });
+    harness.globalTarget.emit('pointerup', { buttons: 0 });
+    harness.root.emit('pointerdown', { clientX: 71, clientY: 30, shiftKey: true });
+    expect(normalizeSelection(
+      harness.snapshot().selection,
+      harness.snapshot().viewport.model,
+    )).toMatchObject({
+      kind: 'column',
+      anchor: { row: 0, column: 3 },
+      active: { row: 0, column: 3 },
+      range: { start: { row: 0, column: 0 }, end: { row: 5, column: 3 } },
     });
     harness.manager.dispose();
   });
@@ -402,6 +468,68 @@ describe('InteractionManager keyboard, wheel, and focus behavior', () => {
     const atEnd = harness.root.emit('wheel', { deltaX: 40, deltaY: 0 });
     expect(atEnd.preventDefault).not.toHaveBeenCalled();
     harness.manager.dispose();
+  });
+
+  it('snaps across consecutive hidden indexes in both directions at exact boundaries', () => {
+    const harness = setup({}, { width: 260, height: 75 });
+    const beforeStart = harness.root.emit('wheel', { deltaX: 0, deltaY: -1 });
+    expect(beforeStart.preventDefault).not.toHaveBeenCalled();
+
+    harness.root.emit('wheel', { deltaX: 0, deltaY: 1 });
+    expect(harness.snapshot().viewport.scroll.y).toBe(25);
+    harness.root.emit('wheel', { deltaX: 0, deltaY: 1 });
+    expect(harness.snapshot().viewport.scroll.y).toBe(50);
+    harness.root.emit('wheel', { deltaX: 0, deltaY: -1 });
+    expect(harness.snapshot().viewport.scroll.y).toBe(25);
+    harness.root.emit('wheel', { deltaX: 0, deltaY: -1 });
+    expect(harness.snapshot().viewport.scroll.y).toBe(0);
+    harness.manager.dispose();
+  });
+
+  it('steps remote maximum-sized axes through bounded index lookups', () => {
+    const base = createSheetGridModel({
+      rows: { len: Number.MAX_SAFE_INTEGER },
+      cols: { len: 2 },
+    });
+    const rowAt = vi.fn(base.rowAt);
+    const rowOffset = vi.fn(base.rowOffset);
+    const model: GridModelPort = { ...base, rowAt, rowOffset };
+    const initial = 1_000_000_000_000;
+    const harness = setup({}, {
+      width: 260,
+      height: 125,
+      scroll: { x: 0, y: initial },
+    }, model);
+
+    const forward = harness.root.emit('wheel', { deltaX: 0, deltaY: 1 });
+    expect(harness.snapshot().viewport.scroll.y).toBe(initial + 25);
+    expect(forward.preventDefault).toHaveBeenCalledOnce();
+    expect(rowAt.mock.calls.length).toBeLessThanOrEqual(1);
+    expect(rowOffset.mock.calls.length).toBeLessThanOrEqual(4);
+
+    rowAt.mockClear();
+    rowOffset.mockClear();
+    harness.root.emit('wheel', { deltaX: 0, deltaY: -1 });
+    expect(harness.snapshot().viewport.scroll.y).toBe(initial);
+    expect(rowAt.mock.calls.length).toBeLessThanOrEqual(1);
+    expect(rowOffset.mock.calls.length).toBeLessThanOrEqual(4);
+    harness.manager.dispose();
+  });
+
+  it('keeps exact-boundary wheel stepping isolated between manager instances', () => {
+    const first = setup({}, {
+      width: 260, height: 75, scroll: { x: 0, y: 25 },
+    });
+    const second = setup({}, {
+      width: 260, height: 75, scroll: { x: 0, y: 50 },
+    });
+
+    first.root.emit('wheel', { deltaX: 0, deltaY: 1 });
+    second.root.emit('wheel', { deltaX: 0, deltaY: -1 });
+    expect(first.snapshot().viewport.scroll.y).toBe(50);
+    expect(second.snapshot().viewport.scroll.y).toBe(25);
+    first.manager.dispose();
+    second.manager.dispose();
   });
 
   it('isolates two focused instances and blur ends active drags', () => {
@@ -667,6 +795,68 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     expect(harness.commands.at(-1)).toEqual({
       type: 'set-row-hidden', sheet: sheetId('sheet-1'), row: 1, count: 1, hidden: false,
     });
+    harness.manager.dispose();
+  });
+
+  it('double-clicks hidden header boundaries to unhide only the preceding contiguous run', () => {
+    const edit = vi.fn();
+    const model = createSheetGridModel({
+      rows: { len: 6, 1: { hide: true }, 2: { hide: true }, 4: { hide: true } },
+      cols: { len: 6, 1: { hide: true }, 2: { hide: true }, 4: { hide: true } },
+    });
+    const harness = setup({ requestEdit: edit }, { width: 700, height: 400 }, model);
+
+    const row = harness.root.emit('dblclick', { clientX: 20, clientY: 70 });
+    expect(row.preventDefault).toHaveBeenCalledOnce();
+    expect(harness.commands.at(-1)).toEqual({
+      type: 'set-row-hidden', sheet: sheetId('sheet-1'), row: 1, count: 2, hidden: false,
+    });
+    const column = harness.root.emit('dblclick', { clientX: 170, clientY: 30 });
+    expect(column.preventDefault).toHaveBeenCalledOnce();
+    expect(harness.commands.at(-1)).toEqual({
+      type: 'set-column-hidden', sheet: sheetId('sheet-1'), column: 1, count: 2, hidden: false,
+    });
+    expect(edit).not.toHaveBeenCalled();
+    harness.manager.dispose();
+  });
+
+  it('unhides an initial hidden run without treating its boundary as a resize handle', () => {
+    const preview = vi.fn();
+    const model = createSheetGridModel({
+      rows: { len: 4 },
+      cols: { len: 6, 0: { hide: true }, 1: { hide: true }, 2: { hide: true } },
+    });
+    const harness = setup(
+      { requestResizePreview: preview },
+      { width: 700, height: 400 },
+      model,
+    );
+
+    harness.root.emit('pointerdown', { clientX: 70, clientY: 30 });
+    harness.globalTarget.emit('pointermove', { clientX: 100, clientY: 30, buttons: 1 });
+    harness.globalTarget.emit('pointerup', { buttons: 0 });
+    expect(preview).not.toHaveBeenCalled();
+    expect(harness.commands).toEqual([]);
+
+    const event = harness.root.emit('dblclick', { clientX: 70, clientY: 30 });
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(harness.commands).toEqual([{
+      type: 'set-column-hidden', sheet: sheetId('sheet-1'), column: 0, count: 3, hidden: false,
+    }]);
+    harness.manager.dispose();
+  });
+
+  it('does not dispatch hidden-boundary double-clicks in readOnly mode', () => {
+    const state: { current?: InteractionSnapshot } = {};
+    const model = createSheetGridModel({
+      rows: { len: 4, 1: { hide: true }, 2: { hide: true } },
+      cols: { len: 4 },
+    });
+    const harness = setup({ getSnapshot: () => state.current! }, { width: 700, height: 400 }, model);
+    state.current = { ...harness.snapshot(), readOnly: true };
+    const event = harness.root.emit('dblclick', { clientX: 20, clientY: 70 });
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(harness.commands).toEqual([]);
     harness.manager.dispose();
   });
 });

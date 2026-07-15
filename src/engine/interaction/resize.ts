@@ -7,8 +7,14 @@ export type ResizeAxis = 'row' | 'column';
 export interface ResizeHandle {
   readonly axis: ResizeAxis;
   readonly index: number;
+  readonly boundary: number;
   readonly position: number;
   readonly size: number;
+}
+
+export interface ResizeBoundary {
+  readonly axis: ResizeAxis;
+  readonly boundary: number;
 }
 
 function previousVisible(index: number, size: (value: number) => number): number | null {
@@ -23,6 +29,24 @@ export function findResizeHandle(
   viewport: ViewportMetrics,
   tolerance = 5,
 ): ResizeHandle | null {
+  const boundary = findResizeBoundary(point, viewport, tolerance);
+  if (boundary === null) return null;
+  const { model } = viewport;
+  const size = boundary.axis === 'row' ? model.rowHeight : model.columnWidth;
+  const index = previousVisible(boundary.boundary - 1, size);
+  return index === null ? null : {
+    ...boundary,
+    index,
+    position: boundary.axis === 'row' ? point.y : point.x,
+    size: size(index),
+  };
+}
+
+export function findResizeBoundary(
+  point: CssPoint,
+  viewport: ViewportMetrics,
+  tolerance = 5,
+): ResizeBoundary | null {
   const { model } = viewport;
   if (point.y < viewport.columnHeaderHeight && point.x >= viewport.rowHeaderWidth) {
     const region = hitTestRegion(point, viewport);
@@ -32,14 +56,11 @@ export function findResizeHandle(
       - (column < viewport.freeze.column ? 0 : viewport.scroll.x);
     const leftDistance = Math.abs(point.x - left);
     const rightDistance = Math.abs(point.x - (left + model.columnWidth(column)));
-    const index = leftDistance <= tolerance && leftDistance <= rightDistance
-      ? previousVisible(column - 1, model.columnWidth)
-      : rightDistance <= tolerance ? previousVisible(column, model.columnWidth) : null;
-    return index === null ? null : {
+    const hitsLeft = leftDistance <= tolerance && leftDistance <= rightDistance;
+    if (!hitsLeft && rightDistance > tolerance) return null;
+    return {
       axis: 'column',
-      index,
-      position: point.x,
-      size: model.columnWidth(index),
+      boundary: hitsLeft ? column : column + 1,
     };
   }
   if (point.x < viewport.rowHeaderWidth && point.y >= viewport.columnHeaderHeight) {
@@ -50,14 +71,11 @@ export function findResizeHandle(
       - (row < viewport.freeze.row ? 0 : viewport.scroll.y);
     const topDistance = Math.abs(point.y - top);
     const bottomDistance = Math.abs(point.y - (top + model.rowHeight(row)));
-    const index = topDistance <= tolerance && topDistance <= bottomDistance
-      ? previousVisible(row - 1, model.rowHeight)
-      : bottomDistance <= tolerance ? previousVisible(row, model.rowHeight) : null;
-    return index === null ? null : {
+    const hitsTop = topDistance <= tolerance && topDistance <= bottomDistance;
+    if (!hitsTop && bottomDistance > tolerance) return null;
+    return {
       axis: 'row',
-      index,
-      position: point.y,
-      size: model.rowHeight(index),
+      boundary: hitsTop ? row : row + 1,
     };
   }
   return null;

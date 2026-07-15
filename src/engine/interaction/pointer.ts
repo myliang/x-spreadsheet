@@ -70,11 +70,47 @@ export function extendToRegion(
   region: HitTestRegion,
   viewport: ViewportMetrics,
 ): SelectionState {
-  if (region.kind !== 'cell') return selectionForRegion(region, viewport);
-  return extendSelection(selection, region.cell, viewport.model);
+  if (region.kind === 'cell') return extendSelection(selection, region.cell, viewport.model);
+  const all = fullRange(viewport);
+  if (region.kind === 'corner') {
+    return createRangeSelection(
+      selection.anchor,
+      all.end,
+      all,
+      'all',
+      containsCell(all, selection.active) ? selection.active : all.start,
+    );
+  }
+  if (region.kind === 'row-header') {
+    const anchor = { row: selection.anchor.row, column: 0 };
+    const focus = { row: region.row, column: all.end.column };
+    const range = {
+      start: { row: Math.min(anchor.row, focus.row), column: 0 },
+      end: { row: Math.max(anchor.row, focus.row), column: all.end.column },
+    };
+    return createRangeSelection(
+      anchor,
+      focus,
+      range,
+      'row',
+      containsCell(range, selection.active) ? selection.active : anchor,
+    );
+  }
+  const anchor = { row: 0, column: selection.anchor.column };
+  const focus = { row: all.end.row, column: region.column };
+  const range = {
+    start: { row: 0, column: Math.min(anchor.column, focus.column) },
+    end: { row: all.end.row, column: Math.max(anchor.column, focus.column) },
+  };
+  return createRangeSelection(
+    anchor,
+    focus,
+    range,
+    'column',
+    containsCell(range, selection.active) ? selection.active : anchor,
+  );
 }
 
 export function selectionContains(selection: SelectionState, point: CellPoint): boolean {
   return containsCell(selection.range, point);
 }
-

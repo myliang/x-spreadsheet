@@ -29,7 +29,14 @@ import {
   selectionForRegion,
 } from './pointer';
 import { ResourceRegistry, type EventTargetPort } from './resource-registry';
-import { findResizeHandle, hiddenRunBefore, resizeRange, type ResizeAxis, type ResizeHandle } from './resize';
+import {
+  findResizeBoundary,
+  findResizeHandle,
+  hiddenRunBefore,
+  resizeRange,
+  type ResizeAxis,
+  type ResizeHandle,
+} from './resize';
 import { TouchGesture, type TouchPointPort } from './touch';
 
 export interface InteractionRootPort extends EventTargetPort {
@@ -172,6 +179,16 @@ function appendCleanupError(errors: unknown[], error: unknown): void {
 
 function currentTargetInside(root: InteractionRootPort, event: InteractionEventLike): boolean {
   return root.contains(event.target);
+}
+
+function previousFloat(value: number): number {
+  if (!Number.isFinite(value)) return value;
+  if (value === 0) return -Number.MIN_VALUE;
+  const floatBits = new DataView(new ArrayBuffer(8));
+  floatBits.setFloat64(0, value);
+  const bits = floatBits.getBigUint64(0);
+  floatBits.setBigUint64(0, value > 0 ? bits - 1n : bits + 1n);
+  return floatBits.getFloat64(0);
 }
 
 export class InteractionManager {
@@ -428,8 +445,8 @@ export class InteractionManager {
     const snapshot = this.ports.getSnapshot();
     if (this.drag.mode === 'selection') {
       const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
-      if (region?.kind === 'cell') {
-        this.setSelection(extendSelection(snapshot.selection, region.cell, snapshot.viewport.model), 'pointer');
+      if (region !== null) {
+        this.setSelection(extendToRegion(snapshot.selection, region, snapshot.viewport), 'pointer');
       }
       return;
     }
@@ -488,6 +505,11 @@ export class InteractionManager {
   private doubleClick(event: InteractionEventLike): void {
     const snapshot = this.ports.getSnapshot();
     if (snapshot.readOnly) return;
+    const boundary = findResizeBoundary(localPoint(event, this.ports.root), snapshot.viewport);
+    if (boundary !== null && this.unhideBefore(boundary.axis, boundary.boundary)) {
+      event.preventDefault?.();
+      return;
+    }
     const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
     if (region?.kind !== 'cell' || !this.ports.commitEditor()) return;
     const selection = selectionForRegion(region, snapshot.viewport);
@@ -652,18 +674,16 @@ export class InteractionManager {
     const frozen = axis === 'row' ? viewport.freeze.row : viewport.freeze.column;
     const count = axis === 'row' ? model.rowCount : model.columnCount;
     const offset = axis === 'row' ? model.rowOffset : model.columnOffset;
-    const size = axis === 'row' ? model.rowHeight : model.columnWidth;
+    const indexAt = axis === 'row' ? model.rowAt : model.columnAt;
     const start = offset(frozen);
+    if (count === 0) return scroll;
     if (direction > 0) {
-      let index = frozen;
-      while (index < count && offset(index + 1) - start <= scroll) index += 1;
-      while (index < count && size(index) === 0) index += 1;
-      return index >= count ? scroll : offset(index + 1) - start;
+      const index = indexAt(start + scroll);
+      return index === null ? scroll : Math.max(0, offset(Math.min(count, index + 1)) - start);
     }
-    let index = count - 1;
-    while (index >= frozen && offset(index) - start >= scroll) index -= 1;
-    while (index >= frozen && size(index) === 0) index -= 1;
-    return index < frozen ? 0 : offset(index) - start;
+    if (scroll <= 0) return 0;
+    const index = indexAt(previousFloat(start + scroll));
+    return index === null || index < frozen ? 0 : Math.max(0, offset(index) - start);
   }
 
   private scrollContinuous(delta: Readonly<{ x: number; y: number }>, source: 'touch'): boolean {
