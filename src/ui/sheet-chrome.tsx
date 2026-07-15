@@ -14,7 +14,7 @@ import type { SheetTabsRenderer, ToolbarRenderer } from './slot-types';
 import { PrintDialog } from './dialogs/print-dialog';
 import { ValidationDialog } from './dialogs/validation-dialog';
 import { CellEditor } from './editor/cell-editor';
-import { ContextMenu } from './menus/context-menu';
+import { ContextMenu, type ContextMenuAction } from './menus/context-menu';
 import { FilterMenu } from './menus/filter-menu';
 import { NotificationHost } from './notifications/notification-host';
 import { SheetTabs } from './tabs/sheet-tabs';
@@ -57,10 +57,13 @@ export interface SheetChromeProps {
   readonly onCloseValidation: () => void;
   readonly onDismissNotification: () => void;
   readonly onExecute: (action: ToolbarAction) => void;
+  readonly onExecuteContext: (action: ContextMenuAction) => void;
   readonly onFilter: (filter: FilterDefinition) => void;
   readonly onOpenFilter: () => void;
   readonly onOpenPrint: () => void;
   readonly onOpenValidation: () => void;
+  readonly onOpenContextFilter: () => void;
+  readonly onOpenContextValidation: () => void;
   readonly onPrint: (options: PrintWorkbookOptions) => void;
   readonly onRemoveValidation: () => void;
   readonly onValidation: (rule: ValidationRule) => void;
@@ -95,10 +98,11 @@ export function SheetChrome(props: SheetChromeProps) {
           <ContextMenu
             point={props.contextMenu.point}
             disabled={props.toolbar.disabledActions}
-            execute={props.onExecute}
+            readOnly={props.toolbar.readOnly}
+            execute={props.onExecuteContext}
             onClose={props.onCloseContextMenu}
-            onOpenFilter={props.onOpenFilter}
-            onOpenValidation={props.onOpenValidation}
+            onOpenFilter={props.onOpenContextFilter}
+            onOpenValidation={props.onOpenContextValidation}
             t={t}
           />
         )}

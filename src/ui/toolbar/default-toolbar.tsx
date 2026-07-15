@@ -28,7 +28,9 @@ export function DefaultToolbar(props: DefaultToolbarProps) {
     <div className="tego-sheet__toolbar" data-tego-toolbar="default" role="toolbar" aria-label={t('toolbar.label', 'Spreadsheet toolbar')}>
       {button({ type: 'undo' }, t('toolbar.undo', 'Undo'))}
       {button({ type: 'redo' }, t('toolbar.redo', 'Redo'))}
-      <ToolbarButton onClick={props.onOpenPrint}>{t('toolbar.print', 'Print')}</ToolbarButton>
+      <ToolbarButton disabled={toolbar.disabledActions.has('print')} onClick={props.onOpenPrint}>
+        {t('toolbar.print', 'Print')}
+      </ToolbarButton>
       {button({ type: 'paint-format' }, t('toolbar.paintFormat', 'Paint format'), props.paintFormatActive)}
       {button({ type: 'clear-format' }, t('toolbar.clearFormat', 'Clear format'))}
       <FormatControls toolbar={toolbar} t={t} />

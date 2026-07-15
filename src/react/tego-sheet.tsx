@@ -38,6 +38,7 @@ import {
   type ControllerEpoch,
 } from './hooks/use-controller-epoch';
 import { useInteractionManager } from './hooks/use-interaction-manager';
+import type { InteractionManager } from '../engine';
 import { useSheetChromeState } from './hooks/use-sheet-chrome-state';
 import {
   useCellEditorRuntime,
@@ -65,6 +66,7 @@ import { EmptyWorkbook } from '../ui/empty-workbook';
 import {
   SheetChrome,
 } from '../ui/sheet-chrome';
+import type { ContextMenuAction } from '../ui/menus/context-menu';
 import { createTranslator } from '../ui/translate';
 import {
   type PrintWorkbookOptions,
@@ -188,6 +190,7 @@ function disabledToolbarActions(runtime: SlotRuntime): Set<ToolbarAction['type']
     for (const action of SELECTION_ACTIONS) disabled.add(action);
   }
   if (sheet === null) {
+    disabled.add('print');
     disabled.add('clear-filter');
     disabled.add('sort');
     disabled.add('unfreeze');
@@ -323,9 +326,13 @@ function toolbarCommand(runtime: SlotRuntime, action: ToolbarAction): WorkbookCo
   }
 }
 
-function executeToolbar(runtime: SlotRuntime, action: ToolbarAction): void {
+function executeAction(
+  runtime: SlotRuntime,
+  action: ToolbarAction,
+  source: 'toolbar' | 'context-menu',
+): void {
   if (disabledToolbarActions(runtime).has(action.type)) {
-    uiError(runtime, `Toolbar action "${action.type}" is unavailable`);
+    uiError(runtime, `${source === 'toolbar' ? 'Toolbar' : 'Context-menu'} action "${action.type}" is unavailable`);
     return;
   }
   if (action.type === 'print') {
@@ -334,10 +341,10 @@ function executeToolbar(runtime: SlotRuntime, action: ToolbarAction): void {
   }
   const command = toolbarCommand(runtime, action);
   if (command === null) {
-    uiError(runtime, `Toolbar action "${action.type}" cannot run in the current view`);
+    uiError(runtime, `${source === 'toolbar' ? 'Toolbar' : 'Context-menu'} action "${action.type}" cannot run in the current view`);
     return;
   }
-  runtime.dispatcher.dispatchUi(command, 'toolbar');
+  runtime.dispatcher.dispatchUi(command, source);
 }
 
 function printRuntime(runtime: SlotRuntime, options: PrintWorkbookOptions): void {
@@ -435,6 +442,7 @@ function Runtime(
 ) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const interactionManagerRef = useRef<InteractionManager | null>(null);
   const [engineSlot] = useState(createEngineAdapterSlot);
   const [callbackStore] = useState(() => createCallbackStore(callbacksFromProps(props)));
   const initialOptions = props.mountOptions;
@@ -631,6 +639,7 @@ function Runtime(
     dispatcher,
     engineGeneration,
     engineSlot,
+    managerRef: interactionManagerRef,
     epoch: props.epoch,
     rootRef,
     showContextMenu: props.options?.showContextMenu,
@@ -696,7 +705,7 @@ function Runtime(
     const runtime = runtimeAuthority.committed(renderToken);
     if (runtime === null) return;
     if (action.type !== 'paint-format') {
-      executeToolbar(runtime, action);
+      executeAction(runtime, action, 'toolbar');
       return;
     }
     if (disabledToolbarActions(runtime).has('paint-format') || runtime.selection === null) {
@@ -704,6 +713,58 @@ function Runtime(
       return;
     }
     togglePaintSource(clonePublic(runtime.selection));
+  };
+  const executeContext = (action: ContextMenuAction) => {
+    const runtime = runtimeAuthority.committed(renderToken);
+    if (runtime === null) return;
+    const manager = interactionManagerRef.current;
+    switch (action.type) {
+      case 'copy':
+        if (manager === null) uiError(runtime, 'Context-menu copy is unavailable');
+        else void manager.copy();
+        return;
+      case 'cut':
+        if (manager === null) uiError(runtime, 'Context-menu cut is unavailable');
+        else void manager.copy(undefined, true);
+        return;
+      case 'paste':
+      case 'paste-value':
+      case 'paste-format':
+        if (manager === null) uiError(runtime, 'Context-menu paste is unavailable');
+        else void manager.paste(
+          undefined,
+          action.type === 'paste' ? 'all' : action.type === 'paste-value' ? 'value' : 'format',
+          'context-menu',
+        );
+        return;
+      case 'clear-contents':
+        if (runtime.selection === null) uiError(runtime, 'Context-menu clear contents is unavailable');
+        else runtime.dispatcher.dispatchUi({ type: 'clear-contents', selection: runtime.selection }, 'context-menu');
+        return;
+      case 'set-cell-metadata':
+        if (runtime.selection === null) uiError(runtime, 'Context-menu cell metadata is unavailable');
+        else runtime.dispatcher.dispatchUi({ ...action, selection: runtime.selection }, 'context-menu');
+        return;
+      default:
+        executeAction(runtime, action, 'context-menu');
+    }
+  };
+  const dialogSourceRef = useRef<'toolbar' | 'context-menu'>('toolbar');
+  const openToolbarFilter = () => {
+    dialogSourceRef.current = 'toolbar';
+    openFilter();
+  };
+  const openToolbarValidation = () => {
+    dialogSourceRef.current = 'toolbar';
+    openValidation();
+  };
+  const openContextFilter = () => {
+    dialogSourceRef.current = 'context-menu';
+    openFilter();
+  };
+  const openContextValidation = () => {
+    dialogSourceRef.current = 'context-menu';
+    openValidation();
   };
   const tabActions = {
     add(name?: string) {
@@ -792,13 +853,17 @@ function Runtime(
         onCloseValidation={() => setValidationOpen(false)}
         onDismissNotification={() => setNotification(null)}
         onExecute={execute}
+        onExecuteContext={executeContext}
         onFilter={(filter: FilterDefinition) => {
           setFilterOpen(false);
-          execute({ type: 'set-filter', filter });
+          const runtime = runtimeAuthority.committed(renderToken);
+          if (runtime !== null) executeAction(runtime, { type: 'set-filter', filter }, dialogSourceRef.current);
         }}
-        onOpenFilter={openFilter}
+        onOpenFilter={openToolbarFilter}
+        onOpenContextFilter={openContextFilter}
         onOpenPrint={() => setPrintOpen(true)}
-        onOpenValidation={openValidation}
+        onOpenValidation={openToolbarValidation}
+        onOpenContextValidation={openContextValidation}
         onPrint={(options: PrintWorkbookOptions) => {
           setPrintOpen(false);
           const runtime = runtimeAuthority.committed(renderToken);
@@ -806,11 +871,13 @@ function Runtime(
         }}
         onRemoveValidation={() => {
           setValidationOpen(false);
-          execute({ type: 'remove-validation' });
+          const runtime = runtimeAuthority.committed(renderToken);
+          if (runtime !== null) executeAction(runtime, { type: 'remove-validation' }, dialogSourceRef.current);
         }}
         onValidation={(rule: ValidationRule) => {
           setValidationOpen(false);
-          execute({ type: 'set-validation', rule });
+          const runtime = runtimeAuthority.committed(renderToken);
+          if (runtime !== null) executeAction(runtime, { type: 'set-validation', rule }, dialogSourceRef.current);
         }}
       >
         {sheets.length === 0 ? (

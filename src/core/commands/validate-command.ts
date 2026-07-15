@@ -24,7 +24,10 @@ import {
 } from '../operations/clipboard';
 import { assertValidationRule } from '../operations/validation';
 import { parseA1Range } from '../coordinates/ranges';
-import { assertClearContentsResourceLimit } from '../operations/cell';
+import {
+  assertCellMetadataResourceLimit,
+  assertClearContentsResourceLimit,
+} from '../operations/cell';
 import { assertSetFilterResourceLimit } from '../operations/filter';
 import { assertSortResourceLimit } from '../operations/sort';
 import type { WorkbookCommand } from './workbook-command';
@@ -164,6 +167,19 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         assertRangeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
       } catch (cause) {
         throw invalidCommand('Clear contents range is not mutable', cause);
+      }
+      return;
+    case 'set-cell-metadata':
+      validateSelection(state, command.selection);
+      if (command.property !== 'editable' && command.property !== 'printable') {
+        throw invalidCommand('Cell metadata property must be editable or printable');
+      }
+      if (typeof command.value !== 'boolean') throw invalidCommand('Cell metadata value must be boolean');
+      try {
+        assertRangeWithinSheet(state, command.selection.sheet, command.selection.range);
+        assertCellMetadataResourceLimit(command);
+      } catch (cause) {
+        throw invalidCommand('Cell metadata range is invalid', cause);
       }
       return;
     case 'set-style':

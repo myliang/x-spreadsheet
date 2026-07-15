@@ -10,12 +10,14 @@ import {
 } from '../adapters/interaction-adapter';
 import type { ControllerEpoch } from './use-controller-epoch';
 import type { EngineAdapterSlot } from './use-canvas-engine';
+import type { InteractionManager } from '../../engine';
 
 export interface UseInteractionManagerOptions {
   readonly dispatcher: EventDispatcher;
   readonly activeSheet: SheetId | null;
   readonly engineGeneration: number;
   readonly engineSlot: EngineAdapterSlot;
+  readonly managerRef: RefObject<InteractionManager | null>;
   readonly epoch: ControllerEpoch;
   readonly rootRef: RefObject<HTMLDivElement | null>;
   readonly showContextMenu?: boolean;
@@ -36,6 +38,7 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     dispatcher,
     engineGeneration,
     engineSlot,
+    managerRef,
     epoch,
     rootRef,
     showContextMenu,
@@ -77,14 +80,19 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
       requestEdit,
       requestFormat,
     });
+    managerRef.current = manager;
     if (manager !== null && document.activeElement === root) manager.focus();
-    return () => manager?.dispose();
+    return () => {
+      if (managerRef.current === manager) managerRef.current = null;
+      manager?.dispose();
+    };
   }, [
     controller,
     activeSheet,
     dispatcher,
     engineGeneration,
     engineSlot,
+    managerRef,
     isActive,
     rootRef,
     showContextMenu,

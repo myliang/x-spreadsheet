@@ -4,7 +4,7 @@ import { MAX_STRUCTURE_AXIS_CHANGES } from '../../core/operations/structure';
 import type { ChangeSource } from '../../core/types/changes';
 import type { CellPoint, Selection, SheetId } from '../../core/types/coordinates';
 import { TegoSheetException } from '../../core/errors/tego-sheet-exception';
-import { parseClipboardMatrix } from '../../core/operations/clipboard';
+import { parseClipboardMatrix, type PasteMode } from '../../core/operations/clipboard';
 import { clampScroll, scrollBy } from '../viewport/scroll-state';
 import {
   createRangeSelection,
@@ -268,13 +268,18 @@ export class InteractionManager {
     return true;
   }
 
-  async paste(dataTransfer?: DataTransferPort): Promise<boolean> {
+  async paste(
+    dataTransfer?: DataTransferPort,
+    mode: PasteMode = 'all',
+    source: ChangeSource = 'clipboard',
+  ): Promise<boolean> {
     if (!this.active) return false;
     const snapshot = this.ports.getSnapshot();
     if (snapshot.readOnly) return false;
     const target = publicSelection(snapshot);
     if (dataTransfer !== undefined) {
-      this.dispatchExternalPaste(dataTransfer.getData('text/plain'), target);
+      if (mode === 'format') return false;
+      this.dispatchExternalPaste(dataTransfer.getData('text/plain'), target, source);
       return true;
     }
     if (this.internalClipboard !== null) {
@@ -283,12 +288,13 @@ export class InteractionManager {
         type: 'paste-internal',
         source: state.selection,
         target,
-        mode: 'all',
+        mode,
         cut: state.cut,
-      }, 'clipboard');
+      }, source);
       if (state.cut && outcome.status === 'committed') this.internalClipboard = null;
       return true;
     }
+    if (mode === 'format') return false;
     if (this.ports.clipboard === undefined) return false;
     const epoch = snapshot.epoch;
     let text: string;
@@ -305,7 +311,7 @@ export class InteractionManager {
       this.ports.requestError(replacedPasteSnapshot());
       return true;
     }
-    this.dispatchExternalPaste(text, target);
+    this.dispatchExternalPaste(text, target, source);
     return true;
   }
 
@@ -751,12 +757,12 @@ export class InteractionManager {
     event.preventDefault?.();
   }
 
-  private dispatchExternalPaste(text: string, target: Selection): void {
+  private dispatchExternalPaste(text: string, target: Selection, source: ChangeSource): void {
     this.ports.dispatch({
       type: 'paste-external',
       target,
       values: parseClipboardMatrix(text),
-    }, 'clipboard');
+    }, source);
   }
 
   private scheduleTimer(callback: () => void, delay: number): () => void {

@@ -233,6 +233,7 @@ export type {
   ResizeColumnCommand,
   ResizeRowCommand,
   SetCellTextCommand,
+  SetCellMetadataCommand,
   SetFilterCommand,
   SetBorderCommand,
   SetFreezeCommand,

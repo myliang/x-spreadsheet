@@ -121,6 +121,187 @@ it('disables every mutating default control in read-only mode', async () => {
   expect(rendered.getByRole('button', { name: /^filter$/i }).hasAttribute('disabled')).toBe(true);
 });
 
+it('exposes legacy context actions and attributes context-menu mutations to their source', async () => {
+  const ref = createRef<TegoSheetHandle>();
+  const changes: Array<{ readonly kind: string; readonly source: string }> = [];
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{
+        rows: { len: 2, 0: { cells: { 0: { text: 'A', style: 0 }, 1: { text: 'B' } } } },
+        cols: { len: 2 },
+        styles: [{ color: '#f00' }],
+      }]}
+      onChange={(_value, change) => changes.push(change)}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 500 },
+    clientHeight: { configurable: true, value: 300 },
+  });
+  fireEvent(window, new Event('resize'));
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  let menu = rendered.getByRole('menu', { name: /cell actions/i });
+  for (const name of [
+    /^copy$/i, /^cut$/i, /^paste$/i, /paste values only/i, /paste format only/i,
+    /clear contents/i, /enable export/i, /disable export/i, /enable editing/i, /disable editing/i,
+  ]) expect(within(menu).getByRole('menuitem', { name })).toBeTruthy();
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /disable export/i }));
+  expect(ref.current!.getValue()[0]).toMatchObject({
+    rows: { 0: { cells: { 0: { text: 'A', printable: false } } } },
+  });
+  expect(changes.at(-1)).toMatchObject({ kind: 'cell', source: 'context-menu' });
+  ref.current!.undo();
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /clear format/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'style', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /clear contents/i }));
+  expect(ref.current!.getValue()[0]).toMatchObject({ rows: { 0: { cells: { 0: { text: '' } } } } });
+  expect(changes.at(-1)).toMatchObject({ kind: 'cell', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /insert row/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'structure', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /delete row/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'structure', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /data validation/i }));
+  const validation = rendered.getByRole('dialog', { name: /data validation/i });
+  fireEvent.change(validation.querySelector('select[name="type"]')!, { target: { value: 'number' } });
+  fireEvent.click(within(validation).getByRole('button', { name: /^save$/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'validation', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /data validation/i }));
+  fireEvent.click(within(rendered.getByRole('dialog', { name: /data validation/i }))
+    .getByRole('button', { name: /remove validation/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'validation', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  menu = rendered.getByRole('menu', { name: /cell actions/i });
+  fireEvent.click(within(menu).getByRole('menuitem', { name: /^filter$/i }));
+  fireEvent.click(within(rendered.getByRole('dialog', { name: /^filter$/i }))
+    .getByRole('button', { name: /apply filter/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'filter', source: 'context-menu' });
+
+  fireEvent.click(rendered.getByRole('button', { name: /data validation/i }));
+  const toolbarValidation = rendered.getByRole('dialog', { name: /data validation/i });
+  fireEvent.change(toolbarValidation.querySelector('select[name="type"]')!, { target: { value: 'number' } });
+  fireEvent.click(within(toolbarValidation).getByRole('button', { name: /^save$/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'validation', source: 'toolbar' });
+  fireEvent.click(rendered.getByRole('button', { name: /clear filter/i }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'filter', source: 'toolbar' });
+});
+
+it('routes context clipboard modes through the interaction owner and keeps copy available read-only', async () => {
+  const clipboard = { readText: vi.fn(async () => ''), writeText: vi.fn(async () => undefined) };
+  vi.stubGlobal('navigator', { userAgent: navigator.userAgent, clipboard });
+  const ref = createRef<TegoSheetHandle>();
+  const changes: Array<{ readonly kind: string; readonly source: string }> = [];
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      defaultValue={[{
+        rows: { len: 1, 0: { cells: {
+          0: { text: 'source', style: 0 },
+          1: { text: 'target', style: 1 },
+        } } },
+        cols: { len: 2 },
+        styles: [{ color: '#f00' }, { color: '#00f' }],
+      }]}
+      onChange={(_value, change) => changes.push(change)}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 500 },
+    clientHeight: { configurable: true, value: 300 },
+  });
+  fireEvent(window, new Event('resize'));
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /^copy$/i }));
+  await waitFor(() => expect(clipboard.writeText).toHaveBeenCalledWith('source'));
+  fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 170, clientY: 40 });
+  fireEvent.contextMenu(root, { clientX: 170, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /paste values only/i }));
+  await waitFor(() => expect(ref.current!.getValue()[0]).toMatchObject({
+    rows: { 0: { cells: { 1: { text: 'source', style: 1 } } } },
+  }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'clipboard', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 170, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /paste format only/i }));
+  await waitFor(() => expect(ref.current!.getValue()[0]).toMatchObject({
+    rows: { 0: { cells: { 1: { text: 'source', style: 0 } } } },
+  }));
+  expect(changes.at(-1)).toMatchObject({ kind: 'clipboard', source: 'context-menu' });
+
+  fireEvent.contextMenu(root, { clientX: 170, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /^cut$/i }));
+  await waitFor(() => expect(clipboard.writeText).toHaveBeenLastCalledWith('source'));
+  fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /^paste$/i }));
+  await waitFor(() => expect(ref.current!.getValue()[0]).toMatchObject({
+    rows: { 0: { cells: { 0: { text: 'source', style: 0 } } } },
+  }));
+  expect((ref.current!.getValue()[0]!.rows?.['0'] as { cells?: Record<string, unknown> }).cells?.['1'])
+    .toBeUndefined();
+  expect(changes.at(-1)).toMatchObject({ kind: 'clipboard', source: 'context-menu' });
+
+  rendered.rerender(<TegoSheet defaultValue={[{ rows: { 0: { cells: { 0: { text: 'read only' } } } } }]} readOnly />);
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  const menu = rendered.getByRole('menu');
+  expect(within(menu).getByRole('menuitem', { name: /^copy$/i }).hasAttribute('disabled')).toBe(false);
+  for (const name of [/^cut$/i, /^paste$/i, /clear contents/i, /disable export/i]) {
+    expect(within(menu).getByRole('menuitem', { name }).hasAttribute('disabled')).toBe(true);
+  }
+});
+
+it('reports context clipboard denial to the latest onError callback', async () => {
+  const clipboard = {
+    readText: vi.fn(async () => ''),
+    writeText: vi.fn(async () => { throw new DOMException('blocked', 'NotAllowedError'); }),
+  };
+  vi.stubGlobal('navigator', { userAgent: navigator.userAgent, clipboard });
+  const first = vi.fn();
+  const latest = vi.fn();
+  const rendered = render(<TegoSheet defaultValue={[{ rows: { 0: { cells: { 0: { text: 'A' } } } } }]} onError={first} />);
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 500 },
+    clientHeight: { configurable: true, value: 300 },
+  });
+  fireEvent(window, new Event('resize'));
+  rendered.rerender(<TegoSheet defaultValue={[{ rows: { 0: { cells: { 0: { text: 'A' } } } } }]} onError={latest} />);
+
+  fireEvent.contextMenu(root, { clientX: 70, clientY: 40 });
+  fireEvent.click(within(rendered.getByRole('menu')).getByRole('menuitem', { name: /^copy$/i }));
+
+  await waitFor(() => expect(latest).toHaveBeenCalledWith(expect.objectContaining({
+    code: 'CLIPBOARD_DENIED',
+    recoverable: true,
+  })));
+  expect(first).not.toHaveBeenCalled();
+});
+
 it('arms paint format and applies it to the next engine selection', async () => {
   const ref = createRef<TegoSheetHandle>();
   const onChange = vi.fn();

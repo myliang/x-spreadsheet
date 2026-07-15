@@ -1,6 +1,6 @@
 import { selectCellText } from '../selectors/cell';
 import type { WorkbookState } from '../model/workbook-state';
-import { applyCellOperation, clearContents } from '../operations/cell';
+import { applyCellOperation, clearContents, setCellMetadata } from '../operations/cell';
 import { applyMergeOperation } from '../operations/merge';
 import { applyFreezeOperation, applySheetOperation } from '../operations/sheet';
 import { applyStructureOperation, structureRange } from '../operations/structure';
@@ -80,6 +80,20 @@ export function applyCommand(
         const runtimeSheet = state.get(command.selection.sheet);
         if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.selection.sheet}`);
         const next = clearContents(runtimeSheet.data, command);
+        if (next === runtimeSheet.data) return null;
+        return {
+          state: state.update(command.selection.sheet, () => next),
+          result: undefined,
+          kind: 'cell',
+          sheet: command.selection.sheet,
+          range: command.selection.range,
+          undoable: true,
+        };
+      }
+      case 'set-cell-metadata': {
+        const runtimeSheet = state.get(command.selection.sheet);
+        if (runtimeSheet === null) throw new RangeError(`Unknown sheet ID: ${command.selection.sheet}`);
+        const next = setCellMetadata(runtimeSheet.data, command);
         if (next === runtimeSheet.data) return null;
         return {
           state: state.update(command.selection.sheet, () => next),

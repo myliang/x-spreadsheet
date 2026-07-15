@@ -730,6 +730,25 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     harness.manager.dispose();
   });
 
+  it('uses requested internal paste modes and sources without adding another clipboard owner', async () => {
+    const dispatch = vi.fn(() => ({ status: 'committed' as const }));
+    const harness = setup({ dispatch });
+
+    await harness.manager.copy();
+    await expect(harness.manager.paste(undefined, 'value', 'context-menu')).resolves.toBe(true);
+    expect(dispatch).toHaveBeenLastCalledWith(expect.objectContaining({
+      type: 'paste-internal',
+      mode: 'value',
+    }), 'context-menu');
+    await expect(harness.manager.paste(undefined, 'format', 'context-menu')).resolves.toBe(true);
+    expect(dispatch).toHaveBeenLastCalledWith(expect.objectContaining({
+      type: 'paste-internal',
+      mode: 'format',
+    }), 'context-menu');
+    expect(harness.clipboard.reads).toBe(0);
+    harness.manager.dispose();
+  });
+
   it('allows copy but blocks cut/paste in readOnly mode', () => {
     const state: { current?: InteractionSnapshot } = {};
     const harness = setup({

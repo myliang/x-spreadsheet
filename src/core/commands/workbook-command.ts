@@ -16,6 +16,13 @@ export interface ClearContentsCommand {
   readonly selection: Selection;
 }
 
+export interface SetCellMetadataCommand {
+  readonly type: 'set-cell-metadata';
+  readonly selection: Selection;
+  readonly property: 'editable' | 'printable';
+  readonly value: boolean;
+}
+
 export interface SetStyleCommand {
   readonly type: 'set-style';
   readonly selection: Selection;
@@ -175,6 +182,7 @@ export type HistoryCommand = UndoCommand | RedoCommand;
 export type WorkbookCommand =
   | SetCellTextCommand
   | ClearContentsCommand
+  | SetCellMetadataCommand
   | SetStyleCommand
   | SetBorderCommand
   | ClearFormatCommand
