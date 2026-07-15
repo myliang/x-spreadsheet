@@ -56,6 +56,7 @@
     "test:ssr": "node scripts/test-ssr.mjs",
     "test:package": "node scripts/test-package.mjs",
     "test:parity-gate": "node scripts/test-parity-gate.mjs",
+    "test:parity-release": "node scripts/run-parity-release.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "dev": "vite --config demo/vite.config.ts",

@@ -1,17 +1,26 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { assertParityReleaseContextCurrent } from './parity-release-provenance.mjs';
 import { parityManifest } from '../tests/parity/manifest.ts';
 import type {
   AssertionLane,
   EvidenceStatus,
   ParityEvidenceRecord,
   ParityLane,
+  ParityReleaseContext,
 } from '../tests/parity/manifest-types.ts';
 
 const laneNames = ['unit', 'component', 'browser', 'visual'] as const;
 const evidenceStatuses = ['passed', 'failed', 'skipped'] as const;
 const rowPropertyNames = ['id', ...laneNames] as const;
-const evidencePropertyNames = ['lane', 'status', 'title', 'source', 'project'] as const;
+const evidencePropertyNames = [
+  'lane', 'status', 'title', 'source', 'project', 'runId', 'revision', 'treeHash',
+  'manifestHash', 'runner', 'configHash', 'startedAt', 'observedAt',
+] as const;
 const requiredEvidencePropertyNames = ['lane', 'status', 'title', 'source'] as const;
+const provenancePropertyNames = [
+  'runId', 'revision', 'treeHash', 'manifestHash', 'runner', 'configHash', 'startedAt', 'observedAt',
+] as const;
 const rowIdPattern = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const assertionIdPattern = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$/;
 const controlCharacterPattern = /[\u0000-\u001f\u007f-\u009f]/;
@@ -28,8 +37,17 @@ interface AssertionDeclaration {
   readonly lane: ParityLane;
 }
 
-interface ValidatedEvidenceRecord extends ParityEvidenceRecord {
+interface ValidatedEvidenceRecord extends Omit<ParityEvidenceRecord,
+  'runId' | 'revision' | 'treeHash' | 'manifestHash' | 'runner' | 'configHash' | 'startedAt' | 'observedAt'> {
   readonly id: string;
+  readonly runId?: string;
+  readonly revision?: string;
+  readonly treeHash?: string;
+  readonly manifestHash?: string;
+  readonly runner?: string;
+  readonly configHash?: string;
+  readonly startedAt?: string;
+  readonly observedAt?: string;
 }
 
 export interface ManifestVerificationSummary {
@@ -132,7 +150,17 @@ function extractEvidenceId(title: string, label: string): string {
   return exactTokens[0].slice('@parity:'.length);
 }
 
-function validateEvidenceRecords(evidence: unknown): readonly ValidatedEvidenceRecord[] {
+function validateTimestamp(value: unknown, label: string): string {
+  if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
+    throw new Error(`${label} must be an ISO timestamp`);
+  }
+  return value;
+}
+
+function validateEvidenceRecords(
+  evidence: unknown,
+  context?: ParityReleaseContext,
+): readonly ValidatedEvidenceRecord[] {
   if (!Array.isArray(evidence)) {
     throw new Error('execution evidence must be an array of structured records');
   }
@@ -146,6 +174,13 @@ function validateEvidenceRecords(evidence: unknown): readonly ValidatedEvidenceR
     for (const propertyName of requiredEvidencePropertyNames) {
       if (!Object.hasOwn(value, propertyName)) {
         throw new Error(`${label} is missing property "${propertyName}"`);
+      }
+    }
+    if (context !== undefined) {
+      for (const propertyName of provenancePropertyNames) {
+        if (!Object.hasOwn(value, propertyName)) {
+          throw new Error(`${label} is missing property "${propertyName}"`);
+        }
       }
     }
     const unexpectedProperty = Object.keys(value).find(
@@ -180,12 +215,57 @@ function validateEvidenceRecords(evidence: unknown): readonly ValidatedEvidenceR
       throw new Error(`${label} project must not contain control characters`);
     }
 
+    if (context !== undefined) {
+      const lane = value.lane as ParityLane;
+      const laneContext = context.lanes[lane];
+      if (value.runId !== context.runId) {
+        throw new Error(
+          `${label} must belong to the same release run ${context.runId}; observed ${String(value.runId)}`,
+        );
+      }
+      for (const propertyName of ['revision', 'treeHash', 'manifestHash'] as const) {
+        if (value[propertyName] !== context[propertyName]) {
+          throw new Error(
+            `${label} ${propertyName} does not match the current release ${context[propertyName]}`,
+          );
+        }
+      }
+      for (const propertyName of ['runner', 'configHash'] as const) {
+        if (value[propertyName] !== laneContext[propertyName]) {
+          throw new Error(
+            `${label} ${propertyName} does not match the ${lane} release configuration`,
+          );
+        }
+      }
+      if (value.startedAt !== context.startedAt) {
+        throw new Error(`${label} startedAt does not match the current release`);
+      }
+      const observedAt = validateTimestamp(value.observedAt, `${label} observedAt`);
+      const observedTime = Date.parse(observedAt);
+      if (
+        observedTime < Date.parse(context.startedAt)
+        || observedTime > Date.parse(context.expiresAt)
+      ) {
+        throw new Error(`${label} observedAt is outside the release validity window`);
+      }
+    }
+
     return {
       lane: value.lane as ParityLane,
       status: value.status as EvidenceStatus,
       title: value.title,
       source: value.source,
       ...(value.project === undefined ? {} : { project: value.project as string }),
+      ...(context === undefined ? {} : {
+        runId: value.runId as string,
+        revision: value.revision as string,
+        treeHash: value.treeHash as string,
+        manifestHash: value.manifestHash as string,
+        runner: value.runner as string,
+        configHash: value.configHash as string,
+        startedAt: value.startedAt as string,
+        observedAt: value.observedAt as string,
+      }),
       id: extractEvidenceId(value.title, label),
     };
   });
@@ -194,6 +274,7 @@ function validateEvidenceRecords(evidence: unknown): readonly ValidatedEvidenceR
 export function verifyManifest(
   rows: readonly unknown[],
   evidence?: unknown,
+  context?: ParityReleaseContext,
 ): ManifestVerificationSummary {
   const records = validateRowsInput(rows);
   const rowIds = new Set<string>();
@@ -265,7 +346,7 @@ export function verifyManifest(
   const observedRecords = new Map<string, ValidatedEvidenceRecord[]>();
 
   if (evidence !== undefined) {
-    const evidenceRecords = validateEvidenceRecords(evidence);
+    const evidenceRecords = validateEvidenceRecords(evidence, context);
     evidenceRecordCount = evidenceRecords.length;
 
     for (const record of evidenceRecords) {
@@ -302,14 +383,47 @@ export function verifyManifest(
             `status=${record.status} source="${record.source}" project="${record.project ?? '<none>'}"`,
         )
         .join('; ');
+      if (context !== undefined) {
+        const expectedProjects = context.lanes[declaration.lane].expectedProjects;
+        const expectedProjectSet = new Set(expectedProjects);
+        const observedProjects = new Set<string>();
+        for (const record of recordsForAssertion) {
+          const project = record.project;
+          if (project === undefined || !expectedProjectSet.has(project)) {
+            throw new Error(
+              `assertion "${assertionId}" has unexpected project "${project ?? '<none>'}"`,
+            );
+          }
+          if (observedProjects.has(project)) {
+            throw new Error(`assertion "${assertionId}" has duplicate project "${project}"`);
+          }
+          observedProjects.add(project);
+          if (record.status === 'skipped') {
+            const allowed = context.lanes[declaration.lane].allowedProjectSkips[assertionId] ?? [];
+            if (!allowed.includes(project)) {
+              throw new Error(
+                `assertion "${assertionId}" skip is not allowed for project "${project}"`,
+              );
+            }
+          }
+        }
+        const missingProjects = expectedProjects.filter(project => !observedProjects.has(project));
+        if (missingProjects.length > 0) {
+          throw new Error(
+            `assertion "${assertionId}" is missing project evidence: ${missingProjects.join(', ')}`,
+          );
+        }
+      }
       if (!passedIds.has(assertionId)) {
         throw new Error(
           `assertion "${assertionId}" declared by row "${declaration.rowId}" has no passed evidence; observed records: ${recordSummary}`,
         );
       }
-      if (recordsForAssertion.some(({ status }) => status !== 'passed')) {
+      if (recordsForAssertion.some(({ status }) => (
+        status === 'failed' || (context === undefined && status === 'skipped')
+      ))) {
         throw new Error(
-          `assertion "${assertionId}" declared by row "${declaration.rowId}" has mixed terminal outcomes; every retained record must pass; observed records: ${recordSummary}`,
+          `assertion "${assertionId}" declared by row "${declaration.rowId}" has mixed terminal outcomes; no retained record may fail; observed records: ${recordSummary}`,
         );
       }
     }
@@ -369,6 +483,23 @@ export function verifyEvidenceArtifacts(args: readonly string[]): ManifestVerifi
 
   const evidence = args.flatMap(parseEvidenceArtifact);
   return verifyManifest(parityManifest, evidence);
+}
+
+export function verifyReleaseEvidenceArtifacts(
+  args: readonly string[],
+  contextPath: string,
+  repositoryRoot = process.cwd(),
+): ManifestVerificationSummary {
+  let context: unknown;
+  try {
+    context = JSON.parse(readFileSync(contextPath, 'utf8')) as unknown;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`could not read parity release context ${JSON.stringify(contextPath)}: ${message}`);
+  }
+  assertParityReleaseContextCurrent(context, resolve(repositoryRoot));
+  const evidence = args.flatMap(parseEvidenceArtifact);
+  return verifyManifest(parityManifest, evidence, context as ParityReleaseContext);
 }
 
 export interface ParityCliIo {

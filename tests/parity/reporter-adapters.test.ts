@@ -67,13 +67,13 @@ describe('Vitest parity evidence reporter', () => {
       reporter.onTestCaseResult(vitestCase(directory, 'unit', 'passed'));
       reporter.onTestRunEnd([], [], 'passed');
 
-      expect(readEvidence(unit)).toEqual([{
+      expect(readEvidence(unit)).toEqual([expect.objectContaining({
         lane: 'unit',
         project: 'unit',
         source: 'tests/unit/runner.test.ts',
         status: 'passed',
         title: '@parity:workbook.runner-adapter runs through Vitest',
-      }]);
+      })]);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
@@ -124,23 +124,46 @@ describe('Playwright parity evidence reporter', () => {
     try {
       const reporter = new PlaywrightParityEvidenceReporter({
         lane: 'browser',
+        listOnly: true,
         outputPath: artifact,
         root: directory,
       });
       expect(reporter.printsToStdio()).toBe(false);
-      expect(existsSync(artifact)).toBe(false);
+      expect(readFileSync(artifact, 'utf8')).toBe('stale');
       reporter.onBegin();
+      expect(readFileSync(artifact, 'utf8')).toBe('stale');
 
       reporter.onTestEnd(playwrightCase(directory, 'chromium-desktop'), playwrightResult('skipped'));
       reporter.onTestEnd(playwrightCase(directory, 'chromium-touch'), playwrightResult('passed'));
       reporter.onTestEnd(playwrightCase(directory, 'firefox-touch'), playwrightResult('failed'));
       reporter.onEnd({ status: 'failed' });
 
-      expect(readEvidence(artifact)).toEqual([expect.objectContaining({
-        project: 'chromium-desktop, chromium-touch, firefox-touch',
-        source: 'tests/browser/runner.spec.ts',
-        status: 'failed',
-      })]);
+      expect(readEvidence(artifact)).toEqual([
+        expect.objectContaining({ project: 'chromium-desktop', status: 'skipped' }),
+        expect.objectContaining({ project: 'chromium-touch', status: 'passed' }),
+        expect.objectContaining({ project: 'firefox-touch', status: 'failed' }),
+      ]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('clears stale evidence at real-run begin before a pre-test global failure', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'tego-playwright-pretest-failure-'));
+    const artifact = join(directory, 'browser.ndjson');
+    writeFileSync(artifact, 'stale');
+    try {
+      const reporter = new PlaywrightParityEvidenceReporter({
+        lane: 'browser',
+        listOnly: false,
+        outputPath: artifact,
+        root: directory,
+      });
+      reporter.onBegin();
+      expect(existsSync(artifact)).toBe(false);
+      reporter.onError();
+      reporter.onEnd({ status: 'failed' });
+      expect(existsSync(artifact)).toBe(false);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

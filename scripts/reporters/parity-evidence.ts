@@ -1,5 +1,6 @@
 import {
   mkdirSync as nodeMkdirSync,
+  readFileSync as nodeReadFileSync,
   readdirSync as nodeReaddirSync,
   renameSync as nodeRenameSync,
   rmSync as nodeRmSync,
@@ -10,13 +11,50 @@ import { basename, dirname, join } from 'node:path';
 import type {
   EvidenceStatus,
   ParityEvidenceRecord,
+  ParityEvidenceProvenance,
+  ParityReleaseContext,
   ParityLane,
 } from '../../tests/parity/manifest-types.ts';
 
 const assertionIdPattern = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)+$/;
 
-export interface ObservedParityResult extends ParityEvidenceRecord {
+export interface ObservedParityResult extends Omit<ParityEvidenceRecord, keyof ParityEvidenceProvenance> {
   readonly project: string;
+}
+
+function readReleaseProvenance(lane: ParityLane): Omit<ParityEvidenceProvenance, 'observedAt'> {
+  const contextPath = process.env.TEGO_PARITY_RELEASE_CONTEXT;
+  if (contextPath === undefined) {
+    const startedAt = new Date().toISOString();
+    return {
+      runId: `development-${process.pid}-${randomUUID()}`,
+      revision: 'development',
+      treeHash: 'development',
+      manifestHash: 'development',
+      runner: 'development',
+      configHash: 'development',
+      startedAt,
+    };
+  }
+  const context = JSON.parse(
+    // The release orchestrator owns this file; reporters only consume its immutable identity.
+    requireReadFile(contextPath),
+  ) as ParityReleaseContext;
+  const laneContext = context.lanes[lane];
+  return {
+    runId: context.runId,
+    revision: context.revision,
+    treeHash: context.treeHash,
+    manifestHash: context.manifestHash,
+    runner: laneContext.runner,
+    configHash: laneContext.configHash,
+    startedAt: context.startedAt,
+  };
+}
+
+function requireReadFile(path: string): string {
+  // Kept behind a tiny wrapper so evidence construction stays deterministic in tests.
+  return nodeReadFileSync(path, 'utf8');
 }
 
 export interface EvidenceFileSystem {
@@ -53,6 +91,9 @@ function aggregateStatus(statuses: ReadonlySet<EvidenceStatus>): EvidenceStatus 
 
 export function aggregateParityEvidence(
   observations: readonly ObservedParityResult[],
+  provenance: Omit<ParityEvidenceProvenance, 'observedAt'> = readReleaseProvenance(
+    observations[0]?.lane ?? 'unit',
+  ),
 ): ParityEvidenceRecord[] {
   const groups = new Map<string, {
     lane: ParityLane;
@@ -65,7 +106,7 @@ export function aggregateParityEvidence(
   for (const observation of observations) {
     const group = parityGroup(observation.title);
     if (group === null) continue;
-    const key = `${observation.lane}:${group}`;
+    const key = `${observation.lane}:${group}:${observation.project}`;
     const accumulated = groups.get(key) ?? {
       lane: observation.lane,
       projects: new Set<string>(),
@@ -84,7 +125,9 @@ export function aggregateParityEvidence(
     .sort(([first], [second]) => first.localeCompare(second))
     .map(([, group]) => ({
       lane: group.lane,
-      project: [...group.projects].sort().join(', '),
+      ...provenance,
+      observedAt: new Date().toISOString(),
+      project: [...group.projects][0]!,
       source: [...group.sources].sort().join(', '),
       status: aggregateStatus(group.statuses),
       title: [...group.titles].sort()[0]!,

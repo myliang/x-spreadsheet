@@ -37,3 +37,11 @@ it('connects actual Vitest and Playwright runs to the evidence reporters without
   expect(gate).toContain('defaultParityEvidencePaths');
   expect(gate).not.toContain("['test-results/parity-evidence.ndjson']");
 });
+
+it('provides one portable release command that owns all four parity lanes and the gate', () => {
+  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
+    scripts: Record<string, string>;
+  };
+
+  expect(packageJson.scripts['test:parity-release']).toBe('node scripts/run-parity-release.mjs');
+});

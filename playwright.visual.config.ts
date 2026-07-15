@@ -1,7 +1,5 @@
 import { defineConfig } from '@playwright/test';
-
-const desktop = { height: 720, width: 1280 };
-const touch = { height: 844, width: 390 };
+import { visualProjects } from './scripts/parity-release-contract.mjs';
 
 export default defineConfig({
   expect: {
@@ -15,18 +13,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   fullyParallel: false,
   outputDir: 'test-results/playwright-visual',
-  projects: [
-    { name: 'desktop-dpr1', use: { browserName: 'chromium', deviceScaleFactor: 1, viewport: desktop } },
-    { name: 'desktop-dpr2', use: { browserName: 'chromium', deviceScaleFactor: 2, viewport: desktop } },
-    {
-      name: 'touch-dpr1',
-      use: { browserName: 'chromium', deviceScaleFactor: 1, hasTouch: true, isMobile: true, viewport: touch },
-    },
-    {
-      name: 'touch-dpr2',
-      use: { browserName: 'chromium', deviceScaleFactor: 2, hasTouch: true, isMobile: true, viewport: touch },
-    },
-  ],
+  projects: [...visualProjects],
   reporter: [
     ['list'],
     [

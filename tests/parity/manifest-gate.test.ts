@@ -3,7 +3,11 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'vitest';
-import { runParityCli, verifyManifest } from '../../scripts/verify-parity-manifest.ts';
+import {
+  runParityCli,
+  verifyManifest,
+  type ManifestVerificationSummary,
+} from '../../scripts/verify-parity-manifest.ts';
 import { parityManifest } from './manifest.ts';
 import type {
   EvidenceStatus,
@@ -182,6 +186,16 @@ function row(id: string, assertionId = `${id}.unit`): ParityRow {
   };
 }
 
+function browserRow(id: string, assertionId: string): ParityRow {
+  return {
+    id,
+    unit: { notApplicable: 'Covered in the browser matrix.' },
+    component: { notApplicable: 'Covered in the browser matrix.' },
+    browser: { assertions: [assertionId] },
+    visual: { notApplicable: 'No visual evidence is involved.' },
+  };
+}
+
 function validRows(): ParityRow[] {
   return [row('workbook'), ...correctionIds.map((id) => row(id, id))];
 }
@@ -200,7 +214,7 @@ function declarations(rows: readonly ParityRow[]): Array<{ id: string; lane: Par
 function evidenceFor(
   rows: readonly ParityRow[],
   status: EvidenceStatus = 'passed',
-): ParityEvidenceRecord[] {
+): Array<Omit<ParityEvidenceRecord, 'runId' | 'revision' | 'treeHash' | 'manifestHash' | 'runner' | 'configHash' | 'startedAt' | 'observedAt'>> {
   return declarations(rows).map(({ id, lane }) => ({
     lane,
     status,
@@ -208,6 +222,139 @@ function evidenceFor(
     source: `tests/${lane}/${id}.test.ts`,
   }));
 }
+
+const releaseContext = {
+  schemaVersion: 1,
+  runId: '11111111-1111-4111-8111-111111111111',
+  revision: '0123456789012345678901234567890123456789',
+  treeHash: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+  manifestHash: 'manifest-hash',
+  startedAt: '2026-07-16T00:00:00.000Z',
+  expiresAt: '2026-07-16T02:00:00.000Z',
+  lanes: {
+    unit: {
+      runner: 'vitest@4.1.10',
+      configHash: 'unit-config-hash',
+      expectedProjects: ['unit'],
+      allowedProjectSkips: {},
+    },
+    component: {
+      runner: 'vitest@4.1.10',
+      configHash: 'component-config-hash',
+      expectedProjects: ['component'],
+      allowedProjectSkips: {},
+    },
+    browser: {
+      runner: 'playwright@1.61.1',
+      configHash: 'browser-config-hash',
+      expectedProjects: ['chromium-desktop', 'firefox-desktop', 'chromium-touch'],
+      allowedProjectSkips: {
+        'input.touch-gestures': ['chromium-desktop', 'firefox-desktop'],
+      },
+    },
+    visual: {
+      runner: 'playwright@1.61.1',
+      configHash: 'visual-config-hash',
+      expectedProjects: ['desktop-dpr1'],
+      allowedProjectSkips: {},
+    },
+  },
+} as const;
+
+type VerifyWithContext = (
+  rows: readonly unknown[],
+  evidence: unknown,
+  context: typeof releaseContext,
+) => ManifestVerificationSummary;
+
+const verifyWithContext = verifyManifest as unknown as VerifyWithContext;
+
+function provenEvidenceFor(rows: readonly ParityRow[]): Array<Record<string, unknown>> {
+  return evidenceFor(rows).flatMap(record => {
+    const lane = releaseContext.lanes[record.lane];
+    return lane.expectedProjects.map(project => ({
+      ...record,
+      runId: releaseContext.runId,
+      revision: releaseContext.revision,
+      treeHash: releaseContext.treeHash,
+      manifestHash: releaseContext.manifestHash,
+      runner: lane.runner,
+      configHash: lane.configHash,
+      startedAt: releaseContext.startedAt,
+      observedAt: '2026-07-16T00:30:00.000Z',
+      project,
+    }));
+  });
+}
+
+test('@parity:manifest.provenance-required rejects synthetic records without release identity', () => {
+  assert.throws(
+    () => verifyWithContext(validRows(), evidenceFor(validRows()), releaseContext),
+    /missing property "runId"/,
+  );
+});
+
+test('@parity:manifest.single-run rejects evidence copied from another release invocation', () => {
+  const evidence = provenEvidenceFor(validRows());
+  evidence[0] = { ...evidence[0], runId: '22222222-2222-4222-8222-222222222222' };
+  assert.throws(
+    () => verifyWithContext(validRows(), evidence, releaseContext),
+    /same release run.*22222222-2222-4222-8222-222222222222/i,
+  );
+});
+
+test('@parity:manifest.revision-bound rejects evidence from another revision or tree', () => {
+  for (const property of ['revision', 'treeHash'] as const) {
+    const evidence = provenEvidenceFor(validRows());
+    evidence[0] = { ...evidence[0], [property]: 'ffffffffffffffffffffffffffffffffffffffff' };
+    assert.throws(
+      () => verifyWithContext(validRows(), evidence, releaseContext),
+      new RegExp(`${property}.*current release`, 'i'),
+    );
+  }
+});
+
+test('@parity:manifest.project-matrix rejects missing and unexpected browser projects', () => {
+  const rows = validRows();
+  rows[0] = browserRow('workbook', 'workbook.browser');
+  const missing = provenEvidenceFor(rows).filter(record => (
+    record.title !== '@parity:workbook.browser executable parity check'
+    || record.project !== 'firefox-desktop'
+  ));
+  assert.throws(
+    () => verifyWithContext(rows, missing, releaseContext),
+    /workbook\.browser.*missing project.*firefox-desktop/i,
+  );
+
+  const unexpected = provenEvidenceFor(rows);
+  unexpected.push({ ...unexpected.find(record => record.title === '@parity:workbook.browser executable parity check')!, project: 'synthetic-browser' });
+  assert.throws(
+    () => verifyWithContext(rows, unexpected, releaseContext),
+    /unexpected project.*synthetic-browser/i,
+  );
+});
+
+test('@parity:manifest.project-skips allows only explicitly catalogued project skips', () => {
+  const rows = validRows();
+  rows[0] = browserRow('workbook', 'input.touch-gestures');
+  const allowed = provenEvidenceFor(rows).map(record => (
+    record.title === '@parity:input.touch-gestures executable parity check'
+      && String(record.project).endsWith('-desktop')
+      ? { ...record, status: 'skipped' }
+      : record
+  ));
+  assert.doesNotThrow(() => verifyWithContext(rows, allowed, releaseContext));
+
+  const disallowed = allowed.map(record => (
+    record.title === '@parity:correction.empty-workbook executable parity check'
+      ? { ...record, status: 'skipped' }
+      : record
+  ));
+  assert.throws(
+    () => verifyWithContext(rows, disallowed, releaseContext),
+    /correction\.empty-workbook.*skip.*not allowed/i,
+  );
+});
 
 function runCliPaths(paths: readonly string[]) {
   const stdout: string[] = [];

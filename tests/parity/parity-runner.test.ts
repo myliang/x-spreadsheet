@@ -8,7 +8,7 @@ import type { ParityEvidenceRecord, ParityLane } from './manifest-types.ts';
 
 const lanes = ['unit', 'component', 'browser', 'visual'] as const;
 
-function completeEvidence(): ParityEvidenceRecord[] {
+function completeEvidence(): Array<Omit<ParityEvidenceRecord, 'runId' | 'revision' | 'treeHash' | 'manifestHash' | 'runner' | 'configHash' | 'startedAt' | 'observedAt'>> {
   return parityManifest.flatMap(row => lanes.flatMap((lane: ParityLane) => {
     const declaration = row[lane];
     return 'assertions' in declaration
@@ -29,7 +29,7 @@ function runGate(path: string) {
   });
 }
 
-test('portable parity gate accepts complete evidence and rejects missing or failed evidence', () => {
+test('release parity gate rejects synthetic evidence without a release context', () => {
   const directory = mkdtempSync(join(tmpdir(), 'tego-sheet-parity-runner-'));
   try {
     const complete = completeEvidence();
@@ -44,17 +44,16 @@ test('portable parity gate accepts complete evidence and rejects missing or fail
     ].join('\n'));
 
     const accepted = runGate(completePath);
-    expect(accepted.status, accepted.stderr).toBe(0);
-    expect(accepted.stdout).toMatch(/manifest-gate\.test\.ts.*passed/is);
-    expect(accepted.stdout).toMatch(/release-evidence\.test\.ts.*passed/is);
+    expect(accepted.status).not.toBe(0);
+    expect(`${accepted.stdout}\n${accepted.stderr}`).toMatch(/release context|runId/i);
 
     const missing = runGate(missingPath);
     expect(missing.status).not.toBe(0);
-    expect(`${missing.stdout}\n${missing.stderr}`).toMatch(/not executed/i);
+    expect(`${missing.stdout}\n${missing.stderr}`).toMatch(/release context|runId/i);
 
     const failed = runGate(failedPath);
     expect(failed.status).not.toBe(0);
-    expect(`${failed.stdout}\n${failed.stderr}`).toMatch(/no passed evidence.*failed/is);
+    expect(`${failed.stdout}\n${failed.stderr}`).toMatch(/release context|runId/i);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

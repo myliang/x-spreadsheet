@@ -22,18 +22,16 @@ function observed(overrides: Partial<ObservedParityResult> = {}): ObservedParity
 }
 
 describe('parity evidence aggregation', () => {
-  it('lets an actual pass win over expected project skips', () => {
+  it('retains each project outcome instead of letting a pass hide project skips', () => {
     expect(aggregateParityEvidence([
       observed({ project: 'chromium-desktop', status: 'skipped' }),
       observed({ project: 'firefox-desktop', status: 'skipped' }),
       observed({ project: 'chromium-touch', status: 'passed' }),
-    ])).toEqual([{
-      lane: 'browser',
-      project: 'chromium-desktop, chromium-touch, firefox-desktop',
-      source: 'tests/browser/input-touch.spec.ts',
-      status: 'passed',
-      title: '@parity:input.touch-gestures exercises touch input',
-    }]);
+    ])).toEqual([
+      expect.objectContaining({ project: 'chromium-desktop', status: 'skipped' }),
+      expect.objectContaining({ project: 'chromium-touch', status: 'passed' }),
+      expect.objectContaining({ project: 'firefox-desktop', status: 'skipped' }),
+    ]);
   });
 
   it('retains a failure even when another project or retry passes', () => {
@@ -41,30 +39,34 @@ describe('parity evidence aggregation', () => {
       observed({ project: 'chromium', status: 'passed' }),
       observed({ project: 'firefox', status: 'failed' }),
       observed({ project: 'webkit', status: 'skipped' }),
-    ])).toEqual([expect.objectContaining({
-      project: 'chromium, firefox, webkit',
-      status: 'failed',
-    })]);
+    ])).toEqual([
+      expect.objectContaining({ project: 'chromium', status: 'passed' }),
+      expect.objectContaining({ project: 'firefox', status: 'failed' }),
+      expect.objectContaining({ project: 'webkit', status: 'skipped' }),
+    ]);
   });
 
   it('reports skipped only when every observed execution skipped', () => {
     expect(aggregateParityEvidence([
       observed({ project: 'chromium', status: 'skipped' }),
       observed({ project: 'webkit', status: 'skipped' }),
-    ])).toEqual([expect.objectContaining({ status: 'skipped' })]);
+    ])).toEqual([
+      expect.objectContaining({ project: 'chromium', status: 'skipped' }),
+      expect.objectContaining({ project: 'webkit', status: 'skipped' }),
+    ]);
   });
 
   it('aggregates duplicate assertion ids across titles and sources without hiding either trace', () => {
     expect(aggregateParityEvidence([
       observed({ source: 'tests/browser/a.spec.ts', title: '@parity:input.touch-gestures first' }),
       observed({ source: 'tests/browser/b.spec.ts', title: '@parity:input.touch-gestures second' }),
-    ])).toEqual([{
+    ])).toEqual([expect.objectContaining({
       lane: 'browser',
       project: 'chromium-touch',
       source: 'tests/browser/a.spec.ts, tests/browser/b.spec.ts',
       status: 'passed',
       title: '@parity:input.touch-gestures first',
-    }]);
+    })]);
   });
 
   it('retains unknown and malformed parity titles so the manifest gate can reject them', () => {
@@ -104,15 +106,17 @@ describe('parity evidence artifacts', () => {
     const directory = mkdtempSync(join(tmpdir(), 'tego-parity-write-'));
     const artifact = join(directory, 'unit.ndjson');
     try {
-      writeEvidenceArtifactAtomically(artifact, [observed({ lane: 'unit', project: 'unit' })]);
+      writeEvidenceArtifactAtomically(artifact, aggregateParityEvidence([
+        observed({ lane: 'unit', project: 'unit' }),
+      ]));
 
-      expect(readFileSync(artifact, 'utf8')).toBe(`${JSON.stringify({
+      expect(JSON.parse(readFileSync(artifact, 'utf8'))).toEqual(expect.objectContaining({
         lane: 'unit',
         project: 'unit',
         source: 'tests/browser/input-touch.spec.ts',
         status: 'passed',
         title: '@parity:input.touch-gestures exercises touch input',
-      })}\n`);
+      }));
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
@@ -133,7 +137,11 @@ describe('parity evidence artifacts', () => {
       writeFileSync: vi.fn(),
     };
     try {
-      expect(() => writeEvidenceArtifactAtomically(artifact, [observed()], fileSystem))
+      expect(() => writeEvidenceArtifactAtomically(
+        artifact,
+        aggregateParityEvidence([observed()]),
+        fileSystem,
+      ))
         .toThrow(/rename denied/);
       expect(fileSystem.writeFileSync).toHaveBeenCalledOnce();
       expect(realRename).toHaveBeenCalledOnce();
