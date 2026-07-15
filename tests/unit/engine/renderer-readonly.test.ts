@@ -397,6 +397,48 @@ describe('read-only Canvas rendering', () => {
     expect(harness.operations).not.toContainEqual({ name: 'moveTo', args: [0.5, 24.5] });
   });
 
+  it.each([
+    {
+      label: 'vertical merge',
+      merge: 'A1:A2',
+      span: [1, 0] as const,
+      move: [0.5, 24.5],
+      line: [199.5, 24.5],
+    },
+    {
+      label: 'horizontal merge',
+      merge: 'A1:B1',
+      span: [0, 1] as const,
+      move: [99.5, 0.5],
+      line: [99.5, 49.5],
+    },
+  ])('keeps singleton grid boundaries outside a $label', ({ merge, span, move, line }) => {
+    const sheet: SheetData = {
+      merges: [merge],
+      rows: { len: 2, 0: { cells: { 0: { text: 'merged', merge: span } } } },
+      cols: { len: 2 },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 200,
+        height: 50,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: move });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: line });
+  });
+
   it('paints filter dropdowns for blank visible header cells without styling them', () => {
     const sheet: SheetData = {
       autofilter: { ref: 'A1:C1' },

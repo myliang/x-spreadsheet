@@ -1,6 +1,6 @@
 import type { CellPoint, CellRange } from '../../core/types/coordinates';
 import { rangesIntersect } from '../../core/coordinates/ranges';
-import { cellRect } from '../geometry/grid-geometry';
+import { rangeRect } from '../geometry/grid-geometry';
 import type { FrozenQuadrant } from '../geometry/frozen-pane-geometry';
 import type { ViewportMetrics } from '../ports';
 import type { DrawContext } from './draw-context';
@@ -156,11 +156,13 @@ export function paintGrid(
   const firstColumn = indexes.columns[0];
   if (firstRow === undefined || firstColumn === undefined) return;
   const rowBoundaries = boundaries(indexes.rows, row => {
-    const rect = cellRect({ row, column: firstColumn }, viewport);
+    const point = { row, column: firstColumn };
+    const rect = rangeRect({ start: point, end: point }, viewport);
     return { start: rect.top, size: rect.height };
   });
   const columnBoundaries = boundaries(indexes.columns, column => {
-    const rect = cellRect({ row: firstRow, column }, viewport);
+    const point = { row: firstRow, column };
+    const rect = rangeRect({ start: point, end: point }, viewport);
     return { start: rect.left, size: rect.width };
   });
   const left = columnBoundaries[0];
