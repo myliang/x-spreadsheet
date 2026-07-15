@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ts from 'typescript';
 import { expect, it } from 'vitest';
@@ -9,9 +9,16 @@ import { createControlledReconciler } from '../../src/react/control/controlled-r
 const root = resolve(import.meta.dirname, '../..');
 
 function sourceFiles(directory: string): readonly string[] {
-  return execFileSync('git', ['ls-files', '-z', directory], { cwd: root, encoding: 'utf8' })
-    .split('\0')
-    .filter(file => /\.tsx?$/.test(file));
+  const output: string[] = [];
+  const visit = (relative: string): void => {
+    for (const entry of readdirSync(resolve(root, relative), { withFileTypes: true })) {
+      const file = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) visit(file);
+      else if (/\.tsx?$/.test(file)) output.push(file);
+    }
+  };
+  visit(directory);
+  return output.sort();
 }
 
 function imports(file: string): readonly string[] {
@@ -23,6 +30,18 @@ it('[ARCH-3] prevents reverse dependencies into React and UI from the engine', (
   for (const file of sourceFiles('src/engine')) {
     expect(imports(file), file).not.toEqual(expect.arrayContaining([
       expect.stringMatching(/(?:^|\/)react(?:\/|$)|(?:^|\/)ui(?:\/|$)/),
+    ]));
+  }
+});
+
+it('[ARCH-3] keeps controllers on commands instead of importing operations or presentation layers', () => {
+  const controllerFiles = sourceFiles('src/core/controller');
+  expect(controllerFiles.length).toBeGreaterThan(3);
+  for (const file of controllerFiles) {
+    expect(imports(file), file).not.toEqual(expect.arrayContaining([
+      expect.stringMatching(
+        /(?:^|\/)(?:operations|engine|ui|react)(?:\/|$)|(?:^|\/)[^/]*painter(?:\/|$|\.)/,
+      ),
     ]));
   }
 });
@@ -61,13 +80,22 @@ it('[ARCH-7] preserves runtime IDs and history when a controlled checkpoint is a
   controller.dispose();
 });
 
-it('[ARCH-7] maps selection, scrolling, and editing preservation to active component regressions', () => {
-  const reconciliation = readFileSync(
-    resolve(root, 'tests/component/controlled-reconciliation.test.tsx'),
-    'utf8',
-  );
-  const editing = readFileSync(resolve(root, 'tests/component/editing.test.tsx'), 'utf8');
-  expect(reconciliation).toMatch(/it\('acknowledges the newest checkpoint without replacing IDs, history, or callbacks'/);
-  expect(reconciliation).toMatch(/scroll/);
-  expect(editing).toMatch(/it\('preserves editing across controlled acknowledgement but cancels on replacement and read-only'/);
-});
+it('[ARCH-7] executes controlled acknowledgement preservation in the component runtime', () => {
+  const cli = resolve(root, 'node_modules/vitest/vitest.mjs');
+  const output = execFileSync(process.execPath, [
+    cli,
+    'run',
+    '--project',
+    'component',
+    'tests/component/controlled-reconciliation.test.tsx',
+    'tests/component/editing.test.tsx',
+    '-t',
+    'acknowledges the newest checkpoint|preserves selection, scroll, and active editing across controlled acknowledgement',
+  ], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+    stdio: 'pipe',
+  });
+  expect(output).toMatch(/Tests\s+2 passed/);
+}, 30_000);

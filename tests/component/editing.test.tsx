@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { createRef, useState, type ComponentProps } from 'react';
+import { createRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TegoSheet, type TegoSheetHandle, type WorkbookInput } from '../../src';
@@ -136,29 +136,34 @@ it('commits once on Tab and pointer navigation with selection before paint', asy
   });
 });
 
-it('preserves editing across controlled acknowledgement but cancels on replacement and read-only', async () => {
+it('preserves selection, scroll, and active editing across controlled acknowledgement', async () => {
   const ref = createRef<TegoSheetHandle>();
-  const value: WorkbookInput = [{ name: 'Controlled' }];
+  const value: WorkbookInput = [{ name: 'Controlled', rows: { len: 5 }, cols: { len: 20 } }];
   let sheet: Parameters<TegoSheetHandle['setCellText']>[0]['sheet'] | undefined;
   let checkpoint: WorkbookInput | undefined;
+  let selectedColumn = -1;
   const onChange = (next: WorkbookInput) => { checkpoint = next; };
-  const onSelectionChange = (next: Parameters<NonNullable<ComponentProps<typeof TegoSheet>['onSelectionChange']>>[0]) => {
+  const onSelectionChange: NonNullable<Parameters<typeof TegoSheet>[0]['onSelectionChange']> = next => {
     sheet = next.sheet;
+    selectedColumn = next.active.column;
   };
   const rendered = render(
     <TegoSheet ref={ref} value={value} onChange={onChange} onSelectionChange={onSelectionChange} />,
   );
   const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
-  sizeRoot(root);
+  sizeRoot(root, 300, 200);
   fireEvent.focusIn(root);
-  fireEvent.keyDown(window, { key: 'ArrowRight' });
-  fireEvent.keyDown(window, { key: 'ArrowLeft' });
+  for (let column = 0; column < 8; column += 1) fireEvent.keyDown(window, { key: 'ArrowRight' });
   expect(sheet).toBeDefined();
+  expect(selectedColumn).toBe(8);
   ref.current!.setCellText({ sheet: sheet!, row: 0, column: 0 }, 'accepted');
   expect(checkpoint).toBeDefined();
+  fireEvent.wheel(root, { deltaX: 200, deltaY: 0 });
   fireEvent.keyDown(window, { key: 'x' });
   const editor = await rendered.findByRole('textbox', { name: /cell editor/i });
   fireEvent.change(editor, { target: { value: 'draft' } });
+  const editorHost = editor.closest<HTMLElement>('.tego-sheet__editor')!;
+  const scrolledLeft = editorHost.style.left;
 
   const acknowledgement = structuredClone(checkpoint!);
   rendered.rerender(
@@ -170,6 +175,14 @@ it('preserves editing across controlled acknowledgement but cancels on replaceme
     />,
   );
   expect((rendered.getByRole('textbox', { name: /cell editor/i }) as HTMLTextAreaElement).value).toBe('draft');
+  expect(editorHost.style.left).toBe(scrolledLeft);
+  expect(selectedColumn).toBe(8);
+
+  fireEvent.keyDown(editor, { key: 'Escape' });
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(selectedColumn).toBe(9);
+  fireEvent.keyDown(window, { key: 'x' });
+  expect(await rendered.findByRole('textbox', { name: /cell editor/i })).toBeTruthy();
 
   rendered.rerender(<TegoSheet ref={ref} value={[{ name: 'Replacement' }]} />);
   await waitFor(() => expect(rendered.queryByRole('textbox', { name: /cell editor/i })).toBeNull());

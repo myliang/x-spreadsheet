@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import ts from 'typescript';
 import { expect, it, vi } from 'vitest';
 import { CanvasEngine } from '../../src/engine/canvas/canvas-engine';
 import { ResourceRegistry } from '../../src/engine/interaction/resource-registry';
@@ -88,33 +89,105 @@ it('[ARCH-5] cancels the renderer schedule during idempotent engine disposal', (
   expect(harness.animationFrame.cancelled).toHaveLength(1);
 });
 
-it('[ARCH-5] confines browser resource creation to the documented sole owners', () => {
-  const files = execFileSync('git', ['ls-files', '-z', 'src'], { cwd: root, encoding: 'utf8' })
-    .split('\0')
-    .filter(file => /\.tsx?$/.test(file));
-  const ownership = [
-    { pattern: /\.(?:addEventListener|removeEventListener)\s*\(/, allowed: new Set([
+it('[ARCH-5] confines every section 6.6 browser resource primitive to its sole owner', () => {
+  const files: string[] = [];
+  const visitDirectory = (relative: string): void => {
+    for (const entry of readdirSync(resolve(root, relative), { withFileTypes: true })) {
+      const file = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) visitDirectory(file);
+      else if (/\.tsx?$/.test(file)) files.push(file);
+    }
+  };
+  visitDirectory('src');
+  const owners = new Map<string, Set<string>>();
+  const record = (primitive: string, file: string): void => {
+    const entries = owners.get(primitive) ?? new Set<string>();
+    entries.add(file);
+    owners.set(primitive, entries);
+  };
+  const callNames = new Map<string, string>([
+    ['addEventListener', 'listener'],
+    ['removeEventListener', 'listener'],
+    ['requestAnimationFrame', 'animation-frame'],
+    ['cancelAnimationFrame', 'animation-frame'],
+    ['setTimeout', 'timer'],
+    ['clearTimeout', 'timer'],
+    ['setInterval', 'timer'],
+    ['clearInterval', 'timer'],
+    ['subscribe', 'subscription'],
+    ['unsubscribe', 'subscription'],
+    ['createElement', 'overlay'],
+    ['append', 'overlay'],
+    ['appendChild', 'overlay'],
+    ['remove', 'overlay'],
+    ['removeChild', 'overlay'],
+    ['createPortal', 'portal'],
+  ]);
+  const propertyOnly = new Set([
+    'createElement',
+    'append',
+    'appendChild',
+    'remove',
+    'removeChild',
+  ]);
+  for (const file of files) {
+    const source = readFileSync(resolve(root, file), 'utf8');
+    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
+      file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    const visit = (node: ts.Node): void => {
+      if (ts.isCallExpression(node)) {
+        const expression = node.expression;
+        const name = ts.isIdentifier(expression)
+          ? expression.text
+          : ts.isPropertyAccessExpression(expression)
+            ? expression.name.text
+            : ts.isElementAccessExpression(expression) && ts.isStringLiteral(expression.argumentExpression)
+              ? expression.argumentExpression.text
+              : null;
+        const primitive = name === null || (ts.isIdentifier(expression) && propertyOnly.has(name))
+          ? undefined
+          : callNames.get(name);
+        if (primitive !== undefined) record(primitive, file);
+      }
+      if (
+        ts.isNewExpression(node)
+        && ts.isIdentifier(node.expression)
+        && node.expression.text === 'ResizeObserver'
+      ) record('observer', file);
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  const ownership = new Map<string, ReadonlySet<string>>([
+    ['listener', new Set([
       'src/engine/interaction/resource-registry.ts',
       'src/react/adapters/interaction-adapter.ts',
-    ]) },
-    { pattern: /new\s+ResizeObserver\s*\(/, allowed: new Set([
+    ])],
+    ['observer', new Set([
       'src/react/adapters/interaction-adapter.ts',
-    ]) },
-    { pattern: /globalThis\.(?:requestAnimationFrame|cancelAnimationFrame)\b/, allowed: new Set([
+    ])],
+    ['animation-frame', new Set([
       'src/engine/canvas/render-scheduler.ts',
-    ]) },
-    { pattern: /\.setTimeout\s*\(/, allowed: new Set([
+    ])],
+    ['timer', new Set([
       'src/react/adapters/interaction-adapter.ts',
-    ]) },
-  ];
-
-  for (const { pattern, allowed } of ownership) {
-    const owners = files.filter(file => pattern.test(readFileSync(resolve(root, file), 'utf8')));
-    expect(new Set(owners), pattern.source).toEqual(allowed);
+    ])],
+    ['subscription', new Set([
+      'src/core/controller/workbook-controller.ts',
+      'src/react/adapters/controller-external-store.ts',
+      'src/react/hooks/use-canvas-engine.ts',
+    ])],
+    ['overlay', new Set([
+      'src/ui/print-workbook.ts',
+    ])],
+    ['portal', new Set()],
+  ]);
+  for (const [primitive, allowed] of ownership) {
+    expect(owners.get(primitive) ?? new Set(), primitive).toEqual(allowed);
   }
 });
 
-it('[ARCH-5] keeps the React disposal cascade ordered and covered by Strict Mode regression', () => {
+it('[ARCH-5] keeps the React disposal cascade ordered and executes the Strict Mode cleanup probe', () => {
   const component = readFileSync(resolve(root, 'src/react/tego-sheet.tsx'), 'utf8');
   expect(component.indexOf('useInteractionManager({')).toBeLessThan(component.indexOf('useCanvasEngine({'));
 
@@ -123,9 +196,18 @@ it('[ARCH-5] keeps the React disposal cascade ordered and covered by Strict Mode
     engineHook.indexOf('append(errors, adapter.dispose)'),
   );
 
-  const regression = readFileSync(resolve(root, 'tests/component/strict-mode-cleanup.test.tsx'), 'utf8');
-  expect(regression).toMatch(/it\('balances Strict Mode resources and makes retained browser callbacks inert'/);
-  for (const resource of ['listener', 'observer', 'timer', 'animation-frame', 'subscription', 'overlay']) {
-    expect(regression, resource).toContain(resource);
-  }
-});
+  const cli = resolve(root, 'node_modules/vitest/vitest.mjs');
+  const output = execFileSync(process.execPath, [
+    cli,
+    'run',
+    '--project',
+    'component',
+    'tests/component/strict-mode-cleanup.test.tsx',
+  ], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+    stdio: 'pipe',
+  });
+  expect(output).toMatch(/Tests\s+4 passed/);
+}, 30_000);

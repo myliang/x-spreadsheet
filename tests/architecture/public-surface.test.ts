@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import * as publicApi from '../../src';
@@ -38,28 +38,45 @@ it('[ARCH-1] publishes only the approved package entry points', () => {
   expect(packageJson.files).toEqual(['dist', 'docs/migration-from-x-data-spreadsheet.md']);
 });
 
-it('does not track the obsolete runtime or generated documentation bundles', () => {
-  const exactObsolete = new Set([
-    'docs/index.html',
-    'docs/xspreadsheet.css',
-    'docs/xspreadsheet.css.map',
-    'docs/xspreadsheet.js',
-    'docs/xspreadsheet.js.map',
-    'docs/58eaeb4e52248a5c75936c6f4c33a370.svg',
-    'docs/ece3e4fa05d4292823fdef970eaf1233.svg',
-    'docs/demo.png',
+it('keeps the removed root legacy tree visible to filesystem and ignore guards', () => {
+  expect(existsSync(resolve(root, 'legacy'))).toBe(false);
+  const ignored = spawnSync(
+    'git',
+    ['check-ignore', '-q', '--no-index', 'legacy/__architecture_probe__.ts'],
+    { cwd: root },
+  );
+  expect(ignored.status, 'root legacy must not be hidden by .gitignore').toBe(1);
+});
+
+it('does not track generated output outside the explicit evidence allowlist', () => {
+  const approvedPrefixes = [
+    'docs/superpowers/',
+    'tests/parity/legacy/',
+    'tests/visual/__snapshots__/',
+    'tests/visual/fonts/',
+  ];
+  const approvedFiles = new Set([
+    'docs/migration-from-x-data-spreadsheet.md',
+    'assets/material_common_sprite82.svg',
+    'assets/sprite.svg',
   ]);
-  const obsolete = trackedFiles().filter(file => (
-    file === 'legacy'
-    || file.startsWith('legacy/')
-    || file === 'dist'
-    || file.startsWith('dist/')
-    || file === 'docs/dist'
-    || file.startsWith('docs/dist/')
-    || file === 'docs/locale'
-    || file.startsWith('docs/locale/')
-    || exactObsolete.has(file)
+  const approved = (file: string): boolean => (
+    approvedFiles.has(file) || approvedPrefixes.some(prefix => file.startsWith(prefix))
+  );
+  const generated = trackedFiles().filter(file => !approved(file) && (
+    /^(?:dist|demo-dist)(?:\/|$)/.test(file)
+    || /^docs\/(?:dist|locale)(?:\/|$)/.test(file)
+    || /^docs\/.*\.(?:html|js|css|map|svg|png)$/.test(file)
+    || /\.map$/.test(file)
+    || /(?:^|\/)[a-f0-9]{8,}\.(?:js|css|map|svg|png|woff2?)$/i.test(file)
+    || /(?:^|\/)(?:assets\/)?[^/]+-[a-z0-9_-]{8,}\.(?:js|css)$/i.test(file)
+    || /(?:^|\/)(?:tego-sheet|xspreadsheet)(?:\.[a-z0-9-]+)?\.(?:js|cjs|css)$/i.test(file)
+    || /\.min\.(?:js|css)$/.test(file)
   ));
 
-  expect(obsolete, 'tracked legacy/generated artifacts').toEqual([]);
+  for (const prefix of approvedPrefixes) {
+    expect(trackedFiles().some(file => file.startsWith(prefix)), prefix).toBe(true);
+  }
+  for (const file of approvedFiles) expect(trackedFiles(), file).toContain(file);
+  expect(generated, 'tracked generated outputs').toEqual([]);
 });

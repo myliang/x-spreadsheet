@@ -23,6 +23,71 @@ function sourceFiles(): readonly string[] {
     .filter(file => /\.tsx?$/.test(file));
 }
 
+interface ListedTest {
+  readonly annotations: readonly { readonly type: string }[];
+  readonly expectedStatus: string;
+}
+
+interface ListedSpec {
+  readonly file: string;
+  readonly line: number;
+  readonly ok: boolean;
+  readonly tags: readonly string[];
+  readonly tests: readonly ListedTest[];
+  readonly title: string;
+}
+
+interface ListedSuite {
+  readonly specs?: readonly ListedSpec[];
+  readonly suites?: readonly ListedSuite[];
+}
+
+function listedParityRegistrations(arguments_: readonly string[]): ReadonlyMap<string, ReadonlySet<string>> {
+  const cli = resolve(root, 'node_modules/@playwright/test/cli.js');
+  const output = execFileSync(process.execPath, [
+    cli,
+    'test',
+    ...arguments_,
+    '--list',
+    '--reporter=json',
+  ], { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+  const report = JSON.parse(output) as {
+    readonly errors: readonly unknown[];
+    readonly suites: readonly ListedSuite[];
+  };
+  expect(report.errors).toEqual([]);
+  const registrations = new Map<string, Set<string>>();
+  const logicalSpecs = new Map<string, ListedSpec>();
+  const visit = (suite: ListedSuite): void => {
+    for (const spec of suite.specs ?? []) {
+      const key = `${spec.file}:${spec.line}:${spec.title}`;
+      const existing = logicalSpecs.get(key);
+      logicalSpecs.set(key, existing === undefined ? spec : {
+        ...spec,
+        ok: existing.ok && spec.ok,
+        tests: [...existing.tests, ...spec.tests],
+      });
+    }
+    for (const child of suite.suites ?? []) visit(child);
+  };
+  for (const suite of report.suites) visit(suite);
+  for (const [key, spec] of logicalSpecs) {
+    const parityTags = spec.tags.filter(tag => tag.startsWith('parity:'));
+    expect(parityTags, key).toHaveLength(1);
+    expect(spec.ok, key).toBe(true);
+    expect(spec.tests.length, key).toBeGreaterThan(0);
+    expect(spec.tests.every(test => (
+      test.expectedStatus === 'passed'
+      && test.annotations.every(annotation => !['skip', 'fixme'].includes(annotation.type))
+    )), key).toBe(true);
+    const id = parityTags[0]!.slice('parity:'.length);
+    const entries = registrations.get(id) ?? new Set<string>();
+    entries.add(key);
+    registrations.set(id, entries);
+  }
+  return registrations;
+}
+
 function eagerBrowserGlobals(file: string): readonly string[] {
   const source = readFileSync(resolve(root, file), 'utf8');
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
@@ -69,19 +134,19 @@ it('[ARCH-9] imports the public source entry without creating browser globals', 
   }
 });
 
-it('[ARCH-8] maps every declared browser and visual parity assertion to an executable title', () => {
-  const sources = execFileSync('git', ['ls-files', '-z', 'tests/browser', 'tests/visual'], {
-    cwd: root,
-    encoding: 'utf8',
-  }).split('\0').filter(file => /\.(?:ts|tsx)$/.test(file));
-  const titles = sources.map(file => readFileSync(resolve(root, file), 'utf8')).join('\n');
-  const declared = parityManifest.flatMap(row => (['browser', 'visual'] as const).flatMap(lane => {
-    const evidence = row[lane];
-    return 'assertions' in evidence ? evidence.assertions : [];
-  }));
-
-  expect(declared.length).toBeGreaterThan(20);
-  for (const assertion of declared) {
-    expect(titles, assertion).toContain(`@parity:${assertion}`);
+it('[ARCH-8] lists an enabled Playwright registration for every browser and visual assertion', () => {
+  const lanes = {
+    browser: listedParityRegistrations(['tests/browser']),
+    visual: listedParityRegistrations(['--config', 'playwright.visual.config.ts']),
+  };
+  for (const lane of ['browser', 'visual'] as const) {
+    const declared = parityManifest.flatMap(row => {
+      const evidence = row[lane];
+      return 'assertions' in evidence ? evidence.assertions : [];
+    }).sort();
+    expect([...lanes[lane].keys()].sort(), `${lane} registration IDs`).toEqual(declared);
+    for (const id of declared) {
+      expect(lanes[lane].get(id)?.size ?? 0, `${lane}:${id}`).toBeGreaterThanOrEqual(1);
+    }
   }
 });
