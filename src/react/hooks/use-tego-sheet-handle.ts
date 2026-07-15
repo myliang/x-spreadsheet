@@ -64,6 +64,7 @@ export interface TegoSheetRuntimeAuthority<Runtime extends TegoSheetHandleRuntim
     sheet: SheetId | null,
   ) => boolean;
   readonly deactivate: () => void;
+  readonly patchRoot: (root: HTMLDivElement) => boolean;
   readonly require: () => Runtime;
   readonly activate: (sheet: SheetId | null) => void;
 }
@@ -115,6 +116,12 @@ function createRuntimeAuthority<Runtime extends TegoSheetHandleRuntime>(): TegoS
     deactivate() {
       activeDecisionVersion += 1;
       current = null;
+    },
+    patchRoot(root) {
+      const runtime = current;
+      if (runtime === null || !runtime.isActive()) return false;
+      current = { ...runtime, root };
+      return true;
     },
     require: requireRuntime,
     activate(sheet) {

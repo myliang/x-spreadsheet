@@ -507,6 +507,7 @@ function Runtime(
   const rootCallback = useCallback((node: HTMLDivElement | null) => {
     rootRef.current = node;
     if (node === null) runtimeAuthority.deactivate();
+    else runtimeAuthority.patchRoot(node);
   }, [runtimeAuthority]);
 
   if (
