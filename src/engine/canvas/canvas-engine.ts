@@ -1,15 +1,15 @@
 import { createFormulaEvaluationBudget } from '../../core/formulas/evaluator';
 import type { CellPoint, CellRange } from '../../core/types/coordinates';
-import type { SheetData } from '../../core/types/workbook';
+import type { CellStyle, SheetData } from '../../core/types/workbook';
 import { frozenQuadrants } from '../geometry/frozen-pane-geometry';
 import type { ViewportMetrics } from '../ports';
-import { paintCells } from './cell-painter';
-import { DrawContext } from './draw-context';
+import { configuredCellDefaultStyle, paintCells } from './cell-painter';
+import { currentDevicePixelRatio, DrawContext } from './draw-context';
 import type {
   CanvasSurfacePort,
   TextMeasurementPort,
 } from './draw-context';
-import { paintGrid, paneCells } from './grid-painter';
+import { paintGrid, paneCells, paneGridIndexes } from './grid-painter';
 import { paintHeaders } from './header-painter';
 import { RenderScheduler } from './render-scheduler';
 import type { AnimationFramePort } from './render-scheduler';
@@ -31,13 +31,9 @@ export interface CanvasRenderSnapshot {
 
 export interface CanvasEngineOptions {
   readonly animationFrame?: AnimationFramePort;
+  readonly defaultStyle?: CellStyle;
   readonly devicePixelRatio?: number;
   readonly measurement?: TextMeasurementPort;
-}
-
-function currentDevicePixelRatio(): number {
-  const value = globalThis.devicePixelRatio;
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 1;
 }
 
 function canvasMeasurement(canvas: CanvasSurfacePort): TextMeasurementPort {
@@ -56,11 +52,13 @@ function canvasMeasurement(canvas: CanvasSurfacePort): TextMeasurementPort {
 
 export class CanvasEngine {
   private readonly draw: DrawContext;
+  private readonly defaultStyle: CellStyle;
   private readonly scheduler: RenderScheduler;
   private latest: CanvasRenderSnapshot | null = null;
   private disposed = false;
 
   constructor(canvas: CanvasSurfacePort, options: Readonly<CanvasEngineOptions> = {}) {
+    this.defaultStyle = configuredCellDefaultStyle(options.defaultStyle);
     this.draw = new DrawContext(
       canvas,
       options.devicePixelRatio ?? currentDevicePixelRatio(),
@@ -81,14 +79,17 @@ export class CanvasEngine {
     const { viewport } = snapshot;
     this.draw.resize(viewport.width, viewport.height);
     this.draw.clear(viewport.width, viewport.height);
-    const allCells = new Map<string, CellPoint>();
+    const visibleRows = new Set<number>();
+    const visibleColumns = new Set<number>();
     const formulaBudget = createFormulaEvaluationBudget(250_000);
     for (const pane of frozenQuadrants(viewport.freeze, viewport)) {
-      const cells = paneCells(pane, viewport);
-      for (const point of cells) allCells.set(`${point.row}:${point.column}`, point);
+      const indexes = paneGridIndexes(pane, viewport);
+      const cells = paneCells(pane, viewport, indexes);
+      for (const row of indexes.rows) visibleRows.add(row);
+      for (const column of indexes.columns) visibleColumns.add(column);
       this.draw.withClip(pane, () => {
-        if (snapshot.showGrid !== false) paintGrid(this.draw, cells, viewport);
-        paintCells(this.draw, snapshot, cells, formulaBudget);
+        if (snapshot.showGrid !== false) paintGrid(this.draw, indexes, viewport);
+        paintCells(this.draw, snapshot, cells, formulaBudget, this.defaultStyle);
         paintSelection(this.draw, snapshot.selection, viewport, pane.kind);
       }, {
         x: viewport.rowHeaderWidth
@@ -97,7 +98,14 @@ export class CanvasEngine {
           - (pane.kind === 'left' || pane.kind === 'body' ? viewport.scroll.y : 0),
       });
     }
-    paintHeaders(this.draw, viewport, [...allCells.values()], snapshot.selection, snapshot.sheet);
+    paintHeaders(
+      this.draw,
+      viewport,
+      [...visibleRows],
+      [...visibleColumns],
+      snapshot.selection,
+      snapshot.sheet,
+    );
   }
 
   dispose(): void {

@@ -22,6 +22,18 @@ const DEFAULT_STYLE: CellStyle = {
   font: { name: 'Arial', size: 10, bold: false, italic: false },
 };
 
+export function configuredCellDefaultStyle(configured: CellStyle | undefined): CellStyle {
+  if (configured === undefined) return DEFAULT_STYLE;
+  return {
+    ...DEFAULT_STYLE,
+    ...configured,
+    font: {
+      ...DEFAULT_STYLE.font,
+      ...configured.font,
+    },
+  };
+}
+
 export interface CellPaintSnapshot {
   readonly sheet: Readonly<SheetData>;
   readonly viewport: ViewportMetrics;
@@ -50,9 +62,10 @@ export function resolveCellPresentation(
   point: CellPoint,
   print: boolean,
   budget: FormulaEvaluationBudget = createFormulaEvaluationBudget(250_000),
+  defaultStyle: CellStyle = DEFAULT_STYLE,
 ): CellPresentation {
   const cell = getCellData(sheet, point.row, point.column);
-  const style = selectCellStyle(sheet, point.row, point.column, DEFAULT_STYLE);
+  const style = selectCellStyle(sheet, point.row, point.column, defaultStyle);
   const printable = cell?.printable !== false;
   if (print && !printable) return { cell, style, text: '', printable };
   let rendered;
@@ -289,7 +302,7 @@ export function paintCellAppearance(
 ): void {
   const style = presentation.style;
   border(draw, rect, style, visualScale);
-  draw.withClip(cellContentRect(rect, visualScale), () => {
+  draw.withPixelAlignedClip(cellContentRect(rect, visualScale), () => {
     paintCellContent(draw, rect, presentation, visualScale);
     paintMarks?.();
   });
@@ -300,13 +313,15 @@ export function paintCells(
   snapshot: CellPaintSnapshot,
   cells: readonly CellPoint[],
   budget: FormulaEvaluationBudget,
+  defaultStyle: CellStyle,
 ): void {
   const invalid = new Set((snapshot.invalidCells ?? []).map(point => `${point.row}:${point.column}`));
   const filter = filterHeaderRange(snapshot.sheet);
   for (const point of cells) {
+    if (getCellData(snapshot.sheet, point.row, point.column) === null) continue;
     if (!isMergeAnchor(point, snapshot.viewport)) continue;
     const rect = cellRect(point, snapshot.viewport);
-    const presentation = resolveCellPresentation(snapshot.sheet, point, false, budget);
+    const presentation = resolveCellPresentation(snapshot.sheet, point, false, budget, defaultStyle);
     paintCellAppearance(draw, rect, presentation, 1, () => {
       if (invalid.has(`${point.row}:${point.column}`)) marker(draw, rect, 'rgba(255, 0, 0, .65)');
       if (presentation.cell?.editable === false) marker(draw, rect, 'rgba(0, 255, 0, .85)');

@@ -1,4 +1,4 @@
-import type { CellPoint, CellRange } from '../../core/types/coordinates';
+import type { CellRange } from '../../core/types/coordinates';
 import type { SheetData } from '../../core/types/workbook';
 import type { ViewportMetrics } from '../ports';
 import type { DrawContext } from './draw-context';
@@ -38,7 +38,8 @@ function hiddenEntry(collection: unknown, index: number): boolean {
 export function paintHeaders(
   draw: DrawContext,
   viewport: ViewportMetrics,
-  cells: readonly CellPoint[],
+  visibleRows: readonly number[],
+  visibleColumns: readonly number[],
   selection?: CellRange,
   sheet?: Readonly<SheetData>,
 ): void {
@@ -54,8 +55,8 @@ export function paintHeaders(
     width: viewport.rowHeaderWidth,
     height: viewport.height,
   }, '#f4f5f8');
-  const rows = [...new Set(cells.map(point => point.row))].sort((a, b) => a - b);
-  const columns = [...new Set(cells.map(point => point.column))].sort((a, b) => a - b);
+  const rows = [...new Set(visibleRows)].sort((a, b) => a - b);
+  const columns = [...new Set(visibleColumns)].sort((a, b) => a - b);
   for (const row of rows) {
     const top = rowTop(row, viewport);
     const height = viewport.model.rowHeight(row);

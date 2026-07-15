@@ -92,9 +92,9 @@ function coordinateRange(rows: readonly number[], columns: readonly number[]): C
 export function paneCells(
   pane: FrozenQuadrant,
   viewport: ViewportMetrics,
+  indexes: PaneGridIndexes = paneGridIndexes(pane, viewport),
 ): readonly CellPoint[] {
-  const rows = paneAxisIndexes('row', pane, viewport);
-  const columns = paneAxisIndexes('column', pane, viewport);
+  const { rows, columns } = indexes;
   if (BigInt(rows.length) * BigInt(columns.length) > BigInt(MAX_VISIBLE_CELLS)) {
     throw new RangeError(`visible canvas pane exceeds the ${MAX_VISIBLE_CELLS}-cell limit`);
   }
@@ -119,33 +119,67 @@ export function paneCells(
   return points;
 }
 
+export interface PaneGridIndexes {
+  readonly rows: readonly number[];
+  readonly columns: readonly number[];
+}
+
+export function paneGridIndexes(
+  pane: FrozenQuadrant,
+  viewport: ViewportMetrics,
+): PaneGridIndexes {
+  return {
+    rows: paneAxisIndexes('row', pane, viewport),
+    columns: paneAxisIndexes('column', pane, viewport),
+  };
+}
+
+function boundaries(
+  indexes: readonly number[],
+  offset: (boundary: number) => number,
+): readonly number[] {
+  const values = new Set<number>();
+  for (const index of indexes) {
+    values.add(offset(index));
+    values.add(offset(index + 1));
+  }
+  return [...values].sort((first, second) => first - second);
+}
+
 export function paintGrid(
   draw: DrawContext,
-  cells: readonly CellPoint[],
+  indexes: PaneGridIndexes,
   viewport: ViewportMetrics,
 ): void {
-  for (const point of cells) {
-    const rect = cellRect(point, viewport);
-    const right = rect.left + rect.width;
-    const bottom = rect.top + rect.height;
+  const firstRow = indexes.rows[0];
+  const lastRow = indexes.rows.at(-1);
+  const firstColumn = indexes.columns[0];
+  const lastColumn = indexes.columns.at(-1);
+  if (firstRow === undefined || lastRow === undefined
+    || firstColumn === undefined || lastColumn === undefined) return;
+  const first = cellRect({ row: firstRow, column: firstColumn }, viewport);
+  const last = cellRect({ row: lastRow, column: lastColumn }, viewport);
+  const left = first.left;
+  const top = first.top;
+  const right = last.left + last.width;
+  const bottom = last.top + last.height;
+  const rowBoundaries = boundaries(indexes.rows, boundary => (
+    viewport.columnHeaderHeight + viewport.model.rowOffset(boundary)
+  ));
+  const columnBoundaries = boundaries(indexes.columns, boundary => (
+    viewport.rowHeaderWidth + viewport.model.columnOffset(boundary)
+  ));
+  for (const y of rowBoundaries) {
     draw.line(
-      { x: rect.left, y: rect.top },
-      { x: right, y: rect.top },
+      { x: left, y },
+      { x: right, y },
       { color: '#e6e6e6' },
     );
+  }
+  for (const x of columnBoundaries) {
     draw.line(
-      { x: rect.left, y: rect.top },
-      { x: rect.left, y: bottom },
-      { color: '#e6e6e6' },
-    );
-    draw.line(
-      { x: right, y: rect.top },
-      { x: right, y: bottom },
-      { color: '#e6e6e6' },
-    );
-    draw.line(
-      { x: rect.left, y: bottom },
-      { x: right, y: bottom },
+      { x, y: top },
+      { x, y: bottom },
       { color: '#e6e6e6' },
     );
   }

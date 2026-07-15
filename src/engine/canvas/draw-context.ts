@@ -42,6 +42,11 @@ function positiveDpr(value: number): number {
   return value;
 }
 
+export function currentDevicePixelRatio(): number {
+  const value = globalThis.devicePixelRatio;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 1;
+}
+
 export class DrawContext {
   readonly canvas: CanvasSurfacePort;
   readonly context: CanvasRenderingContext2D;
@@ -119,13 +124,42 @@ export class DrawContext {
     }
   }
 
+  withPixelAlignedClip(rect: CssRect, paint: () => void): void {
+    this.withClip({
+      left: this.lineCoordinate(rect.left),
+      top: this.lineCoordinate(rect.top),
+      width: this.pixelSize(rect.width),
+      height: this.pixelSize(rect.height),
+    }, paint);
+  }
+
+  private lineCoordinate(value: number): number {
+    const physical = Math.floor(value * this.devicePixelRatio);
+    return (physical > 0 ? physical - 0.5 : 0.5) / this.devicePixelRatio;
+  }
+
+  private fillCoordinate(value: number): number {
+    return (Math.floor(value * this.devicePixelRatio) - 0.5) / this.devicePixelRatio;
+  }
+
+  private pixelSize(value: number): number {
+    return Math.floor(value * this.devicePixelRatio) / this.devicePixelRatio;
+  }
+
+  private lineWidth(style: string | undefined, scale: number, width: number): number {
+    const nominal = style === 'medium' ? 2 * scale : style === 'thick' ? 3 * scale : width * scale;
+    const physical = Math.floor(nominal * this.devicePixelRatio);
+    if (style === 'thick') return Math.max(1, physical) / this.devicePixelRatio;
+    return Math.max(0.5, physical - 0.5) / this.devicePixelRatio;
+  }
+
   fillRect(rect: CssRect, color: string): void {
     this.context.fillStyle = color;
     this.context.fillRect(
-      rect.left - this.originX,
-      rect.top - this.originY,
-      rect.width,
-      rect.height,
+      this.fillCoordinate(rect.left) - this.originX,
+      this.fillCoordinate(rect.top) - this.originY,
+      this.pixelSize(rect.width),
+      this.pixelSize(rect.height),
     );
   }
 
@@ -143,13 +177,8 @@ export class DrawContext {
 
   line(start: CssPoint, end: CssPoint, options: DrawLineOptions): void {
     const scale = options.scale ?? 1;
-    const width = options.style === 'medium'
-      ? 2 * scale
-      : options.style === 'thick'
-        ? 3 * scale
-        : (options.width ?? 1) * scale;
     this.context.strokeStyle = options.color;
-    this.context.lineWidth = width;
+    this.context.lineWidth = this.lineWidth(options.style, scale, options.width ?? 1);
     this.context.setLineDash(
       options.style === 'dashed'
         ? [3 * scale, 2 * scale]
@@ -160,8 +189,14 @@ export class DrawContext {
             : [],
     );
     this.context.beginPath();
-    this.context.moveTo(start.x - this.originX, start.y - this.originY);
-    this.context.lineTo(end.x - this.originX, end.y - this.originY);
+    this.context.moveTo(
+      this.lineCoordinate(start.x) - this.originX,
+      this.lineCoordinate(start.y) - this.originY,
+    );
+    this.context.lineTo(
+      this.lineCoordinate(end.x) - this.originX,
+      this.lineCoordinate(end.y) - this.originY,
+    );
     this.context.stroke();
   }
 

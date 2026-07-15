@@ -205,8 +205,8 @@ describe('read-only Canvas rendering', () => {
     expect(withGrid.filter(operation => operation.name === 'stroke').length).toBeGreaterThan(
       withoutGrid.filter(operation => operation.name === 'stroke').length,
     );
-    expect(withoutGrid).toContainEqual({ name: 'set:lineWidth', args: [1] });
-    expect(withoutGrid).toContainEqual({ name: 'set:lineWidth', args: [2] });
+    expect(withoutGrid).toContainEqual({ name: 'set:lineWidth', args: [0.5] });
+    expect(withoutGrid).toContainEqual({ name: 'set:lineWidth', args: [1.5] });
     expect(withoutGrid).toContainEqual({ name: 'set:lineWidth', args: [3] });
     expect(withoutGrid).toContainEqual({ name: 'setLineDash', args: [[3, 2]] });
     expect(withoutGrid).toContainEqual({ name: 'setLineDash', args: [[1, 1]] });
@@ -252,8 +252,8 @@ describe('read-only Canvas rendering', () => {
     const clips = harness.operations
       .filter(operation => operation.name === 'rect')
       .map(operation => operation.args);
-    expect(clips).toContainEqual([1, 1, 28, 23]);
-    expect(clips).toContainEqual([31, 1, 58, 23]);
+    expect(clips).toContainEqual([0.5, 0.5, 28, 23]);
+    expect(clips).toContainEqual([30.5, 0.5, 58, 23]);
     const longText = harness.operations.findIndex(operation => (
       operation.name === 'fillText' && operation.args[0] === 'a very long unwrapped value'
     ));
@@ -261,10 +261,112 @@ describe('read-only Canvas rendering', () => {
       operation.name === 'set:fillStyle' && operation.args[0] === 'rgba(255, 0, 0, .65)'
     ));
     expect(longText).toBeGreaterThan(harness.operations.findIndex(operation => (
-      operation.name === 'rect' && operation.args[0] === 1 && operation.args[1] === 1
+      operation.name === 'rect' && operation.args[0] === 0.5 && operation.args[1] === 0.5
     )));
     expect(redMark).toBeGreaterThan(longText);
     expect(harness.operations.slice(redMark).some(operation => operation.name === 'restore')).toBe(true);
+  });
+
+  it('threads configured defaults beneath column, row, and cell styles', () => {
+    const sheet: SheetData = {
+      styles: [
+        { bgcolor: '#ccddee', font: { bold: true } },
+        { align: 'center', font: { italic: true } },
+        { color: '#123456', font: { size: 12 } },
+      ],
+      rows: { len: 1, 0: { style: 1, cells: { 0: { text: 'styled', style: 2 } } } },
+      cols: { len: 1, 0: { style: 0 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+      defaultStyle: {
+        bgcolor: '#ffffff',
+        align: 'left',
+        color: '#000000',
+        font: { name: 'Configured', size: 8, bold: false, italic: false },
+      },
+    });
+
+    engine.render({
+      sheet,
+      showGrid: false,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 100,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations).toContainEqual({ name: 'set:fillStyle', args: ['#ccddee'] });
+    expect(harness.operations).toContainEqual({
+      name: 'set:font',
+      args: ['italic bold 16px Configured'],
+    });
+    expect(harness.operations).toContainEqual({ name: 'set:textAlign', args: ['center'] });
+    expect(harness.operations).toContainEqual({ name: 'set:fillStyle', args: ['#123456'] });
+  });
+
+  it('skips absent coordinates but paints explicit empty cells', () => {
+    const sheet: SheetData = {
+      styles: [
+        { bgcolor: '#column-only' },
+        { bgcolor: '#explicit-row' },
+      ],
+      merges: ['A1:B1'],
+      rows: { len: 1, 0: { style: 1, cells: { 2: {} } } },
+      cols: { len: 3, 0: { width: 30, style: 0 }, 1: { width: 30 }, 2: { width: 30 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      showGrid: false,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 90,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
+      .toEqual([[0, 0, 90, 25], [60.5, 0.5, 28, 23]]);
+    expect(harness.operations).not.toContainEqual({ name: 'set:fillStyle', args: ['#column-only'] });
+    expect(harness.operations).toContainEqual({ name: 'set:fillStyle', args: ['#explicit-row'] });
+  });
+
+  it('draws large empty grids with row-plus-column boundary complexity', () => {
+    const sheet: SheetData = { rows: { len: 500 }, cols: { len: 500 } };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 50_000,
+        height: 12_500,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    expect(() => harness.animationFrame.flush()).not.toThrow();
+
+    expect(harness.operations.filter(operation => operation.name === 'stroke').length)
+      .toBeLessThanOrEqual(2_004);
+    expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
+      .toEqual([[0, 0, 50_000, 12_500]]);
   });
 
   it('uses legacy point sizes, character wrapping, and multiline vertical origins', () => {
@@ -377,14 +479,14 @@ describe('read-only Canvas rendering', () => {
       return move === undefined || line === undefined ? [] : [[move.args, line.args]];
     });
     expect(decorationLines('#aa0000')).toEqual([
-      [[5, 23], [12, 23]],
-      [[35, 28], [42, 28]],
-      [[65, 35], [72, 35]],
+      [[4.5, 22.5], [11.5, 22.5]],
+      [[34.5, 27.5], [41.5, 27.5]],
+      [[64.5, 34.5], [71.5, 34.5]],
     ]);
     expect(decorationLines('#00aa00')).toEqual([
-      [[95, 15], [102, 15]],
-      [[125, 20], [132, 20]],
-      [[155, 27], [162, 27]],
+      [[94.5, 14.5], [101.5, 14.5]],
+      [[124.5, 19.5], [131.5, 19.5]],
+      [[154.5, 26.5], [161.5, 26.5]],
     ]);
   });
 
@@ -458,10 +560,10 @@ describe('read-only Canvas rendering', () => {
     expect(harness.operations.filter(operation => (
       operation.name === 'set:strokeStyle' && operation.args[0] === '#c6c6c6'
     ))).toHaveLength(2);
-    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [5, 30] });
-    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [55, 30] });
-    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [65, 5] });
-    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [65, 20] });
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [4.5, 29.5] });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [54.5, 29.5] });
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [64.5, 4.5] });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [64.5, 19.5] });
   });
 
   it.each([1, 2])('uses DPR %s without reading browser globals', (devicePixelRatio) => {
@@ -497,5 +599,61 @@ describe('read-only Canvas rendering', () => {
       { name: 'setTransform', args: [devicePixelRatio, 0, 0, devicePixelRatio, 0, 0] },
     ]);
     expect(harness.operations.some(operation => operation.name === 'scale')).toBe(false);
+  });
+
+  it.each([
+    {
+      dpr: 1,
+      width: 0.5,
+      start: [0.5, 24.5],
+      end: [29.5, 24.5],
+      contentRect: [0.5, 0.5, 28, 23],
+    },
+    {
+      dpr: 2,
+      width: 0.75,
+      start: [0.25, 24.75],
+      end: [29.75, 24.75],
+      contentRect: [0.75, 0.75, 28, 23],
+    },
+  ])('aligns thin lines to physical pixels at DPR $dpr', ({
+    dpr,
+    width,
+    start,
+    end,
+    contentRect,
+  }) => {
+    const sheet: SheetData = {
+      styles: [{ border: { bottom: ['thin', '#135790'] } }],
+      rows: { len: 1, 0: { cells: { 0: { style: 0 } } } },
+      cols: { len: 1, 0: { width: 30 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      devicePixelRatio: dpr,
+      measurement: harness.measurement,
+    });
+    engine.render({
+      sheet,
+      showGrid: false,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 30,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    const border = harness.operations.findIndex(operation => (
+      operation.name === 'set:strokeStyle' && operation.args[0] === '#135790'
+    ));
+    expect(harness.operations.slice(border)).toContainEqual({ name: 'set:lineWidth', args: [width] });
+    expect(harness.operations.slice(border)).toContainEqual({ name: 'moveTo', args: start });
+    expect(harness.operations.slice(border)).toContainEqual({ name: 'lineTo', args: end });
+    expect(harness.operations).toContainEqual({ name: 'rect', args: contentRect });
+    expect(harness.operations).toContainEqual({ name: 'fillRect', args: contentRect });
+    expect(harness.operations).toContainEqual({ name: 'setTransform', args: [dpr, 0, 0, dpr, 0, 0] });
   });
 });

@@ -5,11 +5,12 @@ import type { CellStyle, SheetData } from '../../core/types/workbook';
 import { createSheetGridModel } from '../ports';
 import type { CssRect } from '../ports';
 import {
+  configuredCellDefaultStyle,
   paintCellAppearance,
   resolveCellPresentation,
 } from './cell-painter';
 import type { CellPresentation } from './cell-painter';
-import { DrawContext } from './draw-context';
+import { currentDevicePixelRatio, DrawContext } from './draw-context';
 import type { CanvasSurfacePort, TextMeasurementPort } from './draw-context';
 
 const MAX_PRINT_CELLS = 250_000;
@@ -30,6 +31,7 @@ export interface PrintLayoutOptions {
   readonly orientation: PaperOrientation;
   readonly padding?: number;
   readonly invalidCells?: readonly CellPoint[];
+  readonly defaultStyle?: CellStyle;
 }
 
 export interface PrintPaper {
@@ -184,6 +186,7 @@ function buildPageCells(
   rows: PageRows,
   columnEnd: number,
   invalidCells: ReadonlySet<string>,
+  defaultStyle: CellStyle,
 ): readonly PrintCellLayout[] {
   if (rows.end < rows.start) return [];
   const model = createSheetGridModel(sheet);
@@ -200,7 +203,7 @@ function buildPageCells(
     seen.add(key);
     const merge = model.mergeAt(point);
     if (mergeInterior(point, merge)) return;
-    const presentation = resolveCellPresentation(sheet, point, true, budget);
+    const presentation = resolveCellPresentation(sheet, point, true, budget, defaultStyle);
     if (presentation.cell === null) return;
     cells.push({
       row: point.row,
@@ -260,12 +263,13 @@ export function createPrintLayout(
   const pageCount = Math.floor(contentHeight / printPaper.innerHeight) + 1;
   const rows = pageRows(sheet, end.row, printPaper.innerHeight, pageCount);
   const invalidCells = new Set((options.invalidCells ?? []).map(point => `${point.row}:${point.column}`));
+  const defaultStyle = configuredCellDefaultStyle(options.defaultStyle);
   const pages = rows.map((range, index) => Object.freeze({
     index,
     rowStart: range.start,
     rowEnd: range.end,
     contentTop: model.rowOffset(Math.min(range.start, model.rowCount)),
-    cells: Object.freeze(buildPageCells(sheet, range, end.column, invalidCells)),
+    cells: Object.freeze(buildPageCells(sheet, range, end.column, invalidCells, defaultStyle)),
   }));
   return Object.freeze({
     paper: printPaper,
@@ -315,7 +319,7 @@ export function renderPrintPage(
   if (page === undefined) throw new RangeError('print page index is outside the layout');
   const draw = new DrawContext(
     canvas,
-    options.devicePixelRatio ?? 1,
+    options.devicePixelRatio ?? currentDevicePixelRatio(),
     options.measurement ?? canvasMeasurement(canvas),
   );
   draw.resize(layout.paper.width, layout.paper.height);

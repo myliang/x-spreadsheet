@@ -187,7 +187,7 @@ describe('print layout', () => {
     ))).toBe(true);
     expect(harness.operations).toContainEqual({
       name: 'set:lineWidth',
-      args: [layout.scale],
+      args: [0.5],
     });
     expect(harness.operations).toContainEqual({
       name: 'setLineDash',
@@ -202,10 +202,10 @@ describe('print layout', () => {
       const renderedLeft = layout.contentLeft + formulaRect.left * layout.scale;
       const renderedTop = layout.paper.padding + formulaRect.top * layout.scale;
       const contentClip = [
-        renderedLeft + layout.scale,
-        renderedTop + layout.scale,
-        formulaRect.width * layout.scale - 2 * layout.scale,
-        formulaRect.height * layout.scale - 2 * layout.scale,
+        Math.floor(renderedLeft + layout.scale) - 0.5,
+        Math.floor(renderedTop + layout.scale) - 0.5,
+        Math.floor(formulaRect.width * layout.scale - 2 * layout.scale),
+        Math.floor(formulaRect.height * layout.scale - 2 * layout.scale),
       ];
       expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
         .toContainEqual(contentClip);
@@ -220,6 +220,61 @@ describe('print layout', () => {
       ));
       expect(borderStroke).toBeLessThan(clip);
       expect(validationMark).toBeGreaterThan(clip);
+    }
+  });
+
+  it('threads configured defaults beneath column, row, and cell styles for print', () => {
+    const sheet: SheetData = {
+      styles: [
+        { bgcolor: '#ccddee', font: { bold: true } },
+        { align: 'center', font: { italic: true } },
+        { color: '#123456', font: { size: 12 } },
+      ],
+      rows: { len: 1, 0: { style: 1, cells: { 0: { text: 'styled', style: 2 } } } },
+      cols: { len: 1, 0: { style: 0 } },
+    };
+    const layout = createPrintLayout(sheet, {
+      paperSize: 'A4',
+      orientation: 'portrait',
+      defaultStyle: {
+        bgcolor: '#ffffff',
+        align: 'left',
+        color: '#000000',
+        font: { name: 'Configured', size: 8, bold: false, italic: false },
+      },
+    });
+    expect(layout.pages[0]?.cells[0]?.style).toMatchObject({
+      bgcolor: '#ccddee',
+      align: 'center',
+      color: '#123456',
+      font: { name: 'Configured', size: 12, bold: true, italic: true },
+    });
+
+    const harness = createCanvasHarness();
+    renderPrintPage(layout, 0, harness.canvas, { measurement: harness.measurement });
+    expect(harness.operations).toContainEqual({
+      name: 'set:font',
+      args: ['italic bold 16px Configured'],
+    });
+  });
+
+  it('uses the runtime DPR for print unless explicitly injected', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'devicePixelRatio');
+    Object.defineProperty(globalThis, 'devicePixelRatio', { configurable: true, value: 2 });
+    try {
+      const layout = createPrintLayout({
+        rows: { len: 1, 0: { cells: { 0: { text: 'print' } } } },
+        cols: { len: 1 },
+      }, { paperSize: 'A5', orientation: 'portrait' });
+      const harness = createCanvasHarness();
+      renderPrintPage(layout, 0, harness.canvas, { measurement: harness.measurement });
+
+      expect(harness.canvas.width).toBe(layout.paper.width * 2);
+      expect(harness.canvas.height).toBe(layout.paper.height * 2);
+      expect(harness.operations).toContainEqual({ name: 'setTransform', args: [2, 0, 0, 2, 0, 0] });
+    } finally {
+      if (descriptor === undefined) delete (globalThis as { devicePixelRatio?: number }).devicePixelRatio;
+      else Object.defineProperty(globalThis, 'devicePixelRatio', descriptor);
     }
   });
 
