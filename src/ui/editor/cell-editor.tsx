@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import type { OverlayAnchor } from '../../engine';
+import type { Translate } from '../translate';
 import { DateEditor } from './date-editor';
 import { FormulaSuggestions } from './formula-suggestions';
 
@@ -11,6 +12,7 @@ export interface CellEditorProps {
   readonly onChange: (value: string) => void;
   readonly onCancel: () => void;
   readonly onCommit: (move?: 'up' | 'down' | 'left' | 'right') => void;
+  readonly t: Translate;
 }
 
 export function CellEditor(props: CellEditorProps) {
@@ -59,7 +61,7 @@ export function CellEditor(props: CellEditorProps) {
           }}
         />
       )}
-      <FormulaSuggestions value={props.value} onSelect={props.onChange} />
+      <FormulaSuggestions value={props.value} onSelect={props.onChange} t={props.t} />
     </div>
   );
 }

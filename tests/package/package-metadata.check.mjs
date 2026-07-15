@@ -62,6 +62,11 @@ test('publishes only tego-sheet', () => {
       import: './dist/tego-sheet.js',
       require: './dist/tego-sheet.cjs',
     },
+    './locales': {
+      types: './dist/locales/index.d.ts',
+      import: './dist/locales/index.js',
+      require: './dist/locales/index.cjs',
+    },
     './styles.css': './dist/styles.css',
   });
   assert.equal(Object.keys(pkg.exports).some((path) => path.includes('legacy')), false);
@@ -166,8 +171,13 @@ test('package dry run includes public files only', () => {
   assert.equal(result.status, 0, result.stderr);
   const [pack] = JSON.parse(result.stdout);
   const paths = pack.files.map(({ path }) => path);
+  const localeChunks = paths.filter((path) => /^dist\/locales-[A-Za-z0-9_-]+\.(?:js|cjs)(?:\.map)?$/.test(path));
+  assert.equal(localeChunks.length, 4);
+  assert.equal(localeChunks.filter((path) => path.endsWith('.js')).length, 1);
+  assert.equal(localeChunks.filter((path) => path.endsWith('.cjs')).length, 1);
+  assert.equal(localeChunks.filter((path) => path.endsWith('.map')).length, 2);
 
-  assert.deepEqual(paths, [
+  assert.deepEqual(paths.filter((path) => !localeChunks.includes(path)), [
     'LICENSE',
     'dist/core/commands/apply-command.d.ts',
     'dist/core/commands/command-result.d.ts',
@@ -246,7 +256,9 @@ test('package dry run includes public files only', () => {
     'dist/index.d.ts',
     'dist/locales/de.d.ts',
     'dist/locales/en.d.ts',
+    'dist/locales/index.cjs',
     'dist/locales/index.d.ts',
+    'dist/locales/index.js',
     'dist/locales/nl.d.ts',
     'dist/locales/zh-cn.d.ts',
     'dist/react/adapters/controller-external-store.d.ts',
@@ -300,6 +312,7 @@ test('package dry run includes public files only', () => {
     pkg.module,
     pkg.types,
     ...Object.values(pkg.exports['.']),
+    ...Object.values(pkg.exports['./locales']),
     pkg.exports['./styles.css'],
   ]);
   for (const target of declaredTargets) {

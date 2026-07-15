@@ -2,6 +2,25 @@ import { useState } from 'react';
 import type { ValidationOperator, ValidationRule, ValidationType } from '../../core';
 import type { Translate } from '../translate';
 
+const validationTypes = [
+  ['list', 'List'],
+  ['number', 'Number'],
+  ['date', 'Date'],
+  ['phone', 'Phone'],
+  ['email', 'Email'],
+] as const;
+
+const validationOperators = [
+  ['be', 'between'],
+  ['nbe', 'not between'],
+  ['eq', 'equal to'],
+  ['neq', 'not equal to'],
+  ['lt', 'less than'],
+  ['lte', 'less than or equal to'],
+  ['gt', 'greater than'],
+  ['gte', 'greater than or equal to'],
+] as const;
+
 export function ValidationDialog(props: {
   readonly onClose: () => void;
   readonly onRemove: () => void;
@@ -42,13 +61,17 @@ export function ValidationDialog(props: {
     <div role="dialog" aria-modal="true" aria-label={props.t('validation.title', 'Data validation')} className="tego-sheet__dialog">
       <label>{props.t('validation.type', 'Type')}
         <select name="type" value={type} onChange={event => setType(event.target.value as ValidationType)}>
-          {['list', 'number', 'date', 'phone', 'email'].map(item => <option key={item} value={item}>{item}</option>)}
+          {validationTypes.map(([item, label]) => (
+            <option key={item} value={item}>{props.t(`validation.types.${item}`, label)}</option>
+          ))}
         </select>
       </label>
       <label>{props.t('validation.operator', 'Operator')}
         <select value={operator} onChange={event => setOperator(event.target.value as ValidationOperator | '')}>
           <option value="">{props.t('validation.none', 'None')}</option>
-          {['be', 'nbe', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte'].map(item => <option key={item} value={item}>{item}</option>)}
+          {validationOperators.map(([item, label]) => (
+            <option key={item} value={item}>{props.t(`validation.operators.${item}`, label)}</option>
+          ))}
         </select>
       </label>
       <label>{props.t('validation.value', 'Value')}

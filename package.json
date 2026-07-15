@@ -12,6 +12,11 @@
       "import": "./dist/tego-sheet.js",
       "require": "./dist/tego-sheet.cjs"
     },
+    "./locales": {
+      "types": "./dist/locales/index.d.ts",
+      "import": "./dist/locales/index.js",
+      "require": "./dist/locales/index.cjs"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "files": [

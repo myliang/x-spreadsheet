@@ -1,4 +1,5 @@
 import { FORMULA_FUNCTIONS } from '../../core';
+import type { Translate } from '../translate';
 
 function prefix(value: string): string | null {
   const match = /^=([a-z]*)/i.exec(value.trim());
@@ -8,6 +9,7 @@ function prefix(value: string): string | null {
 export function FormulaSuggestions(props: {
   readonly value: string;
   readonly onSelect: (value: string) => void;
+  readonly t: Translate;
 }) {
   const query = prefix(props.value);
   if (query === null) return null;
@@ -16,7 +18,11 @@ export function FormulaSuggestions(props: {
     .slice(0, 8);
   if (suggestions.length === 0) return null;
   return (
-    <div className="tego-sheet__formula-suggestions" role="listbox" aria-label="Formula suggestions">
+    <div
+      className="tego-sheet__formula-suggestions"
+      role="listbox"
+      aria-label={props.t('formula.suggestions', 'Formula suggestions')}
+    >
       {suggestions.map(name => (
         <button
           type="button"
@@ -24,7 +30,7 @@ export function FormulaSuggestions(props: {
           key={name}
           onMouseDown={event => event.preventDefault()}
           onClick={() => props.onSelect(`=${name}()`)}
-        >{name}</button>
+        >{props.t(`formula.${name.toLowerCase()}`, name)}</button>
       ))}
     </div>
   );

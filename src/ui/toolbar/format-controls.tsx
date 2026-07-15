@@ -7,6 +7,19 @@ export interface FormatControlsProps {
   readonly t: Translate;
 }
 
+const formats = [
+  ['normal', 'Normal'],
+  ['number', 'Number'],
+  ['percent', 'Percent'],
+  ['rmb', 'RMB'],
+  ['usd', 'USD'],
+  ['eur', 'EUR'],
+  ['date', 'Date'],
+  ['time', 'Time'],
+  ['datetime', 'Date time'],
+  ['duration', 'Duration'],
+] as const;
+
 export function FormatControls({ toolbar, t }: FormatControlsProps) {
   const disabled = toolbar.disabledActions.has('set-style');
   const style = toolbar.activeStyle;
@@ -22,8 +35,8 @@ export function FormatControls({ toolbar, t }: FormatControlsProps) {
         disabled={disabled}
         onChange={event => setStyle({ type: 'set-style', patch: { format: event.target.value } })}
       >
-        {['normal', 'number', 'percent', 'rmb', 'usd', 'eur', 'date', 'time', 'datetime', 'duration'].map(value => (
-          <option key={value} value={value}>{value}</option>
+        {formats.map(([value, label]) => (
+          <option key={value} value={value}>{t(`format.${value}`, label)}</option>
         ))}
       </select>
       <select

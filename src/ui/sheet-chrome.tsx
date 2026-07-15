@@ -94,7 +94,7 @@ export function SheetChrome(props: SheetChromeProps) {
       {toolbar}
       <div className="tego-sheet__viewport">
         {props.children}
-        {props.editor === null ? null : <CellEditor {...props.editor} />}
+        {props.editor === null ? null : <CellEditor {...props.editor} t={t} />}
         {props.contextMenu === null ? null : (
           <ContextMenu
             point={props.contextMenu.point}

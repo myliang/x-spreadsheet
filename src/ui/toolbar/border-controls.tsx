@@ -1,6 +1,19 @@
 import type { BorderMode, ToolbarRenderProps } from '../../core';
 import type { Translate } from '../translate';
 
+const borders = [
+  ['all', 'All borders'],
+  ['inside', 'Inside borders'],
+  ['outside', 'Outside borders'],
+  ['horizontal', 'Horizontal borders'],
+  ['vertical', 'Vertical borders'],
+  ['top', 'Top border'],
+  ['bottom', 'Bottom border'],
+  ['left', 'Left border'],
+  ['right', 'Right border'],
+  ['none', 'No borders'],
+] as const;
+
 export function BorderControls(props: {
   readonly toolbar: ToolbarRenderProps;
   readonly t: Translate;
@@ -23,8 +36,8 @@ export function BorderControls(props: {
       }}
     >
       <option value="">{props.t('toolbar.border', 'Borders')}</option>
-      {['all', 'inside', 'outside', 'horizontal', 'vertical', 'top', 'bottom', 'left', 'right', 'none'].map(mode => (
-        <option key={mode} value={mode}>{mode}</option>
+      {borders.map(([mode, label]) => (
+        <option key={mode} value={mode}>{props.t(`border.${mode}`, label)}</option>
       ))}
     </select>
   );
