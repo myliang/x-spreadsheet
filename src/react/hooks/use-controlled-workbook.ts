@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { CommandCommit } from '../../core/commands/command-result';
 import type { WorkbookCommand } from '../../core/commands/workbook-command';
 import type { WorkbookInput } from '../../core';
@@ -17,6 +17,7 @@ interface ControlledSlot {
 export interface ControlledWorkbookRuntime {
   readonly getNotificationVersion: () => number;
   readonly recordCheckpoint: (commit: CommandCommit<unknown, WorkbookCommand>) => void;
+  readonly replacementVersion: number;
 }
 
 export interface UseControlledWorkbookOptions {
@@ -30,6 +31,7 @@ export function useControlledWorkbook(
 ): ControlledWorkbookRuntime {
   const { epoch, onError, value } = options;
   const slot = useRef<ControlledSlot | null>(null);
+  const [replacementVersion, setReplacementVersion] = useState(0);
 
   useLayoutEffect(() => {
     if (epoch === null || epoch.mode !== 'controlled' || value === undefined) return;
@@ -43,6 +45,7 @@ export function useControlledWorkbook(
     }
     const result = current.reconciler.reconcile(value);
     if (result.refresh) epoch.store.refresh();
+    if (result.replaced) setReplacementVersion(version => version + 1);
     if (result.error !== undefined) onError?.(result.error);
   }, [epoch, onError, value]);
 
@@ -61,5 +64,5 @@ export function useControlledWorkbook(
     [],
   );
 
-  return { getNotificationVersion, recordCheckpoint };
+  return { getNotificationVersion, recordCheckpoint, replacementVersion };
 }

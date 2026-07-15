@@ -16,7 +16,7 @@ import {
   type ControllerCheckpoint,
   type HistoryMetadata,
 } from './controller-checkpoint';
-import { History, type HistoryEntry } from './history';
+import { History, type HistoryCheckpoint, type HistoryEntry } from './history';
 import { SubscriptionStore } from './subscription-store';
 
 export interface WorkbookControllerOptions {
@@ -24,7 +24,11 @@ export interface WorkbookControllerOptions {
 }
 
 export interface DispatchOptions {
-  /** Run an internal atomic observer after commit construction and before subscriptions publish. */
+  /**
+   * Run an internal atomic observer after commit construction and before subscriptions publish.
+   * If it throws, state, history, revision, and change sequencing are rolled back before the
+   * original exception is rethrown, and no subscription is published.
+   */
   readonly beforeNotify?: (
     commit: CommandCommit<unknown, WorkbookCommand>,
   ) => void;
@@ -57,6 +61,13 @@ export interface ControllerEvent {
 }
 
 export type ControllerSubscriber = (event: ControllerEvent) => void;
+
+interface MutationTransaction {
+  readonly state: WorkbookState;
+  readonly history: HistoryCheckpoint<WorkbookState, HistoryMetadata>;
+  readonly revision: number;
+  readonly changeSequence: number;
+}
 
 let nextControllerId = 1;
 
@@ -174,6 +185,12 @@ export class WorkbookController {
   ): CommandOutcome<CommandResult<Command>, Command> {
     this.ensureMutable();
     const commandSnapshot = this.isolateCommand(command);
+    if (
+      options.replayAddSheetId !== undefined
+      && (commandSnapshot.type !== 'add-sheet' || options.notify !== false)
+    ) {
+      throw invalidCommand('A replay sheet ID requires a silent add-sheet command');
+    }
     validateCommand(this.state, commandSnapshot);
     if (commandSnapshot.type === 'undo') {
       return this.applyHistory('undo', commandSnapshot, source, options) as CommandOutcome<
@@ -194,6 +211,9 @@ export class WorkbookController {
     });
     if (applied === null) return { status: 'noop' };
 
+    const transaction = options.beforeNotify === undefined
+      ? undefined
+      : this.captureTransaction();
     const before = this.state;
     const change = this.createChange(
       applied.kind,
@@ -217,7 +237,11 @@ export class WorkbookController {
       change,
       applied.result as CommandResult<Command>,
     );
-    options.beforeNotify?.(commit as CommandCommit<unknown, WorkbookCommand>);
+    this.runBeforeNotify(
+      commit as CommandCommit<unknown, WorkbookCommand>,
+      options,
+      transaction,
+    );
     this.publish(commit, options);
     return { status: 'committed', commit };
   }
@@ -291,6 +315,9 @@ export class WorkbookController {
     source: ChangeSource,
     options: DispatchOptions,
   ): CommandOutcome<void, Command> {
+    const transaction = options.beforeNotify === undefined
+      ? undefined
+      : this.captureTransaction();
     const entry = direction === 'undo' ? this.history.undo() : this.history.redo();
     if (entry === null) return { status: 'noop' };
     this.state = direction === 'undo' ? entry.before : entry.after;
@@ -302,7 +329,11 @@ export class WorkbookController {
       entry.metadata.change.range,
     );
     const commit = this.createCommit(command, change, undefined);
-    options.beforeNotify?.(commit as CommandCommit<unknown, WorkbookCommand>);
+    this.runBeforeNotify(
+      commit as CommandCommit<unknown, WorkbookCommand>,
+      options,
+      transaction,
+    );
     this.publish(commit, options);
     return { status: 'committed', commit };
   }
@@ -321,6 +352,34 @@ export class WorkbookController {
       sheet,
       ...(range === undefined ? {} : { range }),
     });
+  }
+
+  private captureTransaction(): MutationTransaction {
+    return {
+      state: this.state,
+      history: this.history.checkpoint(),
+      revision: this.revision,
+      changeSequence: this.changeSequence,
+    };
+  }
+
+  private runBeforeNotify(
+    commit: CommandCommit<unknown, WorkbookCommand>,
+    options: DispatchOptions,
+    transaction: MutationTransaction | undefined,
+  ): void {
+    const beforeNotify = options.beforeNotify;
+    if (beforeNotify === undefined) return;
+    if (transaction === undefined) throw new Error('Missing beforeNotify transaction');
+    try {
+      beforeNotify(commit);
+    } catch (error) {
+      this.state = transaction.state;
+      this.history.restore(transaction.history);
+      this.revision = transaction.revision;
+      this.changeSequence = transaction.changeSequence;
+      throw error;
+    }
   }
 
   private createCommit<Result, Command extends WorkbookCommand>(

@@ -8,6 +8,7 @@ import type { CellAddress, SheetId } from '../../../src/core/types/coordinates';
 import { applyCommand } from '../../../src/core/commands/apply-command';
 import { validateCommand } from '../../../src/core/commands/validate-command';
 import { WorkbookState } from '../../../src/core/model/workbook-state';
+import { createSheetId } from '../../../src/core/model/sheet-ids';
 
 function firstAddress(controller: WorkbookController, row = 0, column = 0): CellAddress {
   const sheet = controller.getSheetIds()[0];
@@ -54,6 +55,102 @@ describe('WorkbookController command boundary', () => {
     expect(seen).toEqual(['cell:next']);
     expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
     expect(controller.getCellText(address)).toBe('next');
+  });
+
+  it('restricts forced sheet IDs to silent add-sheet replay', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const forced = createSheetId();
+    const before = controller.getSnapshot();
+
+    expect(() => controller.dispatch(
+      { type: 'add-sheet', name: 'Published' },
+      'ref',
+      { replayAddSheetId: forced },
+    )).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(() => controller.dispatch(
+      { type: 'set-cell-text', address: firstAddress(controller), text: 'wrong command' },
+      'ref',
+      { notify: false, replayAddSheetId: forced },
+    )).toThrowError(expect.objectContaining({ code: 'INVALID_COMMAND' }));
+    expect(controller.getSnapshot()).toEqual(before);
+
+    const ordinary = controller.dispatch({ type: 'add-sheet', name: 'Ordinary' }, 'ref', {
+      notify: false,
+    });
+    expect(ordinary.status).toBe('committed');
+    expect(controller.getSheetIds()).not.toContain(forced);
+
+    const replayed = controller.dispatch({ type: 'add-sheet', name: 'Replayed' }, 'ref', {
+      notify: false,
+      replayAddSheetId: forced,
+    });
+    expect(replayed).toMatchObject({ status: 'committed', commit: { result: forced } });
+    expect(controller.getSheetIds()).toContain(forced);
+  });
+
+  it('rolls back a normal commit atomically when beforeNotify throws', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller);
+    const before = controller.getSnapshot();
+    const observerError = new Error('checkpoint observer failed');
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    expect(() => controller.dispatch(
+      { type: 'set-cell-text', address, text: 'rolled back' },
+      'ref',
+      { beforeNotify: () => { throw observerError; } },
+    )).toThrow(observerError);
+    expect(controller.getSnapshot()).toEqual(before);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
+
+    const committed = controller.dispatch(
+      { type: 'set-cell-text', address, text: 'committed' },
+      'ref',
+    );
+    expect(committed).toMatchObject({
+      status: 'committed',
+      commit: { change: { id: expect.stringMatching(/-1$/) } },
+    });
+  });
+
+  it('rolls back history movement and change sequencing when beforeNotify throws', () => {
+    const controller = new WorkbookController({ name: 'A' });
+    const address = firstAddress(controller);
+    controller.dispatch({ type: 'set-cell-text', address, text: 'committed' }, 'ref', {
+      notify: false,
+    });
+    const beforeUndo = controller.getSnapshot();
+    const observerError = new Error('history checkpoint observer failed');
+    const subscriber = vi.fn();
+    controller.subscribe(subscriber);
+
+    expect(() => controller.undo('ref', {
+      beforeNotify: () => { throw observerError; },
+    })).toThrow(observerError);
+    expect(controller.getSnapshot()).toEqual(beforeUndo);
+    expect(controller.historySize).toEqual({ undo: 1, redo: 0 });
+    expect(subscriber).not.toHaveBeenCalled();
+
+    const undone = controller.undo('ref', { notify: false });
+    expect(undone).toMatchObject({
+      status: 'committed',
+      commit: { change: { id: expect.stringMatching(/-2$/) } },
+    });
+    const beforeRedo = controller.getSnapshot();
+    expect(() => controller.redo('ref', {
+      beforeNotify: () => { throw observerError; },
+    })).toThrow(observerError);
+    expect(controller.getSnapshot()).toEqual(beforeRedo);
+    expect(controller.historySize).toEqual({ undo: 0, redo: 1 });
+    expect(subscriber).not.toHaveBeenCalled();
+
+    const redone = controller.redo('ref', { notify: false });
+    expect(redone).toMatchObject({
+      status: 'committed',
+      commit: { change: { id: expect.stringMatching(/-3$/) } },
+    });
   });
 
   it('undoes and redoes with history changes and invalidates redo after a new commit', () => {

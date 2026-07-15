@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { createRef, useState } from 'react';
+import { createRef, useLayoutEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TegoSheet } from '../../src';
@@ -12,6 +12,8 @@ import type {
 } from '../../src';
 import { TegoSheetException } from '../../src/core';
 import { WorkbookController } from '../../src/core/controller/workbook-controller';
+import { WorkbookState } from '../../src/core/model/workbook-state';
+import { createEngineAdapter } from '../../src/react/adapters/engine-adapter';
 import { createCanvasHarness } from '../helpers/canvas-harness';
 
 let nextFrame = 1;
@@ -278,6 +280,145 @@ it('replaces genuine external values with new IDs, cleared history, and clipped 
   });
 });
 
+it('persists a clipped active index across shrink-expand and empty-expand replacements', async () => {
+  const sixSheets = Array.from({ length: 6 }, (_, index) => ({ name: `S${index}` }));
+  const twoSheets: WorkbookInput = [{ name: 'R0' }, { name: 'R1' }];
+  const expanded = Array.from({ length: 6 }, (_, index) => ({ name: `E${index}` }));
+  const onSelectionChange = vi.fn<(selection: Selection) => void>();
+  const ref = createRef<TegoSheetHandle>();
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      value={sixSheets}
+      initialActiveSheetIndex={5}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={twoSheets}
+      initialActiveSheetIndex={5}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={expanded}
+      initialActiveSheetIndex={5}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  const retained = activeSelection(rendered.container, onSelectionChange);
+  act(() => ref.current!.setCellText({
+    sheet: retained.sheet,
+    row: 0,
+    column: 0,
+  }, 'retained clipped index'));
+  expect(ref.current!.getValue()[1]?.rows?.[0]).toMatchObject({
+    cells: { 0: { text: 'retained clipped index' } },
+  });
+  expect(ref.current!.getValue()[5]?.rows?.[0]).toBeUndefined();
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={[]}
+      initialActiveSheetIndex={5}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={structuredClone(expanded)}
+      initialActiveSheetIndex={5}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  const reset = activeSelection(rendered.container, onSelectionChange);
+  act(() => ref.current!.setCellText({
+    sheet: reset.sheet,
+    row: 0,
+    column: 0,
+  }, 'empty clips to zero'));
+  expect(ref.current!.getValue()[0]?.rows?.[0]).toMatchObject({
+    cells: { 0: { text: 'empty clips to zero' } },
+  });
+});
+
+it('does not overwrite an explicit active-sheet decision made in the replacement commit stack', async () => {
+  const initial = Array.from({ length: 6 }, (_, index) => ({ name: `S${index}` }));
+  const replacement: WorkbookInput = [{ name: 'R0' }, { name: 'R1' }];
+  const onSelectionChange = vi.fn<(selection: Selection) => void>();
+  const ref = createRef<TegoSheetHandle>();
+  let replace!: () => void;
+
+  function Host() {
+    const [value, setValue] = useState<WorkbookInput>(initial);
+    const [selectExplicit, setSelectExplicit] = useState(false);
+    replace = () => {
+      setSelectExplicit(true);
+      setValue(replacement);
+    };
+    useLayoutEffect(() => {
+      if (!selectExplicit) return;
+      const explicit = ref.current!.addSheet('Explicit');
+      ref.current!.activateSheet(explicit);
+    }, [selectExplicit]);
+    return (
+      <TegoSheet
+        ref={ref}
+        value={value}
+        initialActiveSheetIndex={5}
+        onSelectionChange={onSelectionChange}
+      />
+    );
+  }
+
+  const rendered = render(<Host />);
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  act(replace);
+  const explicit = activeSelection(rendered.container, onSelectionChange);
+  act(() => ref.current!.setCellText({
+    sheet: explicit.sheet,
+    row: 0,
+    column: 0,
+  }, 'explicit wins'));
+  expect(ref.current!.getValue()[2]?.rows?.[0]).toMatchObject({
+    cells: { 0: { text: 'explicit wins' } },
+  });
+});
+
+it('clamps retained engine scroll when a replacement rebuilds a smaller viewport', () => {
+  const controller = new WorkbookController({
+    name: 'Large',
+    rows: { len: 100 },
+    cols: { len: 100 },
+  });
+  const root = document.createElement('div');
+  Object.defineProperties(root, {
+    clientHeight: { configurable: true, value: 200 },
+    clientWidth: { configurable: true, value: 300 },
+  });
+  const adapter = createEngineAdapter({
+    root,
+    canvas: document.createElement('canvas'),
+  });
+  adapter.render(controller.getSnapshot(), controller.getSheetIds()[0]!);
+  adapter.setScroll({ x: 5_000, y: 2_000 });
+  expect(adapter.interactionSnapshot()?.viewport.scroll).toEqual({ x: 5_000, y: 2_000 });
+
+  controller.replace({ name: 'Small', rows: { len: 2 }, cols: { len: 2 } });
+  adapter.render(controller.getSnapshot(), controller.getSheetIds()[0]!);
+
+  expect(adapter.interactionSnapshot()?.viewport.scroll).toEqual({ x: 0, y: 0 });
+  adapter.dispose();
+});
+
 it('uses extension-key semantic equality while preserving sparse index significance', async () => {
   const value: WorkbookInput = [{
     name: 'A',
@@ -489,6 +630,77 @@ it('truncates an actually invalid replay tail once and reports a recoverable com
 
   act(() => ref.current!.undo());
   expect(ref.current!.getValue()).toEqual(base);
+  expect(onError).toHaveBeenCalledOnce();
+});
+
+it('truncates replay when projected JSON matches but runtime sheet IDs drift', async () => {
+  const value: WorkbookInput = [{ name: 'A' }];
+  const onChange = vi.fn<(value: WorkbookData) => void>();
+  const onError = vi.fn();
+  const onSelectionChange = vi.fn<(selection: Selection) => void>();
+  const ref = createRef<TegoSheetHandle>();
+  const rendered = render(
+    <TegoSheet
+      ref={ref}
+      value={value}
+      onChange={onChange}
+      onError={onError}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+  await waitFor(() => expect(ref.current).not.toBeNull());
+  const sheet = activeSelection(rendered.container, onSelectionChange).sheet;
+  act(() => ref.current!.setCellText({ sheet, row: 0, column: 0 }, 'first'));
+  const first = structuredClone(onChange.mock.lastCall![0]);
+  act(() => ref.current!.setCellText({ sheet, row: 0, column: 1 }, 'drop on ID drift'));
+
+  const originalDispatch = WorkbookController.prototype.dispatch;
+  let driftReplayIds = true;
+  vi.spyOn(WorkbookController.prototype, 'dispatch').mockImplementation(function (
+    this: WorkbookController,
+    command,
+    source,
+    options,
+  ) {
+    const outcome = originalDispatch.call(this, command, source, options);
+    if (driftReplayIds && options?.notify === false && outcome.status === 'committed') {
+      driftReplayIds = false;
+      (this as unknown as { state: WorkbookState }).state = WorkbookState.from(this.getValue());
+    }
+    return outcome as never;
+  });
+  onChange.mockClear();
+  onSelectionChange.mockClear();
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={first}
+      onChange={onChange}
+      onError={onError}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
+
+  expect(ref.current!.getValue()).toEqual(first);
+  expect(ref.current!.getCell({ sheet, row: 0, column: 1 })?.text ?? '').toBe('');
+  expect(onChange).not.toHaveBeenCalled();
+  expect(onSelectionChange).not.toHaveBeenCalled();
+  expect(onError).toHaveBeenCalledOnce();
+  expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+    code: 'INVALID_COMMAND',
+    recoverable: true,
+  }));
+
+  rendered.rerender(
+    <TegoSheet
+      ref={ref}
+      value={first}
+      onChange={onChange}
+      onError={onError}
+      onSelectionChange={onSelectionChange}
+    />,
+  );
   expect(onError).toHaveBeenCalledOnce();
 });
 

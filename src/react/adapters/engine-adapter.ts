@@ -7,6 +7,7 @@ import {
 } from '../../core';
 import {
   CanvasEngine,
+  clampScroll,
   createSelectionState,
   createSheetGridModel,
   createViewportMetrics,
@@ -99,6 +100,10 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       scroll: previousScroll,
       freeze: clippedFreeze(sheet.freeze),
     });
+    const clippedScroll = clampScroll(previousScroll, viewport);
+    if (clippedScroll.x !== previousScroll.x || clippedScroll.y !== previousScroll.y) {
+      viewport = createViewportMetrics(model, { ...viewport, scroll: clippedScroll });
+    }
     if (model.rowCount === 0 || model.columnCount === 0) {
       selection = null;
     } else {

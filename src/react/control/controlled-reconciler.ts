@@ -23,6 +23,7 @@ interface AcknowledgedBase {
 
 export interface ReconciliationResult {
   readonly refresh: boolean;
+  readonly replaced: boolean;
   readonly error?: TegoSheetError;
 }
 
@@ -124,6 +125,14 @@ function mapSheetIds(
   }
 }
 
+function sameSheetIds(
+  actual: readonly SheetId[],
+  expected: readonly SheetId[],
+): boolean {
+  return actual.length === expected.length
+    && actual.every((sheet, index) => sheet === expected[index]);
+}
+
 function reportedReference(
   weak: WeakSet<object>,
   primitive: Set<unknown>,
@@ -181,14 +190,16 @@ export function createControlledReconciler(
           controller.restore(before);
           return { pending: replayed, error: replayError(cause) };
         }
+        const replayedSheetIds = controller.getSheetIds();
         if (
           outcome.status !== 'committed'
           || JSON.stringify(outcome.commit.value) !== original.projectedKey
+          || !sameSheetIds(replayedSheetIds, original.runtimeSheetIds)
         ) {
           controller.restore(before);
           return { pending: replayed, error: replayError() };
         }
-        mapSheetIds(mapping, original.runtimeSheetIds, controller.getSheetIds());
+        mapSheetIds(mapping, original.runtimeSheetIds, replayedSheetIds);
         replayed.push(createPendingCheckpoint(controller, outcome.commit, original));
       }
       return { pending: replayed };
@@ -209,13 +220,14 @@ export function createControlledReconciler(
         pending,
       }, value);
       if (update.kind === 'same-reference') {
-        return { refresh: false };
+        return { refresh: false, replaced: false };
       }
       observedValue = value;
       if (update.kind === 'invalid') {
         const duplicate = reportedReference(invalidObjects, invalidPrimitives, value);
         return {
           refresh: false,
+          replaced: false,
           ...(duplicate ? {} : { error: update.error }),
         };
       }
@@ -228,14 +240,14 @@ export function createControlledReconciler(
         };
         pending = [];
         notificationVersion += 1;
-        return { refresh: true };
+        return { refresh: true, replaced: true };
       }
       if (update.kind === 'rollback') {
-        if (pending.length === 0) return { refresh: false };
+        if (pending.length === 0) return { refresh: false, replaced: false };
         controller.restore(base.checkpoint);
         pending = [];
         notificationVersion += 1;
-        return { refresh: true };
+        return { refresh: true, replaced: false };
       }
 
       const acknowledged = pending[update.through]!;
@@ -251,6 +263,7 @@ export function createControlledReconciler(
       if (replayed.error !== undefined) notificationVersion += 1;
       return {
         refresh: true,
+        replaced: false,
         ...(replayed.error === undefined ? {} : { error: replayed.error }),
       };
     },

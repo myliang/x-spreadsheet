@@ -277,9 +277,11 @@ function Runtime(
   const [initialSheetCount] = useState(() => props.epoch.snapshot.sheets.length);
   const initialWorkbookWasEmpty = initialSheetCount === 0;
   const [activeRequest, setActiveRequest] = useState(() => ({
+    decision: 0,
     index: initialWorkbookWasEmpty ? 0 : initialActiveSheetIndex,
     sheet: null as SheetId | null,
   }));
+  const replacementVersion = useRef(props.controlled.replacementVersion);
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
   const [runtimeSlot] = useState(createImperativeRuntimeSlot);
   const [handle] = useState(() => createStableHandle(runtimeSlot));
@@ -296,7 +298,7 @@ function Runtime(
         : props.epoch.controller.getSheetIds().findIndex(candidate => candidate === sheet);
       const nextIndex = index < 0 ? current.index : index;
       if (current.sheet === sheet && current.index === nextIndex) return current;
-      return { index: nextIndex, sheet };
+      return { decision: current.decision + 1, index: nextIndex, sheet };
     });
   }, [props.epoch.controller]);
   const activeSheet = sheets.length === 0
@@ -336,6 +338,29 @@ function Runtime(
   ) {
     throw contractViolation('initialActiveSheetIndex must refer to an initial sheet');
   }
+
+  useLayoutEffect(() => {
+    if (
+      !props.epoch.isActive()
+      || replacementVersion.current === props.controlled.replacementVersion
+    ) return;
+    replacementVersion.current = props.controlled.replacementVersion;
+    const capturedDecision = activeRequest.decision;
+    const clippedIndex = activeSheet === null
+      ? 0
+      : Math.max(0, sheets.findIndex(sheet => sheet.id === activeSheet));
+    // A genuine replacement is an external state transition. The functional
+    // guard preserves any explicit active-sheet decision made in the same commit stack.
+    setActiveRequest(current => current.decision !== capturedDecision
+      ? current
+      : { ...current, index: clippedIndex, sheet: activeSheet });
+  }, [
+    activeRequest.decision,
+    activeSheet,
+    props.controlled.replacementVersion,
+    props.epoch,
+    sheets,
+  ]);
 
   useLayoutEffect(() => {
     runtimeSlot.update({
