@@ -535,6 +535,29 @@ it('clamps retained engine scroll when a replacement rebuilds a smaller viewport
   adapter.dispose();
 });
 
+it('rejects an oversized engine selection instead of returning empty copy data', () => {
+  const controller = new WorkbookController({ rows: { len: 250_001 }, cols: { len: 1 } });
+  const root = document.createElement('div');
+  Object.defineProperties(root, {
+    clientHeight: { configurable: true, value: 200 },
+    clientWidth: { configurable: true, value: 300 },
+  });
+  const adapter = createEngineAdapter({
+    root,
+    canvas: document.createElement('canvas'),
+  });
+  const sheet = controller.getSheetIds()[0]!;
+  adapter.render(controller.getSnapshot(), sheet);
+  const range = {
+    start: { row: 0, column: 0 },
+    end: { row: 250_000, column: 0 },
+  };
+
+  expect(() => adapter.readSelection({ sheet, range, active: range.start }))
+    .toThrowError(/clipboard range exceeds the 250000-cell operation limit/);
+  adapter.dispose();
+});
+
 it('uses extension-key semantic equality while preserving sparse index significance', async () => {
   const value: WorkbookInput = [{
     name: 'A',

@@ -91,7 +91,7 @@ export class CanvasEngine {
     const scanBudget = createSparseCellScanBudget();
     const plans = frozenQuadrants(viewport.freeze, viewport).map(pane => {
       const indexes = paneGridIndexes(pane, viewport);
-      const cells = paneCells(pane, viewport, indexes, snapshot.sheet, scanBudget);
+      const cells = paneCells(viewport, indexes, snapshot.sheet, scanBudget);
       for (const row of indexes.rows) visibleRows.add(row);
       for (const column of indexes.columns) visibleColumns.add(column);
       return { pane, indexes, cells };

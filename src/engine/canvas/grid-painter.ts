@@ -122,7 +122,6 @@ function enumerateAxisIndexes(
 }
 
 export function paneCells(
-  pane: FrozenQuadrant,
   viewport: ViewportMetrics,
   indexes: PaneGridIndexes,
   sheet: Readonly<SheetData>,

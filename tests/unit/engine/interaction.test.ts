@@ -828,6 +828,35 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     harness.manager.dispose();
   });
 
+  it('reports synchronous selection-read failure without writing or retaining clipboard data', async () => {
+    const cause = new RangeError('clipboard selection is too large');
+    const harness = setup({
+      readSelection: () => { throw cause; },
+    });
+    const transfer = new DataTransferHarness();
+
+    await expect(harness.manager.copy(transfer)).resolves.toBe(false);
+
+    expect(transfer.clears).toBe(0);
+    expect(transfer.getData('text/plain')).toBe('');
+    expect(harness.clipboard.writes).toBe(0);
+    expect(harness.errors).toEqual([
+      expect.objectContaining({
+        code: 'INVALID_COMMAND',
+        recoverable: true,
+        cause,
+      }),
+    ]);
+
+    harness.clipboard.text = 'external';
+    await expect(harness.manager.paste()).resolves.toBe(true);
+    expect(harness.commands.at(-1)).toMatchObject({
+      type: 'paste-external',
+      values: [['external']],
+    });
+    harness.manager.dispose();
+  });
+
   it('leaves clipboard keydown to native events and then handles their DataTransfer payloads', async () => {
     const harness = setup();
     harness.root.emit('focusin');

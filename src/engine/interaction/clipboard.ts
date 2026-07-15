@@ -30,3 +30,12 @@ export function clipboardDenied(cause: unknown): TegoSheetException {
     cause,
   });
 }
+
+export function clipboardSelectionUnavailable(cause: unknown): TegoSheetException {
+  return new TegoSheetException({
+    code: 'INVALID_COMMAND',
+    message: 'The selected cells cannot be copied',
+    recoverable: true,
+    cause,
+  });
+}

@@ -5,7 +5,7 @@ import type {
   SheetData,
   SheetId,
 } from '../core';
-import { parseA1Range } from '../core';
+import { filterItems, parseA1Range } from '../core';
 import {
   mountPrintPages,
   type PrintWorkbookOptions,
@@ -35,22 +35,7 @@ export function filterValuesForSelection(
       // Invalid imported filter references remain inert until replaced by a valid command.
     }
   }
-  const values = new Set<string>();
-  for (let row = range.start.row + 1; row <= range.end.row; row += 1) {
-    const rawRow = sheet.rows?.[String(row)];
-    const rowRecord = rawRow !== null && typeof rawRow === 'object' && !Array.isArray(rawRow)
-      ? rawRow as Readonly<Record<string, unknown>>
-      : undefined;
-    const cells = rowRecord?.cells;
-    const rawCell = cells !== null && typeof cells === 'object' && !Array.isArray(cells)
-      ? (cells as Readonly<Record<string, unknown>>)[String(selection.active.column)]
-      : undefined;
-    const cell = rawCell !== null && typeof rawCell === 'object' && !Array.isArray(rawCell)
-      ? rawCell as Readonly<Record<string, unknown>>
-      : undefined;
-    values.add(typeof cell?.text === 'string' ? cell.text : '');
-  }
-  return [...values];
+  return Object.keys(filterItems(sheet, selection.active.column, range));
 }
 
 export function filterCommandSelection(

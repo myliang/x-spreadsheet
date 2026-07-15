@@ -1,4 +1,5 @@
 import {
+  assertClipboardResourceLimit,
   parseA1,
   type ControllerSnapshot,
   type LocaleDefinition,
@@ -52,8 +53,6 @@ export interface EngineAdapter {
   readonly updateLiveOptions: (options: Readonly<{ readonly showGrid?: boolean }>) => void;
   readonly dispose: () => void;
 }
-
-const MAX_CLIPBOARD_CELLS = 250_000;
 
 function dimensions(surface: HTMLElement, fallback: HTMLElement): { readonly width: number; readonly height: number } {
   const rect = typeof surface.getBoundingClientRect === 'function'
@@ -228,9 +227,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       const index = latestSnapshot.sheets.findIndex(sheet => sheet.id === requested.sheet);
       const sheet = index < 0 ? undefined : latestSnapshot.value[index];
       if (sheet === undefined) return [];
-      const rows = requested.range.end.row - requested.range.start.row + 1;
-      const columns = requested.range.end.column - requested.range.start.column + 1;
-      if (rows * columns > MAX_CLIPBOARD_CELLS) return [];
+      assertClipboardResourceLimit(requested.range);
       const output: string[][] = [];
       for (let row = requested.range.start.row; row <= requested.range.end.row; row += 1) {
         const values: string[] = [];

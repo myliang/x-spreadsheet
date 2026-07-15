@@ -18,6 +18,7 @@ import {
 import type { ScrollState, ViewportMetrics } from '../ports';
 import {
   clipboardDenied,
+  clipboardSelectionUnavailable,
   matrixToTsv,
   type ClipboardPort,
   type DataTransferPort,
@@ -313,7 +314,14 @@ export class InteractionManager {
     const snapshot = this.ports.getSnapshot();
     if (cut && snapshot.readOnly) return false;
     const selection = publicSelection(snapshot);
-    const text = matrixToTsv(this.ports.readSelection(selection));
+    let text: string;
+    try {
+      text = matrixToTsv(this.ports.readSelection(selection));
+    } catch (cause) {
+      this.internalClipboard = null;
+      if (this.active) this.ports.requestError(clipboardSelectionUnavailable(cause));
+      return false;
+    }
     this.internalClipboard = Object.freeze({ selection, cut, text });
     if (dataTransfer !== undefined) {
       dataTransfer.clearData?.();

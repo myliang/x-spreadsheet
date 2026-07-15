@@ -16,6 +16,10 @@ import { deepFreeze } from '../../helpers/deep-freeze';
 import { buildStyledWorkbook } from '../../helpers/workbook-builders';
 
 describe('read-only Canvas rendering', () => {
+  it('does not require pane metadata when enumerating materialized cells', () => {
+    expect(paneCells).toHaveLength(3);
+  });
+
   it('renders grid, formatted text, borders, merges, headers, and marks without mutating input', () => {
     const sheet = deepFreeze(buildStyledWorkbook());
     const viewport = deepFreeze(createViewportMetrics(createSheetGridModel(sheet), {
@@ -400,7 +404,7 @@ describe('read-only Canvas rendering', () => {
     expect(pane).toBeDefined();
     if (pane === undefined) return;
     const indexes = paneGridIndexes(pane, viewport);
-    const cells = paneCells(pane, viewport, indexes, sheet);
+    const cells = paneCells(viewport, indexes, sheet);
 
     expect(indexes.rows).toHaveLength(500);
     expect(indexes.columns).toHaveLength(500);
@@ -469,7 +473,7 @@ describe('read-only Canvas rendering', () => {
     numericRowLookups = 0;
     ownKeyScans = 0;
 
-    expect(paneCells(pane, viewport, indexes, sheet)).toEqual([]);
+    expect(paneCells(viewport, indexes, sheet)).toEqual([]);
     expect(numericRowLookups).toBeLessThanOrEqual(indexes.rows.length);
     expect(ownKeyScans).toBe(0);
   });
@@ -494,7 +498,7 @@ describe('read-only Canvas rendering', () => {
     const indexes = paneGridIndexes(pane, viewport);
 
     expect(indexes.columns).toEqual([1]);
-    expect(paneCells(pane, viewport, indexes, sheet)).toEqual([{ row: 0, column: 0 }]);
+    expect(paneCells(viewport, indexes, sheet)).toEqual([{ row: 0, column: 0 }]);
   });
 
   it('checks merge row intersections with logarithmic visible-row probes', () => {
@@ -540,7 +544,7 @@ describe('read-only Canvas rendering', () => {
     const indexes = paneGridIndexes(pane, viewport);
 
     expect(indexes.rows).toHaveLength(50_000);
-    expect(paneCells(pane, viewport, indexes, sheet)).toHaveLength(1_000);
+    expect(paneCells(viewport, indexes, sheet)).toHaveLength(1_000);
   });
 
   it('keeps sorted selection paint, headers, and fill handle on exact logical rows', () => {

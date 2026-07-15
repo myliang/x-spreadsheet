@@ -153,6 +153,10 @@ interface DialogAuthority {
   readonly selection: Selection | null;
 }
 
+interface FilterDialogAuthority extends DialogAuthority {
+  readonly values: readonly string[];
+}
+
 type SlotRuntimeAuthority = TegoSheetRuntimeAuthority<SlotRuntime>;
 
 function uiError(runtime: SlotRuntime, message: string): void {
@@ -785,7 +789,7 @@ function Runtime(
         executeAction(runtime, action, 'context-menu');
     }
   };
-  const [filterAuthority, setFilterAuthority] = useState<DialogAuthority | null>(null);
+  const [filterAuthority, setFilterAuthority] = useState<FilterDialogAuthority | null>(null);
   const validationAuthorityRef = useRef<DialogAuthority | null>(null);
   const captureDialogAuthority = (source: DialogAuthority['source']): DialogAuthority | null => {
     const runtime = runtimeAuthority.committed(renderToken);
@@ -794,24 +798,34 @@ function Runtime(
       selection: runtime.selection === null ? null : clonePublic(runtime.selection),
     };
   };
-  const openToolbarFilter = () => {
-    const authority = captureDialogAuthority('toolbar');
-    if (authority === null) return;
-    setFilterAuthority(authority);
+  const openFilterFor = (source: DialogAuthority['source']) => {
+    const authority = captureDialogAuthority(source);
+    if (authority === null || authority.selection === null) return;
+    const sheet = activeSheetData(props.epoch.snapshot, authority.selection.sheet);
+    if (sheet === null) return;
+    let values: readonly string[];
+    try {
+      values = filterValuesForSelection(sheet, authority.selection);
+    } catch (cause) {
+      dispatcher.reportUiError({
+        code: 'INVALID_COMMAND',
+        message: 'Filter values exceed the supported resource limit',
+        recoverable: true,
+        cause,
+      });
+      return;
+    }
+    setFilterAuthority({ ...authority, values });
     openFilter();
   };
+  const openToolbarFilter = () => openFilterFor('toolbar');
   const openToolbarValidation = () => {
     const authority = captureDialogAuthority('toolbar');
     if (authority === null) return;
     validationAuthorityRef.current = authority;
     openValidation();
   };
-  const openContextFilter = () => {
-    const authority = captureDialogAuthority('context-menu');
-    if (authority === null) return;
-    setFilterAuthority(authority);
-    openFilter();
-  };
+  const openContextFilter = () => openFilterFor('context-menu');
   const openContextValidation = () => {
     const authority = captureDialogAuthority('context-menu');
     if (authority === null) return;
@@ -870,12 +884,7 @@ function Runtime(
     ...tabActions,
   });
   const filterSelection = filterAuthority?.selection ?? selection;
-  const filterSheet = filterSelection === null
-    ? null
-    : activeSheetData(props.epoch.snapshot, filterSelection.sheet);
-  const filterValues = filterOpen && filterSelection !== null && filterSheet !== null
-    ? filterValuesForSelection(filterSheet, filterSelection)
-    : [];
+  const filterValues = filterAuthority?.values ?? [];
   const t = createTranslator(props.locale);
   return (
     <div

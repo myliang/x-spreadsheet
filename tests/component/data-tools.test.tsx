@@ -121,6 +121,42 @@ it('disables every mutating default control in read-only mode', async () => {
   expect(rendered.getByRole('button', { name: /^filter$/i }).hasAttribute('disabled')).toBe(true);
 });
 
+it('rejects an oversized filter dialog once without opening it', async () => {
+  const onError = vi.fn();
+  const rendered = render(
+    <TegoSheet
+      defaultValue={[{
+        rows: { len: 250_002 },
+        cols: { len: 1 },
+        autofilter: { ref: 'A1:A250002', filters: [] },
+      }]}
+      onError={onError}
+    />,
+  );
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  Object.defineProperties(root, {
+    clientWidth: { configurable: true, value: 500 },
+    clientHeight: { configurable: true, value: 300 },
+  });
+  fireEvent(window, new Event('resize'));
+
+  fireEvent.pointerDown(root, { button: 0, buttons: 1, clientX: 70, clientY: 40 });
+  fireEvent.pointerUp(window);
+  fireEvent.click(rendered.getByRole('button', { name: /^filter$/i }));
+
+  await waitFor(() => expect(onError).toHaveBeenCalledOnce());
+  expect(rendered.queryByRole('dialog', { name: /^filter$/i })).toBeNull();
+  expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+    code: 'INVALID_COMMAND',
+    recoverable: true,
+    cause: expect.objectContaining({
+      name: 'RangeError',
+      message: expect.stringContaining('250000'),
+    }),
+  }));
+  expect(rendered.getByRole('status').getAttribute('data-error-code')).toBe('INVALID_COMMAND');
+});
+
 it('exposes legacy context actions and attributes context-menu mutations to their source', async () => {
   const ref = createRef<TegoSheetHandle>();
   const changes: Array<{ readonly kind: string; readonly source: string }> = [];

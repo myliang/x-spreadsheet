@@ -31,6 +31,7 @@ function invalidValue(cause: unknown): TegoSheetError {
     code: 'INVALID_DATA',
     message,
     recoverable: true,
+    cause,
   };
 }
 
