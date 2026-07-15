@@ -4,7 +4,11 @@
     "noEmit": true,
     "paths": {
       "tego-sheet": ["../src/index.ts"],
-      "tego-sheet/styles.css": ["../src/ui/styles/index.less"]
+      "tego-sheet/styles.css": ["../src/ui/styles/index.less"],
+      "tego-sheet/locales/en": ["../src/locales/en.ts"],
+      "tego-sheet/locales/de": ["../src/locales/de.ts"],
+      "tego-sheet/locales/nl": ["../src/locales/nl.ts"],
+      "tego-sheet/locales/zh-cn": ["../src/locales/zh-cn.ts"]
     }
   },
   "include": [

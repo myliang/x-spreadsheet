@@ -10,7 +10,7 @@ const sharedExcludes = [
   'test-results/**',
   'tests/**/*.check.*',
   'tests/package/**/*.test.*',
-  'tests/ssr/public-entrypoints.test.ts',
+  'tests/ssr/public-entrypoints.test.mjs',
   'tests/browser/**',
   'tests/visual/**',
 ];

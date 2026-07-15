@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { createRequire } from 'node:module';
 import { URL } from 'node:url';
-import pkg from '../../package.json' with { type: 'json' };
 
 const packageRoot = new URL('../../', import.meta.url);
+const require = createRequire(import.meta.url);
+const pkg = require('../../package.json');
 
 test('metadata describes a peer-only React package with explicit exports', () => {
   assert.equal(pkg.name, 'tego-sheet');
@@ -23,8 +25,8 @@ test('metadata describes a peer-only React package with explicit exports', () =>
     './locales/zh-cn',
     './package.json',
   ]);
-  assert.equal(pkg.scripts['test:ssr'], 'node scripts/test-ssr.ts');
-  assert.equal(pkg.scripts['test:package'], 'node scripts/test-package.ts');
+  assert.equal(pkg.scripts['test:ssr'], 'node scripts/test-ssr.mjs');
+  assert.equal(pkg.scripts['test:package'], 'node scripts/test-package.mjs');
   assert.equal('postinstall' in pkg.scripts, false);
 });
 

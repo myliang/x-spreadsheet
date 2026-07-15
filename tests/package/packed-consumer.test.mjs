@@ -3,18 +3,27 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
+import { URL } from 'node:url';
+import { runNpm } from '../../scripts/package-test-runtime.mjs';
 
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const consumer = process.env.TEGO_SHEET_CONSUMER;
 assert.ok(consumer, 'TEGO_SHEET_CONSUMER must point at the clean installed fixture');
 
-function run(command: string, args: readonly string[]): void {
+function run(command, args) {
   execFileSync(command, args, { cwd: consumer, stdio: 'inherit' });
 }
 
 test('the packed artifact typechecks and builds in a clean Vite consumer', () => {
-  run(npm, ['run', 'typecheck']);
-  run(npm, ['run', 'build']);
+  runNpm(['run', 'typecheck'], consumer, { stdio: 'inherit' });
+  runNpm(['run', 'build'], consumer, { stdio: 'inherit' });
+});
+
+test('the packed declarations typecheck in NodeNext ESM and CommonJS consumers', () => {
+  const fixture = new URL('./fixtures/types/', import.meta.url);
+  cpSync(fixture, join(consumer, 'types'), { recursive: true });
+  const tsc = join(consumer, 'node_modules/typescript/bin/tsc');
+  run(process.execPath, [tsc, '--project', 'types/tsconfig.esm.json']);
+  run(process.execPath, [tsc, '--project', 'types/tsconfig.cjs.json']);
 });
 
 test('the packed artifact works for ESM and CommonJS Node consumers', () => {
@@ -27,13 +36,7 @@ test('the packed artifact works for ESM and CommonJS Node consumers', () => {
 
 test('React stays peer-only and package files are publishable outputs', () => {
   const installedRoot = join(consumer, 'node_modules/tego-sheet');
-  const installed = JSON.parse(readFileSync(
-    join(installedRoot, 'package.json'),
-    'utf8',
-  )) as {
-    dependencies: Record<string, string>;
-    peerDependencies: Record<string, string>;
-  };
+  const installed = JSON.parse(readFileSync(join(installedRoot, 'package.json'), 'utf8'));
   assert.deepEqual(installed.dependencies, {});
   assert.deepEqual(installed.peerDependencies, {
     react: '^19.2.7',
@@ -51,7 +54,7 @@ test('React stays peer-only and package files are publishable outputs', () => {
   assert.match(germanBundle, /Rückgängig/);
   assert.doesNotMatch(germanBundle, /Spreadsheet toolbar|电子表格工具栏|Werkbalk voor spreadsheets/);
 
-  const files = JSON.parse(process.env.TEGO_SHEET_PACK_FILES ?? '[]') as string[];
+  const files = JSON.parse(process.env.TEGO_SHEET_PACK_FILES ?? '[]');
   assert.equal(files.includes('dist/styles.css'), true);
   assert.equal(files.includes('dist/index.d.ts'), true);
   assert.equal(files.includes('package.json'), true);

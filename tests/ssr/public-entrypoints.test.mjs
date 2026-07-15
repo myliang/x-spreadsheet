@@ -12,18 +12,11 @@ const publicEntries = [
   'tego-sheet/locales/zh-cn',
 ];
 const browserGlobals = [
-  'window',
-  'document',
-  'navigator',
-  'ResizeObserver',
-  'requestAnimationFrame',
-  'cancelAnimationFrame',
-  'HTMLCanvasElement',
-  'CanvasRenderingContext2D',
-  'OffscreenCanvas',
+  'window', 'document', 'navigator', 'ResizeObserver', 'requestAnimationFrame',
+  'cancelAnimationFrame', 'HTMLCanvasElement', 'CanvasRenderingContext2D', 'OffscreenCanvas',
 ];
 
-function ssrProbe(entry: string, loader: string): string {
+function ssrProbe(entry, loader) {
   return `
     const names = ${JSON.stringify(browserGlobals)};
     for (const name of names) {
@@ -43,14 +36,10 @@ function ssrProbe(entry: string, loader: string): string {
 test('every ESM and CommonJS public entry imports without browser globals', () => {
   for (const entry of publicEntries) {
     execFileSync(process.execPath, [
-      '--input-type=module',
-      '--eval',
-      ssrProbe(entry, 'await import'),
+      '--input-type=module', '--eval', ssrProbe(entry, 'await import'),
     ], { cwd: consumer, stdio: 'pipe' });
     execFileSync(process.execPath, [
-      '--input-type=commonjs',
-      '--eval',
-      ssrProbe(entry, 'require'),
+      '--input-type=commonjs', '--eval', ssrProbe(entry, 'require'),
     ], { cwd: consumer, stdio: 'pipe' });
   }
 });

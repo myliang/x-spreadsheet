@@ -20,10 +20,7 @@ test('the package exposes only the approved React surface', () => {
   const packageJson = JSON.parse(readFileSync(
     join(consumer, 'node_modules/tego-sheet/package.json'),
     'utf8',
-  )) as {
-    exports: Record<string, unknown>;
-  };
-
+  ));
   assert.deepEqual(Object.keys(packageJson.exports), expectedExports);
   assert.equal(packageJson.exports['./locales'], undefined);
 });
@@ -65,7 +62,6 @@ test('each locale entry exports only its intended dictionary', () => {
     ['nl', 'nl', 'nl'],
     ['zh-cn', 'zhCN', 'zh-CN'],
   ];
-
   for (const [subpath, name, id] of probes) {
     execFileSync(process.execPath, ['--input-type=module', '--eval', `
       const locale = await import(${JSON.stringify(`tego-sheet/locales/${subpath}`)});
