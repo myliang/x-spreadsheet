@@ -779,10 +779,13 @@ export class InteractionManager {
 
   private adjacentFocus(snapshot: InteractionSnapshot, direction: 'up' | 'down' | 'left' | 'right'): CellPoint {
     const focus = snapshot.selection.focus;
+    const model = snapshot.viewport.model;
+    const visualRow = model.visualIndexOfRow(focus.row);
+    const nextVisualRow = Math.min(model.rowCount - 1, Math.max(0,
+      visualRow + (direction === 'down' ? 1 : direction === 'up' ? -1 : 0)));
     return {
-      row: Math.min(snapshot.viewport.model.rowCount - 1, Math.max(0,
-        focus.row + (direction === 'down' ? 1 : direction === 'up' ? -1 : 0))),
-      column: Math.min(snapshot.viewport.model.columnCount - 1, Math.max(0,
+      row: model.logicalRowAtVisualIndex(nextVisualRow),
+      column: Math.min(model.columnCount - 1, Math.max(0,
         focus.column + (direction === 'right' ? 1 : direction === 'left' ? -1 : 0))),
     };
   }
@@ -792,17 +795,18 @@ export class InteractionManager {
     direction: 'up' | 'down' | 'left' | 'right',
     extend: boolean,
   ): SelectionState {
+    const model = snapshot.viewport.model;
     const point = {
-      row: direction === 'up' ? 0
-        : direction === 'down' ? snapshot.viewport.model.rowCount - 1
+      row: direction === 'up' ? model.logicalRowAtVisualIndex(0)
+        : direction === 'down' ? model.logicalRowAtVisualIndex(model.rowCount - 1)
           : snapshot.selection.active.row,
       column: direction === 'left' ? 0
-        : direction === 'right' ? snapshot.viewport.model.columnCount - 1
+        : direction === 'right' ? model.columnCount - 1
           : snapshot.selection.active.column,
     };
     return extend
-      ? extendSelection(snapshot.selection, point, snapshot.viewport.model)
-      : normalizeSelection(createSelectionState(point), snapshot.viewport.model);
+      ? extendSelection(snapshot.selection, point, model)
+      : normalizeSelection(createSelectionState(point), model);
   }
 
   private wheel(event: InteractionEventLike): void {

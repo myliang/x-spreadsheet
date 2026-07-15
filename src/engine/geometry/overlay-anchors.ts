@@ -53,6 +53,31 @@ function paneKind(rowFrozen: boolean, columnFrozen: boolean): FrozenQuadrantKind
   return 'body';
 }
 
+function segmentRect(
+  rows: AxisSegment,
+  columns: AxisSegment,
+  viewport: ViewportMetrics,
+): CssRect {
+  const logicalRow = viewport.model.logicalRowAtVisualIndex(rows.start);
+  const columnRect = rangeRect({
+    start: { row: logicalRow, column: columns.start },
+    end: { row: logicalRow, column: columns.end },
+  }, viewport);
+  const scroll = rows.frozen ? 0 : viewport.scroll.y;
+  const top = finiteCssSum(
+    viewport.columnHeaderHeight,
+    viewport.model.rowOffset(rows.start) - scroll,
+    'overlay top edge',
+  );
+  const lastLogicalRow = viewport.model.logicalRowAtVisualIndex(rows.end);
+  const bottom = finiteCssSum(
+    viewport.columnHeaderHeight,
+    viewport.model.rowOffset(rows.end) + viewport.model.rowHeight(lastLogicalRow) - scroll,
+    'overlay bottom edge',
+  );
+  return createCssRect(columnRect.left, top, columnRect.width, bottom - top);
+}
+
 export function overlayAnchors(
   range: CellRange,
   viewport: ViewportMetrics,
@@ -61,11 +86,8 @@ export function overlayAnchors(
   const panes = new Map(
     frozenQuadrants(viewport.freeze, viewport).map(pane => [pane.kind, pane]),
   );
-  const rowSegments = axisSegments(
-    normalized.start.row,
-    normalized.end.row,
-    viewport.freeze.row,
-  );
+  const visualRows = viewport.model.visualRowRange(normalized.start.row, normalized.end.row);
+  const rowSegments = axisSegments(visualRows[0], visualRows[1], viewport.freeze.row);
   const columnSegments = axisSegments(
     normalized.start.column,
     normalized.end.column,
@@ -77,10 +99,7 @@ export function overlayAnchors(
       const pane = paneKind(rows.frozen, columns.frozen);
       const paneRect = panes.get(pane);
       if (paneRect === undefined) continue;
-      const source = rangeRect({
-        start: { row: rows.start, column: columns.start },
-        end: { row: rows.end, column: columns.end },
-      }, viewport);
+      const source = segmentRect(rows, columns, viewport);
       const clipped = intersect(source, paneRect);
       if (clipped === null) continue;
       anchors.push({

@@ -27,9 +27,13 @@ test('@parity:tools.filter-menu proves visible filtering, sorting, and validatio
   await dialog.getByLabel('odd').check();
   await dialog.getByRole('button', { name: 'Apply filter' }).click();
 
+  await selectCell(page, 2, 0);
+  await page.getByRole('button', { name: 'Freeze', exact: true }).click();
   await page.getByRole('button', { name: 'Sort ascending', exact: true }).click();
   await selectCell(page, 1, 0);
   await expect.poll(async () => (await selection(page))?.active.row).toBe(2);
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect.poll(async () => (await selection(page))?.active.row).toBe(4);
   await selectCell(page, 2, 0);
   await expect.poll(async () => (await selection(page))?.active.row).toBe(4);
 
@@ -38,6 +42,7 @@ test('@parity:tools.filter-menu proves visible filtering, sorting, and validatio
   await expect.poll(async () => (await selection(page))?.active.row).toBe(1);
   await selectCell(page, 2, 0);
   await expect.poll(async () => (await selection(page))?.active.row).toBe(3);
+  await page.getByRole('button', { name: 'Unfreeze', exact: true }).click();
   value = await capture(page) as typeof value;
   expect(value[0]?.autofilter?.sort).toEqual({ ci: 0, order: 'desc' });
 

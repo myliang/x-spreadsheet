@@ -95,6 +95,42 @@ describe('frozen-pane geometry', () => {
     ]);
   });
 
+  it('partitions sorted overlay rows by visual freeze position', () => {
+    const model = createSheetGridModel({
+      rows: {
+        len: 5,
+        0: { cells: { 0: { text: 'Value' } } },
+        1: { cells: { 0: { text: 'b' } } },
+        2: { cells: { 0: { text: 'a' } } },
+        3: { cells: { 0: { text: 'c' } } },
+        4: { cells: { 0: { text: 'd' } } },
+      },
+      cols: { len: 2 },
+      autofilter: { ref: 'A1:A5', sort: { ci: 0, order: 'asc' } },
+    });
+    const metrics = createViewportMetrics(model, {
+      width: 260,
+      height: 150,
+      freeze: { row: 2, column: 0 },
+    });
+
+    expect(Array.from({ length: 5 }, (_, visual) => model.logicalRowAtVisualIndex(visual)))
+      .toEqual([0, 2, 1, 3, 4]);
+    expect(overlayAnchors({
+      start: { row: 2, column: 0 },
+      end: { row: 2, column: 0 },
+    }, metrics)).toEqual([
+      { pane: 'top', left: 60, top: 50, width: 100, height: 25, clipped: false },
+    ]);
+    expect(overlayAnchors({
+      start: { row: 1, column: 0 },
+      end: { row: 2, column: 0 },
+    }, metrics)).toEqual([
+      { pane: 'top', left: 60, top: 50, width: 100, height: 25, clipped: false },
+      { pane: 'body', left: 60, top: 75, width: 100, height: 25, clipped: false },
+    ]);
+  });
+
   it('clips oversized frozen panes to the data viewport', () => {
     const model = createSheetGridModel({ rows: { len: 4 }, cols: { len: 4 } });
     const viewport = createViewportMetrics(model, { width: 210, height: 80 });

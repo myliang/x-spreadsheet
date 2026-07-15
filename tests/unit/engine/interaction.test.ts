@@ -509,6 +509,32 @@ describe('InteractionManager keyboard, wheel, and focus behavior', () => {
     harness.manager.dispose();
   });
 
+  it('uses visual sorted row order for shifted and modified vertical navigation', () => {
+    const model = createSheetGridModel({
+      rows: {
+        len: 5,
+        0: { cells: { 0: { text: 'Value' } } },
+        1: { cells: { 0: { text: 'd' } } },
+        2: { cells: { 0: { text: 'a' } } },
+        3: { cells: { 0: { text: 'c' } } },
+        4: { cells: { 0: { text: 'b' } } },
+      },
+      cols: { len: 2 },
+      autofilter: { ref: 'A1:A5', sort: { ci: 0, order: 'asc' } },
+    });
+    const harness = setup({}, { width: 260, height: 150 }, model);
+    harness.root.emit('focusin');
+
+    harness.globalTarget.emit('keydown', { key: 'ArrowDown' });
+    expect(harness.snapshot().selection.active).toEqual({ row: 2, column: 0 });
+    harness.globalTarget.emit('keydown', { key: 'ArrowDown', shiftKey: true });
+    expect(harness.snapshot().selection.focus).toEqual({ row: 4, column: 0 });
+    harness.globalTarget.emit('keydown', { key: 'ArrowDown', ctrlKey: true });
+    expect(harness.snapshot().selection.active).toEqual({ row: 1, column: 0 });
+
+    harness.manager.dispose();
+  });
+
   it('commits before Tab/Enter and leaves failed or edge navigation unconsumed', () => {
     const commit = vi.fn().mockReturnValue(false);
     const harness = setup({ commitEditor: commit });
