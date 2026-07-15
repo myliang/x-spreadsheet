@@ -11,11 +11,20 @@ export interface ControllerExternalStore {
   readonly dispose: () => void;
 }
 
+interface ConnectionToken {
+  active: boolean;
+}
+
+interface ControllerConnection {
+  readonly token: ConnectionToken;
+  readonly unsubscribe: () => void;
+}
+
 export function createControllerExternalStore(
   controller: WorkbookController,
 ): ControllerExternalStore {
   let snapshot = controller.getSnapshot();
-  let controllerUnsubscribe: (() => void) | null = null;
+  let controllerConnection: ControllerConnection | null = null;
   let disposed = false;
   const listeners = new Set<() => void>();
 
@@ -39,27 +48,36 @@ export function createControllerExternalStore(
   };
 
   const connect = () => {
-    if (controllerUnsubscribe !== null || disposed) return;
+    if (controllerConnection !== null || disposed) return;
+    const token: ConnectionToken = { active: true };
     let unsubscribe: (() => void) | null = null;
     try {
-      unsubscribe = controller.subscribe(event => publish(event.snapshot));
+      unsubscribe = controller.subscribe(event => {
+        if (token.active) publish(event.snapshot);
+      });
       const current = controller.getSnapshot();
-      controllerUnsubscribe = unsubscribe;
+      controllerConnection = { token, unsubscribe };
       snapshot = current;
     } catch (error) {
+      token.active = false;
       try {
         unsubscribe?.();
-      } catch {
-        // Preserve the connection failure while leaving no local connection state.
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          'Controller connection and rollback cleanup failed',
+        );
       }
       throw error;
     }
   };
 
   const disconnect = () => {
-    const unsubscribe = controllerUnsubscribe;
-    controllerUnsubscribe = null;
-    unsubscribe?.();
+    const connection = controllerConnection;
+    controllerConnection = null;
+    if (connection === null) return;
+    connection.token.active = false;
+    connection.unsubscribe();
   };
 
   return {

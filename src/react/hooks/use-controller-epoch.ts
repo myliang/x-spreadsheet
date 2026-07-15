@@ -82,6 +82,27 @@ function createEpochSlot(): EpochSlot {
   };
 }
 
+function disposeEpoch(
+  store: ControllerExternalStore,
+  controller: WorkbookController,
+): void {
+  const errors: unknown[] = [];
+  try {
+    store.dispose();
+  } catch (error) {
+    errors.push(error);
+  }
+  try {
+    controller.dispose();
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) {
+    throw new AggregateError(errors, 'Controller epoch cleanup failed');
+  }
+}
+
 function contractViolation(message: string): TegoSheetException {
   return new TegoSheetException({
     code: 'INVALID_COMMAND',
@@ -142,8 +163,7 @@ export function useControllerEpoch(
     return () => {
       activeFlag = false;
       slot.deactivate(epoch);
-      store.dispose();
-      controller.dispose();
+      disposeEpoch(store, controller);
     };
   }, [createController, initial, slot]);
 

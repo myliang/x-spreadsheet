@@ -6,7 +6,10 @@ import {
   type WorkbookControllerOptions,
 } from '../../src/core/controller/workbook-controller';
 import type { WorkbookInput } from '../../src/core';
-import { createControllerExternalStore } from '../../src/react/adapters/controller-external-store';
+import {
+  createControllerExternalStore,
+  type ControllerExternalStore,
+} from '../../src/react/adapters/controller-external-store';
 import { useControllerEpoch } from '../../src/react/hooks/use-controller-epoch';
 import { renderSheet } from '../helpers/render-sheet';
 
@@ -95,6 +98,104 @@ it('makes an unmounted epoch synchronously inactive', () => {
   })).toThrow(/disposed|inactive/i);
 });
 
+it('disposes the controller once when store cleanup throws during epoch teardown', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const unsubscribeError = new Error('unsubscribe failed');
+  let controller: WorkbookController | undefined;
+  let store: ControllerExternalStore | undefined;
+  const dispose = vi.fn();
+  const createController = (input: WorkbookInput, options: WorkbookControllerOptions) => {
+    controller = new WorkbookController(input, options);
+    const actualSubscribe = controller.subscribe.bind(controller);
+    controller.subscribe = listener => {
+      const unsubscribe = actualSubscribe(listener);
+      return () => {
+        unsubscribe();
+        throw unsubscribeError;
+      };
+    };
+    const actualDispose = controller.dispose.bind(controller);
+    controller.dispose = () => {
+      dispose();
+      actualDispose();
+    };
+    return controller;
+  };
+
+  function Mounted() {
+    const epoch = useControllerEpoch({ defaultValue: [{}] }, { createController });
+    if (epoch !== null) store = epoch.store;
+    return <output>{epoch?.snapshot.revision ?? 'pending'}</output>;
+  }
+
+  const mounted = render(<Mounted />);
+  if (store === undefined || controller === undefined) throw new Error('epoch did not activate');
+  const activeController = controller;
+  store.subscribe(() => undefined);
+  let thrown: unknown;
+  try {
+    mounted.unmount();
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toBe(unsubscribeError);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(() => activeController.validate()).toThrow(/disposed/i);
+});
+
+it('aggregates store and controller errors after attempting both epoch cleanups', () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const unsubscribeError = new Error('unsubscribe failed');
+  const controllerDisposeError = new Error('controller dispose failed');
+  let controller: WorkbookController | undefined;
+  let store: ControllerExternalStore | undefined;
+  const dispose = vi.fn();
+  const createController = (input: WorkbookInput, options: WorkbookControllerOptions) => {
+    controller = new WorkbookController(input, options);
+    const actualSubscribe = controller.subscribe.bind(controller);
+    controller.subscribe = listener => {
+      const unsubscribe = actualSubscribe(listener);
+      return () => {
+        unsubscribe();
+        throw unsubscribeError;
+      };
+    };
+    const actualDispose = controller.dispose.bind(controller);
+    controller.dispose = () => {
+      dispose();
+      actualDispose();
+      throw controllerDisposeError;
+    };
+    return controller;
+  };
+
+  function Mounted() {
+    const epoch = useControllerEpoch({ defaultValue: [{}] }, { createController });
+    if (epoch !== null) store = epoch.store;
+    return <output>{epoch?.snapshot.revision ?? 'pending'}</output>;
+  }
+
+  const mounted = render(<Mounted />);
+  if (store === undefined || controller === undefined) throw new Error('epoch did not activate');
+  const activeController = controller;
+  store.subscribe(() => undefined);
+  let thrown: unknown;
+  try {
+    mounted.unmount();
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toBeInstanceOf(AggregateError);
+  expect((thrown as AggregateError).errors).toEqual([
+    unsubscribeError,
+    controllerDisposeError,
+  ]);
+  expect(dispose).toHaveBeenCalledOnce();
+  expect(() => activeController.validate()).toThrow(/disposed/i);
+});
+
 it('catches up the external snapshot on delayed first subscribe and reconnect', () => {
   const controller = new WorkbookController([{}]);
   const store = createControllerExternalStore(controller);
@@ -158,28 +259,39 @@ it('adopts a same-revision branch after a disconnected checkpoint restore', () =
   controller.dispose();
 });
 
-it('rolls back a failed first connection without retaining its listener', () => {
+it('makes a failed connection inert when rollback cleanup also throws', () => {
   const controller = new WorkbookController([{}]);
   const store = createControllerExternalStore(controller);
   const sheet = controller.getSheetIds()[0]!;
   const connectError = new Error('snapshot refresh failed');
-  const leakedListenerError = new Error('leaked listener');
+  const cleanupError = new Error('rollback cleanup failed');
+  const actualSubscribe = controller.subscribe.bind(controller);
+  vi.spyOn(controller, 'subscribe').mockImplementation(listener => {
+    actualSubscribe(listener);
+    return () => {
+      throw cleanupError;
+    };
+  });
   const getSnapshot = vi.spyOn(controller, 'getSnapshot')
     .mockImplementationOnce(() => {
       throw connectError;
     });
-  const staleListener = vi.fn(() => {
-    throw leakedListenerError;
-  });
 
-  expect(() => store.subscribe(staleListener)).toThrow(connectError);
+  let thrown: unknown;
+  try {
+    store.subscribe(vi.fn());
+  } catch (error) {
+    thrown = error;
+  }
+  expect(thrown).toBeInstanceOf(AggregateError);
+  expect((thrown as AggregateError).errors).toEqual([connectError, cleanupError]);
   getSnapshot.mockRestore();
-  expect(() => controller.dispatch({
+  controller.dispatch({
     type: 'set-cell-text',
     address: { sheet, row: 0, column: 0 },
-    text: 'after failed subscribe',
-  }, 'ref')).not.toThrow();
-  expect(staleListener).not.toHaveBeenCalled();
+    text: 'late rollback event',
+  }, 'ref');
+  expect(store.getSnapshot().revision).toBe(0);
 
   const liveListener = vi.fn();
   const disconnect = store.subscribe(liveListener);
@@ -191,7 +303,7 @@ it('rolls back a failed first connection without retaining its listener', () => 
   }, 'ref');
   expect(liveListener).toHaveBeenCalledOnce();
 
-  disconnect();
+  expect(() => disconnect()).toThrow(cleanupError);
   store.dispose();
   controller.dispose();
 });
@@ -230,23 +342,37 @@ it('notifies every current listener before rethrowing the first listener error',
   controller.dispose();
 });
 
-it('can reconnect after the last-listener cleanup throws', () => {
+it('makes a disconnected connection inert before a failing cleanup', () => {
   const controller = new WorkbookController([{}]);
   const actualSubscribe = controller.subscribe.bind(controller);
   const cleanupError = new Error('disconnect failed');
   const subscribe = vi.spyOn(controller, 'subscribe').mockImplementation(listener => {
-    const disconnect = actualSubscribe(listener);
+    actualSubscribe(listener);
     return () => {
-      disconnect();
       throw cleanupError;
     };
   });
   const store = createControllerExternalStore(controller);
+  const sheet = controller.getSheetIds()[0]!;
   const disconnectFirst = store.subscribe(vi.fn());
 
   expect(() => disconnectFirst()).toThrow(cleanupError);
-  const disconnectSecond = store.subscribe(vi.fn());
+  controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'late disconnected event',
+  }, 'ref');
+  expect(store.getSnapshot().revision).toBe(0);
+
+  const second = vi.fn();
+  const disconnectSecond = store.subscribe(second);
   expect(subscribe).toHaveBeenCalledTimes(2);
+  controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 1, column: 0 },
+    text: 'after reconnect',
+  }, 'ref');
+  expect(second).toHaveBeenCalledOnce();
 
   expect(() => disconnectSecond()).toThrow(cleanupError);
   store.dispose();
