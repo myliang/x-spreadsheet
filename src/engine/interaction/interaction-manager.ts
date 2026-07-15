@@ -287,6 +287,7 @@ export class InteractionManager {
     }
     if (!this.active) return true;
     const current = this.ports.getSnapshot();
+    if (current.readOnly) return true;
     if (current.sheet !== snapshot.sheet || current.epoch !== epoch) {
       this.ports.requestError(replacedPasteSnapshot());
       return true;
@@ -420,6 +421,7 @@ export class InteractionManager {
     const point = localPoint(event, this.ports.root);
     const handle = findResizeHandle(point, snapshot.viewport);
     if (handle !== null && !snapshot.readOnly) {
+      if (!this.ports.commitEditor()) return;
       this.drag = {
         mode: 'resize',
         handle,
@@ -506,9 +508,12 @@ export class InteractionManager {
     const snapshot = this.ports.getSnapshot();
     if (snapshot.readOnly) return;
     const boundary = findResizeBoundary(localPoint(event, this.ports.root), snapshot.viewport);
-    if (boundary !== null && this.unhideBefore(boundary.axis, boundary.boundary)) {
-      event.preventDefault?.();
-      return;
+    if (boundary !== null) {
+      if (!this.ports.commitEditor()) return;
+      if (this.unhideBefore(boundary.axis, boundary.boundary)) {
+        event.preventDefault?.();
+        return;
+      }
     }
     const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
     if (region?.kind !== 'cell' || !this.ports.commitEditor()) return;

@@ -691,6 +691,27 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     throwingErrorCallback.manager.dispose();
   });
 
+  it('silently cancels navigator paste when readOnly becomes true during clipboard access', async () => {
+    let resolve!: (value: string) => void;
+    const state: { current?: InteractionSnapshot } = {};
+    const harness = setup({
+      getSnapshot: () => state.current!,
+      clipboard: {
+        readText: () => new Promise(done => { resolve = done; }),
+        writeText: async () => {},
+      },
+    });
+    state.current = harness.snapshot();
+    const request = harness.manager.paste();
+    state.current = { ...state.current, readOnly: true };
+    resolve('must not dispatch');
+
+    await expect(request).resolves.toBe(true);
+    expect(harness.commands).toEqual([]);
+    expect(harness.errors).toEqual([]);
+    harness.manager.dispose();
+  });
+
   it('supports tap, double-tap, dominant swipe, threshold, cancel and multitouch', () => {
     let now = 0;
     const edit = vi.fn();
@@ -773,6 +794,32 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     expect(preview).toHaveBeenLastCalledWith(null);
     expect(harness.commands).toEqual([]);
     harness.manager.dispose();
+  });
+
+  it('does not start resize or unhide mutations when the active editor refuses to commit', () => {
+    const commit = vi.fn().mockReturnValue(false);
+    const preview = vi.fn();
+    const resize = setup({ commitEditor: commit, requestResizePreview: preview });
+    const resizeDown = resize.root.emit('pointerdown', { clientX: 270, clientY: 30 });
+    resize.globalTarget.emit('pointermove', { clientX: 320, clientY: 30, buttons: 1 });
+    resize.globalTarget.emit('pointerup', { buttons: 0 });
+    expect(commit).toHaveBeenCalledOnce();
+    expect(resizeDown.preventDefault).not.toHaveBeenCalled();
+    expect(preview).not.toHaveBeenCalled();
+    expect(resize.commands).toEqual([]);
+    resize.manager.dispose();
+
+    const model = createSheetGridModel({
+      rows: { len: 4, 1: { hide: true }, 2: { hide: true } },
+      cols: { len: 4 },
+    });
+    const unhide = setup({ commitEditor: commit }, { width: 700, height: 400 }, model);
+    commit.mockClear();
+    const doubleClick = unhide.root.emit('dblclick', { clientX: 20, clientY: 70 });
+    expect(commit).toHaveBeenCalledOnce();
+    expect(doubleClick.preventDefault).not.toHaveBeenCalled();
+    expect(unhide.commands).toEqual([]);
+    unhide.manager.dispose();
   });
 
   it('hides only full-axis selections and unhides the contiguous preceding hidden run in one command', () => {
