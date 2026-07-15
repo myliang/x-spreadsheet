@@ -137,7 +137,7 @@ test('@parity:correction.resource-cleanup returns every owned browser resource t
       )).length,
       observers,
       overlays: document.querySelectorAll([
-        '.tego-sheet__cell-editor',
+        '.tego-sheet__editor',
         '.tego-sheet__context-menu',
         '.tego-sheet__dialog',
         '.tego-sheet__filter-menu',
@@ -159,6 +159,16 @@ test('@parity:correction.resource-cleanup returns every owned browser resource t
   expect(mounted.listeners).toBeGreaterThan(baseline.listeners);
   expect(mounted.observers).toBeGreaterThan(baseline.observers);
   expect(mounted.subscriptions).toBeGreaterThan(baseline.subscriptions);
+
+  await page.locator('.tego-sheet__canvas').dblclick({ position: { x: 210, y: 62.5 } });
+  await expect(page.locator('.tego-sheet__editor')).toBeVisible();
+  await page.evaluate(() => window.__tegoHarness.unmount());
+  await expect(page.locator('.tego-sheet__editor')).toHaveCount(0);
+  await expect(page.locator('[data-tego-sheet]')).toHaveCount(0);
+  await expect.poll(counts).toEqual(baseline);
+
+  await page.getByRole('button', { name: 'Mount sheet', exact: true }).click();
+  await expect(page.locator('[data-tego-sheet]')).toHaveAttribute('data-mode', 'controlled');
 
   await page.getByRole('button', { name: 'Filter', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Filter' })).toBeVisible();
@@ -185,5 +195,12 @@ test('@parity:correction.resource-cleanup returns every owned browser resource t
   expect(beforeUnmount.frames).toBeGreaterThan(baseline.frames);
   expect(beforeUnmount.overlays).toBeGreaterThan(baseline.overlays);
   await expect(page.locator('[data-tego-sheet]')).toHaveCount(0);
+  await expect(page.locator([
+    '.tego-sheet__editor',
+    '.tego-sheet__context-menu',
+    '.tego-sheet__dialog',
+    '.tego-sheet__filter-menu',
+    '[data-tego-print-pages]',
+  ].join(','))).toHaveCount(0);
   await expect.poll(counts).toEqual(baseline);
 });

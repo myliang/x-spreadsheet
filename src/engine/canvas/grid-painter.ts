@@ -161,16 +161,33 @@ export function paneCells(
   const columnRange = columns.length === 0
     ? null
     : { start: Math.min(...columns), end: Math.max(...columns) };
-  for (const merge of viewport.model.merges) {
-    const visibleRow = rows.some(row => row >= merge.start.row && row <= merge.end.row);
-    if (
-      visibleRow
-      && columnRange !== null
-      && merge.start.column <= columnRange.end
-      && merge.end.column >= columnRange.start
-    ) add(merge.start);
+  if (columnRange !== null && viewport.model.merges.length > 0) {
+    const sortedVisibleRows = [...rows].sort((first, second) => first - second);
+    for (const merge of viewport.model.merges) {
+      if (
+        hasVisibleRowInRange(sortedVisibleRows, merge.start.row, merge.end.row)
+        && merge.start.column <= columnRange.end
+        && merge.end.column >= columnRange.start
+      ) add(merge.start);
+    }
   }
   return points;
+}
+
+export function hasVisibleRowInRange(
+  sortedRows: readonly number[],
+  start: number,
+  end: number,
+): boolean {
+  let low = 0;
+  let high = sortedRows.length;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    if ((sortedRows[middle] ?? Number.POSITIVE_INFINITY) < start) low = middle + 1;
+    else high = middle;
+  }
+  const row = sortedRows[low];
+  return row !== undefined && row <= end;
 }
 
 function indexedObject(value: unknown): Readonly<Record<string, unknown>> | null {

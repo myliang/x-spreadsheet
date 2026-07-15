@@ -131,6 +131,39 @@ describe('frozen-pane geometry', () => {
     ]);
   });
 
+  it('paints only the logical rows in a non-contiguous sorted selection', () => {
+    const model = createSheetGridModel({
+      rows: {
+        len: 7,
+        0: { cells: { 0: { text: 'Value' } } },
+        1: { cells: { 0: { text: 'd' } } },
+        2: { cells: { 0: { text: 'a' } } },
+        3: { cells: { 0: { text: 'e' } } },
+        4: { cells: { 0: { text: 'c' } } },
+        5: { cells: { 0: { text: 'b' } } },
+        6: { cells: { 0: { text: 'f' } } },
+      },
+      cols: { len: 2 },
+      autofilter: { ref: 'A1:A7', sort: { ci: 0, order: 'asc' } },
+    });
+    const metrics = createViewportMetrics(model, {
+      width: 260,
+      height: 220,
+      freeze: { row: 2, column: 0 },
+    });
+
+    expect(Array.from({ length: 7 }, (_, visual) => model.logicalRowAtVisualIndex(visual)))
+      .toEqual([0, 2, 5, 4, 1, 3, 6]);
+    expect(overlayAnchors({
+      start: { row: 2, column: 0 },
+      end: { row: 4, column: 0 },
+    }, metrics)).toEqual([
+      { pane: 'top', left: 60, top: 50, width: 100, height: 25, clipped: false },
+      { pane: 'body', left: 60, top: 100, width: 100, height: 25, clipped: false },
+      { pane: 'body', left: 60, top: 150, width: 100, height: 25, clipped: false },
+    ]);
+  });
+
   it('clips oversized frozen panes to the data viewport', () => {
     const model = createSheetGridModel({ rows: { len: 4 }, cols: { len: 4 } });
     const viewport = createViewportMetrics(model, { width: 210, height: 80 });

@@ -40,6 +40,10 @@ export interface GridModelPort {
   readonly logicalRowAtVisualIndex: (visualRow: number) => number;
   readonly visualIndexOfRow: (logicalRow: number) => number;
   readonly visualRowRange: (logicalStart: number, logicalEnd: number) => readonly [number, number];
+  readonly visualRowRuns: (
+    logicalStart: number,
+    logicalEnd: number,
+  ) => readonly (readonly [number, number])[];
   readonly logicalRowRange: (visualStart: number, visualEnd: number) => readonly [number, number];
 }
 
@@ -107,6 +111,10 @@ interface RowOrder {
   readonly logicalAtVisual: (visualRow: number) => number;
   readonly visualOfLogical: (logicalRow: number) => number;
   readonly visualRange: (logicalStart: number, logicalEnd: number) => readonly [number, number];
+  readonly visualRuns: (
+    logicalStart: number,
+    logicalEnd: number,
+  ) => readonly (readonly [number, number])[];
   readonly logicalRange: (visualStart: number, visualEnd: number) => readonly [number, number];
   readonly reordered: boolean;
 }
@@ -124,6 +132,12 @@ function identityRowOrder(count: number): RowOrder {
       assertRow(logicalEnd, 'logical row range end');
       return [logicalStart, logicalEnd];
     },
+    visualRuns(logicalStart, logicalEnd) {
+      assertRow(logicalStart, 'logical row range start');
+      assertRow(logicalEnd, 'logical row range end');
+      if (logicalStart > logicalEnd) throw new RangeError('logical row range must be normalized');
+      return [[logicalStart, logicalEnd]];
+    },
     logicalRange(visualStart, visualEnd) {
       assertRow(visualStart, 'visual row range start');
       assertRow(visualEnd, 'visual row range end');
@@ -131,6 +145,42 @@ function identityRowOrder(count: number): RowOrder {
     },
     reordered: false,
   };
+}
+
+function mappedRangeRuns(
+  inputStart: number,
+  inputEnd: number,
+  count: number,
+  mappedStart: number,
+  mappedEnd: number,
+  map: (index: number) => number,
+  label: string,
+): readonly (readonly [number, number])[] {
+  assertIndex(inputStart, count, `${label} range start`);
+  assertIndex(inputEnd, count, `${label} range end`);
+  if (inputStart > inputEnd) throw new RangeError(`${label} range must be normalized`);
+  const intervals: Array<[number, number]> = [];
+  if (inputStart < mappedStart) {
+    intervals.push([inputStart, Math.min(inputEnd, mappedStart - 1)]);
+  }
+  const overlapStart = Math.max(inputStart, mappedStart);
+  const overlapEnd = Math.min(inputEnd, mappedEnd);
+  for (let index = overlapStart; index <= overlapEnd; index += 1) {
+    const mapped = map(index);
+    intervals.push([mapped, mapped]);
+  }
+  if (inputEnd > mappedEnd) {
+    intervals.push([Math.max(inputStart, mappedEnd + 1), inputEnd]);
+  }
+  intervals.sort((first, second) => first[0] - second[0]);
+  const runs: Array<[number, number]> = [];
+  for (const interval of intervals) {
+    const previous = runs.at(-1);
+    if (previous !== undefined && interval[0] <= previous[1] + 1) {
+      previous[1] = Math.max(previous[1], interval[1]);
+    } else runs.push([...interval]);
+  }
+  return runs;
 }
 
 function mappedRangeBounds(
@@ -209,6 +259,17 @@ function createRowOrder(
       },
       visualRange(logicalStart, logicalEnd) {
         return mappedRangeBounds(
+          logicalStart,
+          logicalEnd,
+          count,
+          start,
+          end,
+          logicalRow => visualByLogical.get(logicalRow) ?? logicalRow,
+          'logical row',
+        );
+      },
+      visualRuns(logicalStart, logicalEnd) {
+        return mappedRangeRuns(
           logicalStart,
           logicalEnd,
           count,
@@ -437,6 +498,7 @@ export function createSheetGridModel(
     logicalRowAtVisualIndex: order.logicalAtVisual,
     visualIndexOfRow: order.visualOfLogical,
     visualRowRange: order.visualRange,
+    visualRowRuns: order.visualRuns,
     logicalRowRange: order.logicalRange,
   });
 }

@@ -86,8 +86,9 @@ export function overlayAnchors(
   const panes = new Map(
     frozenQuadrants(viewport.freeze, viewport).map(pane => [pane.kind, pane]),
   );
-  const visualRows = viewport.model.visualRowRange(normalized.start.row, normalized.end.row);
-  const rowSegments = axisSegments(visualRows[0], visualRows[1], viewport.freeze.row);
+  const rowSegments = viewport.model
+    .visualRowRuns(normalized.start.row, normalized.end.row)
+    .flatMap(rows => axisSegments(rows[0], rows[1], viewport.freeze.row));
   const columnSegments = axisSegments(
     normalized.start.column,
     normalized.end.column,

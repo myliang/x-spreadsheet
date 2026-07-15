@@ -11,7 +11,22 @@ import {
 } from '../viewport/selection-state';
 
 export interface RootRectPort {
-  getBoundingClientRect(): { readonly left: number; readonly top: number };
+  getBoundingClientRect(): {
+    readonly left: number;
+    readonly top: number;
+    readonly width: number;
+    readonly height: number;
+  };
+  getClientSize(): { readonly width: number; readonly height: number };
+}
+
+function clientScale(root: RootRectPort): CssPoint {
+  const rect = root.getBoundingClientRect();
+  const client = root.getClientSize();
+  return {
+    x: rect.width > 0 && client.width > 0 ? client.width / rect.width : 1,
+    y: rect.height > 0 && client.height > 0 ? client.height / rect.height : 1,
+  };
 }
 
 export function localPoint(
@@ -19,7 +34,19 @@ export function localPoint(
   root: RootRectPort,
 ): CssPoint {
   const rect = root.getBoundingClientRect();
-  return { x: client.clientX - rect.left, y: client.clientY - rect.top };
+  const scale = clientScale(root);
+  return {
+    x: (client.clientX - rect.left) * scale.x,
+    y: (client.clientY - rect.top) * scale.y,
+  };
+}
+
+export function localDelta(
+  client: Readonly<{ x: number; y: number }>,
+  root: RootRectPort,
+): CssPoint {
+  const scale = clientScale(root);
+  return { x: client.x * scale.x, y: client.y * scale.y };
 }
 
 export function regionAtClientPoint(

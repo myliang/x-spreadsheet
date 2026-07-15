@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { capture, cellPoint, openCellMenu, openHarness, selectCell, selection } from './support';
+import {
+  capture,
+  cellPoint,
+  dragCells,
+  openCellMenu,
+  openHarness,
+  selectCell,
+  selection,
+} from './support';
 
 test('@parity:view.zoom-scroll keeps canvas hit testing aligned after consumer zoom and scrolling', async ({ page }) => {
   await openHarness(page);
@@ -20,6 +28,13 @@ test('@parity:view.zoom-scroll keeps canvas hit testing aligned after consumer z
   await expect(page.locator('[data-tego-sheet]')).toHaveAttribute('data-grid-visible', 'true');
 
   await page.getByRole('button', { name: 'Toggle zoom' }).click();
+  await selectCell(page, 1, 1);
+  expect(await selection(page)).toMatchObject({ active: { row: 1, column: 1 } });
+  await dragCells(page, { row: 1, column: 1 }, { row: 2, column: 1 });
+  expect(await selection(page)).toMatchObject({
+    active: { row: 2, column: 1 },
+    range: { start: { row: 1, column: 1 }, end: { row: 2, column: 1 } },
+  });
   const canvas = page.locator('.tego-sheet__canvas');
   await canvas.hover({ position: { x: 200, y: 200 } });
   for (let index = 0; index < 5; index += 1) await page.mouse.wheel(0, 100);

@@ -63,10 +63,12 @@ function managerPorts(
   const model = createSheetGridModel({ rows: { len: 2 }, cols: { len: 2 } });
   const interactionRoot = root as FakeTarget & {
     contains(target: unknown): boolean;
-    getBoundingClientRect(): { left: number; top: number };
+    getBoundingClientRect(): { left: number; top: number; width: number; height: number };
+    getClientSize(): { width: number; height: number };
   };
   interactionRoot.contains = target => target === interactionRoot;
-  interactionRoot.getBoundingClientRect = () => ({ left: 0, top: 0 });
+  interactionRoot.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 200 });
+  interactionRoot.getClientSize = () => ({ width: 300, height: 200 });
   return {
     root: interactionRoot,
     globalTarget,
@@ -233,10 +235,12 @@ describe('ResourceRegistry', () => {
   it('drains manager listeners when transient, touch, and registry cleanup all throw', () => {
     const root = new FakeTarget() as FakeTarget & {
       contains(target: unknown): boolean;
-      getBoundingClientRect(): { left: number; top: number };
+      getBoundingClientRect(): { left: number; top: number; width: number; height: number };
+      getClientSize(): { width: number; height: number };
     };
     root.contains = target => target === root;
-    root.getBoundingClientRect = () => ({ left: 0, top: 0 });
+    root.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 200 });
+    root.getClientSize = () => ({ width: 300, height: 200 });
     const globalTarget = new FakeTarget();
     const model = createSheetGridModel({ rows: { len: 2 }, cols: { len: 2 } });
     const preview = vi.fn((value: unknown) => {

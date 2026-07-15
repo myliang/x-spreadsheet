@@ -26,6 +26,7 @@ import {
 import { isEditableEventTarget, isPrintableKey, navigationKey } from './keyboard';
 import {
   extendToRegion,
+  localDelta,
   localPoint,
   regionAtClientPoint,
   selectionContains,
@@ -44,7 +45,13 @@ import { TouchGesture, type TouchPointPort } from './touch';
 
 export interface InteractionRootPort extends EventTargetPort {
   contains(target: unknown): boolean;
-  getBoundingClientRect(): { readonly left: number; readonly top: number };
+  getBoundingClientRect(): {
+    readonly left: number;
+    readonly top: number;
+    readonly width: number;
+    readonly height: number;
+  };
+  getClientSize(): { readonly width: number; readonly height: number };
 }
 
 export interface InteractionSnapshot {
@@ -258,7 +265,7 @@ export class InteractionManager {
     this.touch = new TouchGesture({
       now: this.ports.now ?? (() => Date.now()),
       tap: (point, double) => this.tap(point, double),
-      swipe: delta => this.scrollContinuous(delta, 'touch'),
+      swipe: delta => this.scrollContinuous(localDelta(delta, this.ports.root), 'touch'),
       ...(this.ports.setTimer === undefined ? {} : {
         schedule: (callback: () => void, delay: number): (() => void) => (
           this.scheduleTimer(callback, delay)

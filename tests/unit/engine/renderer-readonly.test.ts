@@ -5,7 +5,11 @@ import {
   createViewportMetrics,
 } from '../../../src/engine';
 import type { SheetData } from '../../../src/core';
-import { paneCells, paneGridIndexes } from '../../../src/engine/canvas/grid-painter';
+import {
+  hasVisibleRowInRange,
+  paneCells,
+  paneGridIndexes,
+} from '../../../src/engine/canvas/grid-painter';
 import { frozenQuadrants } from '../../../src/engine/geometry/frozen-pane-geometry';
 import { createCanvasHarness } from '../../helpers/canvas-harness';
 import { deepFreeze } from '../../helpers/deep-freeze';
@@ -491,6 +495,106 @@ describe('read-only Canvas rendering', () => {
 
     expect(indexes.columns).toEqual([1]);
     expect(paneCells(pane, viewport, indexes, sheet)).toEqual([{ row: 0, column: 0 }]);
+  });
+
+  it('checks merge row intersections with logarithmic visible-row probes', () => {
+    let probes = 0;
+    const rows = new Proxy(
+      Array.from({ length: 131_072 }, (_, row) => row * 2),
+      {
+        get(target, key, receiver) {
+          if (/^(0|[1-9]\d*)$/.test(String(key))) probes += 1;
+          return Reflect.get(target, key, receiver);
+        },
+      },
+    );
+
+    for (let merge = 0; merge < 1_000; merge += 1) {
+      expect(hasVisibleRowInRange(rows, merge * 200 + 1, merge * 200 + 1)).toBe(false);
+      expect(hasVisibleRowInRange(rows, merge * 200 + 2, merge * 200 + 2)).toBe(true);
+    }
+    expect(probes).toBeLessThanOrEqual(38_000);
+  });
+
+  it('retains many merges across a large tiny-row viewport', () => {
+    const merges = Array.from({ length: 1_000 }, (_, index) => {
+      const first = index * 50 + 1;
+      return `A${first}:A${first + 1}`;
+    });
+    const sheet: SheetData = {
+      merges,
+      rows: { len: 50_000 },
+      cols: { len: 1 },
+    };
+    const viewport = createViewportMetrics(createSheetGridModel(sheet, {
+      defaultRowHeight: 0.01,
+    }), {
+      width: 100,
+      height: 500,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+    });
+    const pane = frozenQuadrants(viewport.freeze, viewport)[0];
+    expect(pane).toBeDefined();
+    if (pane === undefined) return;
+    const indexes = paneGridIndexes(pane, viewport);
+
+    expect(indexes.rows).toHaveLength(50_000);
+    expect(paneCells(pane, viewport, indexes, sheet)).toHaveLength(1_000);
+  });
+
+  it('keeps sorted selection paint, headers, and fill handle on exact logical rows', () => {
+    const sheet: SheetData = {
+      rows: {
+        len: 7,
+        0: { cells: { 0: { text: 'Value' } } },
+        1: { cells: { 0: { text: 'd' } } },
+        2: { cells: { 0: { text: 'a' } } },
+        3: { cells: { 0: { text: 'e' } } },
+        4: { cells: { 0: { text: 'c' } } },
+        5: { cells: { 0: { text: 'b' } } },
+        6: { cells: { 0: { text: 'f' } } },
+      },
+      cols: { len: 2 },
+      autofilter: { ref: 'A1:A7', sort: { ci: 0, order: 'asc' } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+    engine.render({
+      sheet,
+      selection: { start: { row: 2, column: 0 }, end: { row: 4, column: 0 } },
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 260,
+        height: 220,
+        freeze: { row: 2, column: 0 },
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations
+      .filter(operation => operation.name === 'strokeRect')
+      .map(operation => operation.args)).toEqual([
+      [60, 50, 100, 25],
+      [60, 100, 100, 25],
+      [60, 150, 100, 25],
+    ]);
+    expect(harness.operations).toContainEqual({ name: 'fillRect', args: [155.5, 170.5, 8, 8] });
+    const headerHighlights = harness.operations.flatMap((operation, index) => (
+      operation.name === 'set:fillStyle'
+      && operation.args[0] === 'rgba(75, 137, 255, 0.08)'
+      && harness.operations[index + 1]?.name === 'fillRect'
+        ? [harness.operations[index + 1]!.args]
+        : []
+    ));
+    expect(headerHighlights).toEqual([
+      [-0.5, 49.5, 60, 25],
+      [-0.5, 99.5, 60, 25],
+      [-0.5, 149.5, 60, 25],
+      [59.5, -0.5, 100, 25],
+    ]);
   });
 
   it('bounds frozen axis enumeration at the pane extent for safe-integer grid counts', () => {

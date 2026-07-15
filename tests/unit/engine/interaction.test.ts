@@ -13,13 +13,14 @@ import {
   type SelectionState,
   type ViewportStateInput,
 } from '../../../src/engine';
+import { localPoint } from '../../../src/engine/interaction/pointer';
 import { ClipboardHarness, DataTransferHarness } from '../../helpers/clipboard-harness';
 import { findResizeHandle, hiddenRunBefore } from '../../../src/engine/interaction/resize';
 
 class FakeTarget {
   readonly listeners = new Map<string, Set<(event: unknown) => void>>();
   parent: FakeTarget | null = null;
-  rect = { left: 10, top: 20 };
+  rect = { left: 10, top: 20, width: 700, height: 400 };
 
   addEventListener(type: string, listener: (event: unknown) => void): void {
     const listeners = this.listeners.get(type) ?? new Set();
@@ -40,8 +41,12 @@ class FakeTarget {
     return false;
   }
 
-  getBoundingClientRect(): { left: number; top: number } {
+  getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
     return this.rect;
+  }
+
+  getClientSize(): { width: number; height: number } {
+    return { width: 700, height: 400 };
   }
 
   emit(type: string, event: Record<string, unknown> = {}): Record<string, unknown> {
@@ -60,6 +65,18 @@ class FakeTarget {
     return value;
   }
 }
+
+describe('client coordinate conversion', () => {
+  it('maps CSS-zoomed client coordinates back into viewport coordinates', () => {
+    expect(localPoint(
+      { clientX: 272.5, clientY: 97.5 },
+      {
+        getBoundingClientRect: () => ({ left: 10, top: 20, width: 875, height: 500 }),
+        getClientSize: () => ({ width: 700, height: 400 }),
+      },
+    )).toEqual({ x: 210, y: 62 });
+  });
+});
 
 function hugeHiddenRowModel(count: number, hiddenStart: number) {
   const rowOffset = vi.fn((boundary: number) => Math.min(boundary, hiddenStart) * 25);
@@ -87,6 +104,7 @@ function hugeHiddenRowModel(count: number, hiddenStart: number) {
     logicalRowAtVisualIndex: row => row,
     visualIndexOfRow: row => row,
     visualRowRange: (start, end) => [start, end],
+    visualRowRuns: (start, end) => [[start, end]],
     logicalRowRange: (start, end) => [start, end],
   };
   return { model, previousVisibleRow, rowAt, rowOffset };
@@ -777,6 +795,7 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
       logicalRowAtVisualIndex: row => row,
       visualIndexOfRow: row => row,
       visualRowRange: (start, end) => [start, end],
+      visualRowRuns: (start, end) => [[start, end]],
       logicalRowRange: (start, end) => [start, end],
     };
     const viewport = createViewportMetrics(model, {
@@ -1079,6 +1098,42 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     harness.root.emit('pointerdown', { clientX: 20, clientY: 95 });
     harness.globalTarget.emit('pointercancel');
     expect(harness.commands).toHaveLength(count);
+    harness.manager.dispose();
+  });
+
+  it('resizes the logical selected row range when sorted rows are visually separated', () => {
+    const model = createSheetGridModel({
+      rows: {
+        len: 7,
+        0: { cells: { 0: { text: 'Value' } } },
+        1: { cells: { 0: { text: 'd' } } },
+        2: { cells: { 0: { text: 'a' } } },
+        3: { cells: { 0: { text: 'e' } } },
+        4: { cells: { 0: { text: 'c' } } },
+        5: { cells: { 0: { text: 'b' } } },
+        6: { cells: { 0: { text: 'f' } } },
+      },
+      cols: { len: 2 },
+      autofilter: { ref: 'A1:A7', sort: { ci: 0, order: 'asc' } },
+    });
+    const state: { current?: InteractionSnapshot } = {};
+    const harness = setup({ getSnapshot: () => state.current! }, { width: 260, height: 220 }, model);
+    state.current = {
+      ...harness.snapshot(),
+      selection: createSelectionState({ row: 2, column: 0 }, { row: 4, column: 0 }),
+    };
+
+    harness.root.emit('pointerdown', { clientX: 20, clientY: 195 });
+    harness.globalTarget.emit('pointermove', { clientX: 20, clientY: 205, buttons: 1 });
+    harness.globalTarget.emit('pointerup', { buttons: 0 });
+
+    expect(harness.commands.at(-1)).toEqual({
+      type: 'set-row-height',
+      sheet: sheetId('sheet-1'),
+      row: 2,
+      count: 3,
+      height: 35,
+    });
     harness.manager.dispose();
   });
 

@@ -47,6 +47,12 @@ export interface EditorSelectionTarget {
 }
 
 function rootPort(root: HTMLElement, surface: HTMLElement): InteractionRootPort {
+  const metricsElement = (): HTMLElement => {
+    const rect = surface.getBoundingClientRect();
+    return surface.clientWidth > 0 || surface.clientHeight > 0 || rect.width > 0 || rect.height > 0
+      ? surface
+      : root;
+  };
   return {
     addEventListener: (type, listener, options) => root.addEventListener(
       type,
@@ -59,11 +65,10 @@ function rootPort(root: HTMLElement, surface: HTMLElement): InteractionRootPort 
       options as boolean | EventListenerOptions | undefined,
     ),
     contains: target => contains(root, target),
-    getBoundingClientRect: () => {
-      const rect = surface.getBoundingClientRect();
-      return surface.clientWidth > 0 || surface.clientHeight > 0 || rect.width > 0 || rect.height > 0
-        ? rect
-        : root.getBoundingClientRect();
+    getBoundingClientRect: () => metricsElement().getBoundingClientRect(),
+    getClientSize: () => {
+      const element = metricsElement();
+      return { width: element.clientWidth, height: element.clientHeight };
     },
   };
 }

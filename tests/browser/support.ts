@@ -15,9 +15,15 @@ export async function cellPoint(page: Page, row: number, column: number) {
   const canvas = page.locator('.tego-sheet__canvas');
   const box = await canvas.boundingBox();
   if (box === null) throw new Error('canvas has no box');
+  const clientSize = await canvas.evaluate(element => ({
+    width: element.clientWidth,
+    height: element.clientHeight,
+  }));
+  const scaleX = clientSize.width > 0 ? box.width / clientSize.width : 1;
+  const scaleY = clientSize.height > 0 ? box.height / clientSize.height : 1;
   return {
-    x: box.x + 60 + column * 100 + 50,
-    y: box.y + 25 + row * 25 + 12,
+    x: box.x + (60 + column * 100 + 50) * scaleX,
+    y: box.y + (25 + row * 25 + 12.5) * scaleY,
   };
 }
 
