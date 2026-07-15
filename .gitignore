@@ -8,3 +8,14 @@ dist/
 demo-dist/
 playwright-report/
 test-results/
+/legacy/
+/docs/dist/
+/docs/locale/
+/docs/index.html
+/docs/xspreadsheet.css
+/docs/xspreadsheet.css.map
+/docs/xspreadsheet.js
+/docs/xspreadsheet.js.map
+/docs/58eaeb4e52248a5c75936c6f4c33a370.svg
+/docs/ece3e4fa05d4292823fdef970eaf1233.svg
+/docs/demo.png
