@@ -33,19 +33,13 @@ function frozenSelection(
   range: CellRange,
   kind: SelectionKind = 'cell',
 ): SelectionState {
-  const selection = {
+  return Object.freeze({
+    kind,
     anchor: frozenPoint(anchor),
     focus: frozenPoint(focus),
     active: frozenPoint(active),
     range: frozenRange(range),
-  } as SelectionState;
-  Object.defineProperty(selection, 'kind', {
-    configurable: false,
-    enumerable: false,
-    value: kind,
-    writable: false,
   });
-  return Object.freeze(selection);
 }
 
 export function createSelectionState(
@@ -107,16 +101,17 @@ export function normalizeSelection(
   selection: SelectionState,
   model: GridModelPort,
 ): SelectionState {
+  const kind = selection.kind ?? 'cell';
   const anchor = clampPoint(selection.anchor, model);
   const focus = clampPoint(selection.focus, model);
-  if (selection.kind !== 'cell') {
+  if (kind !== 'cell') {
     const range = normalizeCellRange({
       start: clampPoint(selection.range.start, model),
       end: clampPoint(selection.range.end, model),
     });
     const requestedActive = clampPoint(selection.active, model);
     const active = containsCell(range, requestedActive) ? requestedActive : range.start;
-    return frozenSelection(anchor, focus, active, range, selection.kind);
+    return frozenSelection(anchor, focus, active, range, kind);
   }
   const focusMerge = model.mergeAt(focus);
   const active = focusMerge?.start ?? focus;
@@ -124,7 +119,7 @@ export function normalizeSelection(
   const range = singlePoint && focusMerge !== null
     ? focusMerge
     : expandMerges(normalizeCellRange({ start: anchor, end: focus }), model);
-  return frozenSelection(anchor, focus, active, range, selection.kind);
+  return frozenSelection(anchor, focus, active, range, kind);
 }
 
 export function moveSelection(

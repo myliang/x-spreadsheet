@@ -14,6 +14,7 @@ import {
   type ViewportStateInput,
 } from '../../../src/engine';
 import { ClipboardHarness, DataTransferHarness } from '../../helpers/clipboard-harness';
+import { hiddenRunBefore } from '../../../src/engine/interaction/resize';
 
 class FakeTarget {
   readonly listeners = new Map<string, Set<(event: unknown) => void>>();
@@ -58,6 +59,27 @@ class FakeTarget {
     for (const listener of this.listeners.get(type) ?? []) listener(value);
     return value;
   }
+}
+
+function hugeHiddenRowModel(count: number, hiddenStart: number) {
+  const rowOffset = vi.fn((boundary: number) => Math.min(boundary, hiddenStart) * 25);
+  const rowAt = vi.fn((coordinate: number) => {
+    if (coordinate < 0 || hiddenStart === 0) return null;
+    return Math.min(hiddenStart - 1, Math.floor(coordinate / 25));
+  });
+  const model: GridModelPort = {
+    rowCount: count,
+    columnCount: 2,
+    merges: [],
+    rowHeight: row => row < hiddenStart ? 25 : 0,
+    columnWidth: () => 100,
+    rowOffset,
+    columnOffset: boundary => boundary * 100,
+    rowAt,
+    columnAt: coordinate => Math.min(1, Math.max(0, Math.floor(coordinate / 100))),
+    mergeAt: () => null,
+  };
+  return { model, rowAt, rowOffset };
 }
 
 function setup(
@@ -549,9 +571,58 @@ describe('InteractionManager keyboard, wheel, and focus behavior', () => {
     first.manager.dispose();
     second.manager.dispose();
   });
+
+  it('uses global touchstart to transfer keyboard focus between roots sharing one target', () => {
+    const shared = new FakeTarget();
+    const first = setup({ globalTarget: shared });
+    const second = setup({ globalTarget: shared });
+    const touch = { clientX: 71, clientY: 46 };
+    first.root.emit('focusin');
+    second.root.emit('touchstart', { touches: [touch] });
+    shared.emit('touchstart', { target: second.root, touches: [touch] });
+    shared.emit('keydown', { key: 'ArrowRight' });
+    expect(first.snapshot().selection.active).toEqual({ row: 0, column: 0 });
+    expect(second.snapshot().selection.active).toEqual({ row: 0, column: 2 });
+    first.manager.dispose();
+    second.manager.dispose();
+  });
 });
 
 describe('InteractionManager clipboard, touch, resize and hide behavior', () => {
+  it('finds first, massive, and ordinary hidden runs with bounded axis lookups', () => {
+    const count = Number.MAX_SAFE_INTEGER;
+    const massive = hugeHiddenRowModel(count, 1);
+    const massiveViewport = createViewportMetrics(massive.model, { width: 300, height: 200 });
+    expect(hiddenRunBefore('row', count, massiveViewport)).toEqual([1, count - 1]);
+    expect(massive.rowOffset).toHaveBeenCalledTimes(1);
+    expect(massive.rowAt).toHaveBeenCalledTimes(1);
+
+    const initial = hugeHiddenRowModel(count, 0);
+    expect(hiddenRunBefore(
+      'row',
+      count,
+      createViewportMetrics(initial.model, { width: 300, height: 200 }),
+    )).toEqual([0, count]);
+    expect(initial.rowOffset).toHaveBeenCalledTimes(1);
+    expect(initial.rowAt).toHaveBeenCalledTimes(1);
+
+    const visibleBase = createSheetGridModel({ rows: { len: 3 }, cols: { len: 2 } });
+    const visibleRowOffset = vi.fn(visibleBase.rowOffset);
+    const visibleRowAt = vi.fn(visibleBase.rowAt);
+    const visible: GridModelPort = {
+      ...visibleBase,
+      rowOffset: visibleRowOffset,
+      rowAt: visibleRowAt,
+    };
+    expect(hiddenRunBefore(
+      'row',
+      2,
+      createViewportMetrics(visible, { width: 300, height: 200 }),
+    )).toBeNull();
+    expect(visibleRowOffset).toHaveBeenCalledTimes(1);
+    expect(visibleRowAt).toHaveBeenCalledTimes(1);
+  });
+
   it('prefers synchronous DataTransfer copy/paste without touching navigator clipboard', async () => {
     const harness = setup();
     harness.root.emit('focusin');
@@ -569,6 +640,34 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
       values: [['"quoted"', 'B'], ['C', 'D']],
     });
     expect(harness.clipboard.reads).toBe(0);
+    harness.manager.dispose();
+  });
+
+  it('leaves clipboard keydown to native events and then handles their DataTransfer payloads', async () => {
+    const harness = setup();
+    harness.root.emit('focusin');
+    for (const key of ['c', 'x', 'v']) {
+      const keydown = harness.globalTarget.emit('keydown', { key, ctrlKey: true });
+      expect(keydown.preventDefault).not.toHaveBeenCalled();
+    }
+    expect(harness.clipboard.reads).toBe(0);
+    expect(harness.clipboard.writes).toBe(0);
+
+    const transfer = new DataTransferHarness();
+    const copy = harness.globalTarget.emit('copy', { clipboardData: transfer });
+    await Promise.resolve();
+    expect(copy.preventDefault).toHaveBeenCalledOnce();
+    expect(transfer.getData('text/plain')).toBe('raw\t=A1\n0\t');
+    harness.manager.dispose();
+  });
+
+  it('treats an explicitly empty DataTransfer paste as external over stale internal state', async () => {
+    const harness = setup();
+    await harness.manager.copy(new DataTransferHarness());
+    await expect(harness.manager.paste(new DataTransferHarness())).resolves.toBe(true);
+    expect(harness.commands.at(-1)).toMatchObject({
+      type: 'paste-external', values: [['']],
+    });
     harness.manager.dispose();
   });
 
@@ -593,9 +692,7 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     const harness = setup();
     harness.root.emit('focusin');
     harness.clipboard.readError = new Error('denied');
-    harness.globalTarget.emit('paste', { clipboardData: new DataTransferHarness() });
-    await Promise.resolve();
-    await Promise.resolve();
+    await harness.manager.paste();
     expect(harness.errors).toHaveLength(1);
     expect(harness.errors[0]).toMatchObject({ code: 'CLIPBOARD_DENIED', recoverable: true });
 
@@ -603,11 +700,10 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     const pending = new Promise<string>(done => { resolve = done; });
     const late = setup({ clipboard: { readText: () => pending, writeText: async () => {} } });
     late.root.emit('focusin');
-    late.globalTarget.emit('paste', { clipboardData: new DataTransferHarness() });
+    const lateRequest = late.manager.paste();
     late.manager.dispose();
     resolve('late');
-    await pending;
-    await Promise.resolve();
+    await lateRequest;
     expect(late.commands).toEqual([]);
 
     let reject!: (cause: unknown) => void;
@@ -766,7 +862,7 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     };
     harness.root.emit('pointerdown', { clientX: 270, clientY: 30 });
     harness.globalTarget.emit('pointermove', { clientX: 100, clientY: 30, buttons: 1 });
-    expect(preview).toHaveBeenLastCalledWith({ axis: 'column', indices: [2, 3, 4], size: 30 });
+    expect(preview).toHaveBeenLastCalledWith({ axis: 'column', start: 2, count: 3, size: 30 });
     harness.globalTarget.emit('pointerup', { buttons: 0 });
     expect(harness.commands.at(-1)).toEqual({
       type: 'set-column-width', sheet: sheetId('sheet-1'), column: 2, count: 3, width: 30,
@@ -819,6 +915,34 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
     expect(commit).toHaveBeenCalledOnce();
     expect(doubleClick.preventDefault).not.toHaveBeenCalled();
     expect(unhide.commands).toEqual([]);
+    unhide.manager.dispose();
+  });
+
+  it('rejects oversized resize and unhide ranges before preview or dispatch', () => {
+    const model = createSheetGridModel({ rows: { len: 300_002 }, cols: { len: 300_002 } });
+    const state: { current?: InteractionSnapshot } = {};
+    const preview = vi.fn();
+    const harness = setup({
+      getSnapshot: () => state.current!,
+      requestResizePreview: preview,
+    }, { width: 700, height: 400 }, model);
+    state.current = {
+      ...harness.snapshot(),
+      selection: createSelectionState({ row: 0, column: 0 }, { row: 0, column: 250_000 }),
+    };
+    const down = harness.root.emit('pointerdown', { clientX: 170, clientY: 30 });
+    harness.globalTarget.emit('pointermove', { clientX: 200, clientY: 30, buttons: 1 });
+    expect(down.preventDefault).not.toHaveBeenCalled();
+    expect(preview).not.toHaveBeenCalled();
+    expect(harness.commands).toEqual([]);
+    expect(harness.errors.at(-1)).toMatchObject({ code: 'INVALID_COMMAND', recoverable: true });
+    harness.manager.dispose();
+
+    const huge = hugeHiddenRowModel(250_002, 1);
+    const unhide = setup({}, { width: 700, height: 400 }, huge.model);
+    expect(unhide.manager.unhideBefore('row', 250_002)).toBe(false);
+    expect(unhide.commands).toEqual([]);
+    expect(unhide.errors.at(-1)).toMatchObject({ code: 'INVALID_COMMAND', recoverable: true });
     unhide.manager.dispose();
   });
 

@@ -63,6 +63,7 @@ describe('selection state', () => {
     );
 
     expect(normalizeSelection(selection, model)).toEqual({
+      kind: 'cell',
       anchor: { row: 4, column: 5 },
       focus: { row: 1, column: 2 },
       active: { row: 1, column: 2 },
@@ -85,6 +86,7 @@ describe('selection state', () => {
     );
 
     expect(normalizeSelection(selection, model)).toEqual({
+      kind: 'cell',
       anchor: { row: 1, column: 1 },
       focus: { row: 2, column: 2 },
       active: { row: 2, column: 2 },
@@ -158,6 +160,7 @@ describe('selection state', () => {
       createSelectionState({ row: 2, column: 2 }),
       model,
     )).toEqual({
+      kind: 'cell',
       anchor: { row: 2, column: 2 },
       focus: { row: 2, column: 2 },
       active: { row: 1, column: 1 },
@@ -179,5 +182,15 @@ describe('selection state', () => {
     expect(moveSelection(backwards, 'right', model).active).toEqual({ row: 4, column: 6 });
     expect(moveSelection(backwards, 'up', model).active).toEqual({ row: 3, column: 5 });
     expect(moveSelection(backwards, 'down', model).active).toEqual({ row: 5, column: 5 });
+  });
+
+  it('keeps kind enumerable through spread and defaults missing runtime kind to cell', () => {
+    const model = createSheetGridModel({ rows: { len: 3 }, cols: { len: 3 } });
+    const selection = createSelectionState({ row: 1, column: 1 });
+    expect(Object.keys(selection)).toContain('kind');
+    expect({ ...selection }).toMatchObject({ kind: 'cell' });
+
+    const withoutKind = { ...selection, kind: undefined } as unknown as typeof selection;
+    expect(normalizeSelection(withoutKind, model)).toMatchObject({ kind: 'cell' });
   });
 });

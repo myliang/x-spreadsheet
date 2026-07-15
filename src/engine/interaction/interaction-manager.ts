@@ -1,4 +1,6 @@
 import type { WorkbookCommand } from '../../core/commands/workbook-command';
+import { invalidCommand } from '../../core/commands/validate-command';
+import { MAX_STRUCTURE_AXIS_CHANGES } from '../../core/operations/structure';
 import type { ChangeSource } from '../../core/types/changes';
 import type { CellPoint, Selection, SheetId } from '../../core/types/coordinates';
 import { TegoSheetException } from '../../core/errors/tego-sheet-exception';
@@ -60,7 +62,8 @@ export type FormatRequest = 'bold' | 'italic' | 'underline';
 
 export interface ResizePreview {
   readonly axis: ResizeAxis;
-  readonly indices: readonly number[];
+  readonly start: number;
+  readonly count: number;
   readonly size: number;
 }
 
@@ -158,12 +161,6 @@ function publicSelection(snapshot: InteractionSnapshot): Selection {
   });
 }
 
-function indices(start: number, count: number): readonly number[] {
-  const values: number[] = [];
-  for (let offset = 0; offset < count; offset += 1) values.push(start + offset);
-  return Object.freeze(values);
-}
-
 function replacedPasteSnapshot(): TegoSheetException {
   return new TegoSheetException({
     code: 'INVALID_COMMAND',
@@ -212,10 +209,26 @@ export class InteractionManager {
         ),
       }),
     });
-    this.bind();
-    if (this.ports.observeRoot !== undefined) {
-      const callback = this.registry.guard(() => this.ports.requestViewportResize?.());
-      this.registry.observer(this.ports.observeRoot(callback));
+    try {
+      this.bind();
+      if (this.ports.observeRoot !== undefined) {
+        const callback = this.registry.guard(() => this.ports.requestViewportResize?.());
+        this.registry.observer(this.ports.observeRoot(callback));
+      }
+    } catch (cause) {
+      const errors: unknown[] = [cause];
+      try {
+        this.touch.dispose();
+      } catch (error) {
+        appendCleanupError(errors, error);
+      }
+      try {
+        this.registry.dispose();
+      } catch (error) {
+        appendCleanupError(errors, error);
+      }
+      if (errors.length === 1) throw cause;
+      throw new AggregateError(errors, 'Failed to initialize interactions', { cause });
     }
   }
 
@@ -259,9 +272,8 @@ export class InteractionManager {
     const snapshot = this.ports.getSnapshot();
     if (snapshot.readOnly) return false;
     const target = publicSelection(snapshot);
-    const transferred = dataTransfer?.getData('text/plain') ?? '';
-    if (transferred.length > 0) {
-      this.dispatchExternalPaste(transferred, target);
+    if (dataTransfer !== undefined) {
+      this.dispatchExternalPaste(dataTransfer.getData('text/plain'), target);
       return true;
     }
     if (this.internalClipboard !== null) {
@@ -335,6 +347,12 @@ export class InteractionManager {
     const run = hiddenRunBefore(axis, boundary, snapshot.viewport);
     if (run === null) return false;
     const [start, count] = run;
+    if (count > MAX_STRUCTURE_AXIS_CHANGES) {
+      this.ports.requestError(invalidCommand(
+        `structure workload exceeds the ${MAX_STRUCTURE_AXIS_CHANGES}-index operation limit`,
+      ));
+      return false;
+    }
     this.ports.dispatch(axis === 'row' ? {
       type: 'set-row-hidden', sheet: snapshot.sheet, row: start, count, hidden: false,
     } : {
@@ -394,6 +412,10 @@ export class InteractionManager {
       const event = eventLike(value);
       if (!currentTargetInside(root, event)) this.blur();
     });
+    this.registry.listen(globalTarget, 'touchstart', value => {
+      const event = eventLike(value);
+      if (!currentTargetInside(root, event)) this.blur();
+    });
     this.registry.listen(globalTarget, 'pointermove', event => this.pointerMove(eventLike(event)));
     this.registry.listen(globalTarget, 'pointerup', () => this.pointerUp());
     this.registry.listen(globalTarget, 'pointercancel', () => this.cancelDrag());
@@ -422,11 +444,18 @@ export class InteractionManager {
     const handle = findResizeHandle(point, snapshot.viewport);
     if (handle !== null && !snapshot.readOnly) {
       if (!this.ports.commitEditor()) return;
+      const range = resizeRange(handle, snapshot.selection);
+      if (range[1] > MAX_STRUCTURE_AXIS_CHANGES) {
+        this.ports.requestError(invalidCommand(
+          `structure workload exceeds the ${MAX_STRUCTURE_AXIS_CHANGES}-index operation limit`,
+        ));
+        return;
+      }
       this.drag = {
         mode: 'resize',
         handle,
         start: handle.axis === 'row' ? point.y : point.x,
-        range: resizeRange(handle, snapshot.selection),
+        range,
         size: handle.size,
       };
       event.preventDefault?.();
@@ -461,7 +490,8 @@ export class InteractionManager {
     const [start, count] = this.drag.range;
     this.ports.requestResizePreview({
       axis: this.drag.handle.axis,
-      indices: indices(start, count),
+      start,
+      count,
       size: this.drag.size,
     });
   }
@@ -607,15 +637,6 @@ export class InteractionManager {
           column: snapshot.viewport.model.columnCount - 1,
         },
       }, 'all'), 'keyboard');
-    } else if (modifier && lower === 'c') {
-      void this.copy();
-      handled = true;
-    } else if (modifier && lower === 'x') {
-      if (!snapshot.readOnly) void this.copy(undefined, true);
-      handled = !snapshot.readOnly;
-    } else if (modifier && lower === 'v') {
-      if (!snapshot.readOnly) void this.paste();
-      handled = !snapshot.readOnly;
     } else if (isPrintableKey(event)) {
       if (!snapshot.readOnly) this.ports.requestEdit(snapshot.selection.active, key, 'keyboard');
       handled = !snapshot.readOnly;

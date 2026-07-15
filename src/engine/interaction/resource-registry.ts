@@ -8,6 +8,28 @@ interface ResourceEntry {
   readonly dispose: () => void;
 }
 
+function disposeListener(
+  target: EventTargetPort,
+  type: string,
+  listener: (event: unknown) => void,
+  options: unknown,
+  afterRemove: (() => void) | undefined,
+): void {
+  const errors: unknown[] = [];
+  try {
+    target.removeEventListener(type, listener, options);
+  } catch (error) {
+    errors.push(error);
+  }
+  try {
+    afterRemove?.();
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) throw new AggregateError(errors, 'Failed to remove event listener');
+}
+
 export class ResourceRegistry {
   private readonly entries: ResourceEntry[] = [];
   private disposed = false;
@@ -54,11 +76,17 @@ export class ResourceRegistry {
     afterRemove?: () => void,
   ): () => void {
     const guarded = this.guard(listener);
-    target.addEventListener(type, guarded, options);
-    return this.own(() => {
-      target.removeEventListener(type, guarded, options);
-      afterRemove?.();
-    });
+    try {
+      target.addEventListener(type, guarded, options);
+    } catch (cause) {
+      try {
+        disposeListener(target, type, guarded, options, afterRemove);
+      } catch (cleanup) {
+        throw new AggregateError([cause, cleanup], 'Failed to add event listener', { cause });
+      }
+      throw cause;
+    }
+    return this.own(() => disposeListener(target, type, guarded, options, afterRemove));
   }
 
   guard<Args extends readonly unknown[]>(callback: (...args: Args) => void): (...args: Args) => void {
