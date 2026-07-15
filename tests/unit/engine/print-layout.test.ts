@@ -64,7 +64,7 @@ describe('print layout', () => {
         len: 3,
         0: { height: 346, cells: { 0: { text: 'one' }, 1: { text: 'wide' } } },
         1: { height: 347, cells: { 0: { text: 'two' } } },
-        2: { height: 20, cells: { 0: { text: 'three' } } },
+        2: { height: 20, cells: { 0: { text: 'three' }, 1: { text: 'wide-tail' } } },
       },
       cols: { len: 2, 0: { width: 400 }, 1: { width: 400 } },
     };
@@ -196,6 +196,31 @@ describe('print layout', () => {
     expect(harness.operations).toContainEqual({ name: 'set:fillStyle', args: ['rgba(255, 0, 0, .65)'] });
     expect(harness.operations).toContainEqual({ name: 'set:fillStyle', args: ['rgba(0, 255, 0, .85)'] });
     expect(harness.operations.some(operation => operation.name === 'strokeRect')).toBe(false);
+    const formulaRect = formula?.rect;
+    expect(formulaRect).toBeDefined();
+    if (formulaRect !== undefined) {
+      const renderedLeft = layout.contentLeft + formulaRect.left * layout.scale;
+      const renderedTop = layout.paper.padding + formulaRect.top * layout.scale;
+      const contentClip = [
+        renderedLeft + layout.scale,
+        renderedTop + layout.scale,
+        formulaRect.width * layout.scale - 2 * layout.scale,
+        formulaRect.height * layout.scale - 2 * layout.scale,
+      ];
+      expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
+        .toContainEqual(contentClip);
+      const borderStroke = harness.operations.findIndex(operation => (
+        operation.name === 'set:strokeStyle' && operation.args[0] === '#112233'
+      ));
+      const clip = harness.operations.findIndex(operation => (
+        operation.name === 'rect' && operation.args.every((value, index) => value === contentClip[index])
+      ));
+      const validationMark = harness.operations.findIndex(operation => (
+        operation.name === 'set:fillStyle' && operation.args[0] === 'rgba(255, 0, 0, .65)'
+      ));
+      expect(borderStroke).toBeLessThan(clip);
+      expect(validationMark).toBeGreaterThan(clip);
+    }
   });
 
   it('keeps the legacy blank-sheet page without DOM access', () => {
@@ -206,5 +231,23 @@ describe('print layout', () => {
 
     expect(layout.pages).toHaveLength(1);
     expect(layout.pages[0]?.cells).toEqual([]);
+  });
+
+  it('uses the highest row last-cell column instead of a global or merge-extended width', () => {
+    const layout = createPrintLayout({
+      merges: ['A2:F2'],
+      rows: {
+        len: 2,
+        0: { cells: { 5: { text: 'F1 must be outside legacy contentRange' } } },
+        1: { cells: { 0: { text: 'A2' } } },
+      },
+      cols: { len: 6 },
+    }, {
+      paperSize: 'A4',
+      orientation: 'portrait',
+    });
+
+    expect(layout.contentWidth).toBe(100);
+    expect(layout.pages.flatMap(page => page.cells).map(cell => cell.text)).toEqual(['A2']);
   });
 });

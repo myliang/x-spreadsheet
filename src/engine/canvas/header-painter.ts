@@ -1,4 +1,5 @@
 import type { CellPoint, CellRange } from '../../core/types/coordinates';
+import type { SheetData } from '../../core/types/workbook';
 import type { ViewportMetrics } from '../ports';
 import type { DrawContext } from './draw-context';
 
@@ -25,11 +26,21 @@ function columnLeft(column: number, viewport: ViewportMetrics): number {
     - (column < viewport.freeze.column ? 0 : viewport.scroll.x);
 }
 
+function hiddenEntry(collection: unknown, index: number): boolean {
+  if (collection === null || typeof collection !== 'object' || Array.isArray(collection)) return false;
+  const entry = (collection as Record<string, unknown>)[String(index)];
+  return entry !== null
+    && typeof entry === 'object'
+    && !Array.isArray(entry)
+    && (entry as { readonly hide?: unknown }).hide === true;
+}
+
 export function paintHeaders(
   draw: DrawContext,
   viewport: ViewportMetrics,
   cells: readonly CellPoint[],
   selection?: CellRange,
+  sheet?: Readonly<SheetData>,
 ): void {
   draw.fillRect({
     left: 0,
@@ -52,6 +63,13 @@ export function paintHeaders(
       draw.fillRect({ left: 0, top, width: viewport.rowHeaderWidth, height }, 'rgba(75, 137, 255, 0.08)');
     }
     draw.line({ x: 0, y: top }, { x: viewport.rowHeaderWidth, y: top }, { color: '#e6e6e6' });
+    if (row > 0 && hiddenEntry(sheet?.rows, row - 1)) {
+      draw.line(
+        { x: 5, y: top + 5 },
+        { x: viewport.rowHeaderWidth - 5, y: top + 5 },
+        { color: '#c6c6c6' },
+      );
+    }
     draw.text(String(row + 1), {
       x: viewport.rowHeaderWidth / 2,
       y: top + height / 2,
@@ -69,6 +87,13 @@ export function paintHeaders(
       draw.fillRect({ left, top: 0, width, height: viewport.columnHeaderHeight }, 'rgba(75, 137, 255, 0.08)');
     }
     draw.line({ x: left, y: 0 }, { x: left, y: viewport.columnHeaderHeight }, { color: '#e6e6e6' });
+    if (column > 0 && hiddenEntry(sheet?.cols, column - 1)) {
+      draw.line(
+        { x: left + 5, y: 5 },
+        { x: left + 5, y: viewport.columnHeaderHeight - 5 },
+        { color: '#c6c6c6' },
+      );
+    }
     draw.text(columnLabel(column), {
       x: left + width / 2,
       y: viewport.columnHeaderHeight / 2,

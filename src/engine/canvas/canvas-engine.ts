@@ -89,7 +89,7 @@ export class CanvasEngine {
       this.draw.withClip(pane, () => {
         if (snapshot.showGrid !== false) paintGrid(this.draw, cells, viewport);
         paintCells(this.draw, snapshot, cells, formulaBudget);
-        paintSelection(this.draw, snapshot.selection, viewport);
+        paintSelection(this.draw, snapshot.selection, viewport, pane.kind);
       }, {
         x: viewport.rowHeaderWidth
           - (pane.kind === 'top' || pane.kind === 'body' ? viewport.scroll.x : 0),
@@ -97,7 +97,7 @@ export class CanvasEngine {
           - (pane.kind === 'left' || pane.kind === 'body' ? viewport.scroll.y : 0),
       });
     }
-    paintHeaders(this.draw, viewport, [...allCells.values()], snapshot.selection);
+    paintHeaders(this.draw, viewport, [...allCells.values()], snapshot.selection, snapshot.sheet);
   }
 
   dispose(): void {

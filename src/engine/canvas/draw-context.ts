@@ -92,17 +92,24 @@ export class DrawContext {
   withClip(
     rect: CssRect,
     paint: () => void,
-    translation: CssPoint = { x: 0, y: 0 },
+    translation?: CssPoint,
   ): void {
     this.save();
     this.context.beginPath();
-    this.context.rect(rect.left, rect.top, rect.width, rect.height);
+    this.context.rect(
+      rect.left - this.originX,
+      rect.top - this.originY,
+      rect.width,
+      rect.height,
+    );
     this.context.clip();
-    this.context.translate(translation.x, translation.y);
     const previousX = this.originX;
     const previousY = this.originY;
-    this.originX += translation.x;
-    this.originY += translation.y;
+    if (translation !== undefined) {
+      this.context.translate(translation.x, translation.y);
+      this.originX += translation.x;
+      this.originY += translation.y;
+    }
     try {
       paint();
     } finally {
@@ -148,26 +155,14 @@ export class DrawContext {
         ? [3 * scale, 2 * scale]
         : options.style === 'dotted'
           ? [scale, scale]
-          : [],
+          : options.style === 'double'
+            ? [2 * scale, 0]
+            : [],
     );
     this.context.beginPath();
     this.context.moveTo(start.x - this.originX, start.y - this.originY);
     this.context.lineTo(end.x - this.originX, end.y - this.originY);
     this.context.stroke();
-    if (options.style === 'double') {
-      const vertical = start.x === end.x;
-      const delta = 2 * scale;
-      this.context.beginPath();
-      this.context.moveTo(
-        start.x - this.originX + (vertical ? delta : 0),
-        start.y - this.originY + (vertical ? 0 : delta),
-      );
-      this.context.lineTo(
-        end.x - this.originX + (vertical ? delta : 0),
-        end.y - this.originY + (vertical ? 0 : delta),
-      );
-      this.context.stroke();
-    }
   }
 
   text(text: string, point: CssPoint, options: DrawTextOptions): void {

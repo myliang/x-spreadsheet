@@ -107,26 +107,21 @@ function sparseIndex(key: string, count: number): number | null {
 
 function usedEnd(sheet: Readonly<SheetData>, rowCount: number, columnCount: number): CellPoint | null {
   if (rowCount === 0 || columnCount === 0) return null;
-  let rowEnd = 0;
-  let columnEnd = 0;
+  const rows: Array<{ readonly row: number; readonly cells: object }> = [];
   for (const [rowKey, rawRow] of Object.entries(sheet.rows ?? {})) {
     const row = sparseIndex(rowKey, rowCount);
     if (row === null || rawRow === null || typeof rawRow !== 'object' || Array.isArray(rawRow)) continue;
     const cells = (rawRow as { readonly cells?: unknown }).cells;
     if (cells === null || typeof cells !== 'object' || Array.isArray(cells)) continue;
-    for (const columnKey of Object.keys(cells)) {
-      const column = sparseIndex(columnKey, columnCount);
-      if (column === null) continue;
-      rowEnd = Math.max(rowEnd, row);
-      columnEnd = Math.max(columnEnd, column);
-    }
+    rows.push({ row, cells });
   }
-  const model = createSheetGridModel(sheet);
-  for (const merge of model.merges) {
-    rowEnd = Math.max(rowEnd, Math.min(rowCount - 1, merge.end.row));
-    columnEnd = Math.max(columnEnd, Math.min(columnCount - 1, merge.end.column));
-  }
-  return { row: rowEnd, column: columnEnd };
+  const lastRow = rows.sort((first, second) => first.row - second.row).at(-1);
+  if (lastRow === undefined) return { row: 0, column: 0 };
+  const columns = Object.keys(lastRow.cells)
+    .map(key => sparseIndex(key, columnCount))
+    .filter((column): column is number => column !== null)
+    .sort((first, second) => first - second);
+  return { row: lastRow.row, column: columns.at(-1) ?? 0 };
 }
 
 interface PageRows {
@@ -296,12 +291,8 @@ function canvasMeasurement(canvas: CanvasSurfacePort): TextMeasurementPort {
   };
 }
 
-function scaledPresentation(cell: PrintCellLayout, scale: number): CellPresentation {
-  const font = cell.style.font;
-  const style = font === undefined
-    ? cell.style
-    : { ...cell.style, font: { ...font, size: (font.size ?? 10) * scale } };
-  return { cell: null, style, text: cell.text, printable: cell.printable };
+function printPresentation(cell: PrintCellLayout): CellPresentation {
+  return { cell: null, style: cell.style, text: cell.text, printable: cell.printable };
 }
 
 function printMarker(draw: DrawContext, rect: CssRect, color: string, scale: number): void {
@@ -343,9 +334,10 @@ export function renderPrintPage(
         width: cell.rect.width * layout.scale,
         height: cell.rect.height * layout.scale,
       };
-      paintCellAppearance(draw, rect, scaledPresentation(cell, layout.scale), layout.scale);
-      if (cell.invalid) printMarker(draw, rect, 'rgba(255, 0, 0, .65)', layout.scale);
-      if (!cell.editable) printMarker(draw, rect, 'rgba(0, 255, 0, .85)', layout.scale);
+      paintCellAppearance(draw, rect, printPresentation(cell), layout.scale, () => {
+        if (cell.invalid) printMarker(draw, rect, 'rgba(255, 0, 0, .65)', layout.scale);
+        if (!cell.editable) printMarker(draw, rect, 'rgba(0, 255, 0, .85)', layout.scale);
+      });
     }
   });
 }

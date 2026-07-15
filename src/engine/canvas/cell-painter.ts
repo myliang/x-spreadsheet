@@ -69,25 +69,43 @@ export function resolveCellPresentation(
   };
 }
 
-function fontString(style: CellStyle): string {
+const FONT_POINT_PIXELS = new Map<number, number>([
+  [7.5, 10],
+  [8, 11],
+  [9, 12],
+  [10, 13],
+  [10.5, 14],
+  [11, 15],
+  [12, 16],
+  [14, 18.7],
+  [15, 20],
+  [16, 21.3],
+  [18, 24],
+  [22, 29.3],
+  [24, 32],
+  [26, 34.7],
+  [36, 48],
+  [42, 56],
+]);
+
+function fontPixelSize(style: CellStyle, visualScale: number): number {
+  const pointSize = style.font?.size ?? 10;
+  return (FONT_POINT_PIXELS.get(pointSize) ?? pointSize) * visualScale;
+}
+
+function fontString(style: CellStyle, visualScale: number): string {
   const font = style.font ?? {};
-  const size = (font.size ?? 10) * 96 / 72;
+  const size = fontPixelSize(style, visualScale);
   return `${font.italic ? 'italic ' : ''}${font.bold ? 'bold ' : ''}${size}px ${font.name ?? 'Arial'}`;
 }
 
-function textPoint(rect: CssRect, style: CellStyle, visualScale: number): { x: number; y: number } {
+function textX(rect: CssRect, style: CellStyle, visualScale: number): number {
   const padding = 5 * visualScale;
-  const x = style.align === 'right'
+  return style.align === 'right'
     ? rect.left + rect.width - padding
     : style.align === 'center'
       ? rect.left + rect.width / 2
       : rect.left + padding;
-  const y = style.valign === 'top'
-    ? rect.top + padding
-    : style.valign === 'bottom'
-      ? rect.top + rect.height - padding
-      : rect.top + rect.height / 2;
-  return { x, y };
 }
 
 function border(
@@ -159,54 +177,71 @@ function wrapLines(
   font: string,
   width: number,
   wrap: boolean,
+  visualScale: number,
 ): readonly string[] {
   const source = text.split('\n');
   if (!wrap || width <= 0) return source;
   const output: string[] = [];
   for (const original of source) {
+    if (draw.measurement.measureText(original, font) <= width) {
+      output.push(original);
+      continue;
+    }
     let line = '';
+    let lineWidth = 0;
     for (const character of original) {
-      if (line !== '' && draw.measurement.measureText(line + character, font) > width) {
+      if (lineWidth >= width) {
         output.push(line);
         line = '';
+        lineWidth = 0;
       }
       line += character;
+      lineWidth += draw.measurement.measureText(character, font) + visualScale;
     }
     output.push(line);
   }
   return output;
 }
 
-export function paintCellAppearance(
+function cellContentRect(rect: CssRect, visualScale: number): CssRect {
+  return {
+    left: rect.left + visualScale,
+    top: rect.top + visualScale,
+    width: Math.max(0, rect.width - 2 * visualScale),
+    height: Math.max(0, rect.height - 2 * visualScale),
+  };
+}
+
+function paintCellContent(
   draw: DrawContext,
   rect: CssRect,
   presentation: CellPresentation,
-  visualScale = 1,
+  visualScale: number,
 ): void {
   const style = presentation.style;
-  const inset = visualScale;
-  draw.fillRect({
-    left: rect.left + inset,
-    top: rect.top + inset,
-    width: Math.max(0, rect.width - 2 * inset),
-    height: Math.max(0, rect.height - 2 * inset),
-  }, style.bgcolor ?? '#ffffff');
-  border(draw, rect, style, visualScale);
+  draw.fillRect(cellContentRect(rect, visualScale), style.bgcolor ?? '#ffffff');
   if (presentation.text === '') return;
-  const font = fontString(style);
+  const font = fontString(style, visualScale);
   const lines = wrapLines(
     draw,
     presentation.text,
     font,
-    Math.max(0, rect.width - 10 * visualScale),
+    Math.max(0, rect.width - 12 * visualScale),
     style.textwrap === true,
+    visualScale,
   );
-  const point = textPoint(rect, style, visualScale);
-  const lineHeight = (style.font?.size ?? 10) * 96 / 72 + 2 * visualScale;
-  const firstY = point.y - ((lines.length - 1) * lineHeight / 2);
+  const x = textX(rect, style, visualScale);
+  const lineHeight = fontPixelSize(style, visualScale) + 2 * visualScale;
+  const textHeight = (lines.length - 1) * lineHeight;
+  const padding = 5 * visualScale;
+  const firstY = style.valign === 'top'
+    ? rect.top + padding
+    : style.valign === 'bottom'
+      ? rect.top + rect.height - padding - textHeight
+      : rect.top + rect.height / 2 - textHeight / 2;
   for (const [index, line] of lines.entries()) {
     const y = firstY + index * lineHeight;
-    draw.text(line, { x: point.x, y }, {
+    draw.text(line, { x, y }, {
       align: style.align ?? 'left',
       baseline: style.valign ?? 'middle',
       color: style.color ?? '#0a0a0a',
@@ -214,18 +249,15 @@ export function paintCellAppearance(
     });
     const width = draw.measurement.measureText(line, font);
     const startX = style.align === 'center'
-      ? point.x - width / 2
+      ? x - width / 2
       : style.align === 'right'
-        ? point.x - width
-        : point.x;
+        ? x - width
+        : x;
     if (style.underline === true) {
       draw.line(
         { x: startX, y: y + 2 * visualScale },
         { x: startX + width, y: y + 2 * visualScale },
-        {
-        color: style.color ?? '#0a0a0a',
-        scale: visualScale,
-        },
+        { color: style.color ?? '#0a0a0a', scale: visualScale },
       );
     }
     if (style.strike === true) {
@@ -235,6 +267,21 @@ export function paintCellAppearance(
       });
     }
   }
+}
+
+export function paintCellAppearance(
+  draw: DrawContext,
+  rect: CssRect,
+  presentation: CellPresentation,
+  visualScale = 1,
+  paintMarks?: () => void,
+): void {
+  const style = presentation.style;
+  border(draw, rect, style, visualScale);
+  draw.withClip(cellContentRect(rect, visualScale), () => {
+    paintCellContent(draw, rect, presentation, visualScale);
+    paintMarks?.();
+  });
 }
 
 export function paintCells(
@@ -249,9 +296,10 @@ export function paintCells(
     if (!isMergeAnchor(point, snapshot.viewport)) continue;
     const rect = cellRect(point, snapshot.viewport);
     const presentation = resolveCellPresentation(snapshot.sheet, point, false, budget);
-    paintCellAppearance(draw, rect, presentation);
-    if (invalid.has(`${point.row}:${point.column}`)) marker(draw, rect, 'rgba(255, 0, 0, .65)');
-    if (presentation.cell?.editable === false) marker(draw, rect, 'rgba(0, 255, 0, .85)');
-    if (pointInRange(point, filter)) dropdown(draw, rect);
+    paintCellAppearance(draw, rect, presentation, 1, () => {
+      if (invalid.has(`${point.row}:${point.column}`)) marker(draw, rect, 'rgba(255, 0, 0, .65)');
+      if (presentation.cell?.editable === false) marker(draw, rect, 'rgba(0, 255, 0, .85)');
+      if (pointInRange(point, filter)) dropdown(draw, rect);
+    });
   }
 }

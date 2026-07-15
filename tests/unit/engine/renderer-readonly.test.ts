@@ -52,8 +52,11 @@ describe('read-only Canvas rendering', () => {
     expect(harness.canvas.width).toBe(1280);
     expect(harness.canvas.height).toBe(640);
     expect(harness.canvas.style).toEqual({ width: '640px', height: '320px' });
-    expect(harness.operations.filter(operation => operation.name === 'clip')).toHaveLength(4);
-    expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args)).toEqual([
+    const paneRects = harness.operations
+      .filter(operation => operation.name === 'rect')
+      .map(operation => operation.args)
+      .filter(args => args[0] === 60 || args[0] === 150);
+    expect(paneRects).toEqual([
       [60, 25, 90, 30],
       [150, 25, 490, 30],
       [60, 55, 90, 265],
@@ -207,10 +210,190 @@ describe('read-only Canvas rendering', () => {
     expect(withoutGrid).toContainEqual({ name: 'set:lineWidth', args: [3] });
     expect(withoutGrid).toContainEqual({ name: 'setLineDash', args: [[3, 2]] });
     expect(withoutGrid).toContainEqual({ name: 'setLineDash', args: [[1, 1]] });
+    expect(withoutGrid).toContainEqual({ name: 'setLineDash', args: [[2, 0]] });
     expect(
       withoutGrid.filter(operation => operation.name === 'stroke').length
       - withoutBorderOperations.filter(operation => operation.name === 'stroke').length,
-    ).toBe(7);
+    ).toBe(6);
+  });
+
+  it('clips long text and marks to cell and merged-cell interiors', () => {
+    const sheet: SheetData = {
+      merges: ['B1:C1'],
+      rows: {
+        len: 1,
+        0: {
+          cells: {
+            0: { text: 'a very long unwrapped value', editable: false },
+            1: { text: 'merged overflow', merge: [0, 1] },
+          },
+        },
+      },
+      cols: { len: 3, 0: { width: 30 }, 1: { width: 30 }, 2: { width: 30 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      invalidCells: [{ row: 0, column: 0 }],
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 90,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    const clips = harness.operations
+      .filter(operation => operation.name === 'rect')
+      .map(operation => operation.args);
+    expect(clips).toContainEqual([1, 1, 28, 23]);
+    expect(clips).toContainEqual([31, 1, 58, 23]);
+    const longText = harness.operations.findIndex(operation => (
+      operation.name === 'fillText' && operation.args[0] === 'a very long unwrapped value'
+    ));
+    const redMark = harness.operations.findIndex(operation => (
+      operation.name === 'set:fillStyle' && operation.args[0] === 'rgba(255, 0, 0, .65)'
+    ));
+    expect(longText).toBeGreaterThan(harness.operations.findIndex(operation => (
+      operation.name === 'rect' && operation.args[0] === 1 && operation.args[1] === 1
+    )));
+    expect(redMark).toBeGreaterThan(longText);
+    expect(harness.operations.slice(redMark).some(operation => operation.name === 'restore')).toBe(true);
+  });
+
+  it('uses legacy point sizes, character wrapping, and multiline vertical origins', () => {
+    const style = (valign: 'top' | 'middle' | 'bottom') => ({
+      valign,
+      textwrap: true,
+      font: { size: 12 },
+    });
+    const sheet: SheetData = {
+      styles: [style('top'), style('middle'), style('bottom')],
+      rows: {
+        len: 1,
+        0: {
+          height: 60,
+          cells: {
+            0: { text: 'ABCD', style: 0 },
+            1: { text: 'ABCD', style: 1 },
+            2: { text: 'ABCD', style: 2 },
+          },
+        },
+      },
+      cols: { len: 3, 0: { width: 30 }, 1: { width: 30 }, 2: { width: 30 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 90,
+        height: 60,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations).toContainEqual({ name: 'set:font', args: ['16px Arial'] });
+    expect(harness.operations.filter(operation => operation.name === 'fillText')).toEqual([
+      { name: 'fillText', args: ['ABC', 5, 5] },
+      { name: 'fillText', args: ['D', 5, 23] },
+      { name: 'fillText', args: ['ABC', 35, 21] },
+      { name: 'fillText', args: ['D', 35, 39] },
+      { name: 'fillText', args: ['ABC', 65, 37] },
+      { name: 'fillText', args: ['D', 65, 55] },
+      { name: 'fillText', args: ['1', 0, 30] },
+      { name: 'fillText', args: ['A', 15, 0] },
+      { name: 'fillText', args: ['B', 45, 0] },
+      { name: 'fillText', args: ['C', 75, 0] },
+    ]);
+  });
+
+  it.each([
+    {
+      label: 'rows',
+      selection: { start: { row: 0, column: 0 }, end: { row: 1, column: 0 } },
+      rects: [[60, 25, 100, 25], [60, 50, 100, 25]],
+    },
+    {
+      label: 'columns',
+      selection: { start: { row: 0, column: 0 }, end: { row: 0, column: 1 } },
+      rects: [[60, 25, 100, 25], [160, 25, 100, 25]],
+    },
+    {
+      label: 'both axes',
+      selection: { start: { row: 0, column: 0 }, end: { row: 1, column: 1 } },
+      rects: [
+        [60, 25, 100, 25],
+        [160, 25, 100, 25],
+        [60, 50, 100, 25],
+        [160, 50, 100, 25],
+      ],
+    },
+  ])('paints separate 2px selection fragments across frozen $label', ({ selection, rects }) => {
+    const sheet: SheetData = { rows: { len: 4 }, cols: { len: 4 } };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+    engine.render({
+      sheet,
+      selection,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 360,
+        height: 150,
+        freeze: { row: 1, column: 1 },
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations.filter(operation => operation.name === 'strokeRect').map(operation => operation.args)).toEqual(rects);
+    expect(harness.operations.filter(operation => (
+      operation.name === 'set:fillStyle' && operation.args[0] === 'rgba(75, 137, 255, 0.1)'
+    ))).toHaveLength(rects.length);
+    expect(harness.operations.filter(operation => (
+      operation.name === 'set:lineWidth' && operation.args[0] === 2
+    )).length).toBeGreaterThanOrEqual(rects.length);
+  });
+
+  it('draws gray header hints after hidden rows and columns', () => {
+    const sheet: SheetData = {
+      rows: { len: 3, 0: { hide: true }, 1: { height: 30 } },
+      cols: { len: 3, 0: { hide: true }, 1: { width: 80 } },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 260,
+        height: 125,
+      }),
+    });
+    harness.animationFrame.flush();
+
+    expect(harness.operations.filter(operation => (
+      operation.name === 'set:strokeStyle' && operation.args[0] === '#c6c6c6'
+    ))).toHaveLength(2);
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [5, 30] });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [55, 30] });
+    expect(harness.operations).toContainEqual({ name: 'moveTo', args: [65, 5] });
+    expect(harness.operations).toContainEqual({ name: 'lineTo', args: [65, 20] });
   });
 
   it.each([1, 2])('uses DPR %s without reading browser globals', (devicePixelRatio) => {
