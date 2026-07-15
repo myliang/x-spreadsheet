@@ -24,6 +24,7 @@ import {
 } from '../operations/clipboard';
 import { assertValidationRule } from '../operations/validation';
 import { parseA1Range } from '../coordinates/ranges';
+import { assertClearContentsResourceLimit } from '../operations/cell';
 import { assertSetFilterResourceLimit } from '../operations/filter';
 import { assertSortResourceLimit } from '../operations/sort';
 import type { WorkbookCommand } from './workbook-command';
@@ -154,6 +155,15 @@ export function validateCommand(state: WorkbookState, command: WorkbookCommand):
         );
       } catch (cause) {
         throw invalidCommand('Cell is not editable', cause);
+      }
+      return;
+    case 'clear-contents':
+      validateSelection(state, command.selection);
+      try {
+        assertClearContentsResourceLimit(command);
+        assertRangeEditable(state.get(command.selection.sheet)!.data, command.selection.range);
+      } catch (cause) {
+        throw invalidCommand('Clear contents range is not mutable', cause);
       }
       return;
     case 'set-style':

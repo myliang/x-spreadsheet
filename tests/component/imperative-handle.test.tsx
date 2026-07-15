@@ -25,7 +25,12 @@ afterEach(() => {
 it('exposes every approved command and isolated query through one stable handle', async () => {
   const ref = createRef<TegoSheetHandle>();
   const onActiveSheetChange = vi.fn();
-  const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+  let printStyle = '';
+  let printPages = 0;
+  const print = vi.spyOn(window, 'print').mockImplementation(() => {
+    printStyle = document.querySelector('[data-tego-print-style]')?.textContent ?? '';
+    printPages = document.querySelectorAll('[data-tego-print-pages] canvas').length;
+  });
   const rendered = render(
     <TegoSheet
       ref={ref}
@@ -62,6 +67,9 @@ it('exposes every approved command and isolated query through one stable handle'
   expect(() => handle.recalculateLayout()).not.toThrow();
   handle.print();
   expect(print).toHaveBeenCalledOnce();
+  expect(printStyle).toContain('A4 portrait');
+  expect(printPages).toBeGreaterThan(0);
+  expect(document.querySelector('[data-tego-print-pages]')).toBeNull();
 
   rendered.rerender(
     <TegoSheet ref={ref} defaultValue={[]} options={{ defaultStyle: { color: 'red' } }} />,

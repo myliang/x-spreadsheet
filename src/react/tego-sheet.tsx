@@ -14,11 +14,14 @@ import {
   rangesIntersect,
   selectCellStyle,
   TegoSheetException,
+  type ChangeSource,
+  type FilterDefinition,
   type Selection,
   type SheetId,
   type SheetTabsRenderProps,
   type ToolbarAction,
   type ToolbarRenderProps,
+  type ValidationRule,
 } from '../core';
 import type { WorkbookCommand } from '../core/commands/workbook-command';
 import {
@@ -35,6 +38,11 @@ import {
   type ControllerEpoch,
 } from './hooks/use-controller-epoch';
 import { useInteractionManager } from './hooks/use-interaction-manager';
+import { useSheetChromeState } from './hooks/use-sheet-chrome-state';
+import {
+  useCellEditorRuntime,
+  type ActiveCellEditor,
+} from './hooks/use-cell-editor-runtime';
 import {
   useTegoSheetHandle,
   type TegoSheetHandleRuntime,
@@ -53,7 +61,19 @@ import type {
   TegoSheetHandle,
   TegoSheetProps,
 } from './tego-sheet.types';
-import { TegoSheetProvider, useTegoSheetContext } from './tego-sheet-context';
+import { EmptyWorkbook } from '../ui/empty-workbook';
+import {
+  SheetChrome,
+} from '../ui/sheet-chrome';
+import { createTranslator } from '../ui/translate';
+import {
+  type PrintWorkbookOptions,
+} from '../ui/print-workbook';
+import {
+  activeSheetData,
+  filterValuesForSelection,
+  mountActiveSheetPrint,
+} from './sheet-chrome-runtime';
 
 function callbacksFromProps(props: TegoSheetProps): TegoSheetCallbacks {
   return {
@@ -136,9 +156,7 @@ function uiError(runtime: SlotRuntime, message: string): void {
 }
 
 function runtimeSheet(runtime: SlotRuntime) {
-  const snapshot = runtime.controller.getSnapshot();
-  const index = snapshot.sheets.findIndex(sheet => sheet.id === runtime.activeSheet);
-  return index < 0 ? null : snapshot.value[index] ?? null;
+  return activeSheetData(runtime.controller.getSnapshot(), runtime.activeSheet);
 }
 
 function runtimeMerges(runtime: SlotRuntime) {
@@ -217,8 +235,6 @@ function disabledToolbarActions(runtime: SlotRuntime): Set<ToolbarAction['type']
       selection.range.end.column,
     )) disabled.add('delete-column');
   }
-  // Paint format is a two-stage interaction assembled with Task 18 chrome.
-  disabled.add('paint-format');
   return disabled;
 }
 
@@ -313,7 +329,7 @@ function executeToolbar(runtime: SlotRuntime, action: ToolbarAction): void {
     return;
   }
   if (action.type === 'print') {
-    printWorkbook(runtime.dispatcher);
+    printRuntime(runtime, { paper: 'A4', orientation: 'portrait' });
     return;
   }
   const command = toolbarCommand(runtime, action);
@@ -322,6 +338,19 @@ function executeToolbar(runtime: SlotRuntime, action: ToolbarAction): void {
     return;
   }
   runtime.dispatcher.dispatchUi(command, 'toolbar');
+}
+
+function printRuntime(runtime: SlotRuntime, options: PrintWorkbookOptions): void {
+  if (runtimeSheet(runtime) === null) {
+    uiError(runtime, 'Print is unavailable without an active sheet');
+    return;
+  }
+  printWorkbook(runtime.dispatcher, () => mountActiveSheetPrint(
+    runtime.controller.getSnapshot(),
+    runtime.activeSheet,
+    options,
+    runtime.defaultStyle,
+  ) ?? (() => undefined));
 }
 
 function addSheetFromTabs(authority: SlotRuntimeAuthority, name?: string): void {
@@ -385,24 +414,6 @@ function activateSheetFromTabs(
   runtime.dispatcher.emitActiveSheetChange({ sheet, index, source: 'sheet-tabs' });
 }
 
-function ToolbarSlot(props: { readonly renderer: TegoSheetProps['toolbar'] }) {
-  const value = useTegoSheetContext().toolbar;
-  if (props.renderer === false) return null;
-  if (typeof props.renderer === 'function') {
-    return <div data-tego-toolbar="custom">{props.renderer(value)}</div>;
-  }
-  return <div data-tego-toolbar="default" aria-hidden="true" />;
-}
-
-function SheetTabsSlot(props: { readonly renderer: TegoSheetProps['sheetTabs'] }) {
-  const value = useTegoSheetContext().sheetTabs;
-  if (props.renderer === false) return null;
-  if (typeof props.renderer === 'function') {
-    return <div data-tego-sheet-tabs="custom">{props.renderer(value)}</div>;
-  }
-  return <div data-tego-sheet-tabs="default" aria-hidden="true" />;
-}
-
 function CommitAuthority(props: { readonly commit: () => void }) {
   const { commit } = props;
   useLayoutEffect(() => {
@@ -435,6 +446,30 @@ function Runtime(
     sheet: null as SheetId | null,
   }));
   const [selection, setSelection] = useState<Selection | null>(null);
+  const controller = props.epoch.controller;
+  const isActive = props.epoch.isActive;
+  const {
+    editor,
+    editorRef,
+    contextMenu,
+    filterOpen,
+    validationOpen,
+    printOpen,
+    notification,
+    paintSource,
+    replaceEditor,
+    cancelTransient,
+    requestContextMenu,
+    closeContextMenu,
+    openFilter,
+    openValidation,
+    setFilterOpen,
+    setValidationOpen,
+    setPrintOpen,
+    setNotification,
+    togglePaintSource,
+    consumePaintSource,
+  } = useSheetChromeState<ActiveCellEditor>(isActive);
   const [engineGeneration, signalEngineReady] = useReducer((value: number) => value + 1, 0);
   const runtimeAuthority = useTegoSheetHandle<SlotRuntime>(forwardedRef);
 
@@ -459,23 +494,27 @@ function Runtime(
     : Math.max(0, sheets.findIndex(sheet => sheet.id === activeSheet));
 
   const dispatcher = useMemo(() => createEventDispatcher({
-    controller: props.epoch.controller,
+    controller,
     getCallbacks: callbackStore.get,
     getControlledNotificationVersion: props.controlled.getNotificationVersion,
-    isActive: props.epoch.isActive,
+    isActive,
+    onUiError: error => {
+      if (isActive()) setNotification(error);
+    },
     recordControlledCheckpoint: props.controlled.recordCheckpoint,
     schedulePaint: () => engineSlot.get()?.render(
-      props.epoch.controller.getSnapshot(),
+      controller.getSnapshot(),
       activeSheet,
     ),
   }), [
     activeSheet,
     callbackStore,
+    controller,
     engineSlot,
+    isActive,
     props.controlled.getNotificationVersion,
     props.controlled.recordCheckpoint,
-    props.epoch.controller,
-    props.epoch.isActive,
+    setNotification,
   ]);
 
   const renderRuntime: SlotRuntime = {
@@ -485,6 +524,16 @@ function Runtime(
     dispatcher,
     engineSlot,
     isActive: props.epoch.isActive,
+    preparePrint: () => {
+      const cleanup = mountActiveSheetPrint(
+        props.epoch.controller.getSnapshot(),
+        activeSheet,
+        { paper: 'A4', orientation: 'portrait' },
+        initialOptions.defaultStyle,
+      );
+      if (cleanup === null) throw contractViolation('Print is unavailable without an active sheet');
+      return cleanup;
+    },
     readOnly: props.readOnly ?? false,
     root: null,
     selection,
@@ -522,6 +571,40 @@ function Runtime(
     throw contractViolation('initialActiveSheetIndex must refer to an initial sheet');
   }
 
+  const { commitEditor, refreshEditorAnchor, requestEdit } = useCellEditorRuntime({
+    editorRef,
+    isActive,
+    replaceEditor,
+    runtimeAuthority,
+    setSelection,
+  });
+  const requestDelete = useCallback((target: Selection, source: ChangeSource) => {
+    if (!isActive()) return;
+    runtimeAuthority.require().dispatcher.dispatchUi({
+      type: 'clear-contents',
+      selection: target,
+    }, source);
+  }, [isActive, runtimeAuthority]);
+  const requestFormat = useCallback((format: 'bold' | 'italic' | 'underline') => {
+    if (!isActive()) return;
+    const runtime = runtimeAuthority.require();
+    if (runtime.selection === null) return;
+    const sheet = runtimeSheet(runtime);
+    const current = sheet === null ? {} : selectCellStyle(
+      sheet,
+      runtime.selection.active.row,
+      runtime.selection.active.column,
+      runtime.defaultStyle,
+    );
+    runtime.dispatcher.dispatchUi({
+      type: 'set-style',
+      selection: runtime.selection,
+      patch: format === 'underline'
+        ? { underline: current.underline !== true }
+        : { font: { ...(current.font ?? {}), [format]: current.font?.[format] !== true } },
+    }, 'keyboard');
+  }, [isActive, runtimeAuthority]);
+
   useLayoutEffect(() => {
     if (
       !props.epoch.isActive()
@@ -553,6 +636,13 @@ function Runtime(
     showContextMenu: props.options?.showContextMenu,
     minimumColumnWidth: initialOptions.columns?.minimumWidth,
     onSelectionChange: setSelection,
+    onViewportChange: refreshEditorAnchor,
+    commitEditor,
+    requestCancelTransient: cancelTransient,
+    requestContextMenu,
+    requestDelete,
+    requestEdit,
+    requestFormat,
   });
   useCanvasEngine({
     activeSheet,
@@ -567,13 +657,53 @@ function Runtime(
     showGrid: props.options?.showGrid,
   });
 
+  const reconciliationVersion = props.controlled.getNotificationVersion();
+  const transientAuthorityRef = useRef({
+    activeSheet,
+    readOnly: renderRuntime.readOnly,
+    reconciliationVersion,
+  });
+  useLayoutEffect(() => {
+    const previous = transientAuthorityRef.current;
+    transientAuthorityRef.current = {
+      activeSheet,
+      readOnly: renderRuntime.readOnly,
+      reconciliationVersion,
+    };
+    if (
+      renderRuntime.readOnly
+      || previous.activeSheet !== activeSheet
+      || previous.reconciliationVersion !== reconciliationVersion
+    ) cancelTransient();
+  }, [activeSheet, cancelTransient, reconciliationVersion, renderRuntime.readOnly]);
+
+  useLayoutEffect(() => {
+    if (selection === null || !isActive()) return;
+    const source = consumePaintSource(selection);
+    if (source === null) return;
+    runtimeAuthority.require().dispatcher.dispatchUi({
+      type: 'paint-format',
+      source,
+      target: selection,
+    }, 'toolbar');
+  }, [consumePaintSource, isActive, runtimeAuthority, selection]);
+
   useLayoutEffect(() => {
     if (initialOptions.autoFocus === true) rootRef.current?.focus();
   }, [initialOptions.autoFocus]);
 
   const execute = (action: ToolbarAction) => {
     const runtime = runtimeAuthority.committed(renderToken);
-    if (runtime !== null) executeToolbar(runtime, action);
+    if (runtime === null) return;
+    if (action.type !== 'paint-format') {
+      executeToolbar(runtime, action);
+      return;
+    }
+    if (disabledToolbarActions(runtime).has('paint-format') || runtime.selection === null) {
+      uiError(runtime, 'Toolbar action "paint-format" is unavailable');
+      return;
+    }
+    togglePaintSource(clonePublic(runtime.selection));
   };
   const tabActions = {
     add(name?: string) {
@@ -626,8 +756,10 @@ function Runtime(
     readOnly: props.readOnly ?? false,
     ...tabActions,
   });
-  const contextValue = Object.freeze({ toolbar: toolbarProps, sheetTabs: sheetTabsProps });
-
+  const filterValues = filterOpen && selection !== null && activeData !== null
+    ? filterValuesForSelection(activeData, selection)
+    : [];
+  const t = createTranslator(props.locale);
   return (
     <div
       ref={rootCallback}
@@ -639,19 +771,56 @@ function Runtime(
       data-context-menu-enabled={props.options?.showContextMenu === false ? 'false' : 'true'}
       tabIndex={0}
     >
-      <TegoSheetProvider value={contextValue}>
-        <CommitAuthority commit={commitRuntime} />
-        <ToolbarSlot renderer={props.toolbar} />
+      <CommitAuthority commit={commitRuntime} />
+      <SheetChrome
+        toolbar={toolbarProps}
+        toolbarRenderer={props.toolbar}
+        tabs={sheetTabsProps}
+        tabsRenderer={props.sheetTabs}
+        locale={props.locale}
+        editor={editor}
+        contextMenu={contextMenu}
+        filterValues={filterValues}
+        filterOpen={filterOpen}
+        notification={notification}
+        paintFormatActive={paintSource !== null}
+        printOpen={printOpen}
+        validationOpen={validationOpen}
+        onCloseContextMenu={closeContextMenu}
+        onCloseFilter={() => setFilterOpen(false)}
+        onClosePrint={() => setPrintOpen(false)}
+        onCloseValidation={() => setValidationOpen(false)}
+        onDismissNotification={() => setNotification(null)}
+        onExecute={execute}
+        onFilter={(filter: FilterDefinition) => {
+          setFilterOpen(false);
+          execute({ type: 'set-filter', filter });
+        }}
+        onOpenFilter={openFilter}
+        onOpenPrint={() => setPrintOpen(true)}
+        onOpenValidation={openValidation}
+        onPrint={(options: PrintWorkbookOptions) => {
+          setPrintOpen(false);
+          const runtime = runtimeAuthority.committed(renderToken);
+          if (runtime !== null) printRuntime(runtime, options);
+        }}
+        onRemoveValidation={() => {
+          setValidationOpen(false);
+          execute({ type: 'remove-validation' });
+        }}
+        onValidation={(rule: ValidationRule) => {
+          setValidationOpen(false);
+          execute({ type: 'set-validation', rule });
+        }}
+      >
         {sheets.length === 0 ? (
-          <div className="tego-sheet__empty" data-empty-workbook="">
-            <span>Empty workbook</span>
-            {renderRuntime.readOnly ? null : (
-              <button type="button" onClick={addFirstSheet}>Add sheet</button>
-            )}
-          </div>
+          <EmptyWorkbook
+            readOnly={renderRuntime.readOnly}
+            onAddSheet={addFirstSheet}
+            t={t}
+          />
         ) : <canvas ref={canvasRef} className="tego-sheet__canvas" />}
-        <SheetTabsSlot renderer={props.sheetTabs} />
-      </TegoSheetProvider>
+      </SheetChrome>
     </div>
   );
 }

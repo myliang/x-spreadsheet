@@ -16,6 +16,7 @@ import type { TegoSheetCallbacks } from '../tego-sheet.types';
 
 export interface DispatchNotificationOptions {
   readonly selectionAfterCommit?: Selection;
+  readonly beforeSelectionNotify?: () => void;
 }
 
 export type UiDispatchOutcome =
@@ -27,6 +28,7 @@ export interface EventDispatcherOptions {
   readonly getControlledNotificationVersion?: () => number;
   readonly getCallbacks: () => TegoSheetCallbacks;
   readonly isActive?: () => boolean;
+  readonly onUiError?: (error: TegoSheetError) => void;
   readonly recordControlledCheckpoint?: (
     commit: CommandCommit<unknown, WorkbookCommand>,
   ) => void;
@@ -49,14 +51,27 @@ export interface EventDispatcher {
   readonly reportUiError: (error: TegoSheetError) => void;
 }
 
-export function printWorkbook(dispatcher: Pick<EventDispatcher, 'reportUiError'>): void {
+export function printWorkbook(
+  dispatcher: Pick<EventDispatcher, 'reportUiError'>,
+  prepare?: () => () => void,
+): void {
   let failure: unknown;
+  let cleanup: (() => void) | undefined;
   try {
+    cleanup = prepare?.();
     window.print();
-    return;
   } catch (cause) {
     failure = cause;
+  } finally {
+    try {
+      cleanup?.();
+    } catch (cause) {
+      failure = failure === undefined
+        ? cause
+        : new AggregateError([failure, cause], 'Print and print cleanup both failed', { cause: failure });
+    }
   }
+  if (failure === undefined) return;
   dispatcher.reportUiError({
     code: 'PRINT_FAILED',
     message: 'Printing the workbook failed',
@@ -157,7 +172,10 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
 
   const reportUiError = (error: TegoSheetError) => {
     if (!isActive()) return;
-    options.getCallbacks().onError?.(clone(error));
+    const payload = clone(error);
+    options.onUiError?.(payload);
+    if (!isActive()) return;
+    options.getCallbacks().onError?.(clone(payload));
   };
 
   const notifyCommit = (
@@ -204,6 +222,8 @@ export function createEventDispatcher(options: EventDispatcherOptions): EventDis
 
     if (!isActive() || !decisionIsCurrent()) return;
     if (notificationOptions.selectionAfterCommit !== undefined) {
+      notificationOptions.beforeSelectionNotify?.();
+      if (!isActive() || !decisionIsCurrent()) return;
       callbacks.onSelectionChange?.(clone(notificationOptions.selectionAfterCommit));
     }
     if (!isActive() || !decisionIsCurrent()) return;

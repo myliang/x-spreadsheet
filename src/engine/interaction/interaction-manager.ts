@@ -76,7 +76,7 @@ export interface InteractionManagerPorts {
   readonly setScroll: (scroll: ScrollState, source: 'pointer' | 'touch') => void;
   readonly dispatch: (command: WorkbookCommand, source: ChangeSource) => InteractionDispatchOutcome;
   readonly readSelection: (selection: Selection) => readonly (readonly string[])[];
-  readonly commitEditor: () => boolean;
+  readonly commitEditor: (selectionAfterCommit?: SelectionState) => boolean;
   readonly requestEdit: (point: CellPoint, initialText: string | undefined, source: 'keyboard' | 'pointer' | 'touch') => void;
   readonly requestDelete: (selection: Selection, source: 'keyboard') => void;
   readonly requestContextMenu: (point: Readonly<{ x: number; y: number }>, selection: Selection) => void;
@@ -463,10 +463,11 @@ export class InteractionManager {
       return;
     }
     const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
-    if (region === null || !this.ports.commitEditor()) return;
+    if (region === null) return;
     const selection = event.shiftKey === true
       ? extendToRegion(snapshot.selection, region, snapshot.viewport)
       : selectionForRegion(region, snapshot.viewport);
+    if (!this.ports.commitEditor(selection)) return;
     this.setSelection(selection, 'pointer');
     this.drag = { mode: 'selection' };
     event.preventDefault?.();
@@ -547,8 +548,9 @@ export class InteractionManager {
       }
     }
     const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
-    if (region?.kind !== 'cell' || !this.ports.commitEditor()) return;
+    if (region?.kind !== 'cell') return;
     const selection = selectionForRegion(region, snapshot.viewport);
+    if (!this.ports.commitEditor(selection)) return;
     this.setSelection(selection, 'pointer');
     this.ports.requestEdit(selection.active, undefined, 'pointer');
     event.preventDefault?.();
@@ -558,11 +560,15 @@ export class InteractionManager {
     if (this.ports.contextMenuEnabled?.() === false) return;
     const snapshot = this.ports.getSnapshot();
     const region = regionAtClientPoint(event, this.ports.root, snapshot.viewport);
-    if (region === null || !this.ports.commitEditor()) return;
+    if (region === null) return;
+    const selection = region.kind === 'cell' && selectionContains(snapshot.selection, region.cell)
+      ? snapshot.selection
+      : selectionForRegion(region, snapshot.viewport);
+    if (!this.ports.commitEditor(selection)) return;
     if (region.kind === 'cell' && !selectionContains(snapshot.selection, region.cell)) {
-      this.setSelection(selectionForRegion(region, snapshot.viewport), 'pointer');
+      this.setSelection(selection, 'pointer');
     } else if (region.kind !== 'cell') {
-      this.setSelection(selectionForRegion(region, snapshot.viewport), 'pointer');
+      this.setSelection(selection, 'pointer');
     }
     const current = this.ports.getSnapshot();
     this.ports.requestContextMenu(localPoint(event, this.ports.root), publicSelection(current));
@@ -579,12 +585,12 @@ export class InteractionManager {
     let handled = false;
     const direction = navigationKey(key);
     if (direction !== null) {
-      if (this.ports.commitEditor()) {
-        const next = modifier
-          ? this.edgeSelection(snapshot, direction, event.shiftKey === true)
-          : event.shiftKey === true
-            ? extendSelection(snapshot.selection, this.adjacentFocus(snapshot, direction), snapshot.viewport.model)
-            : moveSelection(snapshot.selection, direction, snapshot.viewport.model);
+      const next = modifier
+        ? this.edgeSelection(snapshot, direction, event.shiftKey === true)
+        : event.shiftKey === true
+          ? extendSelection(snapshot.selection, this.adjacentFocus(snapshot, direction), snapshot.viewport.model)
+          : moveSelection(snapshot.selection, direction, snapshot.viewport.model);
+      if (this.ports.commitEditor(next)) {
         handled = this.setSelection(next, 'keyboard');
       }
     } else if (modifier && key === ' ') {
@@ -600,14 +606,12 @@ export class InteractionManager {
         end: { row: active.row, column: snapshot.viewport.model.columnCount - 1 },
       }, 'row'), 'keyboard');
     } else if (key === 'Tab' || key === 'Enter') {
-      if (this.ports.commitEditor()) {
-        const move = key === 'Tab'
-          ? event.shiftKey ? 'left' : 'right'
-          : event.shiftKey ? 'up' : 'down';
-        handled = this.setSelection(
-          moveSelection(snapshot.selection, move, snapshot.viewport.model),
-          'keyboard',
-        );
+      const move = key === 'Tab'
+        ? event.shiftKey ? 'left' : 'right'
+        : event.shiftKey ? 'up' : 'down';
+      const next = moveSelection(snapshot.selection, move, snapshot.viewport.model);
+      if (this.ports.commitEditor(next)) {
+        handled = this.setSelection(next, 'keyboard');
       }
     } else if (key === 'Delete' || key === 'Backspace') {
       if (!snapshot.readOnly) this.ports.requestDelete(publicSelection(snapshot), 'keyboard');
@@ -725,8 +729,9 @@ export class InteractionManager {
   private tap(point: TouchPointPort, double: boolean): void {
     const snapshot = this.ports.getSnapshot();
     const region = regionAtClientPoint(point, this.ports.root, snapshot.viewport);
-    if (region === null || !this.ports.commitEditor()) return;
+    if (region === null) return;
     const selection = selectionForRegion(region, snapshot.viewport);
+    if (!this.ports.commitEditor(selection)) return;
     this.setSelection(selection, 'touch');
     if (double && region.kind === 'cell' && !snapshot.readOnly) {
       this.ports.requestEdit(selection.active, undefined, 'touch');

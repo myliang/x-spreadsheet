@@ -1,8 +1,13 @@
 import { useLayoutEffect, type RefObject } from 'react';
 import type { SheetId } from '../../core';
 import type { Selection } from '../../core';
+import type { CellPoint, ChangeSource } from '../../core';
 import type { EventDispatcher } from '../adapters/event-dispatcher';
-import { createInteractionAdapter } from '../adapters/interaction-adapter';
+import {
+  createInteractionAdapter,
+  type EditorCommitResult,
+  type EditorSelectionTarget,
+} from '../adapters/interaction-adapter';
 import type { ControllerEpoch } from './use-controller-epoch';
 import type { EngineAdapterSlot } from './use-canvas-engine';
 
@@ -16,6 +21,13 @@ export interface UseInteractionManagerOptions {
   readonly showContextMenu?: boolean;
   readonly minimumColumnWidth?: number;
   readonly onSelectionChange?: (selection: Selection | null) => void;
+  readonly onViewportChange?: () => void;
+  readonly commitEditor?: (selectionAfterCommit?: EditorSelectionTarget) => EditorCommitResult;
+  readonly requestCancelTransient?: () => void;
+  readonly requestContextMenu?: (point: Readonly<{ readonly x: number; readonly y: number }>, selection: Selection) => void;
+  readonly requestDelete?: (selection: Selection, source: ChangeSource) => void;
+  readonly requestEdit?: (point: CellPoint, initialText: string | undefined, source: ChangeSource) => void;
+  readonly requestFormat?: (format: 'bold' | 'italic' | 'underline') => void;
 }
 
 export function useInteractionManager(options: UseInteractionManagerOptions): void {
@@ -29,6 +41,13 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     showContextMenu,
     minimumColumnWidth,
     onSelectionChange,
+    onViewportChange,
+    commitEditor,
+    requestCancelTransient,
+    requestContextMenu,
+    requestDelete,
+    requestEdit,
+    requestFormat,
   } = options;
   const { controller, isActive } = epoch;
   useLayoutEffect(() => {
@@ -50,6 +69,13 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
       contextMenuEnabled: () => showContextMenu !== false,
       minimumColumnWidth,
       onSelectionChange,
+      onViewportChange,
+      commitEditor,
+      requestCancelTransient,
+      requestContextMenu,
+      requestDelete,
+      requestEdit,
+      requestFormat,
     });
     if (manager !== null && document.activeElement === root) manager.focus();
     return () => manager?.dispose();
@@ -64,5 +90,12 @@ export function useInteractionManager(options: UseInteractionManagerOptions): vo
     showContextMenu,
     minimumColumnWidth,
     onSelectionChange,
+    onViewportChange,
+    commitEditor,
+    requestCancelTransient,
+    requestContextMenu,
+    requestDelete,
+    requestEdit,
+    requestFormat,
   ]);
 }

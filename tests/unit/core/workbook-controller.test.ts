@@ -552,6 +552,10 @@ describe('WorkbookController command boundary', () => {
       void sheet;
       return { type: 'clear-format', selection: [] };
     }],
+    ['clear-contents without selection', (sheet: SheetId) => {
+      void sheet;
+      return { type: 'clear-contents' };
+    }],
     ['merge without an active point', (sheet: SheetId) => ({
       type: 'merge', selection: {
         sheet,

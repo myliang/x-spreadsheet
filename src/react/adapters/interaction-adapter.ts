@@ -3,6 +3,7 @@ import type { WorkbookCommand } from '../../core/commands/workbook-command';
 import {
   TegoSheetException,
   type CellPoint,
+  type ChangeSource,
   type Selection,
 } from '../../core';
 import {
@@ -11,6 +12,7 @@ import {
   type InteractionDispatchOutcome,
   type InteractionManager,
   type InteractionRootPort,
+  type SelectionState,
 } from '../../engine';
 import type { EventDispatcher } from './event-dispatcher';
 import type { EngineAdapter } from './engine-adapter';
@@ -24,6 +26,22 @@ export interface InteractionAdapterOptions {
   readonly contextMenuEnabled?: () => boolean;
   readonly minimumColumnWidth?: number;
   readonly onSelectionChange?: (selection: Selection | null) => void;
+  readonly onViewportChange?: () => void;
+  readonly commitEditor?: (selectionAfterCommit?: EditorSelectionTarget) => EditorCommitResult;
+  readonly requestCancelTransient?: () => void;
+  readonly requestContextMenu?: (point: Readonly<{ readonly x: number; readonly y: number }>, selection: Selection) => void;
+  readonly requestDelete?: (selection: Selection, source: ChangeSource) => void;
+  readonly requestEdit?: (point: CellPoint, initialText: string | undefined, source: ChangeSource) => void;
+  readonly requestFormat?: (format: 'bold' | 'italic' | 'underline') => void;
+}
+
+export interface EditorCommitResult {
+  readonly allow: boolean;
+}
+
+export interface EditorSelectionTarget {
+  readonly selection: Selection;
+  readonly state: SelectionState;
 }
 
 function rootPort(root: HTMLElement): InteractionRootPort {
@@ -66,8 +84,17 @@ function observeRoot(root: HTMLElement, callback: () => void): () => void {
 export function createInteractionAdapter(
   options: InteractionAdapterOptions,
 ): InteractionManager | null {
-  if (options.engine.interactionSnapshot() === null) return null;
+  const initialSnapshot = options.engine.interactionSnapshot();
+  if (initialSnapshot === null) return null;
   const report = (error: TegoSheetException) => options.dispatcher.reportUiError(error.error);
+  const selectionTarget = (state: SelectionState): EditorSelectionTarget => ({
+    state,
+    selection: {
+      sheet: initialSnapshot.sheet,
+      range: state.range,
+      active: state.active,
+    },
+  });
   return createInteractionManager({
     ports: {
       root: rootPort(options.root),
@@ -92,41 +119,36 @@ export function createInteractionAdapter(
           options.dispatcher.emitSelectionChange(current);
         }
       },
-      setScroll: scroll => options.engine.setScroll(scroll),
+      setScroll: scroll => {
+        options.engine.setScroll(scroll);
+        options.onViewportChange?.();
+      },
       dispatch: (command: WorkbookCommand, source) => committed(
         options.dispatcher.dispatchUi(command, source),
       ),
       readSelection: (selection: Selection) => options.engine.readSelection(selection),
-      commitEditor: () => true,
-      requestEdit(point: CellPoint, initialText) {
-        const snapshot = options.engine.interactionSnapshot();
-        if (snapshot === null || initialText === undefined) return;
-        options.dispatcher.dispatchUi({
-          type: 'set-cell-text',
-          address: { sheet: snapshot.sheet, ...point },
-          text: initialText,
-        }, 'keyboard');
+      commitEditor: selection => {
+        const next = selection === undefined ? undefined : selectionTarget(selection);
+        const result = options.commitEditor?.(next) ?? { allow: true };
+        return result.allow;
       },
-      requestDelete() {
-        // The React editor and range-clear transaction are assembled with the chrome layer.
-      },
-      requestContextMenu() {
-        // Context-menu UI is owned by React and is assembled in the chrome task.
-      },
-      requestEnsureVisible() {
-        // The engine retains the current viewport until scroll chrome is assembled.
+      requestEdit: (point, initialText, source) => options.requestEdit?.(point, initialText, source),
+      requestDelete: (selection, source) => options.requestDelete?.(selection, source),
+      requestContextMenu: (point, selection) => options.requestContextMenu?.(point, selection),
+      requestEnsureVisible(point) {
+        options.engine.ensureVisible(point);
+        options.onViewportChange?.();
       },
       requestResizePreview() {
         // Resize preview is transient React chrome state.
       },
-      requestFormat() {
-        // Formatting controls are assembled with the toolbar.
-      },
+      requestFormat: format => options.requestFormat?.(format),
       requestError: report,
-      requestCancelTransient() {
-        // No React overlays exist in the Task 15 runtime.
+      requestCancelTransient: () => options.requestCancelTransient?.(),
+      requestViewportResize: () => {
+        options.engine.recalculateLayout();
+        options.onViewportChange?.();
       },
-      requestViewportResize: () => options.engine.recalculateLayout(),
       contextMenuEnabled: options.contextMenuEnabled,
       minColumnWidth: options.minimumColumnWidth,
       ...(typeof ResizeObserver === 'undefined' ? {} : {

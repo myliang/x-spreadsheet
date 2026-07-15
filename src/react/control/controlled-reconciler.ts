@@ -69,6 +69,7 @@ export function remapWorkbookCommand(
     case 'set-style':
     case 'set-border':
     case 'clear-format':
+    case 'clear-contents':
     case 'merge':
     case 'unmerge':
     case 'set-filter':

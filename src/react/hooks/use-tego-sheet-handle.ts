@@ -46,6 +46,7 @@ export interface TegoSheetHandleRuntime {
   readonly dispatcher: EventDispatcher;
   readonly engineSlot: EngineAdapterSlot;
   readonly isActive: () => boolean;
+  readonly preparePrint: () => () => void;
   readonly root: HTMLDivElement | null;
   readonly setActiveSheet: (sheet: SheetId | null) => void;
 }
@@ -209,7 +210,8 @@ function createStableHandle<Runtime extends TegoSheetHandleRuntime>(
     },
     validate: () => authority.require().controller.validate(),
     print() {
-      printWorkbook(authority.require().dispatcher);
+      const runtime = authority.require();
+      printWorkbook(runtime.dispatcher, runtime.preparePrint);
     },
     recalculateLayout() {
       authority.require().engineSlot.get()?.recalculateLayout();

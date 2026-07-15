@@ -25,7 +25,7 @@ it('treats an empty object as one blank sheet', async () => {
 
   expect(ref.current!.getValue()).toHaveLength(1);
   expect(rendered.container.querySelector('canvas')).not.toBeNull();
-  expect(rendered.queryByRole('button', { name: /add sheet/i })).toBeNull();
+  expect(rendered.getByRole('button', { name: /add sheet/i })).not.toBeNull();
 });
 
 it('preserves an empty array and lets an editable user add the first sheet', async () => {

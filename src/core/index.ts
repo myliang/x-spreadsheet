@@ -217,6 +217,7 @@ export type {
   AutofillCommand,
   ClearFilterCommand,
   ClearFormatCommand,
+  ClearContentsCommand,
   CommandResult,
   DeleteSheetCommand,
   HideColumnCommand,

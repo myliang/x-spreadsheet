@@ -11,6 +11,11 @@ export interface SetCellTextCommand {
   readonly text: string;
 }
 
+export interface ClearContentsCommand {
+  readonly type: 'clear-contents';
+  readonly selection: Selection;
+}
+
 export interface SetStyleCommand {
   readonly type: 'set-style';
   readonly selection: Selection;
@@ -169,6 +174,7 @@ export type HistoryCommand = UndoCommand | RedoCommand;
  */
 export type WorkbookCommand =
   | SetCellTextCommand
+  | ClearContentsCommand
   | SetStyleCommand
   | SetBorderCommand
   | ClearFormatCommand

@@ -11,7 +11,11 @@ import {
   createSelectionState,
   createSheetGridModel,
   createViewportMetrics,
+  moveSelection,
   normalizeSelection,
+  overlayAnchor,
+  type OverlayAnchor,
+  type SelectionDirection,
   type CanvasRenderSnapshot,
   type InteractionSnapshot,
   type ScrollState,
@@ -28,6 +32,12 @@ export interface EngineAdapterOptions {
 
 export interface EngineAdapter {
   readonly interactionSnapshot: () => InteractionSnapshot | null;
+  readonly overlayAnchor: (point: Readonly<{ readonly row: number; readonly column: number }>) => OverlayAnchor | null;
+  readonly ensureVisible: (point: Readonly<{ readonly row: number; readonly column: number }>) => OverlayAnchor | null;
+  readonly nextSelection: (direction: SelectionDirection) => Readonly<{
+    readonly state: SelectionState;
+    readonly selection: Selection;
+  }> | null;
   readonly publicSelection: () => Selection | null;
   readonly readSelection: (selection: Selection) => readonly (readonly string[])[];
   readonly refresh: (snapshot: ControllerSnapshot) => void;
@@ -35,6 +45,7 @@ export interface EngineAdapter {
   readonly recalculateLayout: () => void;
   readonly setScroll: (scroll: ScrollState) => void;
   readonly setSelection: (selection: SelectionState) => void;
+  readonly stageSelection: (selection: SelectionState) => Selection | null;
   readonly updateReadOnly: (readOnly: boolean) => void;
   readonly updateLiveOptions: (options: Readonly<{ readonly showGrid?: boolean }>) => void;
   readonly dispose: () => void;
@@ -85,7 +96,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     engine.render(renderSnapshot);
   };
 
-  const rebuild = () => {
+  const rebuild = (paintNow = true) => {
     if (disposed || latestSnapshot === null) return;
     const index = activeIndex();
     const sheet = index < 0 ? undefined : latestSnapshot.value[index];
@@ -117,7 +128,48 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
         model,
       );
     }
-    paint();
+    if (paintNow) paint();
+  };
+
+  const ensureVisible = (point: Readonly<{ readonly row: number; readonly column: number }>) => {
+    if (
+      disposed
+      || viewport === null
+      || point.row < 0
+      || point.column < 0
+      || point.row >= viewport.model.rowCount
+      || point.column >= viewport.model.columnCount
+    ) return null;
+    const model = viewport.model;
+    const frozenWidth = model.columnOffset(viewport.freeze.column);
+    const frozenHeight = model.rowOffset(viewport.freeze.row);
+    const bodyWidth = Math.max(0, viewport.width - viewport.rowHeaderWidth - frozenWidth);
+    const bodyHeight = Math.max(0, viewport.height - viewport.columnHeaderHeight - frozenHeight);
+    let x = viewport.scroll.x;
+    let y = viewport.scroll.y;
+    if (point.column >= viewport.freeze.column) {
+      const start = model.columnOffset(point.column);
+      const end = model.columnOffset(point.column + 1);
+      const visibleStart = frozenWidth + x;
+      const visibleEnd = visibleStart + bodyWidth;
+      if (start < visibleStart) x = start - frozenWidth;
+      else if (end > visibleEnd) x = end - frozenWidth - bodyWidth;
+    }
+    if (point.row >= viewport.freeze.row) {
+      const start = model.rowOffset(point.row);
+      const end = model.rowOffset(point.row + 1);
+      const visibleStart = frozenHeight + y;
+      const visibleEnd = visibleStart + bodyHeight;
+      if (start < visibleStart) y = start - frozenHeight;
+      else if (end > visibleEnd) y = end - frozenHeight - bodyHeight;
+    }
+    const next = clampScroll({ x, y }, viewport);
+    if (next.x !== viewport.scroll.x || next.y !== viewport.scroll.y) {
+      viewport = createViewportMetrics(model, { ...viewport, scroll: next });
+      paint();
+    }
+    const range = { start: point, end: point };
+    return overlayAnchor(range, viewport);
   };
 
   return {
@@ -135,6 +187,22 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
         sheet: activeSheet,
         readOnly: liveReadOnly ?? latestSnapshot.readOnly,
         epoch: latestSnapshot,
+      };
+    },
+    overlayAnchor(point) {
+      if (disposed || viewport === null) return null;
+      const range = { start: point, end: point };
+      return overlayAnchor(range, viewport);
+    },
+    ensureVisible(point) {
+      return ensureVisible(point);
+    },
+    nextSelection(direction) {
+      if (disposed || viewport === null || selection === null || activeSheet === null) return null;
+      const next = moveSelection(selection, direction, viewport.model);
+      return {
+        state: next,
+        selection: { sheet: activeSheet, range: next.range, active: next.active },
       };
     },
     publicSelection() {
@@ -181,7 +249,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     refresh(snapshot) {
       if (disposed) return;
       latestSnapshot = snapshot;
-      rebuild();
+      rebuild(false);
     },
     render(snapshot, sheet) {
       if (disposed) return;
@@ -201,6 +269,15 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       if (disposed || viewport === null) return;
       selection = normalizeSelection(next, viewport.model);
       paint();
+    },
+    stageSelection(next) {
+      if (disposed || viewport === null || activeSheet === null) return null;
+      selection = normalizeSelection(next, viewport.model);
+      return {
+        sheet: activeSheet,
+        range: selection.range,
+        active: selection.active,
+      };
     },
     updateReadOnly(readOnly) {
       if (disposed) return;
