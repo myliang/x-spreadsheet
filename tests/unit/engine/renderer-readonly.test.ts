@@ -5,6 +5,8 @@ import {
   createViewportMetrics,
 } from '../../../src/engine';
 import type { SheetData } from '../../../src/core';
+import { paneCells, paneGridIndexes } from '../../../src/engine/canvas/grid-painter';
+import { frozenQuadrants } from '../../../src/engine/geometry/frozen-pane-geometry';
 import { createCanvasHarness } from '../../helpers/canvas-harness';
 import { deepFreeze } from '../../helpers/deep-freeze';
 import { buildStyledWorkbook } from '../../helpers/workbook-builders';
@@ -349,13 +351,16 @@ describe('read-only Canvas rendering', () => {
     const harness = createCanvasHarness();
     const engine = new CanvasEngine(harness.canvas, {
       animationFrame: harness.animationFrame,
+      devicePixelRatio: 1,
       measurement: harness.measurement,
     });
 
     engine.render({
       sheet,
-      viewport: createViewportMetrics(createSheetGridModel(sheet), {
-        width: 50_000,
+      viewport: createViewportMetrics(createSheetGridModel(sheet, {
+        defaultColumnWidth: 32,
+      }), {
+        width: 16_000,
         height: 12_500,
         rowHeaderWidth: 0,
         columnHeaderHeight: 0,
@@ -366,7 +371,146 @@ describe('read-only Canvas rendering', () => {
     expect(harness.operations.filter(operation => operation.name === 'stroke').length)
       .toBeLessThanOrEqual(2_004);
     expect(harness.operations.filter(operation => operation.name === 'rect').map(operation => operation.args))
-      .toEqual([[0, 0, 50_000, 12_500]]);
+      .toEqual([[0, 0, 16_000, 12_500]]);
+  });
+
+  it('returns only materialized cells from a large empty sparse pane', () => {
+    let numericRowLookups = 0;
+    const rows = new Proxy({ len: 500 }, {
+      get(target, key, receiver) {
+        if (/^(0|[1-9]\d*)$/.test(String(key))) numericRowLookups += 1;
+        return Reflect.get(target, key, receiver);
+      },
+    });
+    const sheet = { rows, cols: { len: 500 } } as unknown as SheetData;
+    const viewport = createViewportMetrics(createSheetGridModel(sheet), {
+      width: 50_000,
+      height: 12_500,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+    });
+    const pane = frozenQuadrants(viewport.freeze, viewport)[0];
+    expect(pane).toBeDefined();
+    if (pane === undefined) return;
+    const indexes = paneGridIndexes(pane, viewport);
+    const cells = paneCells(pane, viewport, indexes, sheet);
+
+    expect(indexes.rows).toHaveLength(500);
+    expect(indexes.columns).toHaveLength(500);
+    expect(cells).toEqual([]);
+    expect(numericRowLookups).toBeLessThanOrEqual(indexes.rows.length + indexes.columns.length);
+  });
+
+  it('does not enumerate materialized rows outside the visible sparse pane', () => {
+    let numericRowLookups = 0;
+    let ownKeyScans = 0;
+    const source: Record<string, unknown> = { len: 2_000 };
+    for (let row = 501; row < 2_000; row += 1) {
+      source[row] = { cells: { 0: { text: `offscreen-${row}` } } };
+    }
+    const rows = new Proxy(source, {
+      get(target, key, receiver) {
+        if (/^(0|[1-9]\d*)$/.test(String(key))) numericRowLookups += 1;
+        return Reflect.get(target, key, receiver);
+      },
+      ownKeys(target) {
+        ownKeyScans += 1;
+        return Reflect.ownKeys(target);
+      },
+    }) as unknown as NonNullable<SheetData['rows']>;
+    const sheet = { rows, cols: { len: 500 } } as unknown as SheetData;
+    const viewport = createViewportMetrics(createSheetGridModel(sheet), {
+      width: 50_000,
+      height: 12_500,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+    });
+    const pane = frozenQuadrants(viewport.freeze, viewport)[0];
+    expect(pane).toBeDefined();
+    if (pane === undefined) return;
+    const indexes = paneGridIndexes(pane, viewport);
+    numericRowLookups = 0;
+    ownKeyScans = 0;
+
+    expect(paneCells(pane, viewport, indexes, sheet)).toEqual([]);
+    expect(numericRowLookups).toBeLessThanOrEqual(indexes.rows.length);
+    expect(ownKeyScans).toBe(0);
+  });
+
+  it('retains an intersecting merge anchor outside a pane coordinate range', () => {
+    const sheet: SheetData = {
+      merges: ['A1:B1'],
+      rows: { len: 1, 0: { cells: { 0: { text: 'merged', merge: [0, 1] } } } },
+      cols: { len: 2 },
+    };
+    const viewport = createViewportMetrics(createSheetGridModel(sheet), {
+      width: 200,
+      height: 25,
+      rowHeaderWidth: 0,
+      columnHeaderHeight: 0,
+      freeze: { row: 0, column: 1 },
+    });
+    const pane = frozenQuadrants(viewport.freeze, viewport)
+      .find(candidate => candidate.kind === 'body');
+    expect(pane).toBeDefined();
+    if (pane === undefined) return;
+    const indexes = paneGridIndexes(pane, viewport);
+
+    expect(indexes.columns).toEqual([1]);
+    expect(paneCells(pane, viewport, indexes, sheet)).toEqual([{ row: 0, column: 0 }]);
+  });
+
+  it('bounds frozen axis enumeration at the pane extent for safe-integer grid counts', () => {
+    const sheet: SheetData = {
+      rows: { len: Number.MAX_SAFE_INTEGER },
+      cols: { len: Number.MAX_SAFE_INTEGER },
+    };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet), {
+        width: 100,
+        height: 25,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+        freeze: { row: Number.MAX_SAFE_INTEGER, column: Number.MAX_SAFE_INTEGER },
+      }),
+    });
+
+    expect(() => harness.animationFrame.flush()).not.toThrow();
+    expect(harness.operations.filter(operation => operation.name === 'stroke').length)
+      .toBeLessThanOrEqual(20);
+  });
+
+  it('rejects a visible frozen axis over its explicit enumeration budget', () => {
+    const sheet: SheetData = { rows: { len: 250_001 }, cols: { len: 1 } };
+    const harness = createCanvasHarness();
+    const engine = new CanvasEngine(harness.canvas, {
+      animationFrame: harness.animationFrame,
+      measurement: harness.measurement,
+    });
+
+    engine.render({
+      sheet,
+      viewport: createViewportMetrics(createSheetGridModel(sheet, {
+        defaultRowHeight: 1 / 250_001,
+      }), {
+        width: 100,
+        height: 1,
+        rowHeaderWidth: 0,
+        columnHeaderHeight: 0,
+        freeze: { row: 250_001, column: 0 },
+      }),
+    });
+
+    expect(() => harness.animationFrame.flush()).toThrow(
+      'visible canvas row axis exceeds the 250000-index limit',
+    );
   });
 
   it('aligns unique grid boundaries with scrolled cell rectangles', () => {

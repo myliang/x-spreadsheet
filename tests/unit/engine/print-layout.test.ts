@@ -58,6 +58,22 @@ describe('print layout', () => {
     ]);
   });
 
+  it('rejects an unsafe page count before allocating page layouts', () => {
+    const innerA5Height = PAPER_SIZES.A5.height - 100;
+    const sheet: SheetData = {
+      rows: {
+        len: 1,
+        0: { height: innerA5Height * 10_000, cells: { 0: { text: 'oversized' } } },
+      },
+      cols: { len: 1 },
+    };
+
+    expect(() => createPrintLayout(sheet, {
+      paperSize: 'A5',
+      orientation: 'portrait',
+    })).toThrow(new RangeError('print layout exceeds the 10000-page limit'));
+  });
+
   it('shrinks wide content and keeps legacy strict row-fit page boundaries', () => {
     const sheet: SheetData = {
       rows: {
@@ -142,6 +158,65 @@ describe('print layout', () => {
       operation.name === 'set:fillStyle' && operation.args[0] === '#ffeecc'
     ))).toBe(true);
     expect(harness.operations.some(operation => operation.name === 'stroke')).toBe(true);
+  });
+
+  it('deeply isolates and freezes every value exposed by a print layout', () => {
+    const sheet: SheetData = {
+      styles: [{
+        bgcolor: '#ffeecc',
+        font: { name: 'Original', bold: true },
+        border: { bottom: ['dashed', '#112233'] },
+      }],
+      merges: ['A1:B1'],
+      rows: {
+        len: 1,
+        0: { cells: { 0: { text: 'frozen', style: 0, merge: [0, 1] } } },
+      },
+      cols: { len: 2 },
+    };
+    const layout = createPrintLayout(sheet, { paperSize: 'A4', orientation: 'portrait' });
+    const page = layout.pages[0];
+    const cell = page?.cells[0];
+    expect(page).toBeDefined();
+    expect(cell).toBeDefined();
+    if (page === undefined || cell === undefined || cell.merge === null) return;
+
+    expect([
+      layout,
+      layout.paper,
+      layout.pages,
+      page,
+      page.cells,
+      cell,
+      cell.rect,
+      cell.style,
+      cell.style.font,
+      cell.style.border,
+      cell.style.border?.bottom,
+      cell.merge,
+      cell.merge.start,
+      cell.merge.end,
+    ].every(value => value === undefined || Object.isFrozen(value))).toBe(true);
+
+    expect(() => {
+      (cell.rect as { left: number }).left = 1_000;
+    }).toThrow(TypeError);
+    expect(() => {
+      (cell.style.font as { name: string }).name = 'Mutated layout';
+    }).toThrow(TypeError);
+
+    const sourceStyle = sheet.styles?.[0];
+    if (sourceStyle !== undefined) {
+      (sourceStyle as { bgcolor: string }).bgcolor = '#ff0000';
+      (sourceStyle.font as { name: string }).name = 'Mutated source';
+      (sourceStyle.border?.bottom as [string, string])[1] = '#00ff00';
+    }
+    const harness = createCanvasHarness();
+    renderPrintPage(layout, 0, harness.canvas, { measurement: harness.measurement });
+
+    expect(harness.operations).toContainEqual({ name: 'set:fillStyle', args: ['#ffeecc'] });
+    expect(harness.operations).toContainEqual({ name: 'set:font', args: ['bold 13px Original'] });
+    expect(harness.operations).toContainEqual({ name: 'set:strokeStyle', args: ['#112233'] });
   });
 
   it('prints formulas, scaled styles, borders, validation, and editable marks without blank cells', () => {

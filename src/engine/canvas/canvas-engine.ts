@@ -88,7 +88,7 @@ export class CanvasEngine {
     const formulaBudget = createFormulaEvaluationBudget(250_000);
     for (const pane of frozenQuadrants(viewport.freeze, viewport)) {
       const indexes = paneGridIndexes(pane, viewport);
-      const cells = paneCells(pane, viewport, indexes);
+      const cells = paneCells(pane, viewport, indexes, snapshot.sheet);
       for (const row of indexes.rows) visibleRows.add(row);
       for (const column of indexes.columns) visibleColumns.add(column);
       this.draw.withClip(pane, () => {

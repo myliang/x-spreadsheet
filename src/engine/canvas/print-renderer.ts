@@ -14,6 +14,24 @@ import { currentDevicePixelRatio, DrawContext } from './draw-context';
 import type { CanvasSurfacePort, TextMeasurementPort } from './draw-context';
 
 const MAX_PRINT_CELLS = 250_000;
+const MAX_PRINT_PAGES = 10_000;
+
+function isolated<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return Object.freeze(value.map(item => isolated(item))) as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const output: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      Object.defineProperty(output, key, {
+        enumerable: true,
+        value: isolated((value as Record<string, unknown>)[key]),
+      });
+    }
+    return Object.freeze(output) as T;
+  }
+  return value;
+}
 
 export const PAPER_SIZES = Object.freeze({
   A3: Object.freeze({ width: Math.floor(96 * 11.69), height: Math.floor(96 * 16.54) }),
@@ -234,19 +252,19 @@ export function createPrintLayout(
   const model = createSheetGridModel(sheet);
   const end = usedEnd(sheet, model.rowCount, model.columnCount);
   if (end === null) {
-    return Object.freeze({
+    return isolated({
       paper: printPaper,
       scale: 1,
       contentWidth: 0,
       contentHeight: 0,
       contentLeft: printPaper.padding + printPaper.innerWidth / 2,
-      pages: Object.freeze([Object.freeze({
+      pages: [{
         index: 0,
         rowStart: 0,
         rowEnd: -1,
         contentTop: 0,
-        cells: Object.freeze([]),
-      })]),
+        cells: [],
+      }],
     });
   }
   const cellCount = BigInt(end.row + 1) * BigInt(end.column + 1);
@@ -261,6 +279,9 @@ export function createPrintLayout(
     ? (printPaper.innerWidth - contentWidth) / 2
     : 0);
   const pageCount = Math.floor(contentHeight / printPaper.innerHeight) + 1;
+  if (!Number.isSafeInteger(pageCount) || pageCount > MAX_PRINT_PAGES) {
+    throw new RangeError(`print layout exceeds the ${MAX_PRINT_PAGES}-page limit`);
+  }
   const rows = pageRows(sheet, end.row, printPaper.innerHeight, pageCount);
   const invalidCells = new Set((options.invalidCells ?? []).map(point => `${point.row}:${point.column}`));
   const defaultStyle = configuredCellDefaultStyle(options.defaultStyle);
@@ -271,7 +292,7 @@ export function createPrintLayout(
     contentTop: model.rowOffset(Math.min(range.start, model.rowCount)),
     cells: Object.freeze(buildPageCells(sheet, range, end.column, invalidCells, defaultStyle)),
   }));
-  return Object.freeze({
+  return isolated({
     paper: printPaper,
     scale,
     contentWidth,

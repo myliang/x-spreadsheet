@@ -1,4 +1,5 @@
 import type { CellPoint, CellRange } from '../../core/types/coordinates';
+import type { SheetData } from '../../core/types/workbook';
 import { rangesIntersect } from '../../core/coordinates/ranges';
 import { rangeRect } from '../geometry/grid-geometry';
 import type { FrozenQuadrant } from '../geometry/frozen-pane-geometry';
@@ -6,6 +7,7 @@ import type { ViewportMetrics } from '../ports';
 import type { DrawContext } from './draw-context';
 
 const MAX_VISIBLE_CELLS = 250_000;
+const MAX_VISIBLE_AXIS_INDEXES = 250_000;
 
 type Axis = 'row' | 'column';
 
@@ -57,8 +59,9 @@ function paneAxisIndexes(
   const count = axisCount(axis, viewport);
   const frozen = Math.min(axisFreeze(axis, viewport), count);
   if (isFrozenAxis(axis, pane)) {
-    return Array.from({ length: frozen }, (_, index) => index)
-      .filter(index => axisSize(axis, index, viewport) > 0);
+    if (frozen === 0) return [];
+    const extentEnd = axisAt(axis, axisPaneExtent(axis, pane), viewport) ?? 0;
+    return enumerateAxisIndexes(axis, 0, Math.min(frozen - 1, extentEnd), viewport);
   }
   if (frozen >= count) return [];
   const scroll = axisScroll(axis, viewport);
@@ -68,6 +71,21 @@ function paneAxisIndexes(
     count - 1,
     Math.max(start, axisAt(axis, contentStart + axisPaneExtent(axis, pane), viewport) ?? start),
   );
+  return enumerateAxisIndexes(axis, start, end, viewport);
+}
+
+function enumerateAxisIndexes(
+  axis: Axis,
+  start: number,
+  end: number,
+  viewport: ViewportMetrics,
+): readonly number[] {
+  const length = BigInt(end) - BigInt(start) + 1n;
+  if (length > BigInt(MAX_VISIBLE_AXIS_INDEXES)) {
+    throw new RangeError(
+      `visible canvas ${axis} axis exceeds the ${MAX_VISIBLE_AXIS_INDEXES}-index limit`,
+    );
+  }
   const indexes: number[] = [];
   for (let index = start; index <= end; index += 1) {
     if (axisSize(axis, index, viewport) > 0) indexes.push(index);
@@ -92,23 +110,35 @@ function coordinateRange(rows: readonly number[], columns: readonly number[]): C
 export function paneCells(
   pane: FrozenQuadrant,
   viewport: ViewportMetrics,
-  indexes: PaneGridIndexes = paneGridIndexes(pane, viewport),
+  indexes: PaneGridIndexes,
+  sheet: Readonly<SheetData>,
 ): readonly CellPoint[] {
   const { rows, columns } = indexes;
-  if (BigInt(rows.length) * BigInt(columns.length) > BigInt(MAX_VISIBLE_CELLS)) {
-    throw new RangeError(`visible canvas pane exceeds the ${MAX_VISIBLE_CELLS}-cell limit`);
-  }
   const points: CellPoint[] = [];
   const seen = new Set<string>();
   const add = (point: CellPoint): void => {
     const key = `${point.row}:${point.column}`;
     if (!seen.has(key)) {
+      if (points.length >= MAX_VISIBLE_CELLS) {
+        throw new RangeError(`visible canvas pane exceeds the ${MAX_VISIBLE_CELLS}-cell limit`);
+      }
       seen.add(key);
       points.push(point);
     }
   };
+  const visibleColumns = new Set(columns);
+  const sparseRows = indexedObject(sheet.rows);
   for (const row of rows) {
-    for (const column of columns) add({ row, column });
+    const rowData = indexedObject(sparseRows?.[row]);
+    if (rowData === null) continue;
+    const cells = indexedObject(rowData.cells);
+    if (cells === null) continue;
+    for (const [columnKey, cellValue] of Object.entries(cells)) {
+      const column = sparseIndex(columnKey, viewport.model.columnCount);
+      if (column !== null && visibleColumns.has(column) && indexedObject(cellValue) !== null) {
+        add({ row, column });
+      }
+    }
   }
   const range = coordinateRange(rows, columns);
   if (range !== null) {
@@ -117,6 +147,18 @@ export function paneCells(
     }
   }
   return points;
+}
+
+function indexedObject(value: unknown): Readonly<Record<string, unknown>> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Readonly<Record<string, unknown>>
+    : null;
+}
+
+function sparseIndex(key: string, count: number): number | null {
+  if (!/^(0|[1-9]\d*)$/.test(key)) return null;
+  const index = Number(key);
+  return Number.isSafeInteger(index) && index < count ? index : null;
 }
 
 export interface PaneGridIndexes {

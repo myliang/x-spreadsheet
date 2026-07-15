@@ -30,6 +30,8 @@ export interface DrawLineOptions {
   readonly scale?: number;
 }
 
+const MAX_CANVAS_BACKING_DIMENSION = 16_384;
+
 function finite(value: number, label: string): number {
   if (!Number.isFinite(value)) throw new RangeError(`${label} must be finite`);
   return value;
@@ -40,6 +42,25 @@ function positiveDpr(value: number): number {
     throw new RangeError('device pixel ratio must be a positive finite number');
   }
   return value;
+}
+
+function backingDimension(
+  value: number,
+  devicePixelRatio: number,
+  label: 'width' | 'height',
+): number {
+  const dimension = Math.floor(value * devicePixelRatio);
+  if (!Number.isSafeInteger(dimension) || dimension < 0) {
+    throw new RangeError(
+      `canvas backing ${label} must be a non-negative safe integer`,
+    );
+  }
+  if (dimension > MAX_CANVAS_BACKING_DIMENSION) {
+    throw new RangeError(
+      `canvas backing ${label} exceeds the ${MAX_CANVAS_BACKING_DIMENSION}-pixel limit`,
+    );
+  }
+  return dimension;
 }
 
 export function currentDevicePixelRatio(): number {
@@ -72,10 +93,12 @@ export class DrawContext {
     finite(width, 'canvas width');
     finite(height, 'canvas height');
     if (width < 0 || height < 0) throw new RangeError('canvas size must be non-negative');
+    const backingWidth = backingDimension(width, this.devicePixelRatio, 'width');
+    const backingHeight = backingDimension(height, this.devicePixelRatio, 'height');
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
-    this.canvas.width = Math.floor(width * this.devicePixelRatio);
-    this.canvas.height = Math.floor(height * this.devicePixelRatio);
+    this.canvas.width = backingWidth;
+    this.canvas.height = backingHeight;
     this.originX = 0;
     this.originY = 0;
     // Assigning canvas width/height resets context state, so rebuild the transform every frame.
