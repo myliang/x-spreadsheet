@@ -53,10 +53,6 @@ body {
   font-family: 'Noto Sans Visual';
 }
 
-.visual-harness .tego-sheet textarea {
-  caret-color: transparent;
-}
-
 [data-visual-print-preview] {
   position: absolute;
   z-index: 1000;

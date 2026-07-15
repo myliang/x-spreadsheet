@@ -108,8 +108,17 @@ async function prepareScreenshot(page: Page, fixture: string, touch: boolean): P
       return;
     }
     case 'editing-overlays-menus': {
-      await canvas.dblclick({ position: { x: 210, y: 62.5 } });
-      await expect(page.getByRole('textbox', { name: 'Cell editor' })).toBeVisible();
+      await canvas.dblclick({ position: { x: 110, y: 137.5 } });
+      const editor = page.getByRole('textbox', { name: 'Cell editor' });
+      await expect(editor).toBeVisible();
+      await expect(editor).toHaveValue('');
+      await editor.fill('Editing');
+      await expect(editor).toHaveValue('Editing');
+      await editor.evaluate(element => {
+        if (!(element instanceof HTMLTextAreaElement)) throw new Error('Cell editor is not a textarea');
+        element.setSelectionRange(0, 0);
+      });
+      await page.evaluate(() => window.__tegoVisual.installCaretMask());
       return;
     }
     case 'validation-filter-ui': {
@@ -228,9 +237,20 @@ for (const fixture of visualFixtures) {
       : page.locator('[data-tego-sheet]');
     await expect(screenshot).toHaveScreenshot(`${fixture.name}.png`, {
       mask: [...namedMasks(page, fixture.masks ?? [])],
+      ...(fixture.name === 'editing-overlays-menus'
+        ? { maskColor: '#ffffff', maxDiffPixelRatio: 0 }
+        : {}),
     });
   });
 }
+
+test(`${visualParityByFixture['editing-overlays-menus']} context menu from a public right-click interaction`, async ({ page }) => {
+  await openFixture(page, 'editing-overlays-menus');
+  const point = await cellCenter(page, 4, 0);
+  await page.mouse.click(point.x, point.y, { button: 'right' });
+  await expect(page.getByRole('menu', { name: 'Cell actions' })).toBeVisible();
+  await expect(page.locator('[data-tego-sheet]')).toHaveScreenshot('context-menu.png');
+});
 
 test(`${printableCellsParityToken} printable cells are preserved while private cells are omitted`, async ({ page }) => {
   await openFixture(page, 'print-preview');

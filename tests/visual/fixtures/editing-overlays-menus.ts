@@ -2,6 +2,7 @@ import type { VisualFixture } from './types';
 
 export const editingOverlaysMenus: VisualFixture = {
   name: 'editing-overlays-menus',
+  masks: ['blinking-caret'],
   workbook: [{
     name: 'Editing',
     rows: {

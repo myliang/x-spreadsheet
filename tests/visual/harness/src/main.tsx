@@ -39,6 +39,7 @@ declare global {
   interface Window {
     __tegoVisual: {
       readonly fills: FillRecord[];
+      readonly installCaretMask: () => void;
       readonly lines: LineRecord[];
       readonly strokeRects: StrokeRectRecord[];
       printSnapshot: PrintSnapshot | null;
@@ -48,8 +49,28 @@ declare global {
 }
 
 function recordCanvasGeometry(): void {
+  const installCaretMask = () => {
+    document.querySelector('[data-visual-mask="blinking-caret"]')?.remove();
+    const editor = document.querySelector<HTMLTextAreaElement>('.tego-sheet__editor textarea');
+    if (editor === null) throw new Error('Cell editor is not mounted');
+    const bounds = editor.getBoundingClientRect();
+    const styles = getComputedStyle(editor);
+    const paddingLeft = Number.parseFloat(styles.paddingLeft);
+    const paddingTop = Number.parseFloat(styles.paddingTop);
+    const lineHeight = Number.parseFloat(styles.lineHeight);
+    const mask = document.createElement('span');
+    mask.setAttribute('data-visual-mask', 'blinking-caret');
+    mask.style.position = 'fixed';
+    mask.style.left = `${bounds.left + paddingLeft}px`;
+    mask.style.top = `${bounds.top + paddingTop}px`;
+    mask.style.width = '2px';
+    mask.style.height = `${lineHeight}px`;
+    mask.style.pointerEvents = 'none';
+    document.body.append(mask);
+  };
   const records = {
     fills: [] as FillRecord[],
+    installCaretMask,
     lines: [] as LineRecord[],
     printSnapshot: null as PrintSnapshot | null,
     strokeRects: [] as StrokeRectRecord[],
