@@ -68,7 +68,7 @@ it('stages the target selection before callbacks and paints only that target sna
   engine.dispose();
 });
 
-it('stages offscreen selection and scroll together without scheduling an early paint', () => {
+it('@parity:view.scroll-sync stages offscreen selection and scroll together without scheduling an early paint', () => {
   const frames: FrameRequestCallback[] = [];
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     frames.push(callback);

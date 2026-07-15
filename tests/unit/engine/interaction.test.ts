@@ -485,7 +485,7 @@ describe('InteractionManager keyboard, wheel, and focus behavior', () => {
     harness.manager.dispose();
   });
 
-  it('handles navigation, edge/full-axis selection, edit, delete, history and formats', () => {
+  it('@parity:input.keymap handles navigation, edge/full-axis selection, edit, delete, history and formats', () => {
     const edit = vi.fn();
     const remove = vi.fn();
     const format = vi.fn();

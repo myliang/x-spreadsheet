@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
+import VitestParityEvidenceReporter from './scripts/reporters/vitest-parity-evidence.ts';
 
 const sharedExcludes = [
   'dist/**',
@@ -18,6 +19,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     exclude: sharedExcludes,
+    reporters: ['default', new VitestParityEvidenceReporter()],
     projects: [
       {
         extends: true,

@@ -26,7 +26,7 @@ function sizeRoot(root: HTMLElement, width = 500, height = 300): void {
   fireEvent(window, new Event('resize'));
 }
 
-it('keeps typing local, commits once, creates one undo entry, and preserves callback order', async () => {
+it('@parity:formulas.editor-display keeps typing local, commits once, creates one undo entry, and preserves callback order', async () => {
   const ref = createRef<TegoSheetHandle>();
   const order: string[] = [];
   const rendered = render(
@@ -71,7 +71,7 @@ it('keeps typing local, commits once, creates one undo entry, and preserves call
   expect(order).toHaveLength(notifications);
 });
 
-it('cancels on Escape and commits exactly once on blur', async () => {
+it('@parity:editing.inline-editor cancels on Escape and commits exactly once on blur', async () => {
   const ref = createRef<TegoSheetHandle>();
   const onChange = vi.fn();
   const rendered = render(<TegoSheet ref={ref} defaultValue={[{}]} onChange={onChange} />);
@@ -94,7 +94,7 @@ it('cancels on Escape and commits exactly once on blur', async () => {
   expect(onChange).toHaveBeenCalledOnce();
 });
 
-it('commits once on Tab and pointer navigation with selection before paint', async () => {
+it('@parity:input.desktop-editing commits once on Tab and pointer navigation with selection before paint', async () => {
   const ref = createRef<TegoSheetHandle>();
   const order: string[] = [];
   const selections: number[] = [];

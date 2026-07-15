@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { History } from '../../../src/core/controller/history';
 
 describe('controller history', () => {
-  it('records one undoable transition and moves it deterministically between stacks', () => {
+  it('@parity:history.undo-redo records one undoable transition and moves it deterministically between stacks', () => {
     const history = new History<string>();
     const entry = { before: 'A', after: 'B', metadata: 'cell-1' };
 

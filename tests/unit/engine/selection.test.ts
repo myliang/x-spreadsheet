@@ -55,7 +55,7 @@ describe('selection state', () => {
     expect(Object.isFrozen(model.merges[0]?.end)).toBe(true);
   });
 
-  it('normalizes a backwards drag while retaining its active focus', () => {
+  it('@parity:selection.normalize-range normalizes a backwards drag while retaining its active focus', () => {
     const model = createSheetGridModel({ rows: { len: 8 }, cols: { len: 8 } });
     const selection = createSelectionState(
       { row: 4, column: 5 },

@@ -294,7 +294,7 @@ it('keeps dialog controls out of grid selection and applies their action once', 
   ]);
 });
 
-it('isolates source and opening selection across interleaved filter and validation dialogs', async () => {
+it('@parity:tools.filter-controls isolates source and opening selection across interleaved filter and validation dialogs', async () => {
   const { changes, ref, rendered, root } = renderBoundarySheet();
   await waitFor(() => expect(ref.current).not.toBeNull());
 

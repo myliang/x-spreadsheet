@@ -46,7 +46,7 @@ export const parityManifest: readonly ParityRow[] = [
   {
     id: 'ranges',
     unit: { assertions: ['ranges.merge-autofill'] },
-    component: { assertions: ['ranges.name-box'] },
+    component: { assertions: ['ranges.selection-anchor'] },
     browser: { assertions: ['ranges.drag-fill'] },
     visual: { assertions: ['ranges.merged-selection'] },
   },

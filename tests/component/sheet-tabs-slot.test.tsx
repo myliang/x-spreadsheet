@@ -24,7 +24,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('supports default, hidden and isolated custom sheet-tab hosts', async () => {
+it('@parity:structure.sheet-tabs supports default, hidden and isolated custom sheet-tab hosts', async () => {
   const rendered = render(<TegoSheet defaultValue={[{ name: 'A' }]} />);
   await waitFor(() => expect(rendered.container.querySelector('[data-tego-sheet-tabs="default"]')).not.toBeNull());
   rendered.rerender(<TegoSheet defaultValue={[]} sheetTabs={false} />);
@@ -46,7 +46,7 @@ it('supports default, hidden and isolated custom sheet-tab hosts', async () => {
   expect(Object.isFrozen(props.sheets)).toBe(true);
 });
 
-it('uses sheet-tab actions for add, rename, activate and delete with read-only UI errors', async () => {
+it('@parity:workbook.sheet-lifecycle uses sheet-tab actions for add, rename, activate and delete with read-only UI errors', async () => {
   let props!: SheetTabsRenderProps;
   const active: SheetId[] = [];
   const errors: TegoSheetError[] = [];

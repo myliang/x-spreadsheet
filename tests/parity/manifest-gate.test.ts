@@ -75,7 +75,7 @@ const expectedCatalog: readonly CatalogRow[] = [
   {
     id: 'ranges',
     unit: ['ranges.merge-autofill'],
-    component: ['ranges.name-box'],
+    component: ['ranges.selection-anchor'],
     browser: ['ranges.drag-fill'],
     visual: ['ranges.merged-selection'],
   },

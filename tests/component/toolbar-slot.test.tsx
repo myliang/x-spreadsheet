@@ -54,7 +54,7 @@ it('supports default, hidden and custom toolbar hosts without leaking a controll
   expect('add' in props.disabledActions).toBe(false);
 });
 
-it('dispatches public actions through the command pipeline and reports forced disabled actions', async () => {
+it('@parity:formatting.toolbar dispatches public actions through the command pipeline and reports forced disabled actions', async () => {
   let props!: ToolbarRenderProps;
   const errors: TegoSheetError[] = [];
   const changes: string[] = [];
@@ -95,6 +95,29 @@ it('dispatches public actions through the command pipeline and reports forced di
   expect(props.disabledActions.has('set-style')).toBe(true);
   act(() => props.execute({ type: 'set-style', patch: { color: 'red' } }));
   expect(errors.at(-1)).toMatchObject({ code: 'INVALID_COMMAND', recoverable: true });
+});
+
+it('@parity:selection.keyboard-extension exposes the Shift-extended range through React toolbar props', async () => {
+  let props!: ToolbarRenderProps;
+  const rendered = render(
+    <TegoSheet
+      defaultValue={[{ rows: { len: 2 }, cols: { len: 3 } }]}
+      toolbar={value => {
+        props = value;
+        return null;
+      }}
+    />,
+  );
+  await waitFor(() => expect(props.selection).not.toBeNull());
+  const root = rendered.container.querySelector<HTMLElement>('[data-tego-sheet]')!;
+  fireEvent.focusIn(root);
+
+  fireEvent.keyDown(window, { key: 'ArrowRight', shiftKey: true });
+
+  expect(props.selection).toMatchObject({
+    active: { row: 0, column: 1 },
+    range: { start: { row: 0, column: 0 }, end: { row: 0, column: 1 } },
+  });
 });
 
 it('keeps paint-format disabled and applies the latest read-only gate to retained actions', async () => {
@@ -142,7 +165,7 @@ it('keeps paint-format disabled and applies the latest read-only gate to retaine
   expect(errors).toHaveLength(count);
 });
 
-it('uses range starts for structural actions even when the active cell is inside the range', async () => {
+it('@parity:ranges.selection-anchor uses range starts for structural actions even when the active cell is inside the range', async () => {
   const ref = createRef<TegoSheetHandle>();
   let props!: ToolbarRenderProps;
   const rendered = render(

@@ -32,7 +32,7 @@ describe('legacy formats', () => {
     ['time', '15:59:00', '15:59:00'],
     ['datetime', '26/09/2008 15:59:00', '26/09/2008 15:59:00'],
     ['duration', '24:01:00', '24:01:00'],
-  ])('@parity:formatting.number-and-date %s renders %j', (format, value, expected) => {
+  ])('legacy number-and-date %s renders %j', (format, value, expected) => {
     expect(formatValue(format, value)).toBe(expected);
   });
 

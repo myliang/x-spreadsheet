@@ -75,7 +75,7 @@ describe('formula functions', () => {
     ['OR', ['a', false], true],
     ['OR', [0, false], false],
     ['CONCAT', ['1200', 'USD'], '1200USD'],
-  ] as const)('@parity:formulas.functions %s(%j)', (name, args, expected) => {
+  ] as const)('@parity:formulas.computation %s(%j)', (name, args, expected) => {
     expect(FORMULA_FUNCTIONS[name](args)).toEqual(expected);
   });
 
@@ -118,7 +118,7 @@ describe('pure formula evaluation', () => {
     ['=0.1+0.2', '0.3'],
     ['=1/3', '0.33'],
     ['=1/0', Number.POSITIVE_INFINITY],
-  ])('@parity:formulas.evaluation evaluates %s', (formula, expected) => {
+  ])('@parity:formulas.computation evaluates %s', (formula, expected) => {
     expect(evaluateFormula(formula, select)).toEqual(expected);
   });
 

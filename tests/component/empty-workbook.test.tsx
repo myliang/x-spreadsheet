@@ -28,7 +28,7 @@ it('treats an empty object as one blank sheet', async () => {
   expect(rendered.getByRole('button', { name: /add sheet/i })).not.toBeNull();
 });
 
-it('preserves an empty array and lets an editable user add the first sheet', async () => {
+it('@parity:correction.empty-workbook-component preserves an empty array and lets an editable user add the first sheet', async () => {
   const onChange = vi.fn();
   const ref = createRef<TegoSheetHandle>();
   const rendered = render(

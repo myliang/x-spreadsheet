@@ -17,7 +17,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('runs validation, filter, sort, print, and tab operations through default React chrome', async () => {
+it('@parity:output.print-dialog runs validation, filter, sort, print, and tab operations through default React chrome', async () => {
   const ref = createRef<TegoSheetHandle>();
   let printStyle = '';
   let printPages = 0;
@@ -208,7 +208,7 @@ it('exposes legacy context actions and attributes context-menu mutations to thei
   expect(changes.at(-1)).toMatchObject({ kind: 'filter', source: 'toolbar' });
 });
 
-it('routes context clipboard modes through the interaction owner and keeps copy available read-only', async () => {
+it('@parity:clipboard.menu-actions routes context clipboard modes through the interaction owner and keeps copy available read-only', async () => {
   const clipboard = { readText: vi.fn(async () => ''), writeText: vi.fn(async () => undefined) };
   vi.stubGlobal('navigator', { userAgent: navigator.userAgent, clipboard });
   const ref = createRef<TegoSheetHandle>();

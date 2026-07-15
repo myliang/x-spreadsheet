@@ -1,10 +1,11 @@
 import { fileURLToPath, URL } from 'node:url';
 import { runNpm } from './package-test-runtime.mjs';
+import { defaultParityEvidencePaths } from './reporters/parity-evidence-paths.mjs';
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const evidencePaths = process.argv.length > 2
   ? process.argv.slice(2)
-  : ['test-results/parity-evidence.ndjson'];
+  : defaultParityEvidencePaths;
 
 runNpm([
   'exec',

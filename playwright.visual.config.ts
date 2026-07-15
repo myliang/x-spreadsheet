@@ -27,7 +27,13 @@ export default defineConfig({
       use: { browserName: 'chromium', deviceScaleFactor: 2, hasTouch: true, isMobile: true, viewport: touch },
     },
   ],
-  reporter: [['list']],
+  reporter: [
+    ['list'],
+    [
+      './scripts/reporters/playwright-parity-evidence.ts',
+      { lane: 'visual', outputPath: 'test-results/parity/visual.ndjson' },
+    ],
+  ],
   retries: 0,
   snapshotPathTemplate: '{testDir}/__snapshots__/{arg}-{projectName}{ext}',
   testDir: './tests/visual',

@@ -27,7 +27,13 @@ export default defineConfig({
       use: { browserName: 'webkit', hasTouch: true, viewport: touch },
     },
   ],
-  reporter: [['list']],
+  reporter: [
+    ['list'],
+    [
+      './scripts/reporters/playwright-parity-evidence.ts',
+      { lane: 'browser', outputPath: 'test-results/parity/browser.ndjson' },
+    ],
+  ],
   retries: 0,
   testDir: './tests',
   testMatch: ['browser/**/*.spec.{ts,tsx}', 'visual/**/*.spec.{ts,tsx}'],

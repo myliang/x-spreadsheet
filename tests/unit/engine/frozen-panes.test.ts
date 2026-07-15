@@ -10,7 +10,7 @@ import {
 } from '../../../src/engine';
 
 describe('frozen-pane geometry', () => {
-  it('creates the four legacy pane quadrants from resized rows and columns', () => {
+  it('@parity:view.frozen-geometry creates the four legacy pane quadrants from resized rows and columns', () => {
     const model = createSheetGridModel({
       rows: { len: 12, 0: { height: 20 }, 1: { height: 30 } },
       cols: {

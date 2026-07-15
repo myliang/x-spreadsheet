@@ -49,7 +49,7 @@ function activeSelection(
   return onSelectionChange.mock.lastCall![0];
 }
 
-it('acknowledges the newest checkpoint without replacing IDs, history, or callbacks', async () => {
+it('@parity:history.command-controls acknowledges the newest checkpoint without replacing IDs, history, or callbacks', async () => {
   const value: WorkbookInput = [{ name: 'A' }];
   const onChange = vi.fn<(value: WorkbookData, change: WorkbookChange) => void>();
   const onCellEdit = vi.fn();
