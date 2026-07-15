@@ -54,3 +54,27 @@ export type {
 } from './geometry/frozen-pane-geometry';
 export { overlayAnchor, overlayAnchors } from './geometry/overlay-anchors';
 export type { OverlayAnchor, PaneOverlayAnchor } from './geometry/overlay-anchors';
+export { CanvasEngine } from './canvas/canvas-engine';
+export type {
+  AnimationFramePort,
+  CanvasEngineOptions,
+  CanvasRenderSnapshot,
+  CanvasSurfacePort,
+  TextMeasurementPort,
+} from './canvas/canvas-engine';
+export {
+  PAPER_SIZES,
+  PrintRenderer,
+  createPrintLayout,
+  renderPrintPage,
+} from './canvas/print-renderer';
+export type {
+  PaperOrientation,
+  PaperSizeName,
+  PrintCellLayout,
+  PrintLayout,
+  PrintLayoutOptions,
+  PrintPageLayout,
+  PrintPaper,
+  PrintRenderOptions,
+} from './canvas/print-renderer';
