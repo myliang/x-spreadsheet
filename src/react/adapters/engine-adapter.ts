@@ -1,6 +1,7 @@
 import {
   parseA1,
   type ControllerSnapshot,
+  type LocaleDefinition,
   type Selection,
   type SheetId,
   type SheetOptions,
@@ -28,6 +29,7 @@ export interface EngineAdapterOptions {
   readonly canvas: HTMLCanvasElement;
   readonly sheetOptions?: SheetOptions;
   readonly showGrid?: boolean;
+  readonly locale?: LocaleDefinition;
 }
 
 export interface EngineAdapter {
@@ -111,6 +113,7 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
     const model = createSheetGridModel(sheet, {
       defaultRowHeight: options.sheetOptions?.rows?.defaultHeight,
       defaultColumnWidth: options.sheetOptions?.columns?.defaultWidth,
+      locale: options.locale,
     });
     const previousScroll = viewport?.scroll ?? { x: 0, y: 0 };
     viewport = createViewportMetrics(model, {
@@ -161,9 +164,10 @@ export function createEngineAdapter(options: EngineAdapterOptions): EngineAdapte
       if (start < visibleStart) x = start - frozenWidth;
       else if (end > visibleEnd) x = end - frozenWidth - bodyWidth;
     }
-    if (point.row >= viewport.freeze.row) {
-      const start = model.rowOffset(point.row);
-      const end = model.rowOffset(point.row + 1);
+    const visualRow = model.visualIndexOfRow(point.row);
+    if (visualRow >= viewport.freeze.row) {
+      const start = model.rowOffset(visualRow);
+      const end = model.rowOffset(visualRow + 1);
       const visibleStart = frozenHeight + y;
       const visibleEnd = visibleStart + bodyHeight;
       if (start < visibleStart) y = start - frozenHeight;

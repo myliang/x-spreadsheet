@@ -84,6 +84,10 @@ function hugeHiddenRowModel(count: number, hiddenStart: number) {
     previousVisibleRow,
     previousVisibleColumn: boundary => boundary === 0 ? null : boundary - 1,
     mergeAt: () => null,
+    logicalRowAtVisualIndex: row => row,
+    visualIndexOfRow: row => row,
+    visualRowRange: (start, end) => [start, end],
+    logicalRowRange: (start, end) => [start, end],
   };
   return { model, previousVisibleRow, rowAt, rowOffset };
 }
@@ -744,6 +748,10 @@ describe('InteractionManager clipboard, touch, resize and hide behavior', () => 
       previousVisibleRow: value => value === 0 ? null : value - 1,
       previousVisibleColumn: value => value === 0 ? null : value - 1,
       mergeAt: () => null,
+      logicalRowAtVisualIndex: row => row,
+      visualIndexOfRow: row => row,
+      visualRowRange: (start, end) => [start, end],
+      logicalRowRange: (start, end) => [start, end],
     };
     const viewport = createViewportMetrics(model, {
       width: 300,

@@ -694,6 +694,7 @@ function Runtime(
     enabled: sheets.length > 0,
     engineSlot,
     epoch: props.epoch,
+    locale: props.locale,
     onReady: signalEngineReady,
     onSelectionChange: setSelection,
     rootRef,

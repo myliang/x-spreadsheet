@@ -131,14 +131,16 @@ export function moveSelection(
   const current = model.mergeAt(normalized.anchor)?.start ?? normalized.anchor;
   let next = current;
   if (direction === 'up') {
+    const visualRow = model.visualIndexOfRow(current.row);
     next = {
       ...current,
-      row: Math.max(0, current.row - 1),
+      row: model.logicalRowAtVisualIndex(Math.max(0, visualRow - 1)),
     };
   } else if (direction === 'down') {
+    const visualRow = model.visualIndexOfRow(normalized.range.end.row);
     next = {
       ...current,
-      row: Math.min(model.rowCount - 1, normalized.range.end.row + 1),
+      row: model.logicalRowAtVisualIndex(Math.min(model.rowCount - 1, visualRow + 1)),
     };
   } else if (direction === 'left') {
     next = {

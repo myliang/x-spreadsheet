@@ -1,6 +1,5 @@
-import type { CellPoint, CellRange } from '../../core/types/coordinates';
+import type { CellPoint } from '../../core/types/coordinates';
 import type { SheetData } from '../../core/types/workbook';
-import { rangesIntersect } from '../../core/coordinates/ranges';
 import { rangeRect } from '../geometry/grid-geometry';
 import type { FrozenQuadrant } from '../geometry/frozen-pane-geometry';
 import type { ViewportMetrics } from '../ports';
@@ -53,7 +52,7 @@ function axisAt(axis: Axis, coordinate: number, viewport: ViewportMetrics): numb
 
 function axisSize(axis: Axis, index: number, viewport: ViewportMetrics): number {
   return axis === 'row'
-    ? viewport.model.rowHeight(index)
+    ? viewport.model.rowHeight(viewport.model.logicalRowAtVisualIndex(index))
     : viewport.model.columnWidth(index);
 }
 
@@ -69,7 +68,7 @@ function isFrozenAxis(axis: Axis, pane: FrozenQuadrant): boolean {
     : pane.kind === 'corner' || pane.kind === 'left';
 }
 
-function paneAxisIndexes(
+function paneVisualAxisIndexes(
   axis: Axis,
   pane: FrozenQuadrant,
   viewport: ViewportMetrics,
@@ -92,6 +91,17 @@ function paneAxisIndexes(
   return enumerateAxisIndexes(axis, start, end, viewport);
 }
 
+function paneAxisIndexes(
+  axis: Axis,
+  pane: FrozenQuadrant,
+  viewport: ViewportMetrics,
+): readonly number[] {
+  const indexes = paneVisualAxisIndexes(axis, pane, viewport);
+  return axis === 'row'
+    ? indexes.map(index => viewport.model.logicalRowAtVisualIndex(index))
+    : indexes;
+}
+
 function enumerateAxisIndexes(
   axis: Axis,
   start: number,
@@ -109,20 +119,6 @@ function enumerateAxisIndexes(
     if (axisSize(axis, index, viewport) > 0) indexes.push(index);
   }
   return indexes;
-}
-
-function coordinateRange(rows: readonly number[], columns: readonly number[]): CellRange | null {
-  const firstRow = rows[0];
-  const lastRow = rows.at(-1);
-  const firstColumn = columns[0];
-  const lastColumn = columns.at(-1);
-  return firstRow === undefined || lastRow === undefined
-    || firstColumn === undefined || lastColumn === undefined
-    ? null
-    : {
-        start: { row: firstRow, column: firstColumn },
-        end: { row: lastRow, column: lastColumn },
-      };
 }
 
 export function paneCells(
@@ -162,11 +158,17 @@ export function paneCells(
       }
     }
   }
-  const range = coordinateRange(rows, columns);
-  if (range !== null) {
-    for (const merge of viewport.model.merges) {
-      if (rangesIntersect(range, merge)) add(merge.start);
-    }
+  const columnRange = columns.length === 0
+    ? null
+    : { start: Math.min(...columns), end: Math.max(...columns) };
+  for (const merge of viewport.model.merges) {
+    const visibleRow = rows.some(row => row >= merge.start.row && row <= merge.end.row);
+    if (
+      visibleRow
+      && columnRange !== null
+      && merge.start.column <= columnRange.end
+      && merge.end.column >= columnRange.start
+    ) add(merge.start);
   }
   return points;
 }

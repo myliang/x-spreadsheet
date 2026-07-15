@@ -15,9 +15,10 @@ function columnLabel(column: number): string {
 }
 
 function rowTop(row: number, viewport: ViewportMetrics): number {
+  const visualRow = viewport.model.visualIndexOfRow(row);
   return viewport.columnHeaderHeight
-    + viewport.model.rowOffset(row)
-    - (row < viewport.freeze.row ? 0 : viewport.scroll.y);
+    + viewport.model.rowOffset(visualRow)
+    - (visualRow < viewport.freeze.row ? 0 : viewport.scroll.y);
 }
 
 function columnLeft(column: number, viewport: ViewportMetrics): number {
@@ -55,7 +56,9 @@ export function paintHeaders(
     width: viewport.rowHeaderWidth,
     height: viewport.height,
   }, '#f4f5f8');
-  const rows = [...new Set(visibleRows)].sort((a, b) => a - b);
+  const rows = [...new Set(visibleRows)].sort((a, b) => (
+    viewport.model.visualIndexOfRow(a) - viewport.model.visualIndexOfRow(b)
+  ));
   const columns = [...new Set(visibleColumns)].sort((a, b) => a - b);
   for (const row of rows) {
     const top = rowTop(row, viewport);
@@ -64,7 +67,11 @@ export function paintHeaders(
       draw.fillRect({ left: 0, top, width: viewport.rowHeaderWidth, height }, 'rgba(75, 137, 255, 0.08)');
     }
     draw.line({ x: 0, y: top }, { x: viewport.rowHeaderWidth, y: top }, { color: '#e6e6e6' });
-    if (row > 0 && hiddenEntry(sheet?.rows, row - 1)) {
+    const visualRow = viewport.model.visualIndexOfRow(row);
+    const previousRow = visualRow === 0
+      ? null
+      : viewport.model.logicalRowAtVisualIndex(visualRow - 1);
+    if (previousRow !== null && hiddenEntry(sheet?.rows, previousRow)) {
       draw.line(
         { x: 5, y: top + 5 },
         { x: viewport.rowHeaderWidth - 5, y: top + 5 },

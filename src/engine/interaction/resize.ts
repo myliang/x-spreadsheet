@@ -70,15 +70,16 @@ export function findResizeBoundary(
     const region = hitTestRegion(point, viewport);
     if (region?.kind !== 'row-header') return null;
     const row = region.row;
-    const top = viewport.columnHeaderHeight + model.rowOffset(row)
-      - (row < viewport.freeze.row ? 0 : viewport.scroll.y);
+    const visualRow = model.visualIndexOfRow(row);
+    const top = viewport.columnHeaderHeight + model.rowOffset(visualRow)
+      - (visualRow < viewport.freeze.row ? 0 : viewport.scroll.y);
     const topDistance = Math.abs(point.y - top);
     const bottomDistance = Math.abs(point.y - (top + model.rowHeight(row)));
     const hitsTop = topDistance <= tolerance && topDistance <= bottomDistance;
     if (!hitsTop && bottomDistance > tolerance) return null;
     return {
       axis: 'row',
-      boundary: hitsTop ? row : row + 1,
+      boundary: hitsTop ? visualRow : visualRow + 1,
     };
   }
   return null;
@@ -100,6 +101,11 @@ export function hiddenRunBefore(
   boundary: number,
   viewport: ViewportMetrics,
 ): readonly [start: number, count: number] | null {
+  if (
+    axis === 'row'
+    && boundary > 0
+    && viewport.model.logicalRowAtVisualIndex(boundary - 1) !== boundary - 1
+  ) return null;
   const previous = previousVisible(axis, boundary, viewport);
   const start = previous === null ? 0 : previous + 1;
   return start === boundary ? null : [start, boundary - start];

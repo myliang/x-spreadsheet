@@ -1,5 +1,7 @@
 import { containsCell, parseA1Range } from '../core/coordinates/ranges';
 import { filteredRows } from '../core/operations/filter';
+import { sortRows } from '../core/operations/sort';
+import type { LocaleDefinition } from '../core/types/changes';
 import type { CellPoint, CellRange } from '../core/types/coordinates';
 import type { ColumnData, RowData, SheetData } from '../core/types/workbook';
 
@@ -35,6 +37,10 @@ export interface GridModelPort {
   readonly previousVisibleRow: (rowBoundary: number) => number | null;
   readonly previousVisibleColumn: (columnBoundary: number) => number | null;
   readonly mergeAt: (point: CellPoint) => CellRange | null;
+  readonly logicalRowAtVisualIndex: (visualRow: number) => number;
+  readonly visualIndexOfRow: (logicalRow: number) => number;
+  readonly visualRowRange: (logicalStart: number, logicalEnd: number) => readonly [number, number];
+  readonly logicalRowRange: (visualStart: number, visualEnd: number) => readonly [number, number];
 }
 
 export interface ViewportMetrics {
@@ -50,6 +56,7 @@ export interface ViewportMetrics {
 export interface SheetGridSizing {
   readonly defaultRowHeight?: number;
   readonly defaultColumnWidth?: number;
+  readonly locale?: LocaleDefinition;
 }
 
 const DEFAULT_ROW_COUNT = 100;
@@ -94,6 +101,151 @@ function frozenRange(range: CellRange): CellRange {
     start: Object.freeze({ row: range.start.row, column: range.start.column }),
     end: Object.freeze({ row: range.end.row, column: range.end.column }),
   });
+}
+
+interface RowOrder {
+  readonly logicalAtVisual: (visualRow: number) => number;
+  readonly visualOfLogical: (logicalRow: number) => number;
+  readonly visualRange: (logicalStart: number, logicalEnd: number) => readonly [number, number];
+  readonly logicalRange: (visualStart: number, visualEnd: number) => readonly [number, number];
+  readonly reordered: boolean;
+}
+
+function identityRowOrder(count: number): RowOrder {
+  const assertRow = (row: number, label: string): number => {
+    assertIndex(row, count, label);
+    return row;
+  };
+  return {
+    logicalAtVisual: row => assertRow(row, 'visual row'),
+    visualOfLogical: row => assertRow(row, 'logical row'),
+    visualRange(logicalStart, logicalEnd) {
+      assertRow(logicalStart, 'logical row range start');
+      assertRow(logicalEnd, 'logical row range end');
+      return [logicalStart, logicalEnd];
+    },
+    logicalRange(visualStart, visualEnd) {
+      assertRow(visualStart, 'visual row range start');
+      assertRow(visualEnd, 'visual row range end');
+      return [visualStart, visualEnd];
+    },
+    reordered: false,
+  };
+}
+
+function mappedRangeBounds(
+  inputStart: number,
+  inputEnd: number,
+  count: number,
+  mappedStart: number,
+  mappedEnd: number,
+  map: (index: number) => number,
+  label: string,
+): readonly [number, number] {
+  assertIndex(inputStart, count, `${label} range start`);
+  assertIndex(inputEnd, count, `${label} range end`);
+  if (inputStart > inputEnd) throw new RangeError(`${label} range must be normalized`);
+  if (inputStart === inputEnd) {
+    const mapped = map(inputStart);
+    return [mapped, mapped];
+  }
+  let first = count;
+  let last = -1;
+  const include = (index: number): void => {
+    first = Math.min(first, index);
+    last = Math.max(last, index);
+  };
+  if (inputStart < mappedStart) {
+    include(inputStart);
+    include(Math.min(inputEnd, mappedStart - 1));
+  }
+  const overlapStart = Math.max(inputStart, mappedStart);
+  const overlapEnd = Math.min(inputEnd, mappedEnd);
+  for (let index = overlapStart; index <= overlapEnd; index += 1) include(map(index));
+  if (inputEnd > mappedEnd) {
+    include(Math.max(inputStart, mappedEnd + 1));
+    include(inputEnd);
+  }
+  return [first, last];
+}
+
+function createRowOrder(
+  sheet: Readonly<SheetData>,
+  count: number,
+  locale: LocaleDefinition,
+): RowOrder {
+  const sort = sheet.autofilter?.sort;
+  const reference = sheet.autofilter?.ref;
+  if (sort?.ci === undefined || sort.order === undefined || reference === undefined) {
+    return identityRowOrder(count);
+  }
+  try {
+    const parsed = parseA1Range(reference);
+    const start = Math.min(count, parsed.start.row + 1);
+    const end = Math.min(count - 1, parsed.end.row);
+    if (start > end) return identityRowOrder(count);
+    const range = {
+      start: { row: parsed.start.row, column: parsed.start.column },
+      end: { row: end, column: parsed.end.column },
+    };
+    const sorted = sortRows(sheet, sort.ci, sort.order, locale, range);
+    const included = new Set(sorted);
+    const order = [
+      ...sorted,
+      ...Array.from({ length: end - start + 1 }, (_, index) => start + index)
+        .filter(row => !included.has(row)),
+    ];
+    const visualByLogical = new Map(order.map((row, index) => [row, start + index]));
+    return {
+      logicalAtVisual(visualRow) {
+        assertIndex(visualRow, count, 'visual row');
+        return visualRow < start || visualRow > end
+          ? visualRow
+          : order[visualRow - start] as number;
+      },
+      visualOfLogical(logicalRow) {
+        assertIndex(logicalRow, count, 'logical row');
+        return visualByLogical.get(logicalRow) ?? logicalRow;
+      },
+      visualRange(logicalStart, logicalEnd) {
+        return mappedRangeBounds(
+          logicalStart,
+          logicalEnd,
+          count,
+          start,
+          end,
+          logicalRow => visualByLogical.get(logicalRow) ?? logicalRow,
+          'logical row',
+        );
+      },
+      logicalRange(visualStart, visualEnd) {
+        return mappedRangeBounds(
+          visualStart,
+          visualEnd,
+          count,
+          start,
+          end,
+          visualRow => order[visualRow - start] ?? visualRow,
+          'visual row',
+        );
+      },
+      reordered: order.some((row, index) => row !== start + index),
+    };
+  } catch {
+    return identityRowOrder(count);
+  }
+}
+
+function remapRows(
+  rows: Readonly<Record<string, unknown>> | undefined,
+  count: number,
+  order: RowOrder,
+): Readonly<Record<string, unknown>> | undefined {
+  if (!order.reordered || rows === undefined) return rows;
+  return Object.fromEntries(Object.entries(rows).map(([key, value]) => {
+    const logical = sparseIndex(key, count);
+    return logical === null ? [key, value] : [String(order.visualOfLogical(logical)), value];
+  }));
 }
 
 interface SparseAxis {
@@ -239,6 +391,7 @@ export function createSheetGridModel(
   const merges = Object.freeze((sheet.merges ?? []).map(value => (
     frozenRange(parseA1Range(value))
   )));
+  const order = createRowOrder(sheet, rowCount, sizing.locale ?? { id: 'en', messages: {} });
   let filtered: readonly number[] = [];
   try {
     filtered = filteredRows(sheet);
@@ -246,13 +399,13 @@ export function createSheetGridModel(
     // Invalid imported filter metadata stays inert until a valid command replaces it.
   }
   const rows = createSparseAxis<RowData>(
-    sheet.rows,
+    remapRows(sheet.rows, rowCount, order),
     rowCount,
     defaultRowHeight,
     data => data.height,
     'row',
     defaultRowHeight > 0 ? 'last' : 'none',
-    filtered,
+    filtered.map(order.visualOfLogical),
   );
   const columns = createSparseAxis<ColumnData>(
     sheet.cols,
@@ -267,16 +420,23 @@ export function createSheetGridModel(
     rowCount,
     columnCount,
     merges,
-    rowHeight: rows.size,
+    rowHeight: (logicalRow: number) => rows.size(order.visualOfLogical(logicalRow)),
     columnWidth: columns.size,
     rowOffset: rows.offset,
     columnOffset: columns.offset,
     rowAt: rows.indexAt,
     columnAt: columns.indexAt,
-    previousVisibleRow: rows.previousVisible,
+    previousVisibleRow: (boundary: number) => {
+      const visual = rows.previousVisible(boundary);
+      return visual === null ? null : order.logicalAtVisual(visual);
+    },
     previousVisibleColumn: columns.previousVisible,
     mergeAt: (point: CellPoint): CellRange | null => (
       merges.find(merge => containsCell(merge, point)) ?? null
     ),
+    logicalRowAtVisualIndex: order.logicalAtVisual,
+    visualIndexOfRow: order.visualOfLogical,
+    visualRowRange: order.visualRange,
+    logicalRowRange: order.logicalRange,
   });
 }

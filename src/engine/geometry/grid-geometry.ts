@@ -56,8 +56,9 @@ function viewportAxisPosition(index: number, axis: Axis, viewport: ViewportMetri
   const header = axis === 'row' ? viewport.columnHeaderHeight : viewport.rowHeaderWidth;
   const scroll = axis === 'row' ? viewport.scroll.y : viewport.scroll.x;
   const frozen = axis === 'row' ? viewport.freeze.row : viewport.freeze.column;
-  const content = axisOffset(index, axis, viewport.model);
-  const translatedContent = content - (index < frozen ? 0 : scroll);
+  const visualIndex = axis === 'row' ? viewport.model.visualIndexOfRow(index) : index;
+  const content = axisOffset(visualIndex, axis, viewport.model);
+  const translatedContent = content - (visualIndex < frozen ? 0 : scroll);
   return finiteCssSum(header, translatedContent, 'CSS axis position');
 }
 
@@ -67,7 +68,38 @@ function axisRangeBounds(
   axis: Axis,
   viewport: ViewportMetrics,
 ): readonly [start: number, end: number] {
-  const frozen = axis === 'row' ? viewport.freeze.row : viewport.freeze.column;
+  if (axis === 'row') {
+    const [firstVisualRow, lastVisualRow] = viewport.model.visualRowRange(start, end);
+    const frozen = viewport.freeze.row;
+    const position = (visualRow: number): number => finiteCssSum(
+      viewport.columnHeaderHeight,
+      viewport.model.rowOffset(visualRow) - (visualRow < frozen ? 0 : viewport.scroll.y),
+      'CSS axis position',
+    );
+    const segments: Array<readonly [number, number]> = [];
+    if (firstVisualRow < frozen) {
+      segments.push([firstVisualRow, Math.min(lastVisualRow, frozen - 1)]);
+    }
+    if (lastVisualRow >= frozen) {
+      segments.push([Math.max(firstVisualRow, frozen), lastVisualRow]);
+    }
+    const bounds = segments.map(([segmentStart, segmentEnd]) => {
+      const lastLogicalRow = viewport.model.logicalRowAtVisualIndex(segmentEnd);
+      return [
+        position(segmentStart),
+        finiteCssSum(
+          position(segmentEnd),
+          viewport.model.rowHeight(lastLogicalRow),
+          'CSS axis edge',
+        ),
+      ] as const;
+    });
+    return [
+      Math.min(...bounds.flatMap(value => value)),
+      Math.max(...bounds.flatMap(value => value)),
+    ];
+  }
+  const frozen = viewport.freeze.column;
   const segments: Array<readonly [number, number]> = [];
   if (start < frozen) segments.push([start, Math.min(end, frozen - 1)]);
   if (end >= frozen) segments.push([Math.max(start, frozen), end]);
@@ -186,9 +218,10 @@ export function visibleCellRange(viewport: ViewportMetrics): CellRange | null {
     viewport,
   );
   if (rows === null || columns === null) return null;
+  const logicalRows = viewport.model.logicalRowRange(rows[0], rows[1]);
   return normalizeCellRange({
-    start: { row: rows[0], column: columns[0] },
-    end: { row: rows[1], column: columns[1] },
+    start: { row: logicalRows[0], column: columns[0] },
+    end: { row: logicalRows[1], column: columns[1] },
   });
 }
 
@@ -212,7 +245,8 @@ function viewportAxisIndex(
 }
 
 export function findRowAtViewportY(y: number, viewport: ViewportMetrics): number | null {
-  return viewportAxisIndex(y, 'row', viewport);
+  const visualRow = viewportAxisIndex(y, 'row', viewport);
+  return visualRow === null ? null : viewport.model.logicalRowAtVisualIndex(visualRow);
 }
 
 export function findColumnAtViewportX(x: number, viewport: ViewportMetrics): number | null {
