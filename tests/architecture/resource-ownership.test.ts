@@ -152,74 +152,119 @@ const registryOwnershipMethods = new Map<string, ResourcePrimitive>([
   ['timer', 'timer'],
 ]);
 
-function ownershipMember(owner: string | null, method: string | null): ResourcePrimitive | undefined {
-  if (owner === 'registry' && method !== null) return registryOwnershipMethods.get(method);
-  return owner === 'controller' && method === 'subscribe' ? 'subscription' : undefined;
+type OwnerObject = 'canvas-options' | 'controller-object' | 'epoch-object' | 'registry-object';
+type OwnerAlias = OwnerObject | ResourcePrimitive;
+
+function ownershipMember(owner: OwnerAlias | undefined, method: string | null): OwnerAlias | undefined {
+  if (owner === 'registry-object' && method !== null) return registryOwnershipMethods.get(method);
+  if (owner === 'controller-object' && method === 'subscribe') return 'subscription';
+  if (owner === 'canvas-options' && method === 'epoch') return 'epoch-object';
+  return owner === 'epoch-object' && method === 'controller' ? 'controller-object' : undefined;
 }
 
-function ownershipReference(
-  expression: ts.Expression,
-  aliases: ReadonlyMap<string, ResourcePrimitive>,
-): ResourcePrimitive | undefined {
-  if (ts.isIdentifier(expression)) return aliases.get(expression.text);
-  const target = boundTarget(expression);
-  if (target !== null) return ownershipReference(target, aliases);
-  if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression)) {
-    return undefined;
+function lifetimeResourcesFromSource(source: string, file: string): readonly ResourcePrimitive[] {
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  interface Scope {
+    readonly bindings: Map<string, OwnerAlias | null>;
+    readonly parent: Scope | null;
   }
-  return ownershipMember(expressionName(expression.expression), expressionName(expression));
-}
-
-function ownershipAliases(sourceFile: ts.SourceFile): ReadonlyMap<string, ResourcePrimitive> {
-  const aliases = new Map<string, ResourcePrimitive>();
+  const rootScope: Scope = { bindings: new Map(), parent: null };
+  const scopes = new WeakMap<ts.Node, Scope>();
+  const buildScopes = (node: ts.Node, parent: Scope): void => {
+    const scope = (ts.isFunctionLike(node) || ts.isBlock(node))
+      ? { bindings: new Map(), parent }
+      : parent;
+    scopes.set(node, scope);
+    ts.forEachChild(node, child => buildScopes(child, scope));
+  };
+  buildScopes(sourceFile, rootScope);
+  const visit = (node: ts.Node, visitor: (current: ts.Node, scope: Scope) => void): void => {
+    const scope = scopes.get(node)!;
+    visitor(node, scope);
+    ts.forEachChild(node, child => visit(child, visitor));
+  };
+  const declare = (scope: Scope, name: ts.BindingName): void => {
+    if (ts.isIdentifier(name)) {
+      scope.bindings.set(name.text, null);
+      return;
+    }
+    for (const element of name.elements) {
+      if (!ts.isOmittedExpression(element)) declare(scope, element.name);
+    }
+  };
+  visit(sourceFile, (node, scope) => {
+    if (ts.isVariableDeclaration(node)) declare(scope, node.name);
+    if (ts.isParameter(node)) {
+      declare(scope, node.name);
+      if (!ts.isIdentifier(node.name) || node.type === undefined) return;
+      const type = node.type.getText(sourceFile);
+      if (/\bWorkbookController\b/.test(type)) scope.bindings.set(node.name.text, 'controller-object');
+      if (/\bUseCanvasEngineOptions\b/.test(type)) scope.bindings.set(node.name.text, 'canvas-options');
+    }
+  });
+  const lookup = (scope: Scope, name: string): { readonly owner: Scope | null; readonly value: OwnerAlias | null } => {
+    for (let current: Scope | null = scope; current !== null; current = current.parent) {
+      if (current.bindings.has(name)) return { owner: current, value: current.bindings.get(name)! };
+    }
+    return { owner: null, value: null };
+  };
+  const aliasFor = (expression: ts.Expression, scope: Scope): OwnerAlias | undefined => {
+    if (ts.isIdentifier(expression)) return lookup(scope, expression.text).value ?? undefined;
+    if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+      const property = expressionName(expression);
+      if (
+        expression.expression.kind === ts.SyntaxKind.ThisKeyword
+        && property === 'registry'
+      ) return 'registry-object';
+      return ownershipMember(aliasFor(expression.expression, scope), property);
+    }
+    const target = boundTarget(expression);
+    return target === null ? undefined : aliasFor(target, scope);
+  };
   let changed = true;
   while (changed) {
     changed = false;
-    const bind = (name: string | null, primitive: ResourcePrimitive | undefined): void => {
-      if (name === null || primitive === undefined || aliases.get(name) === primitive) return;
-      aliases.set(name, primitive);
+    const bind = (scope: Scope, name: string | null, alias: OwnerAlias | undefined): void => {
+      if (name === null || alias === undefined || scope.bindings.get(name) === alias) return;
+      scope.bindings.set(name, alias);
       changed = true;
     };
-    const visit = (node: ts.Node): void => {
+    visit(sourceFile, (node, scope) => {
       if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
         if (ts.isIdentifier(node.name)) {
-          bind(node.name.text, ownershipReference(node.initializer, aliases));
-        } else if (ts.isObjectBindingPattern(node.name)) {
-          const owner = expressionName(node.initializer);
-          for (const element of node.name.elements) {
-            bind(
-              bindingName(element.name),
-              ownershipMember(owner, bindingName(element.propertyName ?? element.name)),
-            );
-          }
+          bind(scope, node.name.text, aliasFor(node.initializer, scope));
+          return;
+        }
+        if (!ts.isObjectBindingPattern(node.name)) return;
+        const owner = aliasFor(node.initializer, scope);
+        for (const element of node.name.elements) {
+          bind(
+            scope,
+            bindingName(element.name),
+            ownershipMember(owner, bindingName(element.propertyName ?? element.name)),
+          );
         }
       } else if (
         ts.isBinaryExpression(node)
         && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
         && ts.isIdentifier(node.left)
       ) {
-        bind(node.left.text, ownershipReference(node.right, aliases));
+        const target = lookup(scope, node.left.text);
+        if (target.owner !== null) bind(target.owner, node.left.text, aliasFor(node.right, scope));
       }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
+    });
   }
-  return aliases;
-}
-
-function lifetimeResourcesFromSource(source: string, file: string): readonly ResourcePrimitive[] {
-  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
-    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-  const aliases = ownershipAliases(sourceFile);
   const primitives: ResourcePrimitive[] = [];
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node)) {
-      const primitive = ownershipReference(node.expression, aliases);
-      if (primitive !== undefined) primitives.push(primitive);
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
+  visit(sourceFile, (node, scope) => {
+    if (!ts.isCallExpression(node)) return;
+    const primitive = aliasFor(node.expression, scope);
+    if (
+      primitive !== undefined
+      && primitive !== 'canvas-options'
+      && !primitive.endsWith('-object')
+    ) primitives.push(primitive as ResourcePrimitive);
+  });
   return primitives;
 }
 
@@ -260,10 +305,35 @@ it('keeps lifetime-owner wrapper calls visible through ordinary aliases', () => 
   expect(lifetimeResourcesFromSource(`
     const ownListener = this.registry.listen.bind(this.registry);
     const { timer: ownTimer } = this.registry;
-    const { subscribe: connect } = controller;
     ownListener(root, 'click', listener);
     ownTimer(cancel);
-    connect(publish);
+    function connectController(controller: WorkbookController) {
+      const { subscribe: connect } = controller;
+      connect(publish);
+    }
+  `, 'probe.ts')).toEqual(['listener', 'timer', 'subscription']);
+});
+
+it('resolves owner-object aliases without trusting unrelated receiver names', () => {
+  expect(lifetimeResourcesFromSource(`
+    const resources = this.registry;
+    const chained = resources;
+    let assigned;
+    assigned = chained;
+    const { listen: ownListener, timer: ownTimer } = assigned;
+    const boundListener = ownListener.bind(assigned);
+    boundListener(root, 'click', listener);
+    ownTimer(cancel);
+
+    const registry = unrelatedRegistry;
+    const controller = unrelatedController;
+    registry.listen(root, 'fake', listener);
+    controller.subscribe(listener);
+
+    function connect(realController: WorkbookController) {
+      const source = realController;
+      source.subscribe(listener);
+    }
   `, 'probe.ts')).toEqual(['listener', 'timer', 'subscription']);
 });
 

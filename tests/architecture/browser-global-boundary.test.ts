@@ -103,26 +103,22 @@ function staticName(node: ts.Node | undefined): string | null {
   return null;
 }
 
-function visitEager(node: ts.Node, visitor: (current: ts.Node) => void): void {
-  if (ts.isTypeNode(node)) return;
-  visitor(node);
+function forEachEagerChild(node: ts.Node, visitor: (child: ts.Node) => void): void {
   if (ts.isFunctionLike(node)) return;
   if (ts.isClassDeclaration(node) || ts.isClassExpression(node)) {
     for (const clause of node.heritageClauses ?? []) {
-      for (const type of clause.types) visitEager(type.expression, visitor);
+      for (const type of clause.types) visitor(type.expression);
     }
     for (const member of node.members) {
       const isStatic = (ts.canHaveModifiers(member) ? ts.getModifiers(member) : undefined)
         ?.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword) ?? false;
       if (!isStatic) continue;
-      if (ts.isPropertyDeclaration(member) && member.initializer !== undefined) {
-        visitEager(member.initializer, visitor);
-      }
-      if (ts.isClassStaticBlockDeclaration(member)) visitEager(member.body, visitor);
+      if (ts.isPropertyDeclaration(member) && member.initializer !== undefined) visitor(member.initializer);
+      if (ts.isClassStaticBlockDeclaration(member)) visitor(member.body);
     }
     return;
   }
-  ts.forEachChild(node, child => visitEager(child, visitor));
+  ts.forEachChild(node, visitor);
 }
 
 function collectBindingNames(name: ts.BindingName, names: Set<string>): void {
@@ -138,9 +134,31 @@ function collectBindingNames(name: ts.BindingName, names: Set<string>): void {
 function eagerBrowserGlobalsFromSource(source: string, file: string): readonly string[] {
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true,
     file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-  const declared = new Set<string>();
-  visitEager(sourceFile, node => {
-    if (ts.isVariableDeclaration(node)) collectBindingNames(node.name, declared);
+  interface Scope {
+    readonly bindings: Map<string, BrowserAlias | null>;
+    readonly parent: Scope | null;
+  }
+  const rootScope: Scope = { bindings: new Map(), parent: null };
+  const scopes = new WeakMap<ts.Node, Scope>();
+  const buildScopes = (node: ts.Node, parent: Scope): void => {
+    if (ts.isTypeNode(node)) return;
+    const scope = ts.isBlock(node) ? { bindings: new Map(), parent } : parent;
+    scopes.set(node, scope);
+    forEachEagerChild(node, child => buildScopes(child, scope));
+  };
+  buildScopes(sourceFile, rootScope);
+  const visit = (node: ts.Node, visitor: (current: ts.Node, scope: Scope) => void): void => {
+    if (ts.isTypeNode(node)) return;
+    const scope = scopes.get(node)!;
+    visitor(node, scope);
+    forEachEagerChild(node, child => visit(child, visitor));
+  };
+  visit(sourceFile, (node, scope) => {
+    if (ts.isVariableDeclaration(node)) {
+      const names = new Set<string>();
+      collectBindingNames(node.name, names);
+      for (const name of names) scope.bindings.set(name, null);
+    }
     if (
       (ts.isFunctionDeclaration(node)
         || ts.isClassDeclaration(node)
@@ -150,20 +168,23 @@ function eagerBrowserGlobalsFromSource(source: string, file: string): readonly s
         || ts.isNamespaceImport(node)
         || ts.isImportSpecifier(node))
       && node.name !== undefined
-    ) declared.add(node.name.text);
+    ) scope.bindings.set(node.name.text, null);
   });
-
-  const aliases = new Map<string, BrowserAlias>();
-  const aliasFor = (expression: ts.Expression): BrowserAlias | undefined => {
+  const lookup = (scope: Scope, name: string): { readonly found: boolean; readonly value: BrowserAlias | null } => {
+    for (let current: Scope | null = scope; current !== null; current = current.parent) {
+      if (current.bindings.has(name)) return { found: true, value: current.bindings.get(name)! };
+    }
+    return { found: false, value: null };
+  };
+  const aliasFor = (expression: ts.Expression, scope: Scope): BrowserAlias | undefined => {
     if (ts.isIdentifier(expression)) {
-      const alias = aliases.get(expression.text);
-      if (alias !== undefined) return alias;
-      if (declared.has(expression.text)) return undefined;
+      const binding = lookup(scope, expression.text);
+      if (binding.found) return binding.value ?? undefined;
       if (expression.text === 'globalThis' || expression.text === 'window') return globalObject;
       return browserGlobals.has(expression.text) ? expression.text : undefined;
     }
     if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
-      const parent = aliasFor(expression.expression);
+      const parent = aliasFor(expression.expression, scope);
       const property = ts.isPropertyAccessExpression(expression)
         ? expression.name.text
         : staticName(expression.argumentExpression);
@@ -176,39 +197,50 @@ function eagerBrowserGlobalsFromSource(source: string, file: string): readonly s
       if (
         (ts.isPropertyAccessExpression(binder) || ts.isElementAccessExpression(binder))
         && staticName(ts.isPropertyAccessExpression(binder) ? binder.name : binder.argumentExpression) === 'bind'
-      ) return aliasFor(binder.expression);
+      ) return aliasFor(binder.expression, scope);
     }
     return undefined;
   };
-
   let changed = true;
   while (changed) {
     changed = false;
-    const bind = (name: string | null, alias: BrowserAlias | undefined): void => {
-      if (name === null || alias === undefined || aliases.get(name) === alias) return;
-      aliases.set(name, alias);
+    const bind = (scope: Scope, name: string | null, alias: BrowserAlias | undefined): void => {
+      if (name === null || alias === undefined || scope.bindings.get(name) === alias) return;
+      scope.bindings.set(name, alias);
       changed = true;
     };
-    visitEager(sourceFile, node => {
-      if (!ts.isVariableDeclaration(node) || node.initializer === undefined) return;
-      if (ts.isIdentifier(node.name)) {
-        bind(node.name.text, aliasFor(node.initializer));
-        return;
-      }
-      if (!ts.isObjectBindingPattern(node.name)) return;
-      const parent = aliasFor(node.initializer);
-      for (const element of node.name.elements) {
-        const property = staticName(element.propertyName ?? element.name);
-        const alias = parent === globalObject && property !== null && browserGlobals.has(property)
-          ? property
-          : parent === globalObject ? undefined : parent;
-        bind(staticName(element.name), alias);
+    visit(sourceFile, (node, scope) => {
+      if (ts.isVariableDeclaration(node) && node.initializer !== undefined) {
+        if (ts.isIdentifier(node.name)) {
+          bind(scope, node.name.text, aliasFor(node.initializer, scope));
+          return;
+        }
+        if (!ts.isObjectBindingPattern(node.name)) return;
+        const parent = aliasFor(node.initializer, scope);
+        for (const element of node.name.elements) {
+          const property = staticName(element.propertyName ?? element.name);
+          const alias = parent === globalObject && property !== null && browserGlobals.has(property)
+            ? property
+            : parent === globalObject ? undefined : parent;
+          bind(scope, staticName(element.name), alias);
+        }
+      } else if (
+        ts.isBinaryExpression(node)
+        && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+        && ts.isIdentifier(node.left)
+      ) {
+        const target = lookup(scope, node.left.text);
+        if (!target.found) return;
+        for (let owner: Scope | null = scope; owner !== null; owner = owner.parent) {
+          if (!owner.bindings.has(node.left.text)) continue;
+          bind(owner, node.left.text, aliasFor(node.right, scope));
+          break;
+        }
       }
     });
   }
-
   const found = new Set<string>();
-  visitEager(sourceFile, node => {
+  visit(sourceFile, (node, scope) => {
     if (!ts.isExpression(node)) return;
     if (ts.isIdentifier(node)) {
       const parent = node.parent;
@@ -219,7 +251,7 @@ function eagerBrowserGlobalsFromSource(source: string, file: string): readonly s
         || (ts.isPropertyAssignment(parent) && parent.name === node)
       ) return;
     }
-    const alias = aliasFor(node);
+    const alias = aliasFor(node, scope);
     if (alias === globalObject && ts.isIdentifier(node) && node.text === 'window') found.add('window');
     else if (alias !== undefined && alias !== globalObject) found.add(alias);
   });
@@ -261,6 +293,29 @@ it('detects eager browser access through global, property, and destructured alia
     const globalThis = { document: localDocument };
     globalThis.document;
   `, 'shadowed.ts')).toEqual([]);
+});
+
+it('keeps browser shadowing lexical instead of suppressing outer global reads', () => {
+  expect(eagerBrowserGlobalsFromSource(`
+    { const document = localDocument; }
+    document.createElement('div');
+  `, 'block-shadow.ts')).toEqual(['document']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    const browser = globalThis;
+    {
+      const browser = localBrowser;
+      browser.document.createElement('local');
+    }
+    browser.document.createElement('global');
+  `, 'nested-shadow.ts')).toEqual(['document']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    {
+      const document = localDocument;
+      document.createElement('local');
+    }
+  `, 'local-only.ts')).toEqual([]);
 });
 
 it('[ARCH-9] imports the public source entry without creating browser globals', async () => {
