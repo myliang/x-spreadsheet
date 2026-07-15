@@ -137,6 +137,16 @@ function invokedFunctionFromCallee(
   return ts.isFunctionExpression(callee) || ts.isArrowFunction(callee) ? callee : null;
 }
 
+function visitDecoratorExpression(
+  decorator: ts.Decorator,
+  invokedFunctions: WeakSet<ts.FunctionExpression | ts.ArrowFunction>,
+  visitor: (child: ts.Node) => void,
+): void {
+  const applied = unwrapped(decorator.expression);
+  if (ts.isFunctionExpression(applied) || ts.isArrowFunction(applied)) invokedFunctions.add(applied);
+  visitor(decorator.expression);
+}
+
 function forEachEagerChild(
   node: ts.Node,
   invokedFunctions: WeakSet<ts.FunctionExpression | ts.ArrowFunction>,
@@ -166,16 +176,22 @@ function forEachEagerChild(
     return;
   }
   if (ts.isClassDeclaration(node) || ts.isClassExpression(node)) {
-    for (const decorator of decoratorsOf(node)) visitor(decorator.expression);
+    for (const decorator of decoratorsOf(node)) {
+      visitDecoratorExpression(decorator, invokedFunctions, visitor);
+    }
     for (const clause of node.heritageClauses ?? []) {
       for (const type of clause.types) visitor(type.expression);
     }
     for (const member of node.members) {
-      for (const decorator of decoratorsOf(member)) visitor(decorator.expression);
+      for (const decorator of decoratorsOf(member)) {
+        visitDecoratorExpression(decorator, invokedFunctions, visitor);
+      }
       if (member.name !== undefined && ts.isComputedPropertyName(member.name)) visitor(member.name.expression);
       if (ts.isFunctionLike(member)) {
         for (const parameter of member.parameters) {
-          for (const decorator of decoratorsOf(parameter)) visitor(decorator.expression);
+          for (const decorator of decoratorsOf(parameter)) {
+            visitDecoratorExpression(decorator, invokedFunctions, visitor);
+          }
         }
       }
       const isStatic = (ts.canHaveModifiers(member) ? ts.getModifiers(member) : undefined)
@@ -488,6 +504,21 @@ it('models eager execution paths without entering lazy or ambient declarations',
       [document.createElement('div')]: string;
     }
   `, 'ambient.ts')).toEqual([]);
+});
+
+it('invokes inline arrow and function decorators during class evaluation', () => {
+  expect(eagerBrowserGlobalsFromSource(`
+    @((target: unknown) => { document.createElement('div'); })
+    class ArrowDecorated {}
+
+    @(function (_target: unknown) { navigator.userAgent; })
+    class FunctionDecorated {}
+  `, 'inline-decorators.ts')).toEqual(['document', 'navigator']);
+
+  expect(eagerBrowserGlobalsFromSource(`
+    const lazyArrow = (_target: unknown) => document.createElement('div');
+    const lazyFunction = function (_target: unknown) { navigator.userAgent; };
+  `, 'unapplied-decorators.ts')).toEqual([]);
 });
 
 it('models wrapped invocation and class-local execution scopes', () => {
