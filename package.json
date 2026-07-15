@@ -35,7 +35,7 @@
     "test": "vitest run",
     "test:unit": "vitest run --project unit --project component --project architecture",
     "test:browser": "playwright test tests/browser",
-    "test:visual": "playwright test tests/visual",
+    "test:visual": "playwright test --config playwright.visual.config.ts",
     "test:ssr": "vitest run tests/ssr tests/unit/bootstrap.test.ts",
     "test:package": "npm run build && node --test tests/package/*.check.mjs",
     "test:parity-gate": "node --test tests/parity/manifest-gate.check.ts && node scripts/verify-parity-manifest.ts test-results/parity-evidence.ndjson",

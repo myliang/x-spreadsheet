@@ -1,0 +1,58 @@
+@font-face {
+  font-family: 'Noto Sans Visual';
+  src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Arial';
+  src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Source Sans Pro';
+  src: url('/fonts/NotoSans-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+:root {
+  color-scheme: light;
+  font-family: 'Noto Sans Visual';
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #fff;
+}
+
+.visual-harness {
+  width: 100%;
+  height: 100%;
+}
+
+.visual-harness .tego-sheet,
+.visual-harness .tego-sheet button,
+.visual-harness .tego-sheet input,
+.visual-harness .tego-sheet select,
+.visual-harness .tego-sheet textarea {
+  font-family: 'Noto Sans Visual';
+}
+
+.visual-harness .tego-sheet textarea {
+  caret-color: transparent;
+}
