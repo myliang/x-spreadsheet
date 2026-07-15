@@ -38,6 +38,7 @@ test('package and SSR orchestration is plain JavaScript for Node 20', () => {
   const paths = [
     'scripts/package-test-runtime.mjs',
     'scripts/test-package.mjs',
+    'scripts/test-parity-gate.mjs',
     'scripts/test-ssr.mjs',
     'tests/package/package-exports.test.mjs',
     'tests/package/package-metadata.check.mjs',
@@ -48,6 +49,17 @@ test('package and SSR orchestration is plain JavaScript for Node 20', () => {
     'tests/ssr/public-entrypoints.test.mjs',
   ];
   for (const path of paths) {
+    assert.equal(existsSync(new URL(path, repositoryRoot)), true, `${path} must exist`);
+    execFileSync(process.execPath, ['--check', fileURLToPath(new URL(path, repositoryRoot))]);
+  }
+
+  const directNodeEntries = Object.values(packageJson.scripts).flatMap(script =>
+    [...script.matchAll(/(?:^|&&|\|\||;)\s*node(?:\s+--test)?\s+([^\s&|;]+)/g)]
+      .map(match => match[1]),
+  );
+  assert.ok(directNodeEntries.length > 0);
+  for (const path of directNodeEntries) {
+    assert.match(path, /\.(?:cjs|mjs|js)$/, `${path} requires nonportable direct Node execution`);
     assert.equal(existsSync(new URL(path, repositoryRoot)), true, `${path} must exist`);
     execFileSync(process.execPath, ['--check', fileURLToPath(new URL(path, repositoryRoot))]);
   }

@@ -56,6 +56,15 @@ export default defineConfig({
           include: ['tests/ssr/**/*.test.{ts,tsx}'],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: 'parity',
+          environment: 'node',
+          exclude: sharedExcludes,
+          include: ['tests/parity/**/*.test.ts'],
+        },
+      },
     ],
   },
 });

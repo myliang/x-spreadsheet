@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import test from 'node:test';
-import { verifyManifest } from '../../scripts/verify-parity-manifest.ts';
+import { test } from 'vitest';
+import { runParityCli, verifyManifest } from '../../scripts/verify-parity-manifest.ts';
 import { parityManifest } from './manifest.ts';
 import type {
   EvidenceStatus,
@@ -211,14 +210,17 @@ function evidenceFor(
 }
 
 function runCliPaths(paths: readonly string[]) {
-  return spawnSync(
-    process.execPath,
-    ['scripts/verify-parity-manifest.ts', ...paths],
-    {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-    },
-  );
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const status = runParityCli(paths, {
+    log: message => stdout.push(message),
+    error: message => stderr.push(message),
+  });
+  return {
+    status,
+    stdout: stdout.length === 0 ? '' : `${stdout.join('\n')}\n`,
+    stderr: stderr.length === 0 ? '' : `${stderr.join('\n')}\n`,
+  };
 }
 
 function runCli(input?: string) {

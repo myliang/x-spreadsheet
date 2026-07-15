@@ -1,6 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { parityManifest } from '../tests/parity/manifest.ts';
 import type {
   AssertionLane,
@@ -327,7 +325,7 @@ export function verifyManifest(
   };
 }
 
-function parseEvidenceArtifact(path: string): unknown[] {
+export function parseEvidenceArtifact(path: string): unknown[] {
   let contents: string;
   try {
     contents = readFileSync(path, 'utf8').trim();
@@ -364,28 +362,33 @@ function parseEvidenceArtifact(path: string): unknown[] {
   });
 }
 
-function runCli(args: readonly string[]): void {
+export function verifyEvidenceArtifacts(args: readonly string[]): ManifestVerificationSummary {
   if (args.length === 0) {
     throw new Error('missing execution artifact; pass one or more JSON-array or NDJSON record files');
   }
 
   const evidence = args.flatMap(parseEvidenceArtifact);
-  const summary = verifyManifest(parityManifest, evidence);
-  console.log(
-    `Verified parity manifest: ${summary.rowCount} rows, ${summary.assertionCount} assertions, ${summary.executedCount} covered by ${summary.evidenceRecordCount} evidence records.`,
-  );
+  return verifyManifest(parityManifest, evidence);
 }
 
-const entryPath = process.argv[1];
-const isDirectExecution =
-  entryPath !== undefined && import.meta.url === pathToFileURL(resolve(entryPath)).href;
+export interface ParityCliIo {
+  readonly error: (message: string) => void;
+  readonly log: (message: string) => void;
+}
 
-if (isDirectExecution) {
+export function runParityCli(
+  args: readonly string[],
+  io: ParityCliIo = { error: console.error, log: console.log },
+): number {
   try {
-    runCli(process.argv.slice(2));
+    const summary = verifyEvidenceArtifacts(args);
+    io.log(
+      `Verified parity manifest: ${summary.rowCount} rows, ${summary.assertionCount} assertions, ${summary.executedCount} covered by ${summary.evidenceRecordCount} evidence records.`,
+    );
+    return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`Parity manifest verification failed: ${message}`);
-    process.exitCode = 1;
+    io.error(`Parity manifest verification failed: ${message}`);
+    return 1;
   }
 }

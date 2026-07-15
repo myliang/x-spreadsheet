@@ -55,7 +55,7 @@
     "test:visual": "playwright test --config playwright.visual.config.ts",
     "test:ssr": "node scripts/test-ssr.mjs",
     "test:package": "node scripts/test-package.mjs",
-    "test:parity-gate": "node --test tests/parity/manifest-gate.check.ts && node scripts/verify-parity-manifest.ts test-results/parity-evidence.ndjson",
+    "test:parity-gate": "node scripts/test-parity-gate.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "dev": "vite",
