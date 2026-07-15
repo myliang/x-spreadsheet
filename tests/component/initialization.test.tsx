@@ -108,7 +108,7 @@ it('catches up the external snapshot on delayed first subscribe and reconnect', 
   const first = vi.fn();
   const disconnect = store.subscribe(first);
   expect(store.getSnapshot().revision).toBe(1);
-  expect(first).toHaveBeenCalledOnce();
+  expect(first).not.toHaveBeenCalled();
 
   disconnect();
   controller.dispatch({
@@ -119,7 +119,7 @@ it('catches up the external snapshot on delayed first subscribe and reconnect', 
   const second = vi.fn();
   store.subscribe(second);
   expect(store.getSnapshot().revision).toBe(2);
-  expect(second).toHaveBeenCalledOnce();
+  expect(second).not.toHaveBeenCalled();
 
   store.dispose();
   controller.dispose();
@@ -152,8 +152,135 @@ it('adopts a same-revision branch after a disconnected checkpoint restore', () =
   expect(store.getSnapshot().value[0]?.rows?.[0]).toMatchObject({
     cells: { 0: { text: 'branch B' } },
   });
-  expect(listener).toHaveBeenCalledOnce();
+  expect(listener).not.toHaveBeenCalled();
 
   store.dispose();
+  controller.dispose();
+});
+
+it('rolls back a failed first connection without retaining its listener', () => {
+  const controller = new WorkbookController([{}]);
+  const store = createControllerExternalStore(controller);
+  const sheet = controller.getSheetIds()[0]!;
+  const connectError = new Error('snapshot refresh failed');
+  const leakedListenerError = new Error('leaked listener');
+  const getSnapshot = vi.spyOn(controller, 'getSnapshot')
+    .mockImplementationOnce(() => {
+      throw connectError;
+    });
+  const staleListener = vi.fn(() => {
+    throw leakedListenerError;
+  });
+
+  expect(() => store.subscribe(staleListener)).toThrow(connectError);
+  getSnapshot.mockRestore();
+  expect(() => controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'after failed subscribe',
+  }, 'ref')).not.toThrow();
+  expect(staleListener).not.toHaveBeenCalled();
+
+  const liveListener = vi.fn();
+  const disconnect = store.subscribe(liveListener);
+  expect(liveListener).not.toHaveBeenCalled();
+  controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 1, column: 0 },
+    text: 'after reconnect',
+  }, 'ref');
+  expect(liveListener).toHaveBeenCalledOnce();
+
+  disconnect();
+  store.dispose();
+  controller.dispose();
+});
+
+it('notifies every current listener before rethrowing the first listener error', () => {
+  const controller = new WorkbookController([{}]);
+  const store = createControllerExternalStore(controller);
+  const sheet = controller.getSheetIds()[0]!;
+  const firstError = new Error('first listener failed');
+  let shouldThrow = false;
+  const first = vi.fn(() => {
+    if (shouldThrow) throw firstError;
+  });
+  const second = vi.fn();
+  const disconnectFirst = store.subscribe(first);
+  const disconnectSecond = store.subscribe(second);
+  first.mockClear();
+  second.mockClear();
+  shouldThrow = true;
+
+  expect(() => controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'committed despite notification error',
+  }, 'ref')).toThrow(firstError);
+  expect(first).toHaveBeenCalledOnce();
+  expect(second).toHaveBeenCalledOnce();
+  expect(controller.getCellText({ sheet, row: 0, column: 0 })).toBe(
+    'committed despite notification error',
+  );
+
+  shouldThrow = false;
+  disconnectFirst();
+  disconnectSecond();
+  store.dispose();
+  controller.dispose();
+});
+
+it('can reconnect after the last-listener cleanup throws', () => {
+  const controller = new WorkbookController([{}]);
+  const actualSubscribe = controller.subscribe.bind(controller);
+  const cleanupError = new Error('disconnect failed');
+  const subscribe = vi.spyOn(controller, 'subscribe').mockImplementation(listener => {
+    const disconnect = actualSubscribe(listener);
+    return () => {
+      disconnect();
+      throw cleanupError;
+    };
+  });
+  const store = createControllerExternalStore(controller);
+  const disconnectFirst = store.subscribe(vi.fn());
+
+  expect(() => disconnectFirst()).toThrow(cleanupError);
+  const disconnectSecond = store.subscribe(vi.fn());
+  expect(subscribe).toHaveBeenCalledTimes(2);
+
+  expect(() => disconnectSecond()).toThrow(cleanupError);
+  store.dispose();
+  controller.dispose();
+});
+
+it('clears listeners even when controller cleanup throws during dispose', () => {
+  const controller = new WorkbookController([{}]);
+  const actualSubscribe = controller.subscribe.bind(controller);
+  const cleanupError = new Error('dispose disconnect failed');
+  vi.spyOn(controller, 'subscribe').mockImplementation(listener => {
+    actualSubscribe(listener);
+    return () => {
+      throw cleanupError;
+    };
+  });
+  const store = createControllerExternalStore(controller);
+  const sheet = controller.getSheetIds()[0]!;
+  const leakedListenerError = new Error('disposed listener leaked');
+  let shouldThrow = false;
+  const listener = vi.fn(() => {
+    if (shouldThrow) throw leakedListenerError;
+  });
+  store.subscribe(listener);
+  listener.mockClear();
+  shouldThrow = true;
+
+  expect(() => store.dispose()).toThrow(cleanupError);
+  expect(() => controller.dispatch({
+    type: 'set-cell-text',
+    address: { sheet, row: 0, column: 0 },
+    text: 'after failed dispose',
+  }, 'ref')).not.toThrow();
+  expect(listener).not.toHaveBeenCalled();
+
   controller.dispose();
 });

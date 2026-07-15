@@ -20,21 +20,46 @@ export function createControllerExternalStore(
   const listeners = new Set<() => void>();
 
   const publish = (next: ControllerSnapshot) => {
+    if (disposed) return;
     snapshot = next;
+    let firstError: unknown;
+    let failed = false;
     for (const listener of [...listeners]) {
-      if (listeners.has(listener)) listener();
+      if (!listeners.has(listener)) continue;
+      try {
+        listener();
+      } catch (error) {
+        if (!failed) {
+          failed = true;
+          firstError = error;
+        }
+      }
     }
+    if (failed) throw firstError;
   };
 
   const connect = () => {
     if (controllerUnsubscribe !== null || disposed) return;
-    controllerUnsubscribe = controller.subscribe(event => publish(event.snapshot));
-    publish(controller.getSnapshot());
+    let unsubscribe: (() => void) | null = null;
+    try {
+      unsubscribe = controller.subscribe(event => publish(event.snapshot));
+      const current = controller.getSnapshot();
+      controllerUnsubscribe = unsubscribe;
+      snapshot = current;
+    } catch (error) {
+      try {
+        unsubscribe?.();
+      } catch {
+        // Preserve the connection failure while leaving no local connection state.
+      }
+      throw error;
+    }
   };
 
   const disconnect = () => {
-    controllerUnsubscribe?.();
+    const unsubscribe = controllerUnsubscribe;
     controllerUnsubscribe = null;
+    unsubscribe?.();
   };
 
   return {
@@ -42,8 +67,8 @@ export function createControllerExternalStore(
     getServerSnapshot: () => snapshot,
     subscribe(listener) {
       if (disposed) return () => undefined;
-      listeners.add(listener);
       connect();
+      listeners.add(listener);
       let active = true;
       return () => {
         if (!active) return;
@@ -59,8 +84,8 @@ export function createControllerExternalStore(
     dispose() {
       if (disposed) return;
       disposed = true;
-      disconnect();
       listeners.clear();
+      disconnect();
     },
   };
 }
