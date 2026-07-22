@@ -61,7 +61,8 @@
     "lint": "eslint . --max-warnings 0",
     "dev": "vite --config demo/vite.config.ts",
     "build": "vite build",
-    "build:demo": "tsc --noEmit --project demo/tsconfig.json && vite build --config demo/vite.config.ts"
+    "build:demo": "tsc --noEmit --project demo/tsconfig.json && vite build --config demo/vite.config.ts",
+    "build:pages": "tsc --noEmit --project demo/tsconfig.json && node scripts/prepare-pages-build.mjs && vite build --mode pages --config demo/vite.config.ts && node scripts/test-pages-build.mjs"
   },
   "keywords": [
     "react",

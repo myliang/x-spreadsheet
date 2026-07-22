@@ -19,8 +19,13 @@ function isApprovedEvidence(file: string): boolean {
     || /^tests\/visual\/__snapshots__\/[^/]+\.png$/.test(file);
 }
 
+function isApprovedPagesOutput(file: string): boolean {
+  return file === 'docs/index.html'
+    || /^docs\/assets\/index-[a-z0-9_-]{8,}\.(?:js|css)$/i.test(file);
+}
+
 function isGeneratedOutput(file: string): boolean {
-  if (isApprovedEvidence(file)) return false;
+  if (isApprovedEvidence(file) || isApprovedPagesOutput(file)) return false;
   const sourceOrFixture = /(?:^|\/)(?:src|fixtures?)(?:\/|$)/.test(file);
   return (
     /^(?:docs\/superpowers|tests\/parity\/legacy|tests\/visual\/(?:__snapshots__|fonts))(?:\/|$)/.test(file)
@@ -36,7 +41,7 @@ function isGeneratedOutput(file: string): boolean {
   );
 }
 
-it('classifies only exact architecture evidence as approved and rejects generated lookalikes', () => {
+it('classifies only exact architecture evidence and Pages outputs as approved', () => {
   const approved = [
     'docs/superpowers/plans/design.md',
     'tests/parity/legacy/baseline-meta.json',
@@ -56,6 +61,9 @@ it('classifies only exact architecture evidence as approved and rejects generate
     'tests/visual/fonts/generated-bundle.js',
     'build/main.js',
     'public/bundle.js',
+    'docs/assets/vendor-abcdefgh.js',
+    'docs/assets/index-short.js',
+    'docs/assets/nested/index-abcdefgh.css',
   ];
   const source = ['src/index.ts', 'tests/fixtures/index.js'];
 
@@ -69,6 +77,14 @@ it('classifies only exact architecture evidence as approved and rejects generate
   }
   for (const file of source) {
     expect(isApprovedEvidence(file), file).toBe(false);
+    expect(isGeneratedOutput(file), file).toBe(false);
+  }
+  for (const file of [
+    'docs/index.html',
+    'docs/assets/index-abcdefgh.js',
+    'docs/assets/index-abcdefgh.css',
+  ]) {
+    expect(isApprovedPagesOutput(file), file).toBe(true);
     expect(isGeneratedOutput(file), file).toBe(false);
   }
 });

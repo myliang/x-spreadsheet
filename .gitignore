@@ -10,7 +10,6 @@ playwright-report/
 test-results/
 /docs/dist/
 /docs/locale/
-/docs/index.html
 /docs/xspreadsheet.css
 /docs/xspreadsheet.css.map
 /docs/xspreadsheet.js

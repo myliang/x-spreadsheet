@@ -7,6 +7,7 @@ import {
   type WorkbookInput,
 } from 'tego-sheet';
 import { zhCN } from 'tego-sheet/locales/zh-cn';
+import { RoadmapSection } from './roadmap-section';
 
 const legacyWorkbook: WorkbookData = [{
   name: 'Budget',
@@ -55,12 +56,22 @@ export function App() {
   return (
     <main className="demo-page">
       <header>
-        <p className="demo-kicker">React + TypeScript + Vite</p>
-        <h1>tego-sheet</h1>
-        <p>New React API, compatible workbook JSON and spreadsheet behavior.</p>
+        <nav className="demo-nav" aria-label="Primary navigation">
+          <a className="demo-nav__brand" href="#top">tego-sheet</a>
+          <div>
+            <a href="#examples">Examples</a>
+            <a href="#roadmap">Roadmap</a>
+            <a href="https://github.com/myliang/x-spreadsheet">GitHub</a>
+          </div>
+        </nav>
+        <div className="demo-hero" id="top">
+          <p className="demo-kicker">React + TypeScript + Vite</p>
+          <h1>tego-sheet</h1>
+          <p>New React API, compatible workbook JSON and spreadsheet behavior.</p>
+        </div>
       </header>
 
-      <section>
+      <section id="examples">
         <div className="demo-section-heading">
           <div>
             <h2>Uncontrolled workbook and legacy JSON</h2>
@@ -115,6 +126,8 @@ export function App() {
           </div>
         </div>
       </section>
+
+      <RoadmapSection />
     </main>
   );
 }
