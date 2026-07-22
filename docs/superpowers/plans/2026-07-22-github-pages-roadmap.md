@@ -211,14 +211,14 @@ Expected: all commands exit 0.
 
 Stage the plan, demo source, tests, build script/configuration, `.gitignore`, `package.json`, and generated `docs/index.html` plus `docs/assets/`. Do not stage `.superpowers/`.
 
-- [ ] **Step 3: Create the fork and push the branch**
+- [x] **Step 3: Create the fork and push the branch**
 
 Create `sealday/x-spreadsheet` as a fork if absent, add it as remote `fork`, and push `agent/github-pages-roadmap` with tracking.
 
-- [ ] **Step 4: Publish fork Pages**
+- [x] **Step 4: Publish fork Pages**
 
 Push the same verified commit to the fork's `master`, configure Pages source to `master:/docs`, wait for status `built`, and verify `https://sealday.github.io/x-spreadsheet/` plus `#roadmap` returns HTTP 200 and contains the Roadmap heading.
 
-- [ ] **Step 5: Open the upstream pull request**
+- [x] **Step 5: Open the upstream pull request**
 
 Create a ready-for-review PR from `sealday:agent/github-pages-roadmap` to `myliang:master`, describing the typed Roadmap source, Pages artifact, tests, and the upstream Pages impact. The upstream site becomes visible after a maintainer merges because the authenticated account has READ-only access there.
